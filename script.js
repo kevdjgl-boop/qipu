@@ -1,4 +1,4 @@
- <!-- Scripts de Firebase -->
+    <!-- Scripts de Firebase -->
     <script type="module">
         // Importaciones de Firebase
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
@@ -13,9 +13,8 @@
         const IS_CANVAS_ENV = typeof __initial_auth_token !== 'undefined';
         
         // Determinar si estamos en un servidor (Firebase Mode) o en un archivo local
-        // Si no estamos en el entorno Canvas, pero la app está en un servidor (e.g., GitHub Pages), 
-        // necesitamos habilitar la sincronización si las variables existieran.
-        const IS_FIREBASE_MODE = IS_CANVAS_ENV || (window.location.protocol.startsWith('http'));
+        // CAMBIO CRÍTICO: Forzamos la lógica del servidor si el protocolo es HTTP/HTTPS.
+        const IS_FIREBASE_MODE = IS_CANVAS_ENV || window.location.protocol.startsWith('http');
 
         const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
         const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
@@ -135,12 +134,17 @@
         async function initializeFirebase() {
             if (IS_FIREBASE_MODE) {
                 // Modo Firebase (Entorno Canvas o Servidor Público)
-                if (!IS_CANVAS_ENV && Object.keys(firebaseConfig).length === 0) {
-                     // Si no estamos en Canvas y no hay config. Firebase inyectada, forzamos Local
-                     document.getElementById('auth-status').innerHTML = `
-                        ⚠️ ERROR: No hay configuración de Firebase. Forzando Modo Local.
+                
+                // CRÍTICO: Solo si hay una configuración de Firebase, intentamos inicializarla
+                if (Object.keys(firebaseConfig).length === 0 && !IS_CANVAS_ENV) {
+                    // Si estamos en un servidor público PERO no hay configuración de Firebase inyectada,
+                    // mostramos el modo local
+                    document.getElementById('auth-status').innerHTML = `
+                        💾 Modo Local (PC). Los datos se guardan en el navegador.
                     `;
                     loadLocalState();
+                    // Ocultar la sección de sincronización si no hay Firebase
+                    document.getElementById('sync-section-container').classList.add('hidden');
                     setupListenersAndLoadData(false);
                     return;
                 }
@@ -370,12 +374,6 @@
                         await auth.signOut();
 
                         // 2. Forzar el inicio de sesión con el UID del otro dispositivo (PC/Android)
-                        // Esto se hace pidiendo un Custom Token con el UID del otro dispositivo.
-                        // Ya que no tenemos un servidor, simularemos la conexión forzando la autenticación
-                        // usando signInWithCustomToken, esperando que la otra app lo reconozca.
-                        // NOTA: En este entorno, usamos un truco para pasar el UID.
-                        // En un APK real, esto debería usar un Custom Token.
-                        // Aquí, reutilizamos la lógica de Custom Token para el ID.
                         
                         await signInWithCustomToken(auth, syncUserId);
                         
