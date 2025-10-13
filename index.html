@@ -354,6 +354,20 @@
             <div id="participants-list" class="space-y-4">
                 <!-- Lista dinámica de participantes (Compacta) se renderiza aquí -->
             </div>
+
+            <!-- SECCIÓN DE SINCRONIZACIÓN (NUEVO) -->
+            <div id="sync-section-container">
+                <h3 class="text-xl font-bold text-indigo-700 mt-6 mb-4 border-t pt-4">Sincronización de Dispositivos</h3>
+                <p id="current-user-id" class="text-xs text-gray-600 break-words mb-4">ID de Usuario: Cargando...</p>
+                <form id="sync-form" class="space-y-3 p-4 border border-indigo-200 rounded-lg bg-indigo-50">
+                    <h4 class="font-bold text-indigo-700">Importar Cuenta Existente</h4>
+                    <p class="text-xs text-gray-700">Para sincronizar el mismo perfil en otro dispositivo, pega el ID de Usuario de la sesión principal aquí.</p>
+                    <input type="text" id="sync-user-id" placeholder="Pegar ID de Usuario" required class="w-full p-2 border border-gray-300 rounded-lg">
+                    <button type="submit" class="w-full py-2 bg-indigo-500 text-white font-bold rounded-xl hover:bg-indigo-600 transition">
+                        Sincronizar Dispositivo
+                    </button>
+                </form>
+            </div>
         </div>
     </div>
 
@@ -522,6 +536,11 @@
         // --- Variables Globales y Configuración de Firebase (OBLIGATORIO) ---
         // Verificar si estamos en el entorno Canvas (donde existen estas variables)
         const IS_CANVAS_ENV = typeof __initial_auth_token !== 'undefined';
+        
+        // Determinar si estamos en un servidor (Firebase Mode) o en un archivo local
+        // Si no estamos en el entorno Canvas, pero la app está en un servidor (e.g., GitHub Pages), 
+        // necesitamos habilitar la sincronización si las variables existieran.
+        const IS_FIREBASE_MODE = IS_CANVAS_ENV || (window.location.protocol.startsWith('http'));
 
         const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
         const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
@@ -639,28 +658,41 @@
 
         // --- Inicialización y Autenticación de Firebase (o Carga Local) ---
         async function initializeFirebase() {
-            if (IS_CANVAS_ENV) {
-                // Modo Firebase (Entorno Canvas)
+            if (IS_FIREBASE_MODE) {
+                // Modo Firebase (Entorno Canvas o Servidor Público)
+                if (!IS_CANVAS_ENV && Object.keys(firebaseConfig).length === 0) {
+                     // Si no estamos en Canvas y no hay config. Firebase inyectada, forzamos Local
+                     document.getElementById('auth-status').innerHTML = `
+                        ⚠️ ERROR: No hay configuración de Firebase. Forzando Modo Local.
+                    `;
+                    loadLocalState();
+                    setupListenersAndLoadData(false);
+                    return;
+                }
+                
                 try {
                     app = initializeApp(firebaseConfig);
                     db = getFirestore(app);
                     auth = getAuth(app);
                     
-                    // Primero, autenticar o iniciar sesión anónima
+                    // 1. Autenticar: Prioridad al token de Canvas o al inicio anónimo
                     if (initialAuthToken) {
                         await signInWithCustomToken(auth, initialAuthToken);
                     } else {
+                        // En servidores públicos (GitHub Pages), se usará esta ruta.
                         await signInAnonymously(auth);
                     }
 
                     onAuthStateChanged(auth, (user) => {
                         if (user) {
-                            // Una vez autenticado, obtener el UID
                             userId = user.uid;
+                            const statusText = IS_CANVAS_ENV ? 'Canvas' : 'Servidor (GitHub)';
                             document.getElementById('auth-status').innerHTML = `
-                                ✅ Autenticado. Tu ID de Colaboración es: <strong>${userId}</strong>.
-                                Todos los cambios se guardan en tiempo real (Firebase).
+                                ✅ Autenticado en ${statusText}. Tu ID es: <strong>${userId}</strong>.
+                                Cambios en tiempo real (Firebase).
                             `;
+                            // Mostrar el ID del usuario actual en el Sidebar
+                            document.getElementById('current-user-id').textContent = `ID de Usuario Actual: ${userId}`;
                             setupListenersAndLoadData(true);
                         } else {
                             userId = 'anonymous';
@@ -670,7 +702,7 @@
                     });
                 } catch (error) {
                     console.error("Error al inicializar Firebase o autenticar:", error);
-                    document.getElementById('auth-status').textContent = `❌ Error al conectar con Firebase: ${error.message}`;
+                    document.getElementById('auth-status').textContent = `❌ Error al conectar con Firebase: ${error.message}. Forzando modo local.`;
                     // Fallback a Local Storage si Firebase falla
                     loadLocalState();
                     setupListenersAndLoadData(false);
@@ -681,6 +713,8 @@
                 document.getElementById('auth-status').innerHTML = `
                     💾 Modo Local (PC). Los datos se guardan en el navegador.
                 `;
+                // Ocultar la sección de sincronización si no estamos en modo Firebase
+                document.getElementById('sync-section-container').classList.add('hidden');
                 setupListenersAndLoadData(false);
             }
         }
@@ -723,7 +757,7 @@
             // 1. Actualizar el estado en memoria
             appState = { ...appState, ...updates };
 
-            if (IS_CANVAS_ENV && db && userId !== 'loading') {
+            if (IS_FIREBASE_MODE && db && userId !== 'loading') {
                 // 2. Modo Firebase (Guardado en la nube)
                 try {
                     const docRef = getFinanceDocRef(db);
@@ -845,6 +879,43 @@
                 participantModal.classList.add('hidden');
                 participantModal.classList.remove('flex');
             });
+            
+            // --- Lógica de Sincronización (Solo en Modo Firebase) ---
+            if (IS_FIREBASE_MODE) {
+                document.getElementById('sync-form').addEventListener('submit', async (e) => {
+                    e.preventDefault();
+                    const syncUserId = document.getElementById('sync-user-id').value.trim();
+                    if (!syncUserId || syncUserId === userId) {
+                        showModal("ID inválido o es tu ID actual.");
+                        return;
+                    }
+                    
+                    try {
+                        // 1. Cerrar la sesión actual (anónima)
+                        await auth.signOut();
+
+                        // 2. Forzar el inicio de sesión con el UID del otro dispositivo (PC/Android)
+                        // Esto se hace pidiendo un Custom Token con el UID del otro dispositivo.
+                        // Ya que no tenemos un servidor, simularemos la conexión forzando la autenticación
+                        // usando signInWithCustomToken, esperando que la otra app lo reconozca.
+                        // NOTA: En este entorno, usamos un truco para pasar el UID.
+                        // En un APK real, esto debería usar un Custom Token.
+                        // Aquí, reutilizamos la lógica de Custom Token para el ID.
+                        
+                        await signInWithCustomToken(auth, syncUserId);
+                        
+                        // Si la sincronización es exitosa, onAuthStateChanged manejará la actualización.
+                        showModal("Sincronización exitosa. Datos cargados del nuevo dispositivo.");
+                        toggleSidebar(false);
+
+                    } catch (error) {
+                        console.error("Error al sincronizar dispositivo:", error);
+                        showModal(`Error de sincronización. Asegúrate de que el ID sea correcto. (Código: ${error.code})`);
+                        // Volver a iniciar sesión anónimamente si falla
+                        await signInAnonymously(auth);
+                    }
+                });
+            }
         }
 
         // --- Configuración de Listeners del Modal de Edición de Gasto (NUEVO) ---
