@@ -595,7 +595,7 @@
         // Importaciones de Firebase
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, doc, setDoc, onSnapshot, updateDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getFirestore, doc, setDoc, onSnapshot, getDoc, updateDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
         import { setLogLevel } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
         
         setLogLevel('Debug');
@@ -1075,37 +1075,46 @@
             const inputId = formId === 'sync-form-dashboard' ? 'sync-user-id' : 'sync-user-id-sidebar';
             const targetUserId = document.getElementById(inputId).value.trim();
             
-            if (!targetUserId || targetUserId === userId || !auth) {
-                showModal("ID inválido o ya estás sincronizado con ese ID.", null, "Fallo de Sincronización");
+            // El ID es un uid, no un custom token. Si intentamos signIn, fallará.
+            if (!targetUserId || targetUserId === userId || !db) { 
+                showModal("ID inválido o no se pudo conectar al sistema de sincronización. Asegúrate de estar conectado a Firebase.", null, "Fallo de Sincronización");
                 return;
             }
 
             try {
-                // Generar un token personalizado para el ID objetivo (asumiendo que Canvas soporta esto)
-                // NOTA: En un entorno de producción, esta llamada necesitaría un servidor de backend para crear el token.
-                // Aquí simulamos que el token es el ID, pero Firebase solo acepta JWTs válidos.
-                // Para el Canvas, usamos el token inyectado. Fuera de Canvas, esto fallará por el formato.
-                
-                // Intentamos firmar en el nuevo usuario para cargar sus datos.
-                // Usamos el ID como si fuera el Custom Token.
-                await signInWithCustomToken(auth, targetUserId);
-                
-                // Si la sincronización es exitosa, el listener onAuthStateChanged recargará los datos.
-                showModal("¡Dispositivo Sincronizado! Se han cargado los datos de la cuenta compartida.", null, "Sincronización Exitosa");
+                // 1. Obtener la referencia del documento del usuario objetivo (la pareja)
+                const targetDocRef = doc(db, 'artifacts', appId, 'users', targetUserId, 'finance_tracker', FINANCE_DOC_ID);
+                const targetDocSnap = await getDoc(targetDocRef);
 
+                if (!targetDocSnap.exists()) {
+                    showModal("El ID es válido, pero no se encontraron datos asociados a esa cuenta.", null, "Fallo de Sincronización");
+                    return;
+                }
+
+                const targetData = targetDocSnap.data();
+                
+                // 2. Sobrescribir el documento del usuario actual (userId) con los datos del objetivo
+                // Al usar setDoc con merge: false, sobreescribimos completamente el estado compartido con los datos de la pareja.
+                const currentDocRef = getFinanceDocRef(db);
+                await setDoc(currentDocRef, targetData, { merge: false });
+                
+                // Forzamos la recarga de la aplicación después de la sincronización.
+                window.location.reload();
+
+                showModal("¡Datos Importados! Los datos de la otra cuenta han reemplazado tu estado actual. Ambos dispositivos están sincronizados.", null, "Sincronización Exitosa");
+                
                 // Resetear el campo
                 document.getElementById(inputId).value = '';
                 
             } catch (error) {
-                console.error("Error al sincronizar con ID:", error);
+                console.error("Error al sincronizar/importar datos:", error);
                 
-                // Detalle específico para el error que el usuario estaba viendo:
-                let userMessage = "Error al intentar sincronizar. Asegúrate de que el ID es correcto y que el dispositivo principal esté conectado.";
-                if (error.code === 'auth/invalid-custom-token') {
-                    userMessage = "El ID de sincronización no es válido. Asegúrate de copiar el ID completo y correcto de la cuenta principal.";
+                let userMessage = "Error crítico al intentar importar los datos. Asegúrate de tener permisos y que el ID sea correcto.";
+                if (error.code === 'permission-denied') {
+                     userMessage = "Acceso denegado: Asegúrate de que las Reglas de Seguridad de Firebase permiten el acceso de lectura al documento del otro usuario, aunque el guardado siempre será privado.";
                 }
 
-                showModal(userMessage, error.message, "Fallo de Sincronización");
+                showModal(userMessage, error.message, "Fallo de Importación");
             }
         }
 
