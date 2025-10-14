@@ -115,6 +115,7 @@
     <div class="max-w-7xl mx-auto px-4 md:px-8 pt-4">
         <div id="auth-status-container" class="flex justify-between items-center bg-white rounded-lg shadow-sm p-2 transition duration-300">
             <p id="auth-status" class="text-xs text-gray-600"></p>
+            <!-- FIX: Aseguramos que el botón sea visible con las clases de Tailwind -->
             <button id="switch-to-firebase-btn" class="bg-indigo-500 text-white text-xs font-bold py-1 px-2 rounded-lg hover:bg-indigo-600 transition hidden">
                 Intentar Conectar
             </button>
@@ -735,6 +736,8 @@
                 `;
                 document.getElementById('sync-id-card').classList.add('hidden');
                 document.getElementById('sync-form-dashboard').classList.add('hidden');
+                // Hacemos el botón visible para que el usuario pueda intentar la conexión
+                document.getElementById('switch-to-firebase-btn').classList.remove('hidden'); 
                 setupListenersAndLoadData(false);
                 return;
             }
@@ -1701,7 +1704,7 @@
             } else {
                 // Gasto Personal o Fijo
                 const methodTagColor = paymentMethod && paymentMethod.type === 'cash' ? 'bg-gray-200 text-gray-700' : 'bg-yellow-200 text-yellow-800';
-                const paymentTagText = paymentMethod && paymentUpdate(method).type === 'credit' ? `T. Crédito: ${paymentMethod.name}` : paymentMethod ? paymentMethod.name : 'N/A';
+                const paymentTagText = paymentMethod && paymentMethod.type === 'credit' ? `T. Crédito: ${paymentMethod.name}` : paymentMethod ? paymentMethod.name : 'N/A';
 
                 const paymentTag = `<span class='inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${methodTagColor}'>${paymentTagText}</span>`;
                 
