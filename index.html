@@ -800,11 +800,13 @@
                         if (localData) {
                              try {
                                 const localBackup = JSON.parse(localData);
-                                // Si encontramos datos locales, forzamos un guardado en la nueva cuenta de Firestore.
-                                // Esto ocurrirá ANTES de que el listener de Firestore intente cargar el documento.
-                                saveState(localBackup); 
-                                localStorage.removeItem(LOCAL_STORAGE_KEY); // Limpiamos el localStorage para que no interfiera más
-                                showModal("¡Datos Locales Migrados!", "Tu información guardada en este navegador ha sido sincronizada con tu nueva cuenta de Firebase. Ya puedes usar la sincronización en la nube.", "Migración Exitosa");
+                                // Si encontramos datos locales, forzamos un guardado en la nueva cuenta de Firestore de forma asíncrona.
+                                // Usamos una IIAF para no bloquear el callback sincrónico de onAuthStateChanged.
+                                (async () => {
+                                    await saveState(localBackup);
+                                    localStorage.removeItem(LOCAL_STORAGE_KEY); // Limpiamos el localStorage solo después de un guardado exitoso.
+                                    showModal("¡Datos Locales Migrados!", "Tu información guardada en este navegador ha sido sincronizada con tu nueva cuenta de Firebase. Ya puedes usar la sincronización en la nube.", "Migración Exitosa");
+                                })();
                             } catch (e) {
                                 console.error("Fallo durante la migración local:", e);
                                 // Continuamos con el estado de Firebase aunque la migración haya fallado parcialmente
