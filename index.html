@@ -111,13 +111,12 @@
     <div id="sidebar-backdrop" class="backdrop"></div>
 
     <!-- Auth Status -->
-    <!-- CAMBIO: Ahora el Auth Status refleja el modo local siempre en GitHub Pages -->
     <div class="max-w-7xl mx-auto px-4 md:px-8 pt-4">
         <div id="auth-status-container" class="flex justify-between items-center bg-white rounded-lg shadow-sm p-2 transition duration-300">
+            <!-- Muestra el estado actual de la conexión (Cargando/Firebase/Local) -->
             <p id="auth-status" class="text-xs text-gray-600">
-                💾 Modo Local (PC). Los datos se guardan en el navegador.
+                💾 **Modo Local.** Los datos se guardan en este navegador.
             </p>
-            <!-- El botón de switch ya no es necesario -->
             <button id="switch-to-firebase-btn" class="bg-indigo-500 text-white text-xs font-bold py-1 px-2 rounded-lg hover:bg-indigo-600 transition hidden">
                 Intentar Conectar
             </button>
@@ -145,7 +144,6 @@
             <div class="lg:col-span-2 space-y-6 h-full">
                 
                 <!-- 1. FILA DE SINCRONIZACIÓN (ID DE COPIA + IMPORTAR CUENTA) -->
-                <!-- Esta fila solo tendrá la funcionalidad de Copia/Pegar simulada en Modo Local -->
                 <div id="sync-row-dashboard" class="grid grid-cols-1 md:grid-cols-2 gap-4">
                     
                     <!-- ID DE SINCRONIZACIÓN (Mitad izquierda) -->
@@ -157,8 +155,7 @@
                             <!-- Campo oculto para copiar el ID completo -->
                             <textarea id="temp-user-id-to-copy" style="position: absolute; left: -9999px;"></textarea>
                             
-                            <!-- Ahora muestra un ID estático para simular la copia en modo local -->
-                            <span id="display-user-id-full" class="text-xs font-mono text-gray-800 break-all mr-2 truncate">MODO_LOCAL_NO_SYNC</span>
+                            <span id="display-user-id-full" class="text-xs font-mono text-gray-800 break-all mr-2 truncate">Cargando...</span>
                             <button id="copy-user-id-btn" class="py-1 px-2 bg-indigo-500 text-white font-bold rounded-lg hover:bg-indigo-600 transition text-xs flex items-center">
                                 <i class="fas fa-copy"></i> Copiar
                             </button>
@@ -166,15 +163,13 @@
                     </div>
                     
                     <!-- IMPORTAR CUENTA EXISTENTE (Mitad derecha) -->
-                    <!-- El formulario de sincronización es ahora un simulacro de modo local -->
-                    <form id="sync-form-dashboard" class="section-card border-l-4 border-red-500 p-4 bg-red-50">
-                        <h3 class="text-sm font-bold text-red-700 mb-2 flex items-center">
-                            <i class="fas fa-exclamation-triangle mr-2"></i> No se puede sincronizar
+                    <form id="sync-form-dashboard" class="section-card border-l-4 border-purple-500 p-4 bg-purple-50">
+                        <h3 class="text-sm font-bold text-purple-700 mb-2 flex items-center">
+                            <i class="fas fa-upload mr-2"></i> Importar Cuenta
                         </h3>
-                        <p class="text-xs text-red-700 mb-2">La sincronización requiere conexión a Firebase. Esta versión está en modo local. La data no se comparte.</p>
-                        <input type="text" placeholder="ID de Usuario" disabled class="w-full p-2 border border-gray-300 rounded-lg text-sm bg-gray-100 mb-2">
-                        <button type="button" disabled class="w-full py-1 bg-red-400 text-white font-bold rounded-xl text-sm">
-                            Sincronizar Deshabilitado
+                        <input type="text" id="sync-user-id" placeholder="Pegar ID de Usuario" required class="w-full p-2 border border-gray-300 rounded-lg text-sm mb-2">
+                        <button type="submit" class="w-full py-1 bg-purple-500 text-white font-bold rounded-xl hover:bg-purple-600 transition text-sm">
+                            Sincronizar Dispositivo
                         </button>
                     </form>
                 </div>
@@ -220,7 +215,7 @@
                 <div class="section-card border-l-4 border-indigo-500 h-full">
                     <h2 class="text-lg font-bold text-indigo-700 mb-4 flex items-center">
                         <i class="fas fa-balance-scale mr-2"></i> Balance de Cuentas Compartidas
-                    </h2>
+                    </h2 >
                     <div id="shared-balance-summary" class="space-y-3 text-sm h-full">
                         <p class="text-gray-500 italic">Calculando balance...</p>
                     </div>
@@ -415,7 +410,9 @@
             <!-- SECCIÓN DE SINCRONIZACIÓN (NUEVO) -->
             <div id="sync-section-container">
                 <h3 class="text-xl font-bold text-indigo-700 mt-6 mb-4 border-t pt-4">Sincronización de Dispositivos</h3>
-                <p id="current-user-id" class="text-xs text-gray-600 break-words mb-4">ID de Usuario: Cargando...</p>
+                <p id="current-user-id" class="text-xs text-gray-600 break-words mb-4">
+                    ID de Usuario: Cargando...
+                </p>
                 <form id="sync-form" class="space-y-3 p-4 border border-indigo-200 rounded-lg bg-indigo-50">
                     <h4 class="font-bold text-indigo-700">Importar Cuenta Existente</h4>
                     <p class="text-xs text-gray-700">Para sincronizar el mismo perfil en otro dispositivo, pega el ID de Usuario de la sesión principal aquí.</p>
@@ -602,16 +599,7 @@
         let isFirebaseActive = IS_FIREBASE_MODE_INITIAL;
 
         const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
-        // CONFIGURACIÓN CLAVE: Esta es una configuración segura de Firebase (necesaria para inicializar la app en cualquier host)
-        const firebaseConfig = IS_CANVAS_ENV ? JSON.parse(__firebase_config) : {
-            apiKey: "AIzaSyBZqU-r2v-gq7dG_k-L08oQ63jYfEw4",
-            authDomain: "simulated-firebase.firebaseapp.com",
-            projectId: "simulated-firebase",
-            storageBucket: "simulated-firebase.appspot.com",
-            messagingSenderId: "1234567890",
-            appId: "1:1234567890:web:abcdef123456",
-            measurementId: "G-EXAMPLE"
-        };
+        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
         // FIX: Corregir el error de ReferenceError: Cannot access 'initialAuthToken' before initialization
         const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
         
@@ -727,24 +715,36 @@
         // --- Inicialización y Autenticación de Firebase (o Carga Local) ---
         async function initializeFirebase(attemptForce = false) {
             
-            // CAMBIO CLAVE: Si no estamos en Canvas, asumimos modo Firebase por defecto, 
-            // usando la configuración dummy para que la app no falle en GitHub.
-            
-            if (!IS_CANVAS_ENV && !IS_FIREBASE_MODE_INITIAL) {
-                // Modo local si no hay servidor HTTP/HTTPS (ej: archivo://)
+            // Si NO estamos en Canvas Y no es un intento forzado, pasamos a modo local inmediatamente.
+            if (!IS_CANVAS_ENV && !attemptForce) {
                 isFirebaseActive = false;
                 loadLocalState();
                 document.getElementById('auth-status').innerHTML = `
-                    💾 Modo Local (PC). Los datos se guardan en el navegador.
+                    💾 **Modo Local.** Los datos se guardan en este navegador.
                 `;
+                // Ocultar elementos de sincronización en modo local
                 document.getElementById('sync-id-card').classList.add('hidden');
                 document.getElementById('sync-form-dashboard').classList.add('hidden');
-                document.getElementById('switch-to-firebase-btn').classList.add('hidden');
                 setupListenersAndLoadData(false);
                 return;
             }
 
-            // MODO FIREBASE (Servidor Público o Canvas)
+            // Lógica de Firebase (SOLO se ejecuta si IS_CANVAS_ENV es true o si attemptForce es true)
+            
+            // Si no hay token del Canvas, pero estamos intentando forzar (ej: en GitHub Pages con el botón)
+            if (!IS_CANVAS_ENV && attemptForce) {
+                // Si la configuración no está inyectada, fallamos (la única forma de conectarse es en el Canvas)
+                 if (Object.keys(firebaseConfig).length === 0) {
+                     document.getElementById('auth-status').innerHTML = `
+                        ❌ ERROR: La configuración de Firebase es necesaria para sincronizar.
+                    `;
+                    document.getElementById('switch-to-firebase-btn').textContent = 'Intentar Conectar';
+                    document.getElementById('switch-to-firebase-btn').classList.remove('hidden');
+                    return;
+                 }
+            }
+
+
             try {
                 isFirebaseActive = true;
                 app = initializeApp(firebaseConfig);
@@ -763,10 +763,9 @@
                 onAuthStateChanged(auth, (user) => {
                     if (user) {
                         userId = user.uid;
-                        const statusText = IS_CANVAS_ENV ? 'Canvas' : 'Servidor (GitHub)';
+                        const statusText = IS_CANVAS_ENV ? 'Canvas' : 'Servidor';
                         document.getElementById('auth-status').innerHTML = `
-                            ✅ Autenticado en ${statusText}. Tu ID es: <strong>${userId}</strong>.
-                            Cambios en tiempo real (Firebase).
+                            ✅ Sincronización activa (${statusText}). ID: <strong>${userId}</strong>.
                         `;
                         // Ocultar botón de switch y mostrar info de sincronización
                         document.getElementById('switch-to-firebase-btn').classList.add('hidden'); 
@@ -785,15 +784,14 @@
                     }
                 });
             } catch (error) {
-                // Este error ocurre si la configuración dummy falla la conexión a Firestore (Ej: Reglas de seguridad)
+                // ESTO ES LO QUE ESTABA FALLANDO EN EL CANVAS: Si falla, pasamos a modo local
                 console.error("Error al inicializar Firebase o autenticar:", error);
                 isFirebaseActive = false;
                 document.getElementById('auth-status').innerHTML = `
-                    ❌ Error de conexión. Forzando modo local.
+                    ❌ Fallo de conexión. Forzando modo local.
                 `;
-                document.getElementById('sync-id-card').classList.add('hidden');
-                document.getElementById('sync-form-dashboard').classList.add('hidden');
-                document.getElementById('switch-to-firebase-btn').classList.add('hidden'); // Ocultar si ya falló
+                document.getElementById('switch-to-firebase-btn').textContent = 'Intentar Conectar';
+                document.getElementById('switch-to-firebase-btn').classList.remove('hidden');
                 loadLocalState();
                 setupListenersAndLoadData(false);
             }
@@ -804,11 +802,11 @@
             setupPaymentMethodListeners();
             setupParticipantModalListeners(); 
             setupExpenseModalListeners(); 
-            // FIX: Los listeners del historial se adjuntan en el renderizado
+            
             if (isFirebaseMode) {
                 setupFirestoreListener(); 
             } else {
-                renderUI(); // Renderizar inmediatamente si es modo local
+                renderUI(); 
             }
         }
         
@@ -857,7 +855,6 @@
         function setupFirestoreListener() {
             if (!db || userId === 'loading') return;
             // FIX CRÍTICO: Llamar a la función getFinanceDocRef para obtener la referencia del documento, 
-            // no pasar la función misma.
             const docRef = getFinanceDocRef(db);
             
             onSnapshot(docRef, docSnap => {
@@ -973,7 +970,7 @@
                     }
 
                     if (!isFirebaseActive) {
-                        showModal("Debes conectar a Firebase primero. Usa el botón 'Intentar Conectar' en el dashboard.");
+                        showModal("La sincronización está deshabilitada. Conéctate a Firebase o usa una versión compilada.");
                         return;
                     }
                     
@@ -1098,6 +1095,7 @@
             const participantMap = new Map(participantData.map(p => [p.id, p]));
             let totalSpent = 0;
             let totalIndependentSpent = 0; // Nuevo total de gastos personales (global)
+            let guestDebtTotal = 0; // **NUEVO: Acumulador de deuda de invitados**
 
             // 1. Procesar Gastos (solo los filtrados por mes)
             filteredExpenses.forEach(expense => {
@@ -1125,15 +1123,17 @@
                     let numPayees = participants.length;
                     
                     // Si el pagador es un invitado, se asume que también debe pagar su parte (N+1)
-                    if (expense.payerId.startsWith('guest_')) {
-                        // Si el invitado paga, el gasto se reparte entre N participantes + el invitado (N+1)
+                    // **FIX CRÍTICO:** Si el gasto fue pagado por un participante, pero tenía un invitado asociado
+                    // (lo cual es posible a través del modal de edición), contamos N+1. 
+                    // En este punto, solo nos importa cuántas personas DEBEN.
+                    if (expense.payerId.startsWith('guest_') || expense.payerNameGuest) {
                         numPayees = participants.length + 1;
                     } else {
-                        // Si un participante activo paga, el gasto se divide solo entre los N participantes activos.
+                        // Si un participante activo paga, se divide solo entre los N participantes activos.
                         numPayees = participants.length;
                     }
                     
-                    // La parte que le corresponde a cada participante (y al invitado si se incluye)
+                    // La parte que le corresponde a cada persona (participante o invitado)
                     const splitAmount = amount / numPayees; 
                     
                     // El monto esperado se divide entre todos los participantes activos
@@ -1141,6 +1141,11 @@
                         p.expectedContribution += splitAmount;
                     });
                     
+                    // 2. Si hay un invitado asociado al gasto, sumamos esa parte a la deuda global de invitados
+                    if (expense.payerId.startsWith('guest_') || expense.payerNameGuest) {
+                        guestDebtTotal += splitAmount;
+                    }
+
                     // Aseguramos que splitAmount exista en el objeto expense para la visualización.
                     expense.splitAmount = splitAmount; 
                 }
@@ -1167,6 +1172,7 @@
                 globalSharedSavingsGoal, // Nuevo campo para el dashboard
                 totalSpent, // Nuevo campo para el dashboard
                 totalIndependentSpent, // Nuevo total independiente
+                guestDebtTotal: Math.round(guestDebtTotal * 100) / 100, // **DEUDA TOTAL DE INVITADOS**
                 participantData,
             };
         }
@@ -1205,8 +1211,6 @@
             
             // Gasto Total del Ciclo
             document.getElementById('display-total-spent').textContent = formatCurrency(summary.totalSpent);
-            
-            // NOTE: Se quita 'display-independent-spent' de aquí para simplificar el CARD 1
             
             // Ahorro Mutuo (Dentro del Card 2)
             const sharedSavingsGoalEl = document.getElementById('display-shared-savings-goal');
@@ -1247,7 +1251,6 @@
             });
         }
 
-        /** Renderiza la lista compacta de participantes y la configuración de ahorro. */
         function renderParticipantsConfig(participants, summary) {
             const listEl = document.getElementById('participants-list');
             listEl.innerHTML = '';
@@ -1296,7 +1299,6 @@
             updateExpenseFormParticipants(participants);
         }
 
-        /** Renderiza el selector de mes con el nombre del mes y el año. */
         function renderMonthSelector() {
             const monthNameEl = document.getElementById('current-month-name');
             const yearEl = document.getElementById('current-year');
@@ -1308,7 +1310,6 @@
             yearEl.textContent = year;
         }
 
-        /** Rellena el modal de edición de gasto con la información de un gasto. */
         function openExpenseEditModal(expenseId) {
             const expense = appState.expenses.find(e => e.id === expenseId);
             if (!expense) return;
@@ -1382,7 +1383,7 @@
                     `;
                     displayEl.insertAdjacentHTML('beforeend', catHtml);
 
-                    // Select option in main form and edit form
+                    // Expense Form Select
                     categorySelect.insertAdjacentHTML('beforeend', `<option value='${cat.name}'>${cat.name}</option>`);
                     editCategorySelect.insertAdjacentHTML('beforeend', `<option value='${cat.name}'>${cat.name}</option>`);
                 });
@@ -1700,9 +1701,20 @@
                     return `<span class='inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${tagColor} mr-1'>${p.name}: ${tagText}</span>`;
                 }).join('');
                 
-                // Si el pagador fue un invitado, añadir una etiqueta de Pagador
-                 if (expense.payerId.startsWith('guest_')) {
-                    balanceTags += `<span class='inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-gray-200 text-gray-700 ml-1'>Pagador: ${payerName}</span>`;
+                // Si hay un invitado asociado al gasto, añadimos su etiqueta de deuda
+                if (expense.payerId.startsWith('guest_') || expense.payerNameGuest) {
+                    const guestName = expense.payerNameGuest || 'Invitado';
+                    const guestDebtTag = `<span class='inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-700 ml-1'>${guestName}: Debe ${formatCurrency(splitAmount)}</span>`;
+                    
+                    // Si el pagador no fue un participante, mostramos la deuda del invitado.
+                    if (!participantsMap.has(expense.payerId)) {
+                        balanceTags += guestDebtTag;
+                    }
+                    
+                    // Si el pagador es un invitado, marcamos la etiqueta del pagador
+                    if (expense.payerId.startsWith('guest_')) {
+                        balanceTags += `<span class='inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-gray-200 text-gray-700 ml-1'>Pagador: ${payerName}</span>`;
+                    }
                 }
 
 
@@ -1883,8 +1895,26 @@
             const sharedBalanceEl = document.getElementById('shared-balance-summary');
             // Usar una tolerancia baja para evitar errores de coma flotante
             const balances = summary.participantData.filter(p => Math.abs(p.balance) > 0.01);
+            
+            // Iniciar el HTML con la deuda de invitados si existe
+            let balanceHtml = '';
+            
+            // **NUEVO: Tarjeta de Deuda de Invitados**
+            if (summary.guestDebtTotal > 0) {
+                 balanceHtml += `
+                    <div class="p-3 bg-yellow-100 border border-yellow-400 rounded-lg shadow-sm flex items-center justify-between">
+                        <span class="font-bold text-yellow-800 flex items-center">
+                            <i class="fas fa-hand-holding-usd mr-2"></i> Invitados Deben
+                        </span>
+                        <p class="font-extrabold text-base text-red-600">
+                            ${formatCurrency(summary.guestDebtTotal)}
+                        </p>
+                    </div>
+                `;
+            }
 
-            if (balances.length === 0) {
+
+            if (balances.length === 0 && summary.guestDebtTotal === 0) {
                 sharedBalanceEl.innerHTML = `
                     <div class="text-center p-4 bg-indigo-50 rounded-lg">
                         <i class="fas fa-handshake text-indigo-500 text-3xl mb-2"></i>
@@ -1895,7 +1925,8 @@
                 return;
             }
             
-            sharedBalanceEl.innerHTML = balances.map(p => {
+            // Añadir los balances de los participantes activos
+            balanceHtml += balances.map(p => {
                 const isPositive = p.balance > 0;
                 const icon = isPositive ? '<i class="fas fa-arrow-circle-up mr-2"></i>' : '<i class="fas fa-arrow-circle-down mr-2"></i>';
                 const textColor = isPositive ? 'balance-positive' : 'balance-negative';
@@ -1911,6 +1942,8 @@
                     </div>
                 `;
             }).join('');
+            
+            sharedBalanceEl.innerHTML = balanceHtml;
         }
         
         function updateExpenseFormParticipants(participants) {
@@ -2076,10 +2109,8 @@
             await saveState({ expenses: newExpenses });
         }
 
-        // Iniciar la aplicación
         window.onload = () => initializeFirebase();
 
-        // Función para copiar el ID de usuario al portapapeles
         function copyUserIdToClipboard() {
             const userIdEl = document.getElementById('display-user-id-full');
             const copyTarget = document.getElementById('temp-user-id-to-copy');
@@ -2089,24 +2120,20 @@
                 return;
             }
             
-            // 1. Usar el campo de texto oculto para ejecutar el comando
             copyTarget.value = userIdEl.textContent;
             copyTarget.select();
 
             try {
-                // 2. Usar el método obsoleto (pero funcional en iframes)
                 document.execCommand('copy');
                 showModal("ID de usuario copiado al portapapeles. ¡Pégalo en el otro dispositivo para sincronizar!");
             } catch (err) {
                 console.error('Error al copiar:', err);
-                // 3. Fallback en caso de fallo de execCommand
                 showModal("Error al copiar: Tu navegador bloqueó la API. Por favor, copia el ID manualmente.");
             }
         }
         
         document.addEventListener('click', (e) => {
             if (e.target.closest('#copy-user-id-btn')) {
-                // Previene el comportamiento por defecto si es necesario, aunque execCommand lo maneja
                 e.preventDefault(); 
                 copyUserIdToClipboard();
             }
