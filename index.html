@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gestor Financiero Colaborativo</title>
+    <title>Monedero V.1.02</title>
     <!-- Incluye Tailwind CSS para estilizado rápido y responsive -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Incluye Font Awesome para íconos de balance -->
@@ -794,6 +794,25 @@
                     if (user) {
                         userId = user.uid;
                         const statusText = IS_CANVAS_ENV ? 'Canvas' : 'Externa';
+
+                        // --- INICIO MIGRACIÓN DE DATOS LOCALES CRÍTICA ---
+                        const localData = localStorage.getItem(LOCAL_STORAGE_KEY);
+                        if (localData) {
+                             try {
+                                const localBackup = JSON.parse(localData);
+                                // Si encontramos datos locales, forzamos un guardado en la nueva cuenta de Firestore.
+                                // Esto ocurrirá ANTES de que el listener de Firestore intente cargar el documento.
+                                saveState(localBackup); 
+                                localStorage.removeItem(LOCAL_STORAGE_KEY); // Limpiamos el localStorage para que no interfiera más
+                                showModal("¡Datos Locales Migrados!", "Tu información guardada en este navegador ha sido sincronizada con tu nueva cuenta de Firebase. Ya puedes usar la sincronización en la nube.", "Migración Exitosa");
+                            } catch (e) {
+                                console.error("Fallo durante la migración local:", e);
+                                // Continuamos con el estado de Firebase aunque la migración haya fallado parcialmente
+                            }
+                        }
+                        // --- FIN MIGRACIÓN DE DATOS LOCALES CRÍTICA ---
+
+
                         document.getElementById('auth-status').innerHTML = `
                             ✅ Sincronización activa (${statusText}). ID: <strong>${userId}</strong>.
                         `;
@@ -1161,8 +1180,7 @@
                     // Lógica para reparto: Participantes activos + 1 si el pagador es un invitado
                     let numPayees = participants.length;
                     
-                    // Si el pagador es un invitado, se asume que también debe pagar su parte (N+1)
-                    // **FIX CRÍTICO:** Si el gasto fue pagado por un participante, pero tenía un invitado asociado
+                    // Si el gasto fue pagado por un participante, pero tenía un invitado asociado
                     // (lo cual es posible a través del modal de edición), contamos N+1. 
                     // En este punto, solo nos importa cuántas personas DEBEN.
                     if (expense.payerId.startsWith('guest_') || expense.payerNameGuest) {
