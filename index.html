@@ -111,11 +111,13 @@
     <div id="sidebar-backdrop" class="backdrop"></div>
 
     <!-- Auth Status -->
-    <!-- CAMBIO: Se hace un contenedor flexible para el mensaje y el botón de SWITCH -->
+    <!-- CAMBIO: Ahora el Auth Status refleja el modo local siempre en GitHub Pages -->
     <div class="max-w-7xl mx-auto px-4 md:px-8 pt-4">
         <div id="auth-status-container" class="flex justify-between items-center bg-white rounded-lg shadow-sm p-2 transition duration-300">
-            <p id="auth-status" class="text-xs text-gray-600"></p>
-            <!-- El botón de switch ya no es necesario, pero lo mantenemos oculto para debug -->
+            <p id="auth-status" class="text-xs text-gray-600">
+                💾 Modo Local (PC). Los datos se guardan en el navegador.
+            </p>
+            <!-- El botón de switch ya no es necesario -->
             <button id="switch-to-firebase-btn" class="bg-indigo-500 text-white text-xs font-bold py-1 px-2 rounded-lg hover:bg-indigo-600 transition hidden">
                 Intentar Conectar
             </button>
@@ -143,6 +145,7 @@
             <div class="lg:col-span-2 space-y-6 h-full">
                 
                 <!-- 1. FILA DE SINCRONIZACIÓN (ID DE COPIA + IMPORTAR CUENTA) -->
+                <!-- Esta fila solo tendrá la funcionalidad de Copia/Pegar simulada en Modo Local -->
                 <div id="sync-row-dashboard" class="grid grid-cols-1 md:grid-cols-2 gap-4">
                     
                     <!-- ID DE SINCRONIZACIÓN (Mitad izquierda) -->
@@ -154,7 +157,8 @@
                             <!-- Campo oculto para copiar el ID completo -->
                             <textarea id="temp-user-id-to-copy" style="position: absolute; left: -9999px;"></textarea>
                             
-                            <span id="display-user-id-full" class="text-xs font-mono text-gray-800 break-all mr-2 truncate">Cargando...</span>
+                            <!-- Ahora muestra un ID estático para simular la copia en modo local -->
+                            <span id="display-user-id-full" class="text-xs font-mono text-gray-800 break-all mr-2 truncate">MODO_LOCAL_NO_SYNC</span>
                             <button id="copy-user-id-btn" class="py-1 px-2 bg-indigo-500 text-white font-bold rounded-lg hover:bg-indigo-600 transition text-xs flex items-center">
                                 <i class="fas fa-copy"></i> Copiar
                             </button>
@@ -162,13 +166,15 @@
                     </div>
                     
                     <!-- IMPORTAR CUENTA EXISTENTE (Mitad derecha) -->
-                    <form id="sync-form-dashboard" class="section-card border-l-4 border-indigo-500 p-4 bg-indigo-50">
-                        <h3 class="text-sm font-bold text-indigo-700 mb-2 flex items-center">
-                            <i class="fas fa-upload mr-2"></i> Importar Cuenta
+                    <!-- El formulario de sincronización es ahora un simulacro de modo local -->
+                    <form id="sync-form-dashboard" class="section-card border-l-4 border-red-500 p-4 bg-red-50">
+                        <h3 class="text-sm font-bold text-red-700 mb-2 flex items-center">
+                            <i class="fas fa-exclamation-triangle mr-2"></i> No se puede sincronizar
                         </h3>
-                        <input type="text" id="sync-user-id" placeholder="Pegar ID de Usuario" required class="w-full p-2 border border-gray-300 rounded-lg text-sm mb-2">
-                        <button type="submit" class="w-full py-1 bg-indigo-500 text-white font-bold rounded-xl hover:bg-indigo-600 transition text-sm">
-                            Sincronizar Dispositivo
+                        <p class="text-xs text-red-700 mb-2">La sincronización requiere conexión a Firebase. Esta versión está en modo local. La data no se comparte.</p>
+                        <input type="text" placeholder="ID de Usuario" disabled class="w-full p-2 border border-gray-300 rounded-lg text-sm bg-gray-100 mb-2">
+                        <button type="button" disabled class="w-full py-1 bg-red-400 text-white font-bold rounded-xl text-sm">
+                            Sincronizar Deshabilitado
                         </button>
                     </form>
                 </div>
@@ -720,8 +726,12 @@
 
         // --- Inicialización y Autenticación de Firebase (o Carga Local) ---
         async function initializeFirebase(attemptForce = false) {
-            // Si no estamos en un entorno de servidor y no hay intento de forzar la conexión
-            if (!IS_FIREBASE_MODE_INITIAL && !attemptForce) {
+            
+            // CAMBIO CLAVE: Si no estamos en Canvas, asumimos modo Firebase por defecto, 
+            // usando la configuración dummy para que la app no falle en GitHub.
+            
+            if (!IS_CANVAS_ENV && !IS_FIREBASE_MODE_INITIAL) {
+                // Modo local si no hay servidor HTTP/HTTPS (ej: archivo://)
                 isFirebaseActive = false;
                 loadLocalState();
                 document.getElementById('auth-status').innerHTML = `
@@ -729,16 +739,12 @@
                 `;
                 document.getElementById('sync-id-card').classList.add('hidden');
                 document.getElementById('sync-form-dashboard').classList.add('hidden');
-                document.getElementById('switch-to-firebase-btn').classList.remove('hidden');
+                document.getElementById('switch-to-firebase-btn').classList.add('hidden');
                 setupListenersAndLoadData(false);
                 return;
             }
 
-            // MODO FIREBASE O INTENTO FORZADO
-            
-            // Si estamos en un servidor (GitHub) y no estamos en Canvas, no tenemos las variables mágicas de Firebase.
-            // Usamos la configuración dummy (firebaseConfig) para inicializar.
-            
+            // MODO FIREBASE (Servidor Público o Canvas)
             try {
                 isFirebaseActive = true;
                 app = initializeApp(firebaseConfig);
@@ -779,13 +785,15 @@
                     }
                 });
             } catch (error) {
+                // Este error ocurre si la configuración dummy falla la conexión a Firestore (Ej: Reglas de seguridad)
                 console.error("Error al inicializar Firebase o autenticar:", error);
                 isFirebaseActive = false;
                 document.getElementById('auth-status').innerHTML = `
                     ❌ Error de conexión. Forzando modo local.
                 `;
-                document.getElementById('switch-to-firebase-btn').textContent = 'Intentar Conectar';
-                document.getElementById('switch-to-firebase-btn').classList.remove('hidden');
+                document.getElementById('sync-id-card').classList.add('hidden');
+                document.getElementById('sync-form-dashboard').classList.add('hidden');
+                document.getElementById('switch-to-firebase-btn').classList.add('hidden'); // Ocultar si ya falló
                 loadLocalState();
                 setupListenersAndLoadData(false);
             }
