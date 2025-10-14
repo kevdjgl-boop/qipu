@@ -88,9 +88,9 @@
             min-height: 100%;
         }
 
-        /* Estilo para el botón de sincronización (NUEVO) */
-        .sync-button-style {
-            background-color: #059669; /* Esmeralda-600 */
+        /* Estilo para el botón de participantes (RESTAURADO) */
+        #open-participants-sidebar-btn {
+            background-color: #4F46E5; /* Indigo-600 */
             color: white;
             padding: 0.5rem 1rem;
             border-radius: 0.5rem;
@@ -98,8 +98,8 @@
             box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
             transition: background-color 0.2s;
         }
-        .sync-button-style:hover {
-            background-color: #047857;
+        #open-participants-sidebar-btn:hover {
+            background-color: #4338CA; /* Indigo-700 */
         }
     </style>
     <!-- Incluye GSAP para animaciones -->
@@ -120,10 +120,12 @@
     <!-- ========================================================================================= -->
     <section class="max-w-7xl mx-auto px-4 md:px-8 pt-6 space-y-6">
         <div class="flex justify-between items-center border-b pb-2 mb-4">
-            <h1 class="text-3xl font-extrabold text-gray-800">Dashboard Principal</h1>
-             <!-- Botón de Sincronización (Movido al Header) -->
-            <button id="open-participants-sidebar-btn" class="sync-button-style flex items-center space-x-2">
-                <i class="fas fa-sync-alt"></i> <span>Sincronizar</span>
+            <h1 class="text-3xl font-extrabold text-gray-800 flex items-center">
+                Dashboard Principal 
+            </h1>
+             <!-- Botón de Abrir Sidebar (Participantes y Sincronización) -->
+            <button id="open-participants-sidebar-btn" class="flex items-center space-x-2">
+                <i class="fas fa-users-cog"></i> <span>Participantes</span>
             </button>
         </div>
 
@@ -133,7 +135,38 @@
             <!-- COLUMNA 1 & 2 (8/12 - Resúmenes y Tarjetas) -->
             <div class="lg:col-span-2 space-y-6 h-full">
                 
-                <!-- CARD 1: Saldo Global y Gastos Totales (Dedicada) -->
+                <!-- 1. FILA DE SINCRONIZACIÓN (ID DE COPIA + IMPORTAR CUENTA) -->
+                <div id="sync-row-dashboard" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    
+                    <!-- ID DE SINCRONIZACIÓN (Mitad izquierda) -->
+                    <div id="sync-id-card" class="section-card border-l-4 border-indigo-500 p-4 bg-indigo-50 hidden">
+                        <h3 class="text-sm font-bold text-indigo-700 mb-2 flex items-center">
+                            <i class="fas fa-link mr-2"></i> ID de Sincronización
+                        </h3>
+                        <div class="flex items-center justify-between bg-white p-2 rounded-lg border border-indigo-200">
+                            <!-- Campo oculto para copiar el ID completo -->
+                            <textarea id="temp-user-id-to-copy" style="position: absolute; left: -9999px;"></textarea>
+                            
+                            <span id="display-user-id-full" class="text-xs font-mono text-gray-800 break-all mr-2 truncate">Cargando...</span>
+                            <button id="copy-user-id-btn" class="py-1 px-2 bg-indigo-500 text-white font-bold rounded-lg hover:bg-indigo-600 transition text-xs flex items-center">
+                                <i class="fas fa-copy"></i> Copiar
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- IMPORTAR CUENTA EXISTENTE (Mitad derecha) -->
+                    <form id="sync-form-dashboard" class="section-card border-l-4 border-indigo-500 p-4 bg-indigo-50 hidden">
+                        <h3 class="text-sm font-bold text-indigo-700 mb-2 flex items-center">
+                            <i class="fas fa-upload mr-2"></i> Importar Cuenta
+                        </h3>
+                        <input type="text" id="sync-user-id" placeholder="Pegar ID de Usuario" required class="w-full p-2 border border-gray-300 rounded-lg text-sm mb-2">
+                        <button type="submit" class="w-full py-1 bg-indigo-500 text-white font-bold rounded-xl hover:bg-indigo-600 transition text-sm">
+                            Sincronizar Dispositivo
+                        </button>
+                    </form>
+                </div>
+
+                <!-- 2. CARD GLOBAL (Saldo y Gastos Totales) -->
                 <div id="global-main-card" class="section-card">
                     <div class="grid grid-cols-2 gap-4 text-center">
                         <!-- Saldo Global -->
@@ -148,8 +181,8 @@
                         </div>
                     </div>
                 </div>
-
-                <!-- CARD 2: Tarjetas de Participantes y Ahorro Mutuo -->
+                
+                <!-- 3. CARDS INDIVIDUALES Y AHORRO MUTUO -->
                 <div class="section-card border-t-4 border-purple-500 space-y-4">
                     <h2 class="text-xl font-bold text-purple-700">Saldos Individuales y Ahorro</h2>
                     
@@ -165,11 +198,12 @@
                         <p class="text-xs text-gray-500 mt-1">Suma de % asignados por participante</p>
                     </div>
                 </div>
+
             </div>
 
             <!-- COLUMNA 3 (4/12 - Balance Compartido) -->
             <div class="lg:col-span-1 balance-col">
-                <!-- CARD 3: Balance de Cuentas Compartidas (Ocupa toda la altura) -->
+                <!-- 4. CARD BALANCE DE CUENTAS COMPARTIDAS (Ocupa toda la altura) -->
                 <div class="section-card border-l-4 border-indigo-500 h-full">
                     <h2 class="text-lg font-bold text-indigo-700 mb-4 flex items-center">
                         <i class="fas fa-balance-scale mr-2"></i> Balance de Cuentas Compartidas
@@ -284,13 +318,15 @@
     <!-- ========================================================================================= -->
     <!-- SECCIÓN 3: INFORMES (GASTOS FIJOS, CALENDARIO, HISTORIAL) -->
     <!-- ========================================================================================= -->
-    <div class="max-w-7xl mx-auto px-4 md:px-8 mt-6 grid grid-cols-1 lg:grid-cols-4 gap-6">
-
-        <!-- Columna 1: Filtro de Mes -->
-        <aside class="lg:col-span-1 space-y-6">
-            <div class="section-card border-l-4 border-gray-500">
-                 <h2 class="text-lg font-bold text-gray-700 mb-4">Ciclo de Visualización</h2>
-                 <div id="month-selector" class="flex items-center justify-between p-2 bg-gray-50 rounded-lg border border-gray-200">
+    <div class="max-w-7xl mx-auto px-4 md:px-8 mt-6">
+        <section class="section-card border-t-4 border-gray-500 space-y-6">
+            
+            <!-- Encabezado del Informe y Filtro de Mes -->
+            <div class="flex justify-between items-center pb-2 mb-4">
+                <h2 class="text-xl font-bold text-gray-800">Informe de Gastos por Categoría</h2>
+                
+                <!-- Ciclo de Visualización (Movido aquí para alinearse a la derecha) -->
+                <div id="month-selector" class="flex items-center justify-between p-2 bg-gray-50 rounded-lg border border-gray-200 w-full max-w-xs md:max-w-sm">
                     <button id="prev-month-btn" class="p-2 bg-white rounded-lg hover:bg-gray-200 transition font-bold text-lg shadow-sm">
                         &lt;
                     </button>
@@ -303,26 +339,34 @@
                     </button>
                 </div>
             </div>
-             <!-- Seccion de Gastos Fijos (NUEVO) -->
-            <div class="section-card border-l-4 border-red-500">
-                <h2 class="text-lg font-bold text-red-700 mb-4">Próximos Gastos Fijos</h2>
-                <div id="fixed-expenses-summary" class="space-y-2 text-sm">
-                    <p class="text-gray-500 italic">No hay gastos fijos registrados.</p>
-                </div>
-            </div>
-        </aside>
+            
+            <!-- Rejilla de Informes (2/3 Historial + 1/3 Gastos Fijos) -->
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
 
-        <!-- Columna 2-4: Historial de Gastos (Informe) -->
-        <section class="lg:col-span-3 space-y-6">
-             <div class="section-card border-t-4 border-gray-500">
-                <h2 class="text-xl font-bold mb-4 text-gray-800">Informe de Gastos por Categoría</h2>
-                <span class="text-xs text-purple-600 font-semibold block mb-4" id="expense-diagnostic"></span>
-                <div id="expense-report-by-category" class="space-y-6">
-                    <p class="text-gray-500 text-center py-4 italic">No hay gastos en este ciclo.</p>
+                <!-- Columna 1 (2/3): Historial de Transacciones -->
+                <div class="lg:col-span-2">
+                    <h3 class="text-xl font-bold mt-6 text-gray-700">Historial de Transacciones</h3>
+                    <span class="text-xs text-purple-600 font-semibold block mb-4" id="expense-diagnostic"></span>
+                    
+                    <div id="expense-report-by-category" class="space-y-6">
+                        <p class="text-gray-500 text-center py-4 italic">No hay gastos en este ciclo.</p>
+                    </div>
                 </div>
+
+                <!-- Columna 2 (1/3): Próximos Gastos Fijos -->
+                <aside class="lg:col-span-1">
+                    <div class="section-card border-l-4 border-red-500 h-full">
+                        <h3 class="text-lg font-bold text-red-700 mb-4 flex items-center">
+                            <i class="fas fa-calendar-alt mr-2"></i> Próximos Gastos Fijos
+                        </h3>
+                        <div id="fixed-expenses-summary" class="space-y-2 text-sm">
+                            <p class="text-gray-500 italic">No hay gastos fijos registrados.</p>
+                        </div>
+                    </div>
+                </aside>
+
             </div>
         </section>
-
     </div>
     
     <!-- MOBILE MENU (oculto en escritorio) -->
@@ -362,7 +406,7 @@
                 <form id="sync-form" class="space-y-3 p-4 border border-indigo-200 rounded-lg bg-indigo-50">
                     <h4 class="font-bold text-indigo-700">Importar Cuenta Existente</h4>
                     <p class="text-xs text-gray-700">Para sincronizar el mismo perfil en otro dispositivo, pega el ID de Usuario de la sesión principal aquí.</p>
-                    <input type="text" id="sync-user-id" placeholder="Pegar ID de Usuario" required class="w-full p-2 border border-gray-300 rounded-lg">
+                    <input type="text" id="sync-user-id-sidebar" placeholder="Pegar ID de Usuario" required class="w-full p-2 border border-gray-300 rounded-lg">
                     <button type="submit" class="w-full py-2 bg-indigo-500 text-white font-bold rounded-xl hover:bg-indigo-600 transition">
                         Sincronizar Dispositivo
                     </button>
@@ -670,6 +714,8 @@
                     loadLocalState();
                     // Ocultar la sección de sincronización si no hay Firebase
                     document.getElementById('sync-section-container').classList.add('hidden');
+                    document.getElementById('sync-id-card').classList.add('hidden');
+                    document.getElementById('sync-form-dashboard').classList.add('hidden');
                     setupListenersAndLoadData(false);
                     return;
                 }
@@ -695,8 +741,12 @@
                                 ✅ Autenticado en ${statusText}. Tu ID es: <strong>${userId}</strong>.
                                 Cambios en tiempo real (Firebase).
                             `;
-                            // Mostrar el ID del usuario actual en el Sidebar
+                            // Mostrar el ID del usuario en el Dashboard y Sidebar
+                            document.getElementById('display-user-id-full').textContent = userId; // ID completo para copiar
+                            document.getElementById('sync-id-card').classList.remove('hidden'); // Mostrar tarjeta de ID
+                            document.getElementById('sync-form-dashboard').classList.remove('hidden'); // Mostrar formulario de importación
                             document.getElementById('current-user-id').textContent = `ID de Usuario Actual: ${userId}`;
+
                             setupListenersAndLoadData(true);
                         } else {
                             userId = 'anonymous';
@@ -719,6 +769,8 @@
                 `;
                 // Ocultar la sección de sincronización si no estamos en modo Firebase
                 document.getElementById('sync-section-container').classList.add('hidden');
+                document.getElementById('sync-id-card').classList.add('hidden');
+                document.getElementById('sync-form-dashboard').classList.add('hidden');
                 setupListenersAndLoadData(false);
             }
         }
@@ -886,33 +938,38 @@
             
             // --- Lógica de Sincronización (Solo en Modo Firebase) ---
             if (IS_FIREBASE_MODE) {
-                document.getElementById('sync-form').addEventListener('submit', async (e) => {
-                    e.preventDefault();
-                    const syncUserId = document.getElementById('sync-user-id').value.trim();
-                    if (!syncUserId || syncUserId === userId) {
-                        showModal("ID inválido o es tu ID actual.");
-                        return;
-                    }
-                    
-                    try {
-                        // 1. Cerrar la sesión actual (anónima)
-                        await auth.signOut();
-
-                        // 2. Forzar el inicio de sesión con el UID del otro dispositivo (PC/Android)
+                // FIX CRÍTICO: Asegurar que el elemento exista antes de adjuntar el listener
+                // Usamos querySelector para obtener el formulario del dashboard ya que está fuera del sidebar
+                const syncForm = document.getElementById('sync-form-dashboard');
+                if (syncForm) {
+                    syncForm.addEventListener('submit', async (e) => {
+                        e.preventDefault();
+                        const syncUserId = document.getElementById('sync-user-id').value.trim();
+                        if (!syncUserId || syncUserId === userId) {
+                            showModal("ID inválido o es tu ID actual.");
+                            return;
+                        }
                         
-                        await signInWithCustomToken(auth, syncUserId);
-                        
-                        // Si la sincronización es exitosa, onAuthStateChanged manejará la actualización.
-                        showModal("Sincronización exitosa. Datos cargados del nuevo dispositivo.");
-                        toggleSidebar(false);
+                        try {
+                            // 1. Cerrar la sesión actual (anónima)
+                            await auth.signOut();
 
-                    } catch (error) {
-                        console.error("Error al sincronizar dispositivo:", error);
-                        showModal(`Error de sincronización. Asegúrate de que el ID sea correcto. (Código: ${error.code})`);
-                        // Volver a iniciar sesión anónimamente si falla
-                        await signInAnonymously(auth);
-                    }
-                });
+                            // 2. Forzar el inicio de sesión con el UID del otro dispositivo (PC/Android)
+                            
+                            await signInWithCustomToken(auth, syncUserId);
+                            
+                            // Si la sincronización es exitosa, onAuthStateChanged manejará la actualización.
+                            showModal("Sincronización exitosa. Datos cargados del nuevo dispositivo.");
+                            // No cerramos el sidebar aquí, ya que el renderUI se encargará de actualizar todo.
+
+                        } catch (error) {
+                            console.error("Error al sincronizar dispositivo:", error);
+                            showModal(`Error de sincronización. Asegúrate de que el ID sea correcto. (Código: ${error.code})`);
+                            // Volver a iniciar sesión anónimamente si falla
+                            await signInAnonymously(auth);
+                        }
+                    });
+                }
             }
         }
 
@@ -1995,6 +2052,39 @@
 
         // Iniciar la aplicación
         window.onload = initializeFirebase;
+
+        // Función para copiar el ID de usuario al portapapeles
+        function copyUserIdToClipboard() {
+            const userIdEl = document.getElementById('display-user-id-full');
+            const copyTarget = document.getElementById('temp-user-id-to-copy');
+            
+            if (!userIdEl || !userIdEl.textContent || !copyTarget) {
+                showModal("Error: El ID de usuario no está listo para copiar.");
+                return;
+            }
+            
+            // 1. Usar el campo de texto oculto para ejecutar el comando
+            copyTarget.value = userIdEl.textContent;
+            copyTarget.select();
+
+            try {
+                // 2. Usar el método obsoleto (pero funcional en iframes)
+                document.execCommand('copy');
+                showModal("ID de usuario copiado al portapapeles. ¡Pégalo en el otro dispositivo para sincronizar!");
+            } catch (err) {
+                console.error('Error al copiar:', err);
+                // 3. Fallback en caso de fallo de execCommand
+                showModal("Error al copiar: Tu navegador bloqueó la API. Por favor, copia el ID manualmente.");
+            }
+        }
+        
+        document.addEventListener('click', (e) => {
+            if (e.target.closest('#copy-user-id-btn')) {
+                // Previene el comportamiento por defecto si es necesario, aunque execCommand lo maneja
+                e.preventDefault(); 
+                copyUserIdToClipboard();
+            }
+        });
 
     </script>
 </body>
