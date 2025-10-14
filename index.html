@@ -594,7 +594,7 @@
     <script type="module">
         // Importaciones de Firebase
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged, setPersistence, browserLocalPersistence } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, doc, setDoc, onSnapshot, getDoc, updateDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
         import { setLogLevel } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
         
@@ -790,6 +790,9 @@
                 
                 // 1. CARGA LOCAL INICIAL: Cargar cualquier dato local ANTES de autenticar.
                 loadLocalState(); // Esta carga es instantánea y se utiliza como estado inicial
+
+                // CRITICAL FIX 2: Forzar persistencia local y luego iniciar sesión
+                await setPersistence(auth, browserLocalPersistence);
 
                 // 2. Autenticar
                 if (initialAuthToken && IS_CANVAS_ENV) {
