@@ -430,8 +430,16 @@
     <!-- Modal de Mensajes -->
     <div id="message-modal" class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden items-center justify-center p-4 z-50">
         <div class="bg-white p-6 rounded-xl shadow-2xl max-w-sm w-full">
-            <h3 class="text-xl font-bold mb-4 text-gray-800">Atención</h3>
+            <h3 class="text-xl font-bold mb-4 text-gray-800" id="modal-title">Atención</h3>
             <p id="modal-text" class="mb-4 text-gray-600"></p>
+            
+            <!-- NUEVA ÁREA DE DETALLE DE ERROR -->
+            <div id="modal-error-detail" class="bg-red-50 p-3 rounded-lg border border-red-200 mt-4 hidden">
+                <p class="text-xs font-semibold text-red-700 mb-1">Detalle Técnico:</p>
+                <code id="modal-error-code" class="text-xs text-red-600 break-words block"></code>
+            </div>
+            <!-- FIN NUEVA ÁREA DE DETALLE DE ERROR -->
+            
             <button id="close-modal-btn" class="w-full py-2 bg-blue-500 text-white font-bold rounded-lg hover:bg-blue-600 transition duration-300">Cerrar</button>
         </div>
     </div>
@@ -473,7 +481,7 @@
             <form id="payment-method-form" class="space-y-3 p-4 border border-yellow-200 rounded-lg bg-yellow-50">
                 <input type="hidden" id="method-id-to-edit">
                 <input type="text" id="method-name" placeholder="Nombre del Método (Ej: Visa Banco X)" required class="w-full p-2 border border-gray-300 rounded-lg">
-                <select id="method-type" class="w-full p-2 border border-gray-300 rounded-lg" required>
+                <select type="text" id="method-type" class="w-full p-2 border border-gray-300 rounded-lg" required>
                     <option value="cash">Efectivo/Débito</option>
                     <option value="credit">Tarjeta de Crédito</option>
                 </select>
@@ -587,28 +595,47 @@
         
         setLogLevel('Debug');
 
-        // --- Variables Globales y Configuración de Firebase (OBLIGATORIO) ---
-        // Verificar si estamos en el entorno Canvas (donde existen estas variables)
-        const IS_CANVAS_ENV = typeof __initial_auth_token !== 'undefined';
+        // ====================================================================================
+        // --- VARIABLES DE CONFIGURACIÓN Y AUTENTICACIÓN (INICIO CRÍTICO) ---
+        // ====================================================================================
         
-        // Determinar si estamos en un servidor (Firebase Mode) o en un archivo local
-        // CAMBIO CRÍTICO: Forzamos la lógica del servidor si el protocolo es HTTP/HTTPS.
-        const IS_FIREBASE_MODE_INITIAL = IS_CANVAS_ENV || window.location.protocol.startsWith('http');
-        
-        // Estado de control del modo de sincronización
-        let isFirebaseActive = IS_FIREBASE_MODE_INITIAL;
+        // 1. CONFIGURACIÓN DEL PROYECTO DE FIREBASE (¡REEMPLAZA CON TUS CREDENCIALES!)
+        // Esta configuración se usará si no detectamos el entorno Canvas o si forzamos la conexión.
+        const myFirebaseConfig = {
+            apiKey: "AIzaSyA63OZWFM30Tu17DGxAmbtVsNFWeQU3k4s", // <-- REEMPLAZAR
+            authDomain: "qipu-d1dcd.firebaseapp.com", // <-- REEMPLAZAR
+            projectId: "qipu-d1dcd", // <-- REEMPLAZAR
+            storageBucket: "qipu-d1dcd.firebasestorage.app", // <-- REEMPLAZAR
+            messagingSenderId: "398775085739", // <-- REEMPLAZAR
+            appId: "1:398775085739:web:be8643b5d9fea9ef8da5ee", // <-- REEMPLAZAR
+            // measurementId: "G-XXXXXXXXXX" // Opcional, si usas Analytics
+        };
 
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
-        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
-        // FIX: Corregir el error de ReferenceError: Cannot access 'initialAuthToken' before initialization
+        // 2. DETECCIÓN DEL ENTORNO
+        const IS_CANVAS_ENV = typeof __initial_auth_token !== 'undefined';
+        const IS_EXTERNAL_HOSTING = window.location.protocol.startsWith('http') && !IS_CANVAS_ENV;
+        
+        // 3. DETERMINACIÓN DE CONFIGURACIÓN A USAR
+        let firebaseConfig = {};
+        if (IS_CANVAS_ENV) {
+            // Entorno Canvas: Usar las variables inyectadas (siempre prioritario aquí)
+            firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : myFirebaseConfig;
+        } else if (IS_EXTERNAL_HOSTING || Object.keys(myFirebaseConfig).some(k => myFirebaseConfig[k].startsWith('TU_') === false)) {
+            // Entorno Externo (e.g., GitHub Pages) O si el usuario ya ingresó sus credenciales:
+            firebaseConfig = myFirebaseConfig;
+        }
+
+        // 4. ESTADO GLOBAL
+        const appId = typeof __app_id !== 'undefined' ? __app_id : firebaseConfig.projectId || 'default-app-id';
         const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
         
         let app, db, auth;
         let userId = 'loading';
+        let isFirebaseActive = Object.keys(firebaseConfig).length > 0 && !Object.keys(firebaseConfig).some(k => firebaseConfig[k].startsWith('TU_')); // Activo solo si la configuración no es el placeholder.
+
         const FINANCE_DOC_ID = 'main_finance_state'; 
-        // FIX: Cambiar la referencia a una ruta privada por usuario
         const getFinanceDocRef = (db) => doc(db, 'artifacts', appId, 'users', userId, 'finance_tracker', FINANCE_DOC_ID);
-        const LOCAL_STORAGE_KEY = 'finance_tracker_local_data'; // Clave para guardar localmente
+        const LOCAL_STORAGE_KEY = 'finance_tracker_local_data';
 
         const MONTH_NAMES = [
             'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 
@@ -628,19 +655,34 @@
                 { id: 'm1', name: 'Efectivo', type: 'cash' },
                 { id: 'm2', name: 'Débito', type: 'cash' },
             ],
-            // FIX: Nueva estructura de datos para la estabilidad
             expenses: []
         };
         
-        // FIX CRÍTICO DE FECHA: Inicializar la fecha de filtro al día 1 del mes actual
         let currentFilterDate = new Date();
         currentFilterDate.setDate(1); 
         
         // --- Utilidades ---
         const generateUUID = () => crypto.randomUUID();
         
-        const showModal = (message) => {
+        /** * Muestra un modal de mensaje con opción a detalle técnico.
+         * @param {string} message - Mensaje principal.
+         * @param {string} [errorCode=null] - Mensaje de error técnico (se muestra en el recuadro rojo).
+         * @param {string} [title="Atención"] - Título del modal.
+         */
+        const showModal = (message, errorCode = null, title = "Atención") => {
+            document.getElementById('modal-title').textContent = title;
             document.getElementById('modal-text').textContent = message;
+            
+            const errorDetailEl = document.getElementById('modal-error-detail');
+            const errorCodeEl = document.getElementById('modal-error-code');
+
+            if (errorCode) {
+                errorCodeEl.textContent = errorCode;
+                errorDetailEl.classList.remove('hidden');
+            } else {
+                errorDetailEl.classList.add('hidden');
+            }
+            
             document.getElementById('message-modal').classList.remove('hidden');
             document.getElementById('message-modal').classList.add('flex');
         };
@@ -715,37 +757,25 @@
         // --- Inicialización y Autenticación de Firebase (o Carga Local) ---
         async function initializeFirebase(attemptForce = false) {
             
-            // Si NO estamos en Canvas Y no es un intento forzado, pasamos a modo local inmediatamente.
-            if (!IS_CANVAS_ENV && !attemptForce) {
-                isFirebaseActive = false;
+            // Si no hay configuración válida y no estamos en Canvas, forzamos modo local
+            if (!isFirebaseActive && !IS_CANVAS_ENV) {
                 loadLocalState();
                 document.getElementById('auth-status').innerHTML = `
-                    💾 **Modo Local.** Los datos se guardan en este navegador.
+                    💾 **Modo Local.** Datos guardados localmente. No se requiere conexión.
                 `;
-                // Ocultar elementos de sincronización en modo local
                 document.getElementById('sync-id-card').classList.add('hidden');
                 document.getElementById('sync-form-dashboard').classList.add('hidden');
+                document.getElementById('switch-to-firebase-btn').classList.add('hidden');
                 setupListenersAndLoadData(false);
                 return;
             }
 
-            // Lógica de Firebase (SOLO se ejecuta si IS_CANVAS_ENV es true o si attemptForce es true)
-            
-            // Si no hay token del Canvas, pero estamos intentando forzar (ej: en GitHub Pages con el botón)
-            if (!IS_CANVAS_ENV && attemptForce) {
-                // Si la configuración no está inyectada, fallamos (la única forma de conectarse es en el Canvas)
-                 if (Object.keys(firebaseConfig).length === 0) {
-                     document.getElementById('auth-status').innerHTML = `
-                        ❌ ERROR: La configuración de Firebase es necesaria para sincronizar.
-                    `;
-                    document.getElementById('switch-to-firebase-btn').textContent = 'Intentar Conectar';
-                    document.getElementById('switch-to-firebase-btn').classList.remove('hidden');
-                    return;
-                 }
-            }
-
-
             try {
+                // Si la configuración es un placeholder, informamos y pasamos a local si no es Canvas
+                if (!isFirebaseActive && IS_EXTERNAL_HOSTING) {
+                    throw new Error("Credenciales de Firebase faltantes o inválidas.");
+                }
+
                 isFirebaseActive = true;
                 app = initializeApp(firebaseConfig);
                 db = getFirestore(app);
@@ -754,7 +784,7 @@
                 document.getElementById('switch-to-firebase-btn').textContent = 'Conectando...';
 
                 // 1. Autenticar: Prioridad al token de Canvas o al inicio anónimo
-                if (initialAuthToken) {
+                if (initialAuthToken && IS_CANVAS_ENV) {
                     await signInWithCustomToken(auth, initialAuthToken);
                 } else {
                     await signInAnonymously(auth);
@@ -763,7 +793,7 @@
                 onAuthStateChanged(auth, (user) => {
                     if (user) {
                         userId = user.uid;
-                        const statusText = IS_CANVAS_ENV ? 'Canvas' : 'Servidor';
+                        const statusText = IS_CANVAS_ENV ? 'Canvas' : 'Externa';
                         document.getElementById('auth-status').innerHTML = `
                             ✅ Sincronización activa (${statusText}). ID: <strong>${userId}</strong>.
                         `;
@@ -784,7 +814,7 @@
                     }
                 });
             } catch (error) {
-                // ESTO ES LO QUE ESTABA FALLANDO EN EL CANVAS: Si falla, pasamos a modo local
+                // Si falla Firebase, volvemos a modo local para no detener la aplicación
                 console.error("Error al inicializar Firebase o autenticar:", error);
                 isFirebaseActive = false;
                 document.getElementById('auth-status').innerHTML = `
@@ -844,6 +874,7 @@
                     console.error("Error al guardar el estado en Firestore:", error);
                     // Si falla Firestore, guardar localmente como fallback (aunque no es perfecto en Canvas)
                     localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(appState));
+                    showModal("Error al intentar guardar en la nube. Se guardó localmente. Por favor, intenta de nuevo.", error.message, "Fallo de Guardado");
                 }
             } else {
                 // 2. Modo Local (Guardado en localStorage)
@@ -875,7 +906,7 @@
                 renderUI();
             }, error => {
                 console.error("Error al escuchar cambios en Firestore:", error);
-                showModal("Error de conexión en tiempo real. Revisa la consola.");
+                showModal("Error de conexión en tiempo real. No podemos escuchar los cambios de la base de datos.", error.message, "Error de Conexión");
             });
         }
 
@@ -969,8 +1000,9 @@
                         return;
                     }
 
-                    if (!isFirebaseActive) {
-                        showModal("La sincronización está deshabilitada. Conéctate a Firebase o usa una versión compilada.");
+                    // CRITICAL FIX: Add check for auth initialization to prevent runtime errors
+                    if (!isFirebaseActive || !auth) {
+                        showModal("La sincronización está deshabilitada o aún no se ha conectado completamente a Firebase. Por favor, espera unos segundos e inténtalo de nuevo.");
                         return;
                     }
                     
@@ -988,7 +1020,7 @@
 
                     } catch (error) {
                         console.error("Error al sincronizar dispositivo:", error);
-                        showModal(`Error de sincronización. Asegúrate de que el ID sea correcto. (Código: ${error.code})`);
+                        showModal(`Error al intentar sincronizar el dispositivo. Asegúrate de que el ID sea correcto y que el dispositivo principal esté conectado.`, error.message, "Fallo de Sincronización");
                         // Volver a iniciar sesión anónimamente si falla
                         await signInAnonymously(auth);
                     }
@@ -1019,51 +1051,58 @@
             document.getElementById('edit-expense-form').addEventListener('submit', (e) => {
                 e.preventDefault();
                 
-                const id = document.getElementById('edit-expense-id').value;
-                const newDescription = document.getElementById('edit-expense-description').value.trim();
-                const newAmount = parseFloat(document.getElementById('edit-expense-amount').value);
-                const newCategory = document.getElementById('edit-expense-category').value;
-                let newPayerId = document.getElementById('edit-expense-payer').value;
-                let newPayerName = '';
+                try { // ADDED TRY-CATCH for edit submission
+                    const id = document.getElementById('edit-expense-id').value;
+                    const newDescription = document.getElementById('edit-expense-description').value.trim();
+                    const newAmount = parseFloat(document.getElementById('edit-expense-amount').value);
+                    const newCategory = document.getElementById('edit-expense-category').value;
+                    let newPayerId = document.getElementById('edit-expense-payer').value;
+                    let newPayerName = '';
 
-                // Lógica de Invitado
-                const guestName = guestNameInput.value.trim();
-                if (guestName && guestInputContainer.classList.contains('hidden') === false) {
-                    newPayerId = `guest_${generateUUID()}`; // Generar ID para invitado
-                    newPayerName = guestName;
-                } else if (!newPayerId) {
-                    // Si no se seleccionó participante ni se ingresó invitado
-                    showModal("Por favor, selecciona un pagador o añade un invitado.");
-                    return;
-                }
+                    // Lógica de Invitado
+                    const guestName = guestNameInput.value.trim();
+                    const isGuestInputVisible = guestInputContainer.classList.contains('hidden') === false;
 
-                if (newAmount <= 0 || !newDescription || !newCategory) {
-                    showModal("Por favor, completa la descripción, el monto y la categoría.");
-                    return;
-                }
-
-                const updatedExpenses = appState.expenses.map(exp => {
-                    if (exp.id === id) {
-                        return { 
-                            ...exp, 
-                            description: newDescription, 
-                            amount: newAmount, 
-                            category: newCategory,
-                            payerId: newPayerId,
-                            payerNameGuest: newPayerName, // Guardar nombre del invitado si aplica
-                            // Simplificamos la subcategoría al editar desde el historial, manteniendo el valor anterior si es posible
-                            subcategory: appState.categories.find(c => c.name === newCategory)?.subcategories.includes(exp.subcategory) ? exp.subcategory : ''
-                        };
+                    if (isGuestInputVisible && guestName) {
+                        newPayerId = `guest_${generateUUID()}`; // Generar ID para invitado
+                        newPayerName = guestName;
+                    } else if (!newPayerId) {
+                        // Si no se seleccionó participante ni se ingresó invitado
+                        showModal("Por favor, selecciona un pagador o añade un invitado.");
+                        return;
                     }
-                    return exp;
-                });
 
-                saveState({ expenses: updatedExpenses });
-                showModal(`Gasto actualizado correctamente.`);
-                modal.classList.add('hidden');
-                modal.classList.remove('flex');
-                guestInputContainer.classList.add('hidden');
-                guestNameInput.value = '';
+                    if (newAmount <= 0 || !newDescription || !newCategory) {
+                        showModal("Por favor, completa la descripción, el monto y la categoría.");
+                        return;
+                    }
+
+                    const updatedExpenses = appState.expenses.map(exp => {
+                        if (exp.id === id) {
+                            return { 
+                                ...exp, 
+                                description: newDescription, 
+                                amount: newAmount, 
+                                category: newCategory,
+                                payerId: newPayerId,
+                                payerNameGuest: newPayerName, // Guardar nombre del invitado si aplica
+                                // Simplificamos la subcategoría al editar desde el historial, manteniendo el valor anterior si es posible
+                                subcategory: appState.categories.find(c => c.name === newCategory)?.subcategories.includes(exp.subcategory) ? exp.subcategory : ''
+                            };
+                        }
+                        return exp;
+                    });
+
+                    saveState({ expenses: updatedExpenses });
+                    showModal(`Gasto actualizado correctamente.`);
+                    modal.classList.add('hidden');
+                    modal.classList.remove('flex');
+                    guestInputContainer.classList.add('hidden');
+                    guestNameInput.value = '';
+                } catch (error) {
+                    console.error("Error al editar gasto:", error);
+                    showModal("Error al editar el gasto. Revisa la consola para detalles técnicos.", error.message, "Fallo de Edición");
+                }
             });
         }
         
@@ -1334,8 +1373,15 @@
             payerSelect.innerHTML = '<option value="" disabled selected>Selecciona Pagador</option>';
             appState.participants.forEach(p => {
                 const selected = p.id === expense.payerId ? 'selected' : '';
-                payerSelect.insertAdjacentHTML('beforeend', `<option value='${p.id}' ${selected}>${p.name}</option>`);
+                payerSelect.insertAdjacentHTML('beforeend', `<option value='${p.id}'>${p.name}</option>`);
             });
+            // Ensure the correct participant is selected or no one is selected if it's a guest
+            const participantPayer = appState.participants.find(p => p.id === expense.payerId);
+            if (participantPayer) {
+                payerSelect.value = expense.payerId;
+            } else {
+                payerSelect.value = '';
+            }
 
             // 3. Manejar Invitado
             const isGuest = expense.payerId && expense.payerId.startsWith('guest_');
@@ -1343,11 +1389,9 @@
             if (isGuest) {
                 guestInputContainer.classList.remove('hidden');
                 guestNameInput.value = expense.payerNameGuest || expense.description; // Usar el nombre guardado o descripción
-                payerSelect.value = ''; // Asegurar que el select esté vacío
             } else {
                 guestInputContainer.classList.add('hidden');
                 guestNameInput.value = '';
-                payerSelect.value = expense.payerId; // Seleccionar participante si existe
             }
             
             document.getElementById('edit-expense-modal').classList.remove('hidden');
@@ -1371,12 +1415,12 @@
                 categories.forEach(cat => {
                     // Display list in modal
                     const catHtml = `
-                        <div class="p-3 bg-white rounded-lg border border-gray-200 flex justify-between items-start">
+                        <div class="p-3 bg-white rounded-lg border border-gray-200 flex justify-between items-start relative">
                             <div class="flex-1">
                                 <span class="font-bold text-gray-800">${cat.name}</span>
                                 <p class="text-xs text-gray-600 mt-1">Subcategorías: ${cat.subcategories.join(', ') || 'Ninguna'}</p>
                             </div>
-                            <button data-name="${cat.name}" class="remove-category-btn text-red-500 hover:text-red-700 ml-4 p-1 rounded-full">
+                            <button data-name="${cat.name}" class="remove-category-btn absolute top-2 right-2 text-gray-400 hover:text-red-600 transition p-1 rounded-full">
                                 <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm4 0a1 1 0 012 0v6a1 1 0 11-2 0V8z" clip-rule="evenodd" /></svg>
                             </button>
                         </div>
@@ -2042,74 +2086,111 @@
         
         document.getElementById('expense-form').addEventListener('submit', (e) => {
             e.preventDefault();
-            const description = document.getElementById('expense-description').value.trim();
-            const amount = parseFloat(document.getElementById('expense-amount').value);
-            const paidBy = document.getElementById('expense-paid-by').value;
-            const type = document.getElementById('expense-type').value;
-            const category = document.getElementById('expense-category').value;
-            const subcategory = document.getElementById('expense-subcategory').value;
-            const paymentMethodId = document.getElementById('expense-payment-method-id').value;
             
-            const paymentMethod = appState.paymentMethods.find(m => m.id === paymentMethodId);
+            try { // START TRY-CATCH for expense submission
+                const description = document.getElementById('expense-description').value.trim();
+                const amount = parseFloat(document.getElementById('expense-amount').value);
+                const paidBy = document.getElementById('expense-paid-by').value;
+                const type = document.getElementById('expense-type').value;
+                const category = document.getElementById('expense-category').value;
+                const subcategory = document.getElementById('expense-subcategory').value;
+                const paymentMethodId = document.getElementById('expense-payment-method-id').value;
+                
+                const paymentMethod = appState.paymentMethods.find(m => m.id === paymentMethodId);
 
-            if (amount <= 0 || !description || !paidBy || !category || !paymentMethod) {
-                showModal("Por favor, completa la descripción, el monto, quién pagó, la categoría y el método de pago.");
-                return;
-            }
-            
-            let cycleStart = null;
-            let paymentDate = null;
-            let fixedRecurrenceMonths = 0;
+                if (amount <= 0 || !description || !paidBy || !category || !paymentMethod) {
+                    showModal("Por favor, completa la descripción, el monto, quién pagó, la categoría y el método de pago.");
+                    return;
+                }
+                
+                let cycleStart = null;
+                let paymentDate = null;
+                let fixedRecurrenceMonths = 0;
 
-            if (paymentMethod.type === 'credit') {
-                const dates = getCycleDates(paymentMethod);
-                cycleStart = dates.cycleStart;
-                paymentDate = dates.paymentDate;
-            }
-            
-            if (type === 'fixed') {
-                fixedRecurrenceMonths = parseInt(document.getElementById('fixed-recurrence-months').value) || 1;
-            }
+                if (paymentMethod.type === 'credit') {
+                    const dates = getCycleDates(paymentMethod);
+                    cycleStart = dates.cycleStart;
+                    paymentDate = dates.paymentDate;
+                }
+                
+                if (type === 'fixed') {
+                    fixedRecurrenceMonths = parseInt(document.getElementById('fixed-recurrence-months').value) || 1;
+                }
 
 
-            const now = new Date();
-            // FIX CRÍTICO: Garantizamos todos los campos por defecto para estabilidad.
-            const newExpense = {
-                id: generateUUID(),
-                type: type,
-                description: description,
-                amount: amount,
-                payerId: paidBy,
-                payerNameGuest: '', // Vacío para participantes activos
-                category: category,
-                subcategory: subcategory,
-                paymentMethodId: paymentMethodId,
-                ccCycleStart: cycleStart, // Puede ser null
-                ccPaymentDate: paymentDate, // Puede ser null
-                date: now.toISOString().split('T')[0], // Clave para el filtro YYYY-MM-DD
-                dateCreated: now.toISOString(), // Nuevo campo para ordenación si es necesario
-                splitAmount: 0, // Se calcula en calculateSummary
-                fixedRecurrenceMonths: fixedRecurrenceMonths // 0 si no es fijo
-            };
+                const now = new Date();
+                // FIX CRÍTICO: Garantizamos todos los campos por defecto para estabilidad.
+                const newExpense = {
+                    id: generateUUID(),
+                    type: type,
+                    description: description,
+                    amount: amount,
+                    payerId: paidBy,
+                    payerNameGuest: '', // Vacío para participantes activos
+                    category: category,
+                    subcategory: subcategory,
+                    paymentMethodId: paymentMethodId,
+                    ccCycleStart: cycleStart, // Puede ser null
+                    ccPaymentDate: paymentDate, // Puede ser null
+                    date: now.toISOString().split('T')[0], // Clave para el filtro YYYY-MM-DD
+                    dateCreated: now.toISOString(), // Nuevo campo para ordenación si es necesario
+                    splitAmount: 0, // Se calcula en calculateSummary
+                    fixedRecurrenceMonths: fixedRecurrenceMonths // 0 si no es fijo
+                };
 
-            const newExpenses = [...appState.expenses, newExpense];
-            saveState({ expenses: newExpenses });
-            e.target.reset(); 
-            
-            document.getElementById('expense-subcategory').disabled = true;
-            document.getElementById('expense-subcategory').classList.add('bg-gray-100');
-            document.getElementById('expense-category').value = '';
-            document.getElementById('expense-payment-method-id').value = '';
-            document.getElementById('credit-card-details').classList.add('hidden');
-            document.getElementById('fixed-recurrence-container').classList.add('hidden');
+                const newExpenses = [...appState.expenses, newExpense];
+                saveState({ expenses: newExpenses });
+                e.target.reset(); 
+                
+                document.getElementById('expense-subcategory').disabled = true;
+                document.getElementById('expense-subcategory').classList.add('bg-gray-100');
+                document.getElementById('expense-category').value = '';
+                document.getElementById('expense-payment-method-id').value = '';
+                document.getElementById('credit-card-details').classList.add('hidden');
+                document.getElementById('fixed-recurrence-container').classList.add('hidden');
+
+            } catch (error) {
+                 console.error("Error al añadir gasto:", error);
+                 showModal("Error al añadir el gasto. Revisa la consola para detalles técnicos.", error.message, "Fallo de Guardado");
+            } // END TRY-CATCH
         });
         
         async function removeExpense(idToRemove) {
-            const newExpenses = appState.expenses.filter(e => e.id !== idToRemove);
-            await saveState({ expenses: newExpenses });
+            try { // ADDED TRY-CATCH for expense deletion
+                const newExpenses = appState.expenses.filter(e => e.id !== idToRemove);
+                await saveState({ expenses: newExpenses });
+                showModal(`Gasto eliminado correctamente.`); // ADDED success message
+            } catch (error) {
+                console.error("Error al eliminar gasto:", error);
+                showModal("Error al eliminar gasto. Inténtalo de nuevo.", error.message, "Fallo de Eliminación");
+            }
         }
 
         window.onload = () => initializeFirebase();
+        
+        // ADDED GLOBAL ERROR HANDLER
+        window.onerror = function (message, source, lineno, colno, error) {
+            let detailMessage = "Error desconocido.";
+            if (error && error.message) {
+                detailMessage = error.message;
+            } else if (message) {
+                detailMessage = message;
+            }
+            
+            // Filter common irrelevant browser errors or errors suppressed by try/catch
+            if (message.includes("firebase") || message.includes("Firestore") || message.includes("setDoc")) {
+                 console.error("Error Crítico de Sincronización:", message, error);
+                 showModal(
+                     "⚠️ Fallo Crítico de Sincronización: Fallo al comunicarse con la base de datos. Recarga la página si persiste.", 
+                     detailMessage,
+                     "Error Crítico"
+                 );
+            } else if (message.includes("Uncaught")) {
+                 console.error("Error no manejado en JS:", message, error);
+            }
+            // Return true to suppress the default browser error handling, relying on the modal/console
+            return true; 
+        };
 
         function copyUserIdToClipboard() {
             const userIdEl = document.getElementById('display-user-id-full');
