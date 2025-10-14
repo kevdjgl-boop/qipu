@@ -787,8 +787,11 @@
                 auth = getAuth(app);
                 
                 document.getElementById('switch-to-firebase-btn').textContent = 'Conectando...';
+                
+                // 1. CARGA LOCAL INICIAL: Cargar cualquier dato local ANTES de autenticar.
+                loadLocalState(); // Esta carga es instantánea y se utiliza como estado inicial
 
-                // 1. Autenticar: Prioridad al token de Canvas o al inicio anónimo
+                // 2. Autenticar
                 if (initialAuthToken && IS_CANVAS_ENV) {
                     await signInWithCustomToken(auth, initialAuthToken);
                 } else {
@@ -800,28 +803,33 @@
                         userId = user.uid;
                         const statusText = IS_CANVAS_ENV ? 'Canvas' : 'Externa';
 
-                        // --- INICIO MIGRACIÓN DE DATOS LOCALES CRÍTICA ---
-                        const localData = localStorage.getItem(LOCAL_STORAGE_KEY);
-                        if (localData) {
-                             try {
-                                const localBackup = JSON.parse(localData);
-                                // Si encontramos datos locales, forzamos un guardado en la nueva cuenta de Firestore de forma asíncrona.
-                                // Usamos una IIAF para no bloquear el callback sincrónico de onAuthStateChanged.
-                                (async () => {
-                                    if (db) {
-                                        await saveState(localBackup);
-                                        localStorage.removeItem(LOCAL_STORAGE_KEY); // Limpiamos el localStorage solo después de un guardado exitoso.
-                                        showModal("¡Datos Locales Migrados!", "Tu información guardada en este navegador ha sido sincronizada con tu nueva cuenta de Firebase. Ya puedes usar la sincronización en la nube.", "Migración Exitosa");
-                                    }
-                                })();
-                            } catch (e) {
-                                console.error("Fallo durante la migración local:", e);
-                                // Continuamos con el estado de Firebase aunque la migración haya fallado parcialmente
-                            }
+                        // --- INICIO LÓGICA DE MIGRACIÓN/PERSISTENCIA DE DATOS ---
+                        // 2. Comprobamos si hay datos en el localStorage (rescatados en loadLocalState)
+                        // y si NO hay datos en la nube para este nuevo ID, subimos la copia local.
+                        const localDataExists = localStorage.getItem(LOCAL_STORAGE_KEY) !== null;
+                        
+                        if (localDataExists) {
+                             // Usamos una IIAF para no bloquear el callback sincrónico
+                            (async () => {
+                                // 2a. Comprobamos si el documento de Firestore existe para este nuevo UID.
+                                const docRef = getFinanceDocRef(db);
+                                const docSnap = await getDoc(docRef);
+
+                                if (!docSnap.exists() && localDataExists) {
+                                    // 2b. Si NO existe en Firebase, migramos el estado local (que está en appState) a la nube.
+                                    await saveState(appState); 
+                                    localStorage.removeItem(LOCAL_STORAGE_KEY);
+                                    showModal("¡Datos Locales Migrados!", "La información guardada en tu navegador ha sido sincronizada y respaldada en Firebase.", "Migración Exitosa");
+                                } else if (docSnap.exists()) {
+                                    // Si existe en Firebase, la migración no es necesaria, borramos el local
+                                    // y dejamos que onSnapshot maneje el estado de la nube.
+                                    localStorage.removeItem(LOCAL_STORAGE_KEY);
+                                }
+                            })();
                         }
-                        // --- FIN MIGRACIÓN DE DATOS LOCALES CRÍTICA ---
-
-
+                        // --- FIN LÓGICA DE MIGRACIÓN/PERSISTENCIA DE DATOS ---
+                        
+                        
                         document.getElementById('auth-status').innerHTML = `
                             ✅ Sincronización activa (${statusText}). ID: <strong>${userId}</strong>.
                         `;
@@ -840,7 +848,7 @@
                         document.getElementById('current-user-id').textContent = `ID de Usuario Actual: ${userId}`;
 
                         setupUILogic(true); // <--- Solo lógica de UI
-                        setupRealTimeDataListener(); // <--- NUEVO: Inicia la carga de datos real-time
+                        setupRealTimeDataListener(); // <--- CRÍTICO: Inicia la carga de datos real-time y el renderizado
                     } else {
                         userId = 'anonymous';
                         document.getElementById('auth-status').textContent = '⚠️ Sesión anónima. Tus datos se guardan de forma temporal.';
@@ -857,7 +865,7 @@
                 `;
                 document.getElementById('switch-to-firebase-btn').textContent = 'Intentar Conectar';
                 document.getElementById('switch-to-firebase-btn').classList.remove('hidden');
-                loadLocalState();
+                loadLocalState(); // Forzamos carga local de nuevo si falla la conexión
                 setupUILogic(false);
             }
         }
@@ -881,6 +889,8 @@
                     };
                 } else {
                     // Si el documento no existe, lo creamos con el estado inicial (o migrado)
+                    // NOTA: Esto solo se llama si la migración de local (si existía) no se ejecutó a tiempo.
+                    // Garantiza que el documento exista.
                     setDoc(docRef, appState);
                 }
                 renderUI(); // *** AHORA SOLO SE LLAMA AQUÍ EN MODO FIREBASE ***
@@ -1099,7 +1109,7 @@
                 await setDoc(currentDocRef, targetData, { merge: false });
                 
                 // Forzamos la recarga de la aplicación después de la sincronización.
-                window.location.reload();
+                // window.location.reload(); // REMOVED RELOAD: onSnapshot should handle update gracefully.
 
                 showModal("¡Datos Importados! Los datos de la otra cuenta han reemplazado tu estado actual. Ambos dispositivos están sincronizados.", null, "Sincronización Exitosa");
                 
