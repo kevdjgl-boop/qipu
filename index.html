@@ -101,6 +101,11 @@
         #open-participants-sidebar-btn:hover {
             background-color: #4338CA; /* Indigo-700 */
         }
+
+        /* Ocultar formulario de sincronización manual */
+        #sync-form-dashboard {
+            display: none !important;
+        }
     </style>
     <!-- Incluye GSAP para animaciones -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
@@ -133,7 +138,7 @@
             </h1>
              <!-- Botón de Abrir Sidebar (Participantes y Sincronización) -->
             <button id="open-participants-sidebar-btn" class="flex items-center space-x-2">
-                <i class="fas fa-users-cog"></i> <span>Participantes</span>
+                <i class="fas fa-users-cog"></i> <span>Configuración</span>
             </button>
         </div>
 
@@ -162,16 +167,15 @@
                         </div>
                     </div>
                     
-                    <!-- IMPORTAR CUENTA EXISTENTE (Mitad derecha) -->
-                    <form id="sync-form-dashboard" class="section-card border-l-4 border-purple-500 p-4 bg-purple-50">
-                        <h3 class="text-sm font-bold text-purple-700 mb-2 flex items-center">
-                            <i class="fas fa-upload mr-2"></i> Importar Cuenta
+                    <!-- IMPORTAR CUENTA EXISTENTE (Mitad derecha - AHORA SOLO MOSTRARÁ MENSAJE DE AUTENTICACIÓN) -->
+                    <div class="section-card border-l-4 border-purple-500 p-4 bg-purple-50 flex flex-col justify-center text-center">
+                        <h3 class="text-sm font-bold text-purple-700 mb-2 flex items-center justify-center">
+                            <i class="fas fa-user-lock mr-2"></i> Usa Email/Contraseña
                         </h3>
-                        <input type="text" id="sync-user-id" placeholder="Pegar ID de Usuario" required class="w-full p-2 border border-gray-300 rounded-lg text-sm mb-2">
-                        <button type="submit" class="w-full py-1 bg-purple-500 text-white font-bold rounded-xl hover:bg-purple-600 transition text-sm">
-                            Sincronizar Dispositivo
-                        </button>
-                    </form>
+                        <p class="text-xs text-gray-700">La sincronización con ID manual ha sido deshabilitada por seguridad.</p>
+                        <p class="text-xs text-purple-600 font-semibold mt-1">Regístrate para vincular esta sesión.</p>
+                    </div>
+
                 </div>
 
                 <!-- 2. CARD GLOBAL (Saldo y Gastos Totales) -->
@@ -413,14 +417,11 @@
                 <p id="current-user-id" class="text-xs text-gray-600 break-words mb-4">
                     ID de Usuario: Cargando...
                 </p>
-                <form id="sync-form" class="space-y-3 p-4 border border-indigo-200 rounded-lg bg-indigo-50">
-                    <h4 class="font-bold text-indigo-700">Importar Cuenta Existente</h4>
-                    <p class="text-xs text-gray-700">Para sincronizar el mismo perfil en otro dispositivo, pega el ID de Usuario de la sesión principal aquí.</p>
-                    <input type="text" id="sync-user-id-sidebar" placeholder="Pegar ID de Usuario" required class="w-full p-2 border border-gray-300 rounded-lg">
-                    <button type="submit" class="w-full py-2 bg-indigo-500 text-white font-bold rounded-xl hover:bg-indigo-600 transition">
-                        Sincronizar Dispositivo
-                    </button>
-                </form>
+                 <!-- INFO DE REEMPLAZO DE SINCRONIZACIÓN MANUAL -->
+                <div class="space-y-3 p-4 border border-indigo-200 rounded-lg bg-indigo-50">
+                    <h4 class="font-bold text-indigo-700">Usa Email/Contraseña</h4>
+                    <p class="text-xs text-gray-700">La sincronización con ID manual ha sido deshabilitada por ser insegura. Utiliza el Login/Registro para guardar y compartir tu sesión.</p>
+                </div>
             </div>
         </div>
     </div>
@@ -766,7 +767,7 @@
                 document.getElementById('sync-id-card').classList.add('hidden');
                 document.getElementById('sync-form-dashboard').classList.add('hidden');
                 document.getElementById('switch-to-firebase-btn').classList.add('hidden');
-                setupListenersAndLoadData(false);
+                setupUILogic(false); // <--- Solo lógica de UI, sin carga de datos de Firebase
                 return;
             }
 
@@ -803,9 +804,11 @@
                                 // Si encontramos datos locales, forzamos un guardado en la nueva cuenta de Firestore de forma asíncrona.
                                 // Usamos una IIAF para no bloquear el callback sincrónico de onAuthStateChanged.
                                 (async () => {
-                                    await saveState(localBackup);
-                                    localStorage.removeItem(LOCAL_STORAGE_KEY); // Limpiamos el localStorage solo después de un guardado exitoso.
-                                    showModal("¡Datos Locales Migrados!", "Tu información guardada en este navegador ha sido sincronizada con tu nueva cuenta de Firebase. Ya puedes usar la sincronización en la nube.", "Migración Exitosa");
+                                    if (db) {
+                                        await saveState(localBackup);
+                                        localStorage.removeItem(LOCAL_STORAGE_KEY); // Limpiamos el localStorage solo después de un guardado exitoso.
+                                        showModal("¡Datos Locales Migrados!", "Tu información guardada en este navegador ha sido sincronizada con tu nueva cuenta de Firebase. Ya puedes usar la sincronización en la nube.", "Migración Exitosa");
+                                    }
                                 })();
                             } catch (e) {
                                 console.error("Fallo durante la migración local:", e);
@@ -820,18 +823,25 @@
                         `;
                         // Ocultar botón de switch y mostrar info de sincronización
                         document.getElementById('switch-to-firebase-btn').classList.add('hidden'); 
-                        document.getElementById('sync-id-card').classList.remove('hidden');
-                        document.getElementById('sync-form-dashboard').classList.remove('hidden');
+                        
+                        // FIX CRÍTICO DEL ERROR: Verificar si el elemento existe antes de intentar manipular la clase.
+                        const syncIdCard = document.getElementById('sync-id-card');
+                        if (syncIdCard) syncIdCard.classList.remove('hidden');
+
+                        const syncFormDashboard = document.getElementById('sync-form-dashboard');
+                        if (syncFormDashboard) syncFormDashboard.classList.remove('hidden'); 
                         
                         // Mostrar el ID del usuario en el Dashboard y Sidebar
                         document.getElementById('display-user-id-full').textContent = userId; // ID completo para copiar
                         document.getElementById('current-user-id').textContent = `ID de Usuario Actual: ${userId}`;
 
-                        setupListenersAndLoadData(true);
+                        setupUILogic(true); // <--- Solo lógica de UI
+                        setupRealTimeDataListener(); // <--- NUEVO: Inicia la carga de datos real-time
                     } else {
                         userId = 'anonymous';
                         document.getElementById('auth-status').textContent = '⚠️ Sesión anónima. Tus datos se guardan de forma temporal.';
-                        setupListenersAndLoadData(true);
+                        setupUILogic(true);
+                        setupRealTimeDataListener();
                     }
                 });
             } catch (error) {
@@ -844,19 +854,47 @@
                 document.getElementById('switch-to-firebase-btn').textContent = 'Intentar Conectar';
                 document.getElementById('switch-to-firebase-btn').classList.remove('hidden');
                 loadLocalState();
-                setupListenersAndLoadData(false);
+                setupUILogic(false);
             }
         }
         
-        function setupListenersAndLoadData(isFirebaseMode) {
+        /** NUEVO: Función que centraliza la escucha de datos de Firebase. */
+        function setupRealTimeDataListener() {
+             if (!db || userId === 'loading') return;
+            const docRef = getFinanceDocRef(db);
+            
+            // onSnapshot es ahora el único punto para actualizar appState y llamar a renderUI() en modo Firebase
+            onSnapshot(docRef, docSnap => {
+                if (docSnap.exists()) {
+                    const loadedData = docSnap.data();
+                    appState = { 
+                        ...appState, 
+                        ...loadedData,
+                        participants: loadedData.participants || appState.participants,
+                        categories: loadedData.categories || appState.categories,
+                        paymentMethods: loadedData.paymentMethods || appState.paymentMethods,
+                        expenses: loadedData.expenses || appState.expenses
+                    };
+                } else {
+                    // Si el documento no existe, lo creamos con el estado inicial (o migrado)
+                    setDoc(docRef, appState);
+                }
+                renderUI(); // *** AHORA SOLO SE LLAMA AQUÍ EN MODO FIREBASE ***
+            }, error => {
+                console.error("Error al escuchar cambios en Firestore:", error);
+                showModal("Error de conexión en tiempo real. No podemos escuchar los cambios de la base de datos.", error.message, "Error de Conexión");
+            });
+        }
+
+        /** REFACTORIZADO: Sólo configura listeners DOM y carga el estado Local si no está en Firebase. */
+        function setupUILogic(isFirebaseMode) {
             setupMonthSelectorListeners(); 
             setupPaymentMethodListeners();
             setupParticipantModalListeners(); 
             setupExpenseModalListeners(); 
             
-            if (isFirebaseMode) {
-                setupFirestoreListener(); 
-            } else {
+            if (!isFirebaseMode) {
+                // Si NO es modo Firebase, renderiza inmediatamente después de cargar LocalState
                 renderUI(); 
             }
         }
@@ -1009,44 +1047,8 @@
                 participantModal.classList.remove('flex');
             });
             
-            // --- Lógica de Sincronización (Solo en Modo Firebase) ---
-            // El formulario de sincronización solo es funcional si estamos en modo Firebase
-            const syncForm = document.getElementById('sync-form-dashboard');
-            if (syncForm) {
-                syncForm.addEventListener('submit', async (e) => {
-                    e.preventDefault();
-                    const syncUserId = document.getElementById('sync-user-id').value.trim();
-                    if (!syncUserId || syncUserId === userId) {
-                        showModal("ID inválido o es tu ID actual.");
-                        return;
-                    }
-
-                    // CRITICAL FIX: Add check for auth initialization to prevent runtime errors
-                    if (!isFirebaseActive || !auth) {
-                        showModal("La sincronización está deshabilitada o aún no se ha conectado completamente a Firebase. Por favor, espera unos segundos e inténtalo de nuevo.");
-                        return;
-                    }
-                    
-                    try {
-                        // 1. Cerrar la sesión actual (anónima)
-                        await auth.signOut();
-
-                        // 2. Forzar el inicio de sesión con el UID del otro dispositivo (PC/Android)
-                        // NOTA: En un entorno real, esto requeriría un token personalizado del servidor
-                        // Estamos simulando la transferencia de UID como un Custom Token aquí
-                        await signInWithCustomToken(auth, syncUserId);
-                        
-                        // Si la sincronización es exitosa, onAuthStateChanged manejará la actualización.
-                        showModal("Sincronización exitosa. Datos cargados del nuevo dispositivo.");
-
-                    } catch (error) {
-                        console.error("Error al sincronizar dispositivo:", error);
-                        showModal(`Error al intentar sincronizar el dispositivo. Asegúrate de que el ID sea correcto y que el dispositivo principal esté conectado.`, error.message, "Fallo de Sincronización");
-                        // Volver a iniciar sesión anónimamente si falla
-                        await signInAnonymously(auth);
-                    }
-                });
-            }
+            // --- Lógica de Sincronización (Eliminada por ser insegura y fallida) ---
+            // La lógica de sync manual se ha eliminado para priorizar el login de Email/Contraseña
         }
 
         // --- Configuración de Listeners del Modal de Edición de Gasto (NUEVO) ---
