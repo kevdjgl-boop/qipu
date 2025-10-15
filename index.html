@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Monedero V.1.03</title>
+    <title>Monedero V.1.05</title>
     <!-- Incluye Tailwind CSS para estilizado rápido y responsive -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Incluye Font Awesome para íconos de balance -->
@@ -142,9 +142,9 @@
     <!-- Backdrop para el Sidebar -->
     <div id="sidebar-backdrop" class="backdrop"></div>
 
-    <!-- Auth Status -->
+    <!-- Auth Status - Siempre visible y sobre el blur -->
     <div class="max-w-7xl mx-auto px-4 md:px-8 pt-4">
-        <div id="auth-status-container" class="flex justify-between items-center bg-white rounded-lg shadow-sm p-2 transition duration-300">
+        <div id="auth-status-container" class="flex justify-between items-center bg-white rounded-lg shadow-sm p-2 transition duration-300 relative z-50">
             <!-- Muestra el estado actual de la conexión (Cargando/Firebase/Local) -->
             <p id="auth-status" class="text-xs text-gray-600">
                 <span id="connection-dot" class="sync-indicator sync-red"></span> 💾 **Modo Local.** Los datos se guardan en este navegador.
@@ -165,275 +165,280 @@
     </div>
     
     <!-- ========================================================================================= -->
-    <!-- SECCIÓN 1: DASHBOARD PRINCIPAL Y PARTICIPANTES (100% ANCHO) -->
-    <!-- ========================================================================================= -->
-    <section class="max-w-7xl mx-auto px-4 md:px-8 pt-6 space-y-6">
-        <div class="flex justify-between items-center border-b pb-2 mb-4">
-            <h1 class="text-3xl font-extrabold text-gray-800 flex items-center">
-                Dashboard Principal 
-            </h1>
-             <!-- Botón de Abrir Sidebar (Participantes y Sincronización) -->
-            <button id="open-participants-sidebar-btn" class="flex items-center space-x-2">
-                <i class="fas fa-users-cog"></i> <span>Configuración</span>
+    <!-- MURO DE AUTENTICACIÓN (AUTH WALL OVERLAY) -->
+    <!-- Z-index 45: Cubre el contenido principal pero está bajo el sidebar (50) y los modales (50+). -->
+    <!-- El 'top-16' (aprox) es para no tapar el 'Auth Status' que está arriba. -->
+    <div id="auth-wall-overlay" class="fixed inset-0 top-[4.5rem] z-45 flex items-center justify-center hidden" style="backdrop-filter: blur(10px); background-color: rgba(243, 244, 246, 0.75);">
+        <div class="p-8 bg-white/90 backdrop-blur-sm rounded-xl shadow-2xl text-center border-t-4 border-indigo-500 max-w-sm w-full mx-4">
+            <i class="fas fa-lock text-5xl text-indigo-500 mb-4 animate-bounce"></i>
+            <h2 class="text-2xl font-bold text-gray-800 mb-2">Acceso Restringido</h2>
+            <p class="text-gray-600 mb-4">Inicia sesión con tu cuenta de email para acceder a tus datos financieros.</p>
+            <button id="open-auth-modal-wall" class="w-full py-2 px-6 bg-indigo-600 text-white font-bold rounded-xl hover:bg-indigo-700 transition shadow-lg">
+                Iniciar Sesión / Registrar
             </button>
         </div>
+    </div>
+    <!-- ========================================================================================= -->
 
-        <!-- Dashboard Layout: 3 Columnas principales (2/3 + 1/3) -->
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 h-full">
 
-            <!-- COLUMNA 1 & 2 (8/12 - Resúmenes y Tarjetas) -->
-            <div class="lg:col-span-2 space-y-6 h-full">
-                
-                <!-- 1. FILA DE SINCRONIZACIÓN (ID DE COPIA + IMPORTAR CUENTA) -->
-                <div id="sync-row-dashboard" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+    <!-- Contenido principal de la aplicación (Secciones 1, 2, 3) -->
+    <div id="main-content-wrapper">
+        <!-- ========================================================================================= -->
+        <!-- SECCIÓN 1: DASHBOARD PRINCIPAL Y PARTICIPANTES (100% ANCHO) -->
+        <!-- ========================================================================================= -->
+        <section class="max-w-7xl mx-auto px-4 md:px-8 pt-6 space-y-6">
+            <div class="flex justify-between items-center border-b pb-2 mb-4">
+                <h1 class="text-3xl font-extrabold text-gray-800 flex items-center">
+                    Dashboard Principal 
+                </h1>
+                 <!-- Botón de Abrir Sidebar (Participantes y Sincronización) -->
+                <button id="open-participants-sidebar-btn" class="flex items-center space-x-2">
+                    <i class="fas fa-users-cog"></i> <span>Configuración</span>
+                </button>
+            </div>
+
+            <!-- Dashboard Layout: 3 Columnas principales (2/3 + 1/3) -->
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 h-full">
+
+                <!-- COLUMNA 1 & 2 (8/12 - Resúmenes y Tarjetas) -->
+                <div class="lg:col-span-2 space-y-6 h-full">
                     
-                    <!-- ID DE SINCRONIZACIÓN (Mitad izquierda) -->
-                    <div id="sync-id-card" class="section-card border-l-4 border-indigo-500 p-4 bg-indigo-50 hidden">
-                        <h3 class="text-sm font-bold text-indigo-700 mb-2 flex items-center">
-                            <i class="fas fa-link mr-2"></i> ID de Sincronización
-                        </h3>
-                        <div class="flex items-center justify-between bg-white p-2 rounded-lg border border-indigo-200">
-                            <!-- Campo oculto para copiar el ID completo -->
-                            <textarea id="temp-user-id-to-copy" style="position: absolute; left: -9999px;"></textarea>
+                    <!-- 1. FILA DE SINCRONIZACIÓN (ID DE COPIA ELIMINADO) -->
+                    <div id="sync-row-dashboard" class="grid grid-cols-1 gap-4">
+                        
+                        <!-- BOTÓN PRINCIPAL DE AUTH/LOGIN -->
+                        <!-- Ahora siempre ocupa el ancho completo, ya que el ID de Sync ha sido eliminado -->
+                        <div id="auth-action-card" class="section-card border-l-4 border-purple-500 p-4 bg-purple-50 flex items-center justify-center col-span-full">
+                             <button id="open-auth-modal-dashboard" class="w-full py-2 bg-purple-500 text-white font-bold rounded-xl hover:bg-purple-600 transition text-sm flex items-center justify-center">
+                                <i class="fas fa-user-lock mr-2"></i> Sincronización de Cuenta
+                            </button>
+                        </div>
+
+                    </div>
+
+                    <!-- 2. CARD GLOBAL CONSOLIDADO (2 Métricas principales en un solo contenedor oscuro) -->
+                    <div id="global-main-card" class="section-card border-b-4 border-indigo-500 p-4">
+                        <div class="grid grid-cols-2 gap-4 text-center">
                             
-                            <span id="display-user-id-full" class="text-xs font-mono text-gray-800 break-all mr-2 truncate">Cargando...</span>
-                            <button id="copy-user-id-btn" class="py-1 px-2 bg-indigo-500 text-white font-bold rounded-lg hover:bg-indigo-600 transition text-xs flex items-center">
-                                <i class="fas fa-copy"></i> Copiar
+                            <!-- Métrica 1: Saldo Global Restante -->
+                            <div>
+                                <p class="metric-label text-indigo-300">Saldo Global</p>
+                                <span id="display-remaining-budget" class="metric-value metric-remaining">S/ 0.00</span>
+                            </div>
+
+                            <!-- Métrica 2: Gasto Total del Ciclo -->
+                            <div>
+                                <p class="metric-label text-red-300">Gasto Total</p>
+                                <span id="display-total-spent" class="metric-value metric-spent">S/ 0.00</span>
+                            </div>
+
+                        </div>
+                    </div>
+                    
+                    <!-- 3. CARDS INDIVIDUALES Y AHORRO MUTUO (RESTAURADO A 3 COLUMNAS MÁS PEQUEÑAS) -->
+                    <div class="section-card border-t-4 border-teal-500 space-y-4">
+                        <h3 class="text-lg font-bold text-gray-700">Saldos Individuales y Metas</h3>
+                        
+                        <!-- Resumen de Participantes -->
+                        <div id="participant-summary-cards" class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <!-- Tarjetas de resumen individual se renderizan aquí -->
+                        </div>
+                        
+                        <!-- FILA SEPARADA PARA METAS GLOBALES (Gastos Fijos y Ahorro Mutuo) -->
+                        <div class="grid grid-cols-2 gap-4 pt-2 border-t border-gray-200">
+                            
+                            <!-- Total Gastos Fijos (Movido de nuevo aquí) -->
+                            <div class="section-card border-l-4 border-yellow-500 p-4 text-center bg-yellow-50">
+                                <p class="text-sm font-semibold uppercase text-yellow-700">Gastos Fijos Total</p>
+                                <span id="display-fixed-total" class="text-2xl font-extrabold text-yellow-600 block mt-2">S/ 0.00</span>
+                            </div>
+
+                            <!-- Meta Ahorro Mutuo (Movido de nuevo aquí) -->
+                            <div class="section-card border-l-4 border-purple-500 p-4 text-center bg-purple-50">
+                                <p class="text-sm font-semibold uppercase text-purple-700">Meta Ahorro Mutuo</p>
+                                <span id="display-shared-savings-goal" class="text-2xl font-extrabold text-purple-600 block mt-2">S/ 0.00</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- COLUMNA 3 (4/12 - Balance Compartido y Liquidación) -->
+                <div class="lg:col-span-1 balance-col">
+                    <!-- 4. CARD BALANCE DE CUENTAS COMPARTIDAS (Contiene ahora el botón) -->
+                    <div class="section-card border-l-4 border-indigo-500 h-full flex flex-col justify-between">
+                        <div>
+                            <h2 class="text-lg font-bold text-indigo-700 mb-4 flex items-center">
+                                <i class="fas fa-balance-scale mr-2"></i> Balance de Cuentas Compartidas
+                            </h2 >
+                            <div id="shared-balance-summary" class="space-y-3 text-sm">
+                                <p class="text-gray-500 italic">Calculando balance...</p>
+                            </div>
+                        </div>
+                        
+                        <!-- BOTÓN DE LIQUIDACIÓN DE CUENTAS (MOVIDO ADENTRO y simplificado) -->
+                        <div class="mt-4 pt-4 border-t border-gray-200">
+                            <button id="liquidate-month-btn" class="w-full py-3 bg-red-600 text-white font-bold rounded-xl shadow-lg hover:bg-red-700 transition duration-300">
+                                <i class="fas fa-handshake mr-2"></i> LIQUIDAR
+                            </button>
+                            <p class="text-xs text-gray-600 mt-2 text-center">Ajuste de saldos para poner las cuentas compartidas en cero.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- NOTE: La configuración de participantes se ha movido al Sidebar -->
+
+        </section>
+
+        <!-- ========================================================================================= -->
+        <!-- SECCIÓN 2: REGISTRO DE GASTO Y BOTONES DE CONFIGURACIÓN (100% ANCHO) -->
+        <!-- ========================================================================================= -->
+        <div class="max-w-7xl mx-auto px-4 md:px-8 pt-6">
+            <main class="space-y-6">
+                <section class="section-card border-t-4 border-red-500">
+                    <div class="flex justify-between items-center mb-4">
+                        <h2 class="text-xl font-bold text-red-700">Registrar Nuevo Gasto</h2>
+                        
+                        <!-- Botones de Configuración Rápida (Movidos aquí) -->
+                        <div class="flex space-x-2">
+                            <button id="open-categories-modal-btn" class="py-1 px-3 bg-green-500 text-white font-bold rounded-xl hover:bg-green-600 transition duration-300 text-xs">
+                                Categorías
+                            </button>
+                            <button id="open-payment-methods-modal-btn" class="py-1 px-3 bg-yellow-500 text-white font-bold rounded-xl hover:bg-yellow-600 transition duration-300 text-xs">
+                                Métodos Pago
                             </button>
                         </div>
                     </div>
-                    
-                    <!-- BOTÓN PRINCIPAL DE AUTH/LOGIN -->
-                    <div id="auth-action-card" class="section-card border-l-4 border-purple-500 p-4 bg-purple-50 flex items-center justify-center col-span-full md:col-span-1">
-                         <button id="open-auth-modal-dashboard" class="w-full py-2 bg-purple-500 text-white font-bold rounded-xl hover:bg-purple-600 transition text-sm flex items-center justify-center">
-                            <i class="fas fa-user-lock mr-2"></i> Sincronización de Cuenta
-                        </button>
-                    </div>
-
-                </div>
-
-                <!-- 2. CARD GLOBAL CONSOLIDADO (2 Métricas principales en un solo contenedor oscuro) -->
-                <div id="global-main-card" class="section-card border-b-4 border-indigo-500 p-4">
-                    <div class="grid grid-cols-2 gap-4 text-center">
+                    <form id="expense-form" class="space-y-4">
                         
-                        <!-- Métrica 1: Saldo Global Restante -->
-                        <div>
-                            <p class="metric-label text-indigo-300">Saldo Global</p>
-                            <span id="display-remaining-budget" class="metric-value metric-remaining">S/ 0.00</span>
+                        <!-- Fila 1: Descripción, Monto -->
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <div class="md:col-span-2">
+                                <label for="expense-description" class="block text-sm font-medium text-gray-700">Descripción</label>
+                                <input type="text" id="expense-description" required class="w-full mt-1 p-3 border border-gray-300 rounded-lg focus:ring-red-500 focus:border-red-500">
+                            </div>
+                            <div>
+                                <label for="expense-amount" class="block text-sm font-medium text-gray-700">Monto (S/)</label>
+                                <input type="number" id="expense-amount" min="0.01" step="0.01" required class="w-full mt-1 p-3 border border-gray-300 rounded-lg focus:ring-red-500 focus:border-red-500">
+                            </div>
                         </div>
-
-                        <!-- Métrica 2: Gasto Total del Ciclo -->
-                        <div>
-                            <p class="metric-label text-red-300">Gasto Total</p>
-                            <span id="display-total-spent" class="metric-value metric-spent">S/ 0.00</span>
-                        </div>
-
-                    </div>
-                </div>
-                
-                <!-- 3. CARDS INDIVIDUALES Y AHORRO MUTUO (RESTAURADO A 3 COLUMNAS MÁS PEQUEÑAS) -->
-                <div class="section-card border-t-4 border-teal-500 space-y-4">
-                    <h3 class="text-lg font-bold text-gray-700">Saldos Individuales y Metas</h3>
-                    
-                    <!-- Resumen de Participantes -->
-                    <div id="participant-summary-cards" class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        <!-- Tarjetas de resumen individual se renderizan aquí -->
-                    </div>
-                    
-                    <!-- FILA SEPARADA PARA METAS GLOBALES (Gastos Fijos y Ahorro Mutuo) -->
-                    <div class="grid grid-cols-2 gap-4 pt-2 border-t border-gray-200">
                         
-                        <!-- Total Gastos Fijos (Movido de nuevo aquí) -->
-                        <div class="section-card border-l-4 border-yellow-500 p-4 text-center bg-yellow-50">
-                            <p class="text-sm font-semibold uppercase text-yellow-700">Gastos Fijos Total</p>
-                            <span id="display-fixed-total" class="text-2xl font-extrabold text-yellow-600 block mt-2">S/ 0.00</span>
+                        <!-- Fila 2: Pagador, Tipo de Gasto, Método de Pago -->
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <div>
+                                <label for="expense-paid-by" class="block text-sm font-medium text-gray-700">Pagado Por</label>
+                                <select id="expense-paid-by" required class="w-full mt-1 p-3 border border-gray-300 rounded-lg bg-white focus:ring-red-500 focus:border-red-500">
+                                    <!-- Opciones de participantes se cargan aquí -->
+                                </select>
+                            </div>
+                            <div>
+                                <label for="expense-type" class="block text-sm font-medium text-gray-700">Tipo de Gasto</label>
+                                <select id="expense-type" class="w-full mt-1 p-3 border border-gray-300 rounded-lg bg-white focus:ring-red-500 focus:border-red-500" required>
+                                    <option value="personal">Personal</option>
+                                    <option value="shared">Compartido (Dividido por igual)</option>
+                                    <option value="fixed">Gasto Fijo (Mensual)</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label for="expense-payment-method-id" class="block text-sm font-medium text-gray-700">Método de Pago</label>
+                                <select id="expense-payment-method-id" required class="w-full mt-1 p-3 border border-gray-300 rounded-lg bg-white focus:ring-red-500 focus:border-red-500">
+                                    <!-- Opciones de métodos de pago se cargan aquí -->
+                                </select>
+                            </div>
                         </div>
 
-                        <!-- Meta Ahorro Mutuo (Movido de nuevo aquí) -->
-                        <div class="section-card border-l-4 border-purple-500 p-4 text-center bg-purple-50">
-                            <p class="text-sm font-semibold uppercase text-purple-700">Meta Ahorro Mutuo</p>
-                            <span id="display-shared-savings-goal" class="text-2xl font-extrabold text-purple-600 block mt-2">S/ 0.00</span>
+                        <!-- Fila 3: Categoría, Subcategoría y Gasto Fijo (Recurrencia) -->
+                        <div class="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
+                            <div class="md:col-span-1">
+                                <label for="expense-category" class="block text-sm font-medium text-gray-700">Categoría</label>
+                                <select id="expense-category" required class="w-full mt-1 p-3 border border-gray-300 rounded-lg bg-white focus:ring-red-500 focus:border-red-500">
+                                    <option value="" disabled selected>Selecciona Categoría</option>
+                                </select>
+                            </div>
+                            <div class="md:col-span-1">
+                                <label for="expense-subcategory" class="block text-sm font-medium text-gray-700">Subcategoría</label>
+                                <select id="expense-subcategory" required disabled class="w-full mt-1 p-3 border border-gray-300 rounded-lg bg-gray-100 focus:ring-red-500 focus:border-red-500">
+                                    <option value="" disabled selected>Selecciona Subcategoría</option>
+                                </option>
+                                </select>
+                            </div>
+                             <!-- Campo de Recurrencia para Gastos Fijos (Oculto por defecto) -->
+                            <div id="fixed-recurrence-container" class="hidden">
+                                <label for="fixed-recurrence-months" class="block text-sm font-medium text-red-700">Meses de Gasto Fijo</label>
+                                <input type="number" id="fixed-recurrence-months" min="1" max="60" value="12" required class="w-full mt-1 p-3 border border-red-300 rounded-lg focus:ring-red-500 focus:border-red-500">
+                            </div>
+                            <!-- Botón de Añadir Gasto -->
+                            <button type="submit" class="w-full py-3 bg-red-500 text-white font-bold rounded-xl shadow-lg hover:bg-red-600 transition duration-300">
+                                Añadir Gasto
+                            </button>
                         </div>
-                    </div>
-                </div>
-            </div>
 
-            <!-- COLUMNA 3 (4/12 - Balance Compartido y Liquidación) -->
-            <div class="lg:col-span-1 balance-col">
-                <!-- 4. CARD BALANCE DE CUENTAS COMPARTIDAS (Contiene ahora el botón) -->
-                <div class="section-card border-l-4 border-indigo-500 h-full flex flex-col justify-between">
-                    <div>
-                        <h2 class="text-lg font-bold text-indigo-700 mb-4 flex items-center">
-                            <i class="fas fa-balance-scale mr-2"></i> Balance de Cuentas Compartidas
-                        </h2 >
-                        <div id="shared-balance-summary" class="space-y-3 text-sm">
-                            <p class="text-gray-500 italic">Calculando balance...</p>
+                        <!-- Información de Ciclo de Tarjeta de Crédito (Condicional) -->
+                        <div id="credit-card-details" class="space-y-2 p-3 border border-yellow-300 rounded-lg bg-yellow-50 hidden">
+                            <p class="font-bold text-xs text-yellow-800">Detalles de Facturación:</p>
+                            <div class="flex justify-between text-xs">
+                                <span class="text-gray-700">Inicio de Ciclo: <strong id="cc-cycle-start-display" class="font-semibold"></strong></span>
+                                <span class="text-gray-700">Límite de Pago: <strong id="cc-payment-date-display" class="font-semibold"></strong></span>
+                            </div>
                         </div>
-                    </div>
-                    
-                    <!-- BOTÓN DE LIQUIDACIÓN DE CUENTAS (MOVIDO ADENTRO y simplificado) -->
-                    <div class="mt-4 pt-4 border-t border-gray-200">
-                        <button id="liquidate-month-btn" class="w-full py-3 bg-red-600 text-white font-bold rounded-xl shadow-lg hover:bg-red-700 transition duration-300">
-                            <i class="fas fa-handshake mr-2"></i> LIQUIDAR
-                        </button>
-                        <p class="text-xs text-gray-600 mt-2 text-center">Ajuste de saldos para poner las cuentas compartidas en cero.</p>
-                    </div>
-                </div>
-            </div>
+                    </form>
+                </section>
+            </main>
         </div>
 
-        <!-- NOTE: La configuración de participantes se ha movido al Sidebar -->
-
-    </section>
-
-    <!-- ========================================================================================= -->
-    <!-- SECCIÓN 2: REGISTRO DE GASTO Y BOTONES DE CONFIGURACIÓN (100% ANCHO) -->
-    <!-- ========================================================================================= -->
-    <div class="max-w-7xl mx-auto px-4 md:px-8 pt-6">
-        <main class="space-y-6">
-            <section class="section-card border-t-4 border-red-500">
-                <div class="flex justify-between items-center mb-4">
-                    <h2 class="text-xl font-bold text-red-700">Registrar Nuevo Gasto</h2>
-                    
-                    <!-- Botones de Configuración Rápida (Movidos aquí) -->
-                    <div class="flex space-x-2">
-                        <button id="open-categories-modal-btn" class="py-1 px-3 bg-green-500 text-white font-bold rounded-xl hover:bg-green-600 transition duration-300 text-xs">
-                            Categorías
-                        </button>
-                        <button id="open-payment-methods-modal-btn" class="py-1 px-3 bg-yellow-500 text-white font-bold rounded-xl hover:bg-yellow-600 transition duration-300 text-xs">
-                            Métodos Pago
-                        </button>
-                    </div>
-                </div>
-                <form id="expense-form" class="space-y-4">
-                    
-                    <!-- Fila 1: Descripción, Monto -->
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        <div class="md:col-span-2">
-                            <label for="expense-description" class="block text-sm font-medium text-gray-700">Descripción</label>
-                            <input type="text" id="expense-description" required class="w-full mt-1 p-3 border border-gray-300 rounded-lg focus:ring-red-500 focus:border-red-500">
-                        </div>
-                        <div>
-                            <label for="expense-amount" class="block text-sm font-medium text-gray-700">Monto (S/)</label>
-                            <input type="number" id="expense-amount" min="0.01" step="0.01" required class="w-full mt-1 p-3 border border-gray-300 rounded-lg focus:ring-red-500 focus:border-red-500">
-                        </div>
-                    </div>
-                    
-                    <!-- Fila 2: Pagador, Tipo de Gasto, Método de Pago -->
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        <div>
-                            <label for="expense-paid-by" class="block text-sm font-medium text-gray-700">Pagado Por</label>
-                            <select id="expense-paid-by" required class="w-full mt-1 p-3 border border-gray-300 rounded-lg bg-white focus:ring-red-500 focus:border-red-500">
-                                <!-- Opciones de participantes se cargan aquí -->
-                            </select>
-                        </div>
-                        <div>
-                            <label for="expense-type" class="block text-sm font-medium text-gray-700">Tipo de Gasto</label>
-                            <select id="expense-type" class="w-full mt-1 p-3 border border-gray-300 rounded-lg bg-white focus:ring-red-500 focus:border-red-500" required>
-                                <option value="personal">Personal</option>
-                                <option value="shared">Compartido (Dividido por igual)</option>
-                                <option value="fixed">Gasto Fijo (Mensual)</option>
-                            </select>
-                        </div>
-                        <div>
-                            <label for="expense-payment-method-id" class="block text-sm font-medium text-gray-700">Método de Pago</label>
-                            <select id="expense-payment-method-id" required class="w-full mt-1 p-3 border border-gray-300 rounded-lg bg-white focus:ring-red-500 focus:border-red-500">
-                                <!-- Opciones de métodos de pago se cargan aquí -->
-                            </select>
-                        </div>
-                    </div>
-
-                    <!-- Fila 3: Categoría, Subcategoría y Gasto Fijo (Recurrencia) -->
-                    <div class="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
-                        <div class="md:col-span-1">
-                            <label for="expense-category" class="block text-sm font-medium text-gray-700">Categoría</label>
-                            <select id="expense-category" required class="w-full mt-1 p-3 border border-gray-300 rounded-lg bg-white focus:ring-red-500 focus:border-red-500">
-                                <option value="" disabled selected>Selecciona Categoría</option>
-                            </select>
-                        </div>
-                        <div class="md:col-span-1">
-                            <label for="expense-subcategory" class="block text-sm font-medium text-gray-700">Subcategoría</label>
-                            <select id="expense-subcategory" required disabled class="w-full mt-1 p-3 border border-gray-300 rounded-lg bg-gray-100 focus:ring-red-500 focus:border-red-500">
-                                <option value="" disabled selected>Selecciona Subcategoría</option>
-                            </option>
-                            </select>
-                        </div>
-                         <!-- Campo de Recurrencia para Gastos Fijos (Oculto por defecto) -->
-                        <div id="fixed-recurrence-container" class="hidden">
-                            <label for="fixed-recurrence-months" class="block text-sm font-medium text-red-700">Meses de Gasto Fijo</label>
-                            <input type="number" id="fixed-recurrence-months" min="1" max="60" value="12" required class="w-full mt-1 p-3 border border-red-300 rounded-lg focus:ring-red-500 focus:border-red-500">
-                        </div>
-                        <!-- Botón de Añadir Gasto -->
-                        <button type="submit" class="w-full py-3 bg-red-500 text-white font-bold rounded-xl shadow-lg hover:bg-red-600 transition duration-300">
-                            Añadir Gasto
-                        </button>
-                    </div>
-
-                    <!-- Información de Ciclo de Tarjeta de Crédito (Condicional) -->
-                    <div id="credit-card-details" class="space-y-2 p-3 border border-yellow-300 rounded-lg bg-yellow-50 hidden">
-                        <p class="font-bold text-xs text-yellow-800">Detalles de Facturación:</p>
-                        <div class="flex justify-between text-xs">
-                            <span class="text-gray-700">Inicio de Ciclo: <strong id="cc-cycle-start-display" class="font-semibold"></strong></span>
-                            <span class="text-gray-700">Límite de Pago: <strong id="cc-payment-date-display" class="font-semibold"></strong></span>
-                        </div>
-                    </div>
-                </form>
-            </section>
-        </main>
-    </div>
-
-    <!-- ========================================================================================= -->
-    <!-- SECCIÓN 3: INFORMES (GASTOS FIJOS, CALENDARIO, HISTORIAL) -->
-    <!-- ========================================================================================= -->
-    <div class="max-w-7xl mx-auto px-4 md:px-8 mt-6">
-        <section class="section-card border-t-4 border-gray-500 space-y-6">
-            
-            <!-- Encabezado del Informe y Filtro de Mes -->
-            <div class="flex justify-between items-center pb-2 mb-4">
-                <h2 class="text-xl font-bold text-gray-800">Informe de Gastos por Categoría</h2>
+        <!-- ========================================================================================= -->
+        <!-- SECCIÓN 3: INFORMES (GASTOS FIJOS, CALENDARIO, HISTORIAL) -->
+        <!-- ========================================================================================= -->
+        <div class="max-w-7xl mx-auto px-4 md:px-8 mt-6">
+            <section class="section-card border-t-4 border-gray-500 space-y-6">
                 
-                <!-- Ciclo de Visualización (Movido aquí para alinearse a la derecha) -->
-                <div id="month-selector" class="flex items-center justify-between p-2 bg-gray-50 rounded-lg border border-gray-200 w-full max-w-xs md:max-w-sm">
-                    <button id="prev-month-btn" class="p-2 bg-white rounded-lg hover:bg-gray-200 transition font-bold text-lg shadow-sm">
-                        &lt;
-                    </button>
-                    <div class="text-center">
-                        <h3 id="current-month-name" class="text-xl font-extrabold text-gray-800 leading-none">Cargando</h3>
-                        <p id="current-year" class="text-sm text-gray-500 -mt-1">...</p>
-                    </div>
-                    <button id="next-month-btn" class="p-2 bg-white rounded-lg hover:bg-gray-200 transition font-bold text-lg shadow-sm">
-                        &gt;
-                    </button>
-                </div>
-            </div>
-            
-            <!-- Rejilla de Informes (2/3 Historial + 1/3 Gastos Fijos) -->
-            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-
-                <!-- Columna 1 (2/3): Historial de Transacciones -->
-                <div class="lg:col-span-2">
-                    <h3 class="text-xl font-bold mt-6 text-gray-700">Historial de Transacciones</h3>
-                    <span class="text-xs text-purple-600 font-semibold block mb-4" id="expense-diagnostic"></span>
+                <!-- Encabezado del Informe y Filtro de Mes -->
+                <div class="flex justify-between items-center pb-2 mb-4">
+                    <h2 class="text-xl font-bold text-gray-800">Informe de Gastos por Categoría</h2>
                     
-                    <div id="expense-report-by-category" class="space-y-6">
-                        <p class="text-gray-500 text-center py-4 italic">No hay gastos en este ciclo.</p>
+                    <!-- Ciclo de Visualización (Movido aquí para alinearse a la derecha) -->
+                    <div id="month-selector" class="flex items-center justify-between p-2 bg-gray-50 rounded-lg border border-gray-200 w-full max-w-xs md:max-w-sm">
+                        <button id="prev-month-btn" class="p-2 bg-white rounded-lg hover:bg-gray-200 transition font-bold text-lg shadow-sm">
+                            &lt;
+                        </button>
+                        <div class="text-center">
+                            <h3 id="current-month-name" class="text-xl font-extrabold text-gray-800 leading-none">Cargando</h3>
+                            <p id="current-year" class="text-sm text-gray-500 -mt-1">...</p>
+                        </div>
+                        <button id="next-month-btn" class="p-2 bg-white rounded-lg hover:bg-gray-200 transition font-bold text-lg shadow-sm">
+                            &gt;
+                        </button>
                     </div>
                 </div>
+                
+                <!-- Rejilla de Informes (2/3 Historial + 1/3 Gastos Fijos) -->
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
 
-                <!-- Columna 2 (1/3): Próximos Gastos Fijos -->
-                <aside class="lg:col-span-1">
-                    <div class="section-card border-l-4 border-red-500 h-full">
-                        <h3 class="text-lg font-bold text-red-700 mb-4 flex items-center">
-                            <i class="fas fa-calendar-alt mr-2"></i> Próximos Gastos Fijos
-                        </h3>
-                        <div id="fixed-expenses-summary" class="space-y-2 text-sm">
-                            <p class="text-gray-500 italic">No hay gastos fijos registrados.</p>
+                    <!-- Columna 1 (2/3): Historial de Transacciones -->
+                    <div class="lg:col-span-2">
+                        <h3 class="text-xl font-bold mt-6 text-gray-700">Historial de Transacciones</h3>
+                        <span class="text-xs text-purple-600 font-semibold block mb-4" id="expense-diagnostic"></span>
+                        
+                        <div id="expense-report-by-category" class="space-y-6">
+                            <p class="text-gray-500 text-center py-4 italic">No hay gastos en este ciclo.</p>
                         </div>
                     </div>
-                </aside>
 
-            </div>
-        </section>
+                    <!-- Columna 2 (1/3): Próximos Gastos Fijos -->
+                    <aside class="lg:col-span-1">
+                        <div class="section-card border-l-4 border-red-500 h-full">
+                            <h3 class="text-lg font-bold text-red-700 mb-4 flex items-center">
+                                <i class="fas fa-calendar-alt mr-2"></i> Próximos Gastos Fijos
+                            </h3>
+                            <div id="fixed-expenses-summary" class="space-y-2 text-sm">
+                                <p class="text-gray-500 italic">No hay gastos fijos registrados.</p>
+                            </div>
+                        </div>
+                    </aside>
+
+                </div>
+            </section>
+        </div>
     </div>
     
     <!-- MOBILE MENU (oculto en escritorio) -->
@@ -476,6 +481,7 @@
                 <form id="sync-form-sidebar" class="space-y-3 p-4 border border-indigo-200 rounded-lg bg-indigo-50">
                     <h4 class="font-bold text-indigo-700">Importar Cuenta Existente</h4>
                     <p class="text-xs text-gray-700">Para sincronizar el mismo perfil en otro dispositivo, pega el ID de Usuario de la sesión principal aquí.</p>
+                    <!-- Input de Sync ID (Se mantiene para la sincronización manual) -->
                     <input type="text" id="sync-user-id-sidebar" placeholder="Pegar ID de Usuario" required class="w-full p-2 border border-gray-300 rounded-lg">
                     <button type="submit" class="w-full py-2 bg-indigo-500 text-white font-bold rounded-xl hover:bg-indigo-600 transition">
                         Sincronizar Dispositivo
@@ -874,10 +880,14 @@
                 document.getElementById('auth-status').innerHTML = `
                     <span id="connection-dot" class="sync-indicator sync-red"></span> 💾 **Modo Local.** Datos guardados localmente. No se requiere conexión.
                 `;
-                document.getElementById('sync-id-card').classList.add('hidden');
+                // El ID de sincronización fue removido del HTML, solo controlamos la tarjeta de acción principal.
                 document.getElementById('auth-action-card').classList.remove('hidden'); // Mostrar Login/Register Card
                 document.getElementById('auth-action-btn').textContent = 'Iniciar Sesión / Registrar';
                 document.getElementById('logout-btn').classList.add('hidden'); // OCULTAR LOGOUT
+                
+                // Mostrar el muro de autenticación en modo local/no conectado
+                document.getElementById('auth-wall-overlay').classList.remove('hidden');
+                
                 setupUILogic(false); // <--- Solo lógica de UI, sin carga de datos de Firebase
                 return;
             }
@@ -914,11 +924,13 @@
                 onAuthStateChanged(auth, (user) => {
                     const logoutBtn = document.getElementById('logout-btn');
                     const authActionBtn = document.getElementById('auth-action-btn');
+                    const authWallOverlay = document.getElementById('auth-wall-overlay');
 
                     if (user) {
                         userId = user.uid;
                         const isEmailAuth = !!user.email;
-                        const statusText = isEmailAuth ? 'Email' : (IS_CANVAS_ENV ? 'Canvas' : 'Anónima');
+                        // Usamos el email si está disponible, si no, el tipo de sesión.
+                        const statusText = isEmailAuth ? user.email : (IS_CANVAS_ENV ? 'Canvas' : 'Anónima');
                         
                         // --- INICIO LÓGICA DE MIGRACIÓN/PERSISTENCIA DE DATOS ---
                         const localDataExists = localStorage.getItem(LOCAL_STORAGE_KEY) !== null;
@@ -940,8 +952,9 @@
                         // --- FIN LÓGICA DE MIGRACIÓN/PERSISTENCIA DE DATOS ---
                         
                         
+                        // SIMPLIFICADO: Muestra solo el email/tipo de sesión, sin el ID truncado.
                         document.getElementById('auth-status').innerHTML = `
-                            <span id="connection-dot" class="sync-indicator sync-green"></span> ✅ Sincronización activa (${statusText}). ID: <strong>${userId.substring(0, 8)}...</strong>.
+                            <span id="connection-dot" class="sync-indicator sync-green"></span> ✅ Sincronización activa. Sesión: <strong>${statusText}</strong>.
                         `;
                         
                         // VISIBILIDAD DE BOTONES: AUTH
@@ -951,24 +964,20 @@
 
                         document.getElementById('auth-action-card').classList.add('hidden');
                         
-                        // Ocultar ID de Sincronización si es Login por Email
-                        const syncIdCard = document.getElementById('sync-id-card');
-                        
-                        if (syncIdCard) {
-                            if (isEmailAuth) {
-                                syncIdCard.classList.add('hidden');
-                            } else {
-                                syncIdCard.classList.remove('hidden');
-                                document.getElementById('display-user-id-full').textContent = userId; // ID completo para copiar
-                            }
+                        // Ocultar muro solo si es autenticación por Email
+                        if (isEmailAuth) {
+                            authWallOverlay.classList.add('hidden');
+                        } else {
+                            authWallOverlay.classList.remove('hidden');
                         }
-
-                        // Mostrar el ID del usuario en Sidebar
-                        document.getElementById('current-user-id').textContent = `ID de Usuario Actual: ${isEmailAuth ? user.email : userId}`;
+                        
+                        // Mostrar el ID del usuario en Sidebar (simplificado)
+                        document.getElementById('current-user-id').textContent = `ID de Sesión: ${isEmailAuth ? user.email : 'Sincronizado'}`;
                         
                         // Ocultar formulario de sincronización manual del sidebar si es Email Auth
                         const syncFormSidebar = document.getElementById('sync-form-sidebar');
                         if (syncFormSidebar) {
+                            // Si es un login con email, el formulario de sincronización de ID no es necesario
                             if (isEmailAuth) {
                                 syncFormSidebar.classList.add('hidden');
                             } else {
@@ -989,11 +998,13 @@
                         authActionBtn.onclick = openAuthModal;
                         logoutBtn.classList.add('hidden'); // OCULTAR LOGOUT
 
-                        // Mostrar Login Card
-                        document.getElementById('sync-id-card').classList.add('hidden');
+                        // Mostrar Muro de autenticación
+                        authWallOverlay.classList.remove('hidden');
+                        
+                        // Mostrar Login Card (Asegurar que ocupe todo el ancho)
                         document.getElementById('auth-action-card').classList.remove('hidden');
                         document.getElementById('auth-action-card').classList.add('col-span-full');
-                        document.getElementById('current-user-id').textContent = `ID de Usuario Actual: Anónimo (Temporal)`;
+                        document.getElementById('current-user-id').textContent = `ID de Sesión: Anónima (Temporal)`;
 
                         // Mostrar formulario de sincronización manual en el sidebar
                         const syncFormSidebar = document.getElementById('sync-form-sidebar');
@@ -1014,6 +1025,9 @@
                 document.getElementById('auth-action-btn').classList.remove('hidden');
                 document.getElementById('auth-action-btn').onclick = () => initializeFirebase(true); // Intenta forzar reconexión
                 document.getElementById('logout-btn').classList.add('hidden'); // OCULTAR LOGOUT
+                
+                // Mostrar el muro de autenticación si falla
+                document.getElementById('auth-wall-overlay').classList.remove('hidden');
 
                 loadLocalState(); // Forzamos carga local de nuevo si falla la conexión
                 setupUILogic(false);
@@ -1379,6 +1393,9 @@
 
              // Listener para el botón principal de la esquina (Login/Register)
             document.getElementById('auth-action-btn').onclick = openAuthModal;
+            
+            // Listener para el botón del muro de autenticación
+            document.getElementById('open-auth-modal-wall').onclick = openAuthModal;
 
             // Listener para cerrar el modal
             document.getElementById('close-auth-modal-btn').onclick = closeAuthModal;
@@ -2704,32 +2721,10 @@
             return true; 
         };
 
-        function copyUserIdToClipboard() {
-            const userIdEl = document.getElementById('display-user-id-full');
-            const copyTarget = document.getElementById('temp-user-id-to-copy');
-            
-            if (!userIdEl || !userIdEl.textContent || !copyTarget) {
-                showModal("Error: El ID de usuario no está listo para copiar.");
-                return;
-            }
-            
-            copyTarget.value = userIdEl.textContent;
-            copyTarget.select();
+        // Función para copiar ID eliminada ya que no se usa
 
-            try {
-                document.execCommand('copy');
-                showModal("ID de usuario copiado al portapapeles. ¡Pégalo en el otro dispositivo para sincronizar!");
-            } catch (err) {
-                console.error('Error al copiar:', err);
-                showModal("Error al copiar: Tu navegador bloqueó la API. Por favor, copia el ID manualmente.");
-            }
-        }
-        
         document.addEventListener('click', (e) => {
-            if (e.target.closest('#copy-user-id-btn')) {
-                e.preventDefault(); 
-                copyUserIdToClipboard();
-            }
+            // Se eliminó el listener de copy-user-id-btn
              // Listener para el botón de switch de Firebase
             if (e.target.closest('#switch-to-firebase-btn')) {
                 e.preventDefault();
