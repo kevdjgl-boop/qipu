@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Monedero V.1.02</title>
+    <title>Monedero V.1.03</title>
     <!-- Incluye Tailwind CSS para estilizado rápido y responsive -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Incluye Font Awesome para íconos de balance -->
@@ -108,7 +108,7 @@
             min-height: 100%;
         }
 
-        /* Estilo para el botón de participantes (RESTAURADO) */
+        /* Estilo para el botón de participantes */
         #open-participants-sidebar-btn {
             background-color: #4F46E5; /* Indigo-600 */
             color: white;
@@ -122,10 +122,7 @@
             background-color: #4338CA; /* Indigo-700 */
         }
 
-        /* Ocultar formulario de sincronización manual */
-        /* Eliminamos el display: none!important para que se pueda mostrar con JS */
-        
-        /* Estilo para el indicador de conexión (NUEVO) */
+        /* Estilo para el indicador de conexión */
         .sync-indicator {
             display: inline-block;
             width: 10px;
@@ -152,10 +149,18 @@
             <p id="auth-status" class="text-xs text-gray-600">
                 <span id="connection-dot" class="sync-indicator sync-red"></span> 💾 **Modo Local.** Los datos se guardan en este navegador.
             </p>
-             <!-- Botón que activa la reconexión o el Login (NUEVO BOTÓN DE AUTENTICACIÓN) -->
-            <button id="auth-action-btn" class="bg-indigo-500 text-white text-xs font-bold py-1 px-2 rounded-lg hover:bg-indigo-600 transition">
-                Cargando...
-            </button>
+             <!-- Contenedor para los botones de acción (Login/Logout) -->
+            <div class="flex space-x-2 items-center">
+                 <!-- Botón principal de Login/Register (Visible cuando NO AUTH) -->
+                <button id="auth-action-btn" class="bg-indigo-500 text-white text-xs font-bold py-1 px-2 rounded-lg hover:bg-indigo-600 transition">
+                    Cargando...
+                </button>
+                
+                 <!-- Botón de Cerrar Sesión (NUEVO - Visible cuando AUTH) -->
+                 <button id="logout-btn" class="bg-red-500 text-white text-xs font-bold py-1 px-2 rounded-lg hover:bg-red-600 transition hidden">
+                    Cerrar Sesión
+                </button>
+            </div>
         </div>
     </div>
     
@@ -650,7 +655,7 @@
     <div id="auth-modal" class="fixed inset-0 bg-gray-600 bg-opacity-70 hidden items-center justify-center p-4 z-50">
         <div class="bg-white p-6 rounded-xl shadow-2xl max-w-sm w-full">
             <h3 class="text-2xl font-bold mb-2 text-purple-700" id="auth-modal-title">Iniciar Sesión</h3>
-            <p id="auth-modal-text" class="text-sm text-gray-600 mb-4">Ingresa tu email y contraseña para acceder a tu cuenta sincronizada o registrar una nueva.</p>
+            <p id="auth-modal-text" class="text-sm text-gray-600 mb-4">Ingresa tu email y contraseña. Usa **Iniciar Sesión** para cuentas existentes o **Registrar** si es tu primera vez.</p>
             <form id="auth-form" class="space-y-4">
                 
                 <label for="auth-email" class="block text-sm font-medium text-gray-700">Email</label>
@@ -669,6 +674,24 @@
                 </div>
             </form>
             <button id="close-auth-modal-btn" class="w-full mt-4 py-2 bg-gray-300 text-gray-800 font-bold rounded-lg hover:bg-gray-400 transition duration-300">Cancelar</button>
+        </div>
+    </div>
+    
+    <!-- NUEVO MODAL DE CONFIRMACIÓN DE CIERRE DE SESIÓN -->
+    <div id="logout-confirm-modal" class="fixed inset-0 bg-gray-600 bg-opacity-70 hidden items-center justify-center p-4 z-50">
+        <div class="bg-white p-6 rounded-xl shadow-2xl max-w-sm w-full">
+            <h3 class="text-xl font-bold mb-4 text-red-700">Confirmar Cierre de Sesión</h3>
+            <p class="mb-6 text-gray-600">
+                ¿Estás seguro de que quieres cerrar la sesión? Tus datos están guardados, pero la sincronización se detendrá. Serás redirigido a una sesión anónima.
+            </p>
+            <div class="grid grid-cols-2 gap-3">
+                <button id="confirm-logout-btn" class="py-2 bg-red-500 text-white font-bold rounded-lg hover:bg-red-600 transition">
+                    Sí, Cerrar Sesión
+                </button>
+                <button id="cancel-logout-btn" class="py-2 bg-gray-300 text-gray-800 font-bold rounded-lg hover:bg-gray-400 transition">
+                    Cancelar
+                </button>
+            </div>
         </div>
     </div>
 
@@ -854,6 +877,7 @@
                 document.getElementById('sync-id-card').classList.add('hidden');
                 document.getElementById('auth-action-card').classList.remove('hidden'); // Mostrar Login/Register Card
                 document.getElementById('auth-action-btn').textContent = 'Iniciar Sesión / Registrar';
+                document.getElementById('logout-btn').classList.add('hidden'); // OCULTAR LOGOUT
                 setupUILogic(false); // <--- Solo lógica de UI, sin carga de datos de Firebase
                 return;
             }
@@ -877,39 +901,38 @@
                 // CRITICAL FIX 2: Forzar persistencia local y luego iniciar sesión
                 await setPersistence(auth, browserLocalPersistence);
 
-                // 2. Autenticar
-                if (initialAuthToken && IS_CANVAS_ENV) {
-                    await signInWithCustomToken(auth, initialAuthToken);
-                } else {
-                    await signInAnonymously(auth);
+                // 2. Autenticar (Si no hay usuario en caché)
+                if (!auth.currentUser) {
+                    if (initialAuthToken && IS_CANVAS_ENV) {
+                        await signInWithCustomToken(auth, initialAuthToken);
+                    } else {
+                        // Intentamos un sign-in anónimo para obtener un UID
+                        await signInAnonymously(auth);
+                    }
                 }
 
                 onAuthStateChanged(auth, (user) => {
+                    const logoutBtn = document.getElementById('logout-btn');
+                    const authActionBtn = document.getElementById('auth-action-btn');
+
                     if (user) {
                         userId = user.uid;
                         const isEmailAuth = !!user.email;
                         const statusText = isEmailAuth ? 'Email' : (IS_CANVAS_ENV ? 'Canvas' : 'Anónima');
                         
                         // --- INICIO LÓGICA DE MIGRACIÓN/PERSISTENCIA DE DATOS ---
-                        // 2. Comprobamos si hay datos en el localStorage (rescatados en loadLocalState)
-                        // y si NO hay datos en la nube para este nuevo ID, subimos la copia local.
                         const localDataExists = localStorage.getItem(LOCAL_STORAGE_KEY) !== null;
                         
                         if (localDataExists) {
-                             // Usamos una IIAF para no bloquear el callback sincrónico
                             (async () => {
-                                // 2a. Comprobamos si el documento de Firestore existe para este nuevo UID.
                                 const docRef = getFinanceDocRef(db);
                                 const docSnap = await getDoc(docRef);
 
                                 if (!docSnap.exists() && localDataExists) {
-                                    // 2b. Si NO existe en Firebase, migramos el estado local (que está en appState) a la nube.
                                     await saveState(appState); 
                                     localStorage.removeItem(LOCAL_STORAGE_KEY);
                                     showModal("¡Datos Locales Migrados!", "La información guardada en tu navegador ha sido sincronizada y respaldada en Firebase.", "Migración Exitosa");
                                 } else if (docSnap.exists()) {
-                                    // Si existe en Firebase, la migración no es necesaria, borramos el local
-                                    // y dejamos que onSnapshot maneje el estado de la nube.
                                     localStorage.removeItem(LOCAL_STORAGE_KEY);
                                 }
                             })();
@@ -920,33 +943,30 @@
                         document.getElementById('auth-status').innerHTML = `
                             <span id="connection-dot" class="sync-indicator sync-green"></span> ✅ Sincronización activa (${statusText}). ID: <strong>${userId.substring(0, 8)}...</strong>.
                         `;
-                        document.getElementById('auth-action-btn').textContent = 'Cerrar Sesión';
-                        document.getElementById('auth-action-btn').classList.remove('hidden');
-                        document.getElementById('auth-action-btn').onclick = signOutUser;
+                        
+                        // VISIBILIDAD DE BOTONES: AUTH
+                        authActionBtn.classList.add('hidden'); // Ocultar Login/Register
+                        logoutBtn.classList.remove('hidden'); // Mostrar Cerrar Sesión
+                        logoutBtn.onclick = openLogoutConfirmModal; // Asignar el modal de confirmación
+
                         document.getElementById('auth-action-card').classList.add('hidden');
                         
                         // Ocultar ID de Sincronización si es Login por Email
                         const syncIdCard = document.getElementById('sync-id-card');
-                        const syncFormDashboard = document.getElementById('sync-form-dashboard');
                         
-                        if (syncIdCard) { // Ocultamos el card completo si estamos logueados por Email
+                        if (syncIdCard) {
                             if (isEmailAuth) {
                                 syncIdCard.classList.add('hidden');
-                                // Ajustamos el layout de la otra columna para que ocupe todo el espacio
-                                document.getElementById('auth-action-card').classList.remove('col-span-full', 'md:col-span-1');
-                                document.getElementById('auth-action-card').classList.add('col-span-full');
                             } else {
                                 syncIdCard.classList.remove('hidden');
                                 document.getElementById('display-user-id-full').textContent = userId; // ID completo para copiar
-                                document.getElementById('auth-action-card').classList.remove('col-span-full');
-                                document.getElementById('auth-action-card').classList.add('md:col-span-1');
                             }
                         }
 
                         // Mostrar el ID del usuario en Sidebar
                         document.getElementById('current-user-id').textContent = `ID de Usuario Actual: ${isEmailAuth ? user.email : userId}`;
                         
-                        // Aseguramos que el formulario de sincronización manual del sidebar (para debug/restauración) se muestre si es anónimo
+                        // Ocultar formulario de sincronización manual del sidebar si es Email Auth
                         const syncFormSidebar = document.getElementById('sync-form-sidebar');
                         if (syncFormSidebar) {
                             if (isEmailAuth) {
@@ -956,18 +976,20 @@
                             }
                         }
 
-
-                        setupUILogic(true); // <--- Solo lógica de UI
-                        setupRealTimeDataListener(); // <--- CRÍTICO: Inicia la carga de datos real-time y el renderizado
+                        setupUILogic(true);
+                        setupRealTimeDataListener();
                     } else {
                         // Usuario No autenticado (después de cerrar sesión o si falla el anónimo)
                         userId = 'anonymous';
                         document.getElementById('auth-status').innerHTML = `<span id="connection-dot" class="sync-indicator sync-red"></span> ⚠️ Modo Anónimo. Inicia sesión para sincronizar.`;
-                        document.getElementById('auth-action-btn').textContent = 'Iniciar Sesión / Registrar';
-                        document.getElementById('auth-action-btn').onclick = openAuthModal;
-                        document.getElementById('auth-action-btn').classList.remove('hidden');
+                        
+                        // VISIBILIDAD DE BOTONES: NO AUTH
+                        authActionBtn.textContent = 'Iniciar Sesión / Registrar';
+                        authActionBtn.classList.remove('hidden');
+                        authActionBtn.onclick = openAuthModal;
+                        logoutBtn.classList.add('hidden'); // OCULTAR LOGOUT
 
-                        // Ocultar ID y mostrar Login Card
+                        // Mostrar Login Card
                         document.getElementById('sync-id-card').classList.add('hidden');
                         document.getElementById('auth-action-card').classList.remove('hidden');
                         document.getElementById('auth-action-card').classList.add('col-span-full');
@@ -978,7 +1000,7 @@
                         if (syncFormSidebar) syncFormSidebar.classList.remove('hidden');
 
                         setupUILogic(true);
-                        setupRealTimeDataListener(); // Sigue escuchando, pero usará el UID anónimo/temporal.
+                        setupRealTimeDataListener();
                     }
                 });
             } catch (error) {
@@ -991,6 +1013,7 @@
                 document.getElementById('auth-action-btn').textContent = 'Reintentar Conexión';
                 document.getElementById('auth-action-btn').classList.remove('hidden');
                 document.getElementById('auth-action-btn').onclick = () => initializeFirebase(true); // Intenta forzar reconexión
+                document.getElementById('logout-btn').classList.add('hidden'); // OCULTAR LOGOUT
 
                 loadLocalState(); // Forzamos carga local de nuevo si falla la conexión
                 setupUILogic(false);
@@ -998,18 +1021,36 @@
         }
 
         // --- Funciones de autenticación de Firebase ---
-        async function signOutUser() {
+        
+        /** NUEVA FUNCIÓN: Abre el modal de confirmación de cierre de sesión. */
+        function openLogoutConfirmModal() {
+            document.getElementById('logout-confirm-modal').classList.remove('hidden');
+            document.getElementById('logout-confirm-modal').classList.add('flex');
+        }
+
+        /** NUEVA FUNCIÓN: Cierra el modal de confirmación. */
+        function closeLogoutConfirmModal() {
+            document.getElementById('logout-confirm-modal').classList.add('hidden');
+            document.getElementById('logout-confirm-modal').classList.remove('flex');
+        }
+        
+        // Listener para el botón "Sí, Cerrar Sesión"
+        document.getElementById('confirm-logout-btn').addEventListener('click', async () => {
+            closeLogoutConfirmModal();
             try {
                 // Borra la persistencia de sesión de Firebase del navegador
-                await auth.signOut();
-                // Forzamos el modo anónimo después de cerrar sesión, iniciando una nueva sesión anónima
-                await signInAnonymously(auth);
-                showModal("Sesión cerrada. Ahora estás en modo anónimo temporal.", null, "Sesión Cerrada");
+                await signOut(auth);
+                // La función onAuthStateChanged se encargará de reautenticar anónimamente
+                showModal("Sesión cerrada correctamente. Ahora estás en modo anónimo temporal.", null, "Sesión Cerrada");
             } catch (e) {
                 console.error("Error al cerrar sesión:", e);
-                showModal(`No se pudo cerrar la sesión: ${e.message}`);
+                showModal(`No se pudo cerrar la sesión: ${e.message}`, e.message, "Fallo al Cerrar Sesión");
             }
-        }
+        });
+
+        // Listener para el botón "Cancelar"
+        document.getElementById('cancel-logout-btn').addEventListener('click', closeLogoutConfirmModal);
+        
         
         async function handleAuthSubmit(e, isRegister) {
             e.preventDefault();
@@ -1026,8 +1067,6 @@
 
                 if (isRegister) {
                     userCredential = await createUserWithEmailAndPassword(auth, email, password);
-                    
-                    // La vinculación de data se maneja automáticamente por Firebase (upgrade de cuenta anónima)
                     showModal("¡Registro exitoso! Tus datos anónimos se han vinculado a tu cuenta de Email.", null, "Registro Completo");
                 } else {
                     userCredential = await signInWithEmailAndPassword(auth, email, password);
@@ -1050,8 +1089,6 @@
         }
 
         function openAuthModal() {
-            document.getElementById('auth-modal-title').textContent = 'Iniciar Sesión / Registrar';
-            document.getElementById('auth-modal-text').textContent = 'Ingresa tu email y contraseña para acceder a tu cuenta sincronizada o registrar una nueva.';
             document.getElementById('auth-modal').classList.remove('hidden');
             document.getElementById('auth-modal').classList.add('flex');
         }
@@ -1340,7 +1377,7 @@
              // Listener para el botón de abrir el modal en el Dashboard
             document.getElementById('open-auth-modal-dashboard').onclick = openAuthModal;
 
-             // Listener para el botón principal de la esquina
+             // Listener para el botón principal de la esquina (Login/Register)
             document.getElementById('auth-action-btn').onclick = openAuthModal;
 
             // Listener para cerrar el modal
@@ -1349,6 +1386,7 @@
             // Listener para el formulario: decide si es login o register
             document.getElementById('auth-form').onsubmit = (e) => {
                 e.preventDefault();
+                // Usamos submitter.id para saber qué botón se presionó
                 const isRegister = e.submitter.id === 'auth-register-btn';
                 handleAuthSubmit(e, isRegister);
             };
@@ -1478,9 +1516,6 @@
                 const currentDocRef = getFinanceDocRef(db);
                 await setDoc(currentDocRef, targetData, { merge: false });
                 
-                // Forzamos la recarga de la aplicación después de la sincronización.
-                // window.location.reload(); // REMOVED RELOAD: onSnapshot should handle update gracefully.
-
                 showModal("¡Datos Importados! Los datos de la otra cuenta han reemplazado tu estado actual. Ambos dispositivos están sincronizados.", null, "Sincronización Exitosa");
                 
                 // Resetear el campo
@@ -2109,7 +2144,7 @@
                 const methodColor = isCredit ? 'yellow' : 'gray';
 
                 const methodHtml = `
-                    <div class="p-3 bg-white rounded-lg border border-${methodColor}-200 flex justify-between items-center">
+                    <div class="p-3 bg-white border border-${methodColor}-200 flex justify-between items-center">
                         <div class="flex-1">
                             <span class="font-bold text-gray-800">${m.name}</span>
                             <p class="text-xs text-gray-600 mt-1">${methodDetails}</p>
@@ -2706,4 +2741,3 @@
     </script>
 </body>
 </html>
-
