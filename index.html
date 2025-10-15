@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Monedero V.1.05</title>
+    <title>Monedero V.1.08</title>
     <!-- Incluye Tailwind CSS para estilizado rápido y responsive -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Incluye Font Awesome para íconos de balance -->
@@ -17,6 +17,12 @@
             overflow-x: hidden;
             padding-bottom: 4rem; 
         }
+        
+        /* CLASE CRÍTICA AÑADIDA para bloquear el scroll */
+        .no-scroll {
+            overflow-y: hidden !important;
+        }
+
         .section-card {
             background-color: white;
             padding: 1.5rem;
@@ -133,6 +139,28 @@
         }
         .sync-green { background-color: #10B981; } /* Green */
         .sync-red { background-color: #EF4444; } /* Red */
+
+        /* ESTILO CRÍTICO PARA EL MURO DE AUTENTICACIÓN */
+        #auth-wall-overlay {
+            position: fixed; /* CRÍTICO: Usa posición fija para no moverse con el scroll */
+            inset: 0;
+            top: 4.5rem; /* Ajuste para el Auth Status */
+            z-index: 45; 
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            backdrop-filter: blur(10px); 
+            background-color: rgba(243, 244, 246, 0.75);
+            /* Animación suave para el muro */
+            transition: opacity 0.3s ease-in-out; 
+            opacity: 0;
+            pointer-events: none; /* Permite clicks a través hasta que se hace visible */
+        }
+        
+        #auth-wall-overlay.active {
+            opacity: 1;
+            pointer-events: auto; /* Bloquea el contenido cuando está activo */
+        }
     </style>
     <!-- Incluye GSAP para animaciones -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
@@ -156,7 +184,7 @@
                     Cargando...
                 </button>
                 
-                 <!-- Botón de Cerrar Sesión (NUEVO - Visible cuando AUTH) -->
+                 <!-- Botón de Cerrar Sesión (NUEVO - Visible solo cuando AUTH EMAIL) -->
                  <button id="logout-btn" class="bg-red-500 text-white text-xs font-bold py-1 px-2 rounded-lg hover:bg-red-600 transition hidden">
                     Cerrar Sesión
                 </button>
@@ -166,9 +194,7 @@
     
     <!-- ========================================================================================= -->
     <!-- MURO DE AUTENTICACIÓN (AUTH WALL OVERLAY) -->
-    <!-- Z-index 45: Cubre el contenido principal pero está bajo el sidebar (50) y los modales (50+). -->
-    <!-- El 'top-16' (aprox) es para no tapar el 'Auth Status' que está arriba. -->
-    <div id="auth-wall-overlay" class="fixed inset-0 top-[4.5rem] z-45 flex items-center justify-center hidden" style="backdrop-filter: blur(10px); background-color: rgba(243, 244, 246, 0.75);">
+    <div id="auth-wall-overlay" class="hidden">
         <div class="p-8 bg-white/90 backdrop-blur-sm rounded-xl shadow-2xl text-center border-t-4 border-indigo-500 max-w-sm w-full mx-4">
             <i class="fas fa-lock text-5xl text-indigo-500 mb-4 animate-bounce"></i>
             <h2 class="text-2xl font-bold text-gray-800 mb-2">Acceso Restringido</h2>
@@ -180,9 +206,21 @@
     </div>
     <!-- ========================================================================================= -->
 
+    <!-- ========================================================================================= -->
+    <!-- PANTALLA DE CARGA INICIAL (Mostrada al inicio) -->
+    <!-- Se oculta cuando se resuelve la autenticación -->
+    <div id="initial-loading-screen" class="max-w-7xl mx-auto px-4 md:px-8 pt-20 flex justify-center items-center h-64">
+        <div class="text-center">
+            <i class="fas fa-spinner fa-spin text-4xl text-indigo-500"></i>
+            <p class="mt-3 text-gray-600 font-semibold">Cargando datos y verificando sesión...</p>
+        </div>
+    </div>
+    <!-- ========================================================================================= -->
+
 
     <!-- Contenido principal de la aplicación (Secciones 1, 2, 3) -->
-    <div id="main-content-wrapper">
+    <!-- CRÍTICO: Clase 'hidden' añadida aquí. Se removerá en JS después de la autenticación. -->
+    <div id="main-content-wrapper" class="hidden">
         <!-- ========================================================================================= -->
         <!-- SECCIÓN 1: DASHBOARD PRINCIPAL Y PARTICIPANTES (100% ANCHO) -->
         <!-- ========================================================================================= -->
@@ -871,6 +909,30 @@
         }
 
 
+        // --- Funciones de control de UI y Scroll ---
+
+        const authWallOverlay = document.getElementById('auth-wall-overlay');
+        const body = document.body;
+        const mainContent = document.getElementById('main-content-wrapper');
+        const loadingScreen = document.getElementById('initial-loading-screen');
+
+
+        /** Muestra o oculta el muro de autenticación y controla el scroll. */
+        function setAuthWallVisible(isVisible, isEmailAuth) {
+            if (isVisible && !isEmailAuth) {
+                // Muestra el muro de bloqueo (no si es email auth)
+                authWallOverlay.classList.remove('hidden');
+                setTimeout(() => authWallOverlay.classList.add('active'), 10); 
+                body.classList.add('no-scroll'); // Bloquea el scroll
+            } else {
+                // Oculta el muro (siempre que esté autenticado o en modo local)
+                authWallOverlay.classList.remove('active');
+                authWallOverlay.classList.add('hidden');
+                body.classList.remove('no-scroll'); // Permite el scroll
+            }
+        }
+
+
         // --- Inicialización y Autenticación de Firebase (o Carga Local) ---
         async function initializeFirebase(attemptForce = false) {
             
@@ -880,20 +942,20 @@
                 document.getElementById('auth-status').innerHTML = `
                     <span id="connection-dot" class="sync-indicator sync-red"></span> 💾 **Modo Local.** Datos guardados localmente. No se requiere conexión.
                 `;
-                // El ID de sincronización fue removido del HTML, solo controlamos la tarjeta de acción principal.
-                document.getElementById('auth-action-card').classList.remove('hidden'); // Mostrar Login/Register Card
+                document.getElementById('auth-action-card').classList.remove('hidden'); 
                 document.getElementById('auth-action-btn').textContent = 'Iniciar Sesión / Registrar';
-                document.getElementById('logout-btn').classList.add('hidden'); // OCULTAR LOGOUT
+                document.getElementById('logout-btn').classList.add('hidden'); 
                 
-                // Mostrar el muro de autenticación en modo local/no conectado
-                document.getElementById('auth-wall-overlay').classList.remove('hidden');
+                // CRÍTICO: Ocultar carga y mostrar contenido antes de aplicar muro
+                loadingScreen.classList.add('hidden');
+                mainContent.classList.remove('hidden');
+                setAuthWallVisible(true, false);
                 
-                setupUILogic(false); // <--- Solo lógica de UI, sin carga de datos de Firebase
+                setupUILogic(false); 
                 return;
             }
 
             try {
-                // Si la configuración es un placeholder, informamos y pasamos a local si no es Canvas
                 if (!isFirebaseActive && IS_EXTERNAL_HOSTING) {
                     throw new Error("Credenciales de Firebase faltantes o inválidas.");
                 }
@@ -905,18 +967,14 @@
                 
                 document.getElementById('auth-action-btn').textContent = 'Conectando...';
                 
-                // 1. CARGA LOCAL INICIAL: Cargar cualquier dato local ANTES de autenticar.
-                loadLocalState(); // Esta carga es instantánea y se utiliza como estado inicial
+                loadLocalState(); 
 
-                // CRITICAL FIX 2: Forzar persistencia local y luego iniciar sesión
                 await setPersistence(auth, browserLocalPersistence);
 
-                // 2. Autenticar (Si no hay usuario en caché)
                 if (!auth.currentUser) {
                     if (initialAuthToken && IS_CANVAS_ENV) {
                         await signInWithCustomToken(auth, initialAuthToken);
                     } else {
-                        // Intentamos un sign-in anónimo para obtener un UID
                         await signInAnonymously(auth);
                     }
                 }
@@ -924,17 +982,18 @@
                 onAuthStateChanged(auth, (user) => {
                     const logoutBtn = document.getElementById('logout-btn');
                     const authActionBtn = document.getElementById('auth-action-btn');
-                    const authWallOverlay = document.getElementById('auth-wall-overlay');
+                    
+                    // PASO CRÍTICO: OCULTAR CARGA Y REVELAR CONTENIDO
+                    loadingScreen.classList.add('hidden');
+                    mainContent.classList.remove('hidden');
 
                     if (user) {
                         userId = user.uid;
                         const isEmailAuth = !!user.email;
-                        // Usamos el email si está disponible, si no, el tipo de sesión.
                         const statusText = isEmailAuth ? user.email : (IS_CANVAS_ENV ? 'Canvas' : 'Anónima');
                         
-                        // --- INICIO LÓGICA DE MIGRACIÓN/PERSISTENCIA DE DATOS ---
+                        // LÓGICA DE MIGRACIÓN (Mantenida)
                         const localDataExists = localStorage.getItem(LOCAL_STORAGE_KEY) !== null;
-                        
                         if (localDataExists) {
                             (async () => {
                                 const docRef = getFinanceDocRef(db);
@@ -949,35 +1008,31 @@
                                 }
                             })();
                         }
-                        // --- FIN LÓGICA DE MIGRACIÓN/PERSISTENCIA DE DATOS ---
                         
-                        
-                        // SIMPLIFICADO: Muestra solo el email/tipo de sesión, sin el ID truncado.
+                        // Estado de conexión
                         document.getElementById('auth-status').innerHTML = `
                             <span id="connection-dot" class="sync-indicator sync-green"></span> ✅ Sincronización activa. Sesión: <strong>${statusText}</strong>.
                         `;
                         
-                        // VISIBILIDAD DE BOTONES: AUTH
+                        // VISIBILIDAD DE BOTONES
                         authActionBtn.classList.add('hidden'); // Ocultar Login/Register
-                        logoutBtn.classList.remove('hidden'); // Mostrar Cerrar Sesión
-                        logoutBtn.onclick = openLogoutConfirmModal; // Asignar el modal de confirmación
-
-                        document.getElementById('auth-action-card').classList.add('hidden');
                         
-                        // Ocultar muro solo si es autenticación por Email
+                        // CRÍTICO: El botón de Logout SÓLO es visible si es Email Auth
                         if (isEmailAuth) {
-                            authWallOverlay.classList.add('hidden');
+                            logoutBtn.classList.remove('hidden'); 
+                            logoutBtn.onclick = openLogoutConfirmModal; 
+                            document.getElementById('auth-action-card').classList.add('hidden');
+                            setAuthWallVisible(false, true); // Oculta el muro
                         } else {
-                            authWallOverlay.classList.remove('hidden');
+                            logoutBtn.classList.add('hidden'); // Oculta Logout en anónimo
+                            document.getElementById('auth-action-card').classList.remove('hidden');
+                            setAuthWallVisible(true, false); // Muestra el muro en anónimo
                         }
                         
-                        // Mostrar el ID del usuario en Sidebar (simplificado)
                         document.getElementById('current-user-id').textContent = `ID de Sesión: ${isEmailAuth ? user.email : 'Sincronizado'}`;
                         
-                        // Ocultar formulario de sincronización manual del sidebar si es Email Auth
                         const syncFormSidebar = document.getElementById('sync-form-sidebar');
                         if (syncFormSidebar) {
-                            // Si es un login con email, el formulario de sincronización de ID no es necesario
                             if (isEmailAuth) {
                                 syncFormSidebar.classList.add('hidden');
                             } else {
@@ -988,7 +1043,7 @@
                         setupUILogic(true);
                         setupRealTimeDataListener();
                     } else {
-                        // Usuario No autenticado (después de cerrar sesión o si falla el anónimo)
+                        // Usuario No autenticado (Anónimo o después de cerrar sesión)
                         userId = 'anonymous';
                         document.getElementById('auth-status').innerHTML = `<span id="connection-dot" class="sync-indicator sync-red"></span> ⚠️ Modo Anónimo. Inicia sesión para sincronizar.`;
                         
@@ -996,17 +1051,15 @@
                         authActionBtn.textContent = 'Iniciar Sesión / Registrar';
                         authActionBtn.classList.remove('hidden');
                         authActionBtn.onclick = openAuthModal;
-                        logoutBtn.classList.add('hidden'); // OCULTAR LOGOUT
+                        logoutBtn.classList.add('hidden'); // CRÍTICO: Ocultar siempre en no autenticado
 
                         // Mostrar Muro de autenticación
-                        authWallOverlay.classList.remove('hidden');
+                        setAuthWallVisible(true, false);
                         
-                        // Mostrar Login Card (Asegurar que ocupe todo el ancho)
                         document.getElementById('auth-action-card').classList.remove('hidden');
                         document.getElementById('auth-action-card').classList.add('col-span-full');
                         document.getElementById('current-user-id').textContent = `ID de Sesión: Anónima (Temporal)`;
 
-                        // Mostrar formulario de sincronización manual en el sidebar
                         const syncFormSidebar = document.getElementById('sync-form-sidebar');
                         if (syncFormSidebar) syncFormSidebar.classList.remove('hidden');
 
@@ -1015,7 +1068,7 @@
                     }
                 });
             } catch (error) {
-                // Si falla Firebase, volvemos a modo local para no detener la aplicación
+                // Si falla Firebase
                 console.error("Error al inicializar Firebase o autenticar:", error);
                 isFirebaseActive = false;
                 document.getElementById('auth-status').innerHTML = `
@@ -1023,13 +1076,15 @@
                 `;
                 document.getElementById('auth-action-btn').textContent = 'Reintentar Conexión';
                 document.getElementById('auth-action-btn').classList.remove('hidden');
-                document.getElementById('auth-action-btn').onclick = () => initializeFirebase(true); // Intenta forzar reconexión
-                document.getElementById('logout-btn').classList.add('hidden'); // OCULTAR LOGOUT
+                document.getElementById('auth-action-btn').onclick = () => initializeFirebase(true); 
+                document.getElementById('logout-btn').classList.add('hidden'); 
                 
-                // Mostrar el muro de autenticación si falla
-                document.getElementById('auth-wall-overlay').classList.remove('hidden');
+                // CRÍTICO: Ocultar carga y mostrar contenido antes de aplicar muro
+                loadingScreen.classList.add('hidden');
+                mainContent.classList.remove('hidden');
+                setAuthWallVisible(true, false);
 
-                loadLocalState(); // Forzamos carga local de nuevo si falla la conexión
+                loadLocalState(); 
                 setupUILogic(false);
             }
         }
@@ -1040,21 +1095,22 @@
         function openLogoutConfirmModal() {
             document.getElementById('logout-confirm-modal').classList.remove('hidden');
             document.getElementById('logout-confirm-modal').classList.add('flex');
+            body.classList.add('no-scroll');
         }
 
         /** NUEVA FUNCIÓN: Cierra el modal de confirmación. */
         function closeLogoutConfirmModal() {
             document.getElementById('logout-confirm-modal').classList.add('hidden');
             document.getElementById('logout-confirm-modal').classList.remove('flex');
+            body.classList.remove('no-scroll');
         }
         
         // Listener para el botón "Sí, Cerrar Sesión"
         document.getElementById('confirm-logout-btn').addEventListener('click', async () => {
             closeLogoutConfirmModal();
             try {
-                // Borra la persistencia de sesión de Firebase del navegador
                 await signOut(auth);
-                // La función onAuthStateChanged se encargará de reautenticar anónimamente
+                // La función onAuthStateChanged se encarga del resto
                 showModal("Sesión cerrada correctamente. Ahora estás en modo anónimo temporal.", null, "Sesión Cerrada");
             } catch (e) {
                 console.error("Error al cerrar sesión:", e);
@@ -1105,12 +1161,14 @@
         function openAuthModal() {
             document.getElementById('auth-modal').classList.remove('hidden');
             document.getElementById('auth-modal').classList.add('flex');
+            body.classList.add('no-scroll');
         }
 
         function closeAuthModal() {
             document.getElementById('auth-modal').classList.add('hidden');
             document.getElementById('auth-modal').classList.remove('flex');
             document.getElementById('auth-form').reset();
+            body.classList.remove('no-scroll');
         }
 
         // --- Funciones de UI/Listeners (Se mantienen) ---
@@ -1422,9 +1480,14 @@
                 if (open) {
                     sidebar.classList.add('open');
                     backdrop.classList.add('open');
+                    body.classList.add('no-scroll');
                 } else {
                     sidebar.classList.remove('open');
                     backdrop.classList.remove('open');
+                    // Solo desbloquea el scroll si el muro NO está visible
+                    if (!authWallOverlay.classList.contains('active')) {
+                        body.classList.remove('no-scroll');
+                    }
                 }
             };
             
@@ -1440,12 +1503,17 @@
                 participantForm.reset();
                 participantModal.classList.remove('hidden');
                 participantModal.classList.add('flex');
+                body.classList.add('no-scroll');
             });
 
             
             document.getElementById('close-participant-modal-btn').addEventListener('click', () => {
                 participantModal.classList.add('hidden');
                 participantModal.classList.remove('flex');
+                // Solo desbloquea el scroll si el muro y el sidebar NO están visibles
+                if (!authWallOverlay.classList.contains('active') && !sidebar.classList.contains('open')) {
+                    body.classList.remove('no-scroll');
+                }
             });
 
             // Listener de Guardar/Editar
@@ -1484,6 +1552,7 @@
 
                 participantModal.classList.add('hidden');
                 participantModal.classList.remove('flex');
+                body.classList.remove('no-scroll');
             });
             
             // --- Lógica de Sincronización (Implementada en initializeFirebase y handleSyncSubmit) ---
@@ -1561,6 +1630,7 @@
                 modal.classList.remove('flex');
                 guestInputContainer.classList.add('hidden'); // Ocultar input de invitado al cerrar
                 guestNameInput.value = '';
+                body.classList.remove('no-scroll');
             });
             
             document.getElementById('add-guest-payer-btn').addEventListener('click', () => {
@@ -1621,6 +1691,7 @@
                     modal.classList.remove('flex');
                     guestInputContainer.classList.add('hidden');
                     guestNameInput.value = '';
+                    body.classList.remove('no-scroll');
                 } catch (error) {
                     console.error("Error al editar gasto:", error);
                     showModal("Error al editar el gasto. Revisa la consola para detalles técnicos.", error.message, "Fallo de Edición");
@@ -1925,6 +1996,7 @@
             
             document.getElementById('edit-expense-modal').classList.remove('hidden');
             document.getElementById('edit-expense-modal').classList.add('flex');
+            body.classList.add('no-scroll');
         }
 
 
@@ -2007,6 +2079,7 @@
 
             participantModal.classList.remove('hidden');
             participantModal.classList.add('flex');
+            body.classList.add('no-scroll');
         }
 
         function removeParticipant(idToRemove) {
@@ -2025,12 +2098,14 @@
         document.getElementById('open-payment-methods-modal-btn').addEventListener('click', () => {
             document.getElementById('payment-methods-modal').classList.remove('hidden');
             document.getElementById('payment-methods-modal').classList.add('flex');
+            body.classList.add('no-scroll');
         });
 
         document.getElementById('close-payment-methods-modal-btn').addEventListener('click', () => {
             document.getElementById('payment-methods-modal').classList.add('hidden');
             document.getElementById('payment-methods-modal').classList.remove('flex');
             resetPaymentForm();
+            body.classList.remove('no-scroll');
         });
         
         function setupPaymentMethodListeners() {
@@ -2094,6 +2169,7 @@
                 document.getElementById('payment-methods-modal').classList.add('hidden');
                 document.getElementById('payment-methods-modal').classList.remove('flex');
                 resetPaymentForm();
+                body.classList.remove('no-scroll');
             });
             
             document.getElementById('cancel-edit-method-btn').addEventListener('click', resetPaymentForm);
@@ -2560,11 +2636,13 @@
         document.getElementById('open-categories-modal-btn').addEventListener('click', () => {
             document.getElementById('categories-modal').classList.remove('hidden');
             document.getElementById('categories-modal').classList.add('flex');
+            body.classList.add('no-scroll');
         });
         
         document.getElementById('close-categories-modal-btn').addEventListener('click', () => {
             document.getElementById('categories-modal').classList.add('hidden');
             document.getElementById('categories-modal').classList.remove('flex');
+            body.classList.remove('no-scroll');
         });
 
         document.getElementById('category-form').addEventListener('submit', (e) => {
