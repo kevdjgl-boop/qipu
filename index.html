@@ -152,9 +152,8 @@
             <p id="auth-status" class="text-xs text-gray-600">
                 <span id="connection-dot" class="sync-indicator sync-red"></span> 💾 **Modo Local.** Los datos se guardan en este navegador.
             </p>
-             <!-- Botón que activa la reconexión o el Login (NUEVO BOTÓN DE AUTENTICACIÓN) -->
-            <button id="auth-action-btn" class="bg-indigo-500 text-white text-xs font-bold py-1 px-2 rounded-lg hover:bg-indigo-600 transition">
-                Cargando...
+            <button id="switch-to-firebase-btn" class="bg-indigo-500 text-white text-xs font-bold py-1 px-2 rounded-lg hover:bg-indigo-600 transition hidden">
+                Intentar Conectar
             </button>
         </div>
     </div>
@@ -198,12 +197,16 @@
                         </div>
                     </div>
                     
-                    <!-- REEMPLAZADO POR UN BOTÓN DE AUTH/LOGIN -->
-                    <div id="auth-action-card" class="section-card border-l-4 border-purple-500 p-4 bg-purple-50 flex items-center justify-center">
-                         <button id="open-auth-modal-dashboard" class="w-full py-2 bg-purple-500 text-white font-bold rounded-xl hover:bg-purple-600 transition text-sm flex items-center justify-center">
-                            <i class="fas fa-user-lock mr-2"></i> Iniciar Sesión / Registrar
+                    <!-- IMPORTAR CUENTA EXISTENTE (Mitad derecha - Restauramos el formulario para que sea funcional) -->
+                    <form id="sync-form-dashboard" class="section-card border-l-4 border-purple-500 p-4 bg-purple-50">
+                        <h3 class="text-sm font-bold text-purple-700 mb-2 flex items-center">
+                            <i class="fas fa-upload mr-2"></i> Importar Cuenta
+                        </h3>
+                        <input type="text" id="sync-user-id" placeholder="Pegar ID de Sincronización" required class="w-full p-2 border border-gray-300 rounded-lg text-sm mb-2">
+                        <button type="submit" class="w-full py-1 bg-purple-500 text-white font-bold rounded-xl hover:bg-purple-600 transition text-sm">
+                            Sincronizar Dispositivo
                         </button>
-                    </div>
+                    </form>
 
                 </div>
 
@@ -638,39 +641,13 @@
             <button id="close-edit-expense-modal-btn" class="w-full mt-4 py-2 bg-gray-300 text-gray-800 font-bold rounded-lg hover:bg-gray-400 transition duration-300">Cerrar</button>
         </div>
     </div>
-    
-    <!-- NUEVO MODAL DE AUTENTICACIÓN (LOGIN/REGISTER) -->
-    <div id="auth-modal" class="fixed inset-0 bg-gray-600 bg-opacity-70 hidden items-center justify-center p-4 z-50">
-        <div class="bg-white p-6 rounded-xl shadow-2xl max-w-sm w-full">
-            <h3 class="text-2xl font-bold mb-2 text-purple-700" id="auth-modal-title">Iniciar Sesión</h3>
-            <p id="auth-modal-text" class="text-sm text-gray-600 mb-4">Ingresa tus credenciales.</p>
-            <form id="auth-form" class="space-y-4">
-                
-                <label for="auth-email" class="block text-sm font-medium text-gray-700">Email</label>
-                <input type="email" id="auth-email" placeholder="tu.correo@ejemplo.com" required class="w-full p-3 border border-gray-300 rounded-lg focus:ring-purple-500">
-                
-                <label for="auth-password" class="block text-sm font-medium text-gray-700">Contraseña (Mín. 6 caracteres)</label>
-                <input type="password" id="auth-password" placeholder="••••••••" required class="w-full p-3 border border-gray-300 rounded-lg focus:ring-purple-500">
-                
-                <div class="grid grid-cols-2 gap-4 pt-2">
-                    <button type="submit" id="auth-login-btn" class="w-full py-3 bg-indigo-500 text-white font-bold rounded-xl hover:bg-indigo-600 transition">
-                        <i class="fas fa-sign-in-alt"></i> Iniciar Sesión
-                    </button>
-                    <button type="submit" id="auth-register-btn" class="w-full py-3 bg-purple-500 text-white font-bold rounded-xl hover:bg-purple-600 transition">
-                        <i class="fas fa-user-plus"></i> Registrar
-                    </button>
-                </div>
-            </form>
-            <button id="close-auth-modal-btn" class="w-full mt-4 py-2 bg-gray-300 text-gray-800 font-bold rounded-lg hover:bg-gray-400 transition duration-300">Cancelar</button>
-        </div>
-    </div>
 
 
     <!-- Scripts de Firebase -->
     <script type="module">
         // Importaciones de Firebase
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged, setPersistence, browserLocalPersistence, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged, setPersistence, browserLocalPersistence } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, doc, setDoc, onSnapshot, getDoc, updateDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
         import { setLogLevel } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
         
@@ -845,8 +822,8 @@
                     <span id="connection-dot" class="sync-indicator sync-red"></span> 💾 **Modo Local.** Datos guardados localmente. No se requiere conexión.
                 `;
                 document.getElementById('sync-id-card').classList.add('hidden');
-                document.getElementById('auth-action-card').classList.remove('hidden'); // Mostrar Login/Register Card
-                document.getElementById('auth-action-btn').textContent = 'Iniciar Sesión / Registrar';
+                document.getElementById('sync-form-dashboard').classList.add('hidden');
+                document.getElementById('switch-to-firebase-btn').classList.add('hidden');
                 setupUILogic(false); // <--- Solo lógica de UI, sin carga de datos de Firebase
                 return;
             }
@@ -862,7 +839,7 @@
                 db = getFirestore(app);
                 auth = getAuth(app);
                 
-                document.getElementById('auth-action-btn').textContent = 'Conectando...';
+                document.getElementById('switch-to-firebase-btn').textContent = 'Conectando...';
                 
                 // 1. CARGA LOCAL INICIAL: Cargar cualquier dato local ANTES de autenticar.
                 loadLocalState(); // Esta carga es instantánea y se utiliza como estado inicial
@@ -880,8 +857,8 @@
                 onAuthStateChanged(auth, (user) => {
                     if (user) {
                         userId = user.uid;
-                        const statusText = user.email ? 'Email' : (IS_CANVAS_ENV ? 'Canvas' : 'Anónima');
-                        
+                        const statusText = IS_CANVAS_ENV ? 'Canvas' : 'Externa';
+
                         // --- INICIO LÓGICA DE MIGRACIÓN/PERSISTENCIA DE DATOS ---
                         // 2. Comprobamos si hay datos en el localStorage (rescatados en loadLocalState)
                         // y si NO hay datos en la nube para este nuevo ID, subimos la copia local.
@@ -910,17 +887,18 @@
                         
                         
                         document.getElementById('auth-status').innerHTML = `
-                            <span id="connection-dot" class="sync-indicator sync-green"></span> ✅ Sincronización activa (${statusText}). ID: <strong>${userId.substring(0, 8)}...</strong>.
+                            <span id="connection-dot" class="sync-indicator sync-green"></span> ✅ Sincronización activa (${statusText}). ID: <strong>${userId}</strong>.
                         `;
-                        document.getElementById('auth-action-btn').textContent = 'Cerrar Sesión';
-                        document.getElementById('auth-action-btn').classList.remove('hidden');
-                        document.getElementById('auth-action-btn').onclick = signOutUser;
-                        document.getElementById('auth-action-card').classList.add('hidden');
+                        // Ocultar botón de switch y mostrar info de sincronización
+                        document.getElementById('switch-to-firebase-btn').classList.add('hidden'); 
                         
-                        // Mostrar info de sincronización
+                        // FIX CRÍTICO DEL ERROR: Verificar si el elemento existe antes de intentar manipular la clase.
                         const syncIdCard = document.getElementById('sync-id-card');
                         if (syncIdCard) syncIdCard.classList.remove('hidden');
 
+                        const syncFormDashboard = document.getElementById('sync-form-dashboard');
+                        if (syncFormDashboard) syncFormDashboard.classList.remove('hidden'); 
+                        
                         // Mostrar el ID del usuario en el Dashboard y Sidebar
                         document.getElementById('display-user-id-full').textContent = userId; // ID completo para copiar
                         document.getElementById('current-user-id').textContent = `ID de Usuario Actual: ${userId}`;
@@ -928,19 +906,10 @@
                         setupUILogic(true); // <--- Solo lógica de UI
                         setupRealTimeDataListener(); // <--- CRÍTICO: Inicia la carga de datos real-time y el renderizado
                     } else {
-                        // Usuario No autenticado (después de cerrar sesión o si falla el anónimo)
                         userId = 'anonymous';
-                        document.getElementById('auth-status').innerHTML = `<span id="connection-dot" class="sync-indicator sync-red"></span> ⚠️ Modo Anónimo. Inicia sesión para sincronizar.`;
-                        document.getElementById('auth-action-btn').textContent = 'Iniciar Sesión / Registrar';
-                        document.getElementById('auth-action-btn').onclick = openAuthModal;
-                        document.getElementById('auth-action-btn').classList.remove('hidden');
-
-                        // Ocultar ID y mostrar Login Card
-                        document.getElementById('sync-id-card').classList.add('hidden');
-                        document.getElementById('auth-action-card').classList.remove('hidden');
-
+                        document.getElementById('auth-status').innerHTML = `<span id="connection-dot" class="sync-indicator sync-red"></span> ⚠️ Sesión anónima. Tus datos se guardan de forma temporal.`;
                         setupUILogic(true);
-                        setupRealTimeDataListener(); // Sigue escuchando, pero usará el UID anónimo/temporal.
+                        setupRealTimeDataListener();
                     }
                 });
             } catch (error) {
@@ -950,82 +919,13 @@
                 document.getElementById('auth-status').innerHTML = `
                     <span id="connection-dot" class="sync-indicator sync-red"></span> ❌ Fallo de conexión. Forzando modo local.
                 `;
-                document.getElementById('auth-action-btn').textContent = 'Reintentar Conexión';
-                document.getElementById('auth-action-btn').classList.remove('hidden');
-                document.getElementById('auth-action-btn').onclick = () => initializeFirebase(true); // Intenta forzar reconexión
-
+                document.getElementById('switch-to-firebase-btn').textContent = 'Intentar Conectar';
+                document.getElementById('switch-to-firebase-btn').classList.remove('hidden');
                 loadLocalState(); // Forzamos carga local de nuevo si falla la conexión
                 setupUILogic(false);
             }
         }
-
-        // --- Funciones de autenticación de Firebase ---
-        async function signOutUser() {
-            try {
-                await auth.signOut();
-                // Forzamos el modo anónimo después de cerrar sesión
-                await signInAnonymously(auth);
-                showModal("Sesión cerrada. Ahora estás en modo anónimo temporal.", null, "Sesión Cerrada");
-            } catch (e) {
-                console.error("Error al cerrar sesión:", e);
-                showModal(`No se pudo cerrar la sesión: ${e.message}`);
-            }
-        }
         
-        async function handleAuthSubmit(e, isRegister) {
-            e.preventDefault();
-            const email = document.getElementById('auth-email').value;
-            const password = document.getElementById('auth-password').value;
-            
-            if (password.length < 6) {
-                showModal("La contraseña debe tener al menos 6 caracteres.");
-                return;
-            }
-            
-            try {
-                let userCredential;
-
-                if (isRegister) {
-                    userCredential = await createUserWithEmailAndPassword(auth, email, password);
-                    
-                    // CRÍTICO: Vincular la data anónima existente a la nueva cuenta de email.
-                    // Si el usuario ya estaba en una sesión anónima con data (que es el caso por defecto aquí),
-                    // Firebase automáticamente vincula la data del UID anónimo al nuevo UID de email.
-                    
-                    showModal("¡Registro exitoso! Tus datos anónimos se han vinculado a tu cuenta de Email.", null, "Registro Completo");
-                } else {
-                    userCredential = await signInWithEmailAndPassword(auth, email, password);
-                    showModal("¡Inicio de sesión exitoso! Cargando tus datos compartidos.", null, "Login Completo");
-                }
-                
-                closeAuthModal();
-            } catch (error) {
-                console.error("Error de autenticación:", error);
-                let message = "Fallo de autenticación. Verifica el email y contraseña.";
-                if (error.code === 'auth/email-already-in-use') {
-                    message = "El email ya está en uso. ¿Intentaste Iniciar Sesión?";
-                } else if (error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password') {
-                    message = "Email o contraseña inválidos.";
-                }
-                showModal(message, error.message, "Fallo de Autenticación");
-            }
-        }
-
-        function openAuthModal() {
-            document.getElementById('auth-modal-title').textContent = 'Iniciar Sesión / Registrar';
-            document.getElementById('auth-modal-text').textContent = 'Ingresa tu email y contraseña para acceder a tu cuenta sincronizada o registrar una nueva.';
-            document.getElementById('auth-modal').classList.remove('hidden');
-            document.getElementById('auth-modal').classList.add('flex');
-        }
-
-        function closeAuthModal() {
-            document.getElementById('auth-modal').classList.add('hidden');
-            document.getElementById('auth-modal').classList.remove('flex');
-            document.getElementById('auth-form').reset();
-        }
-
-        // --- Funciones de UI/Listeners (Se mantienen) ---
-
         /** NUEVO: Función que centraliza la escucha de datos de Firebase. */
         function setupRealTimeDataListener() {
              if (!db || userId === 'loading') return;
@@ -1064,7 +964,6 @@
             setupExpenseModalListeners(); 
             setupLiquidateListeners(); 
             setupRestoreJsonListeners(); 
-            setupAuthListeners(); // Llamada al nuevo listener de autenticación
             
             if (!isFirebaseMode) {
                 // Si NO es modo Firebase, renderiza inmediatamente después de cargar LocalState
@@ -1297,25 +1196,6 @@
             }
         }
 
-        // --- Autenticación Listeners (NUEVO) ---
-        function setupAuthListeners() {
-             // Listener para el botón de abrir el modal en el Dashboard
-            document.getElementById('open-auth-modal-dashboard').onclick = openAuthModal;
-
-             // Listener para el botón principal de la esquina
-            document.getElementById('auth-action-btn').onclick = openAuthModal;
-
-            // Listener para cerrar el modal
-            document.getElementById('close-auth-modal-btn').onclick = closeAuthModal;
-
-            // Listener para el formulario: decide si es login o register
-            document.getElementById('auth-form').onsubmit = (e) => {
-                e.preventDefault();
-                const isRegister = e.submitter.id === 'auth-register-btn';
-                handleAuthSubmit(e, isRegister);
-            };
-        }
-
 
         // --- Participantes Modal Listener ---
         function setupParticipantModalListeners() {
@@ -1396,10 +1276,9 @@
             // --- Lógica de Sincronización (Implementada en initializeFirebase y handleSyncSubmit) ---
             
             // Listener para el formulario de sincronización del Dashboard (principal)
-            // ESTE FORMULARIO FUE REEMPLAZADO POR UN BOTÓN DE AUTH
             const syncFormDashboard = document.getElementById('sync-form-dashboard');
             if (syncFormDashboard) {
-                // syncFormDashboard.addEventListener('submit', handleSyncSubmit); // Deshabilitado
+                syncFormDashboard.addEventListener('submit', handleSyncSubmit);
             }
 
             // Listener para el formulario de sincronización del Sidebar
