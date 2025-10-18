@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Componente: Auth Wall con Firebase</title>
+    <!-- Incluye Tailwind CSS para estilizado rápido y responsive -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Incluye Font Awesome para íconos -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <!-- Configuración para usar la fuente Inter -->
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap');
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f3f4f6;
+            overflow-x: hidden;
+        }
+
+        .no-scroll {
+            overflow-y: hidden !important;
+        }
+
+        #auth-wall-overlay {
+            position: fixed;
+            inset: 0;
+            z-index: 45;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            backdrop-filter: blur(10px);
+            background-color: rgba(243, 244, 246, 0.75);
+            transition: opacity 0.3s ease-in-out;
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        #auth-wall-overlay.active {
+            opacity: 1;
+            pointer-events: auto;
+        }
+        
+        .sync-indicator {
+            display: inline-block;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            margin-right: 6px;
+            transition: background-color: 0.3s;
+        }
+        .sync-green { background-color: #10B981; }
+        .sync-red { background-color: #EF4444; }
+    </style>
+</head>
+<body class="min-h-screen">
+
+    <!-- Auth Status - Barra superior para mostrar el estado -->
+    <div class="max-w-7xl mx-auto px-4 md:px-8 pt-4">
+        <div id="auth-status-container" class="flex justify-between items-center bg-white rounded-lg shadow-sm p-2 transition duration-300 relative z-50">
+            <p id="auth-status" class="text-xs text-gray-600">
+                <span id="connection-dot" class="sync-indicator sync-red"></span> ⚠️ **Conectando...**
+            </p>
+            <div class="flex space-x-2 items-center">
+                <button id="auth-action-btn" class="bg-indigo-500 text-white text-xs font-bold py-1 px-2 rounded-lg hover:bg-indigo-600 transition">
+                    Iniciar Sesión
+                </button>
+                <button id="logout-btn" class="bg-red-500 text-white text-xs font-bold py-1 px-2 rounded-lg hover:bg-red-600 transition hidden">
+                    Cerrar Sesión
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Contenido de fondo para demostrar el efecto de superposición -->
+    <div class="p-8">
+        <h1 class="text-3xl font-bold mb-4">Contenido Principal de la Página</h1>
+        <p class="mb-2">Este es el contenido que queda bloqueado por el muro de autenticación.</p>
+        <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nullam in dui mauris. Vivamus hendrerit arcu sed erat molestie vehicula. Sed auctor neque eu tellus rhoncus ut eleifend nibh porttitor. Ut in nulla enim. Phasellus molestie magna non est bibendum non venenatis nisl tempor. Suspendisse dictum feugiat nisl ut dapibus. Mauris iaculis porttitor.</p>
+    </div>
+
+    <!-- ========================================================================================= -->
+    <!-- MURO DE AUTENTICACIÓN (AUTH WALL OVERLAY) -->
+    <!-- ========================================================================================= -->
+    <div id="auth-wall-overlay">
+        <div class="p-8 bg-white/90 backdrop-blur-sm rounded-xl shadow-2xl text-center border-t-4 border-indigo-500 max-w-sm w-full mx-4">
+            <i class="fas fa-lock text-5xl text-indigo-500 mb-4 animate-bounce"></i>
+            <h2 class="text-2xl font-bold text-gray-800 mb-2">Acceso Restringido</h2>
+            <p class="text-gray-600 mb-4">Inicia sesión con tu cuenta para acceder al contenido.</p>
+            <button id="open-auth-modal-from-wall" class="w-full py-2 px-6 bg-indigo-600 text-white font-bold rounded-xl hover:bg-indigo-700 transition shadow-lg">
+                Iniciar Sesión / Registrar
+            </button>
+        </div>
+    </div>
+
+    <!-- ========================================================================================= -->
+    <!-- MODALES -->
+    <!-- ========================================================================================= -->
+
+    <!-- Modal de Mensajes Genérico -->
+    <div id="message-modal" class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden items-center justify-center p-4 z-[60]">
+        <div class="bg-white p-6 rounded-xl shadow-2xl max-w-sm w-full">
+            <h3 class="text-xl font-bold mb-4 text-gray-800" id="message-modal-title">Atención</h3>
+            <p id="message-modal-text" class="mb-4 text-gray-600"></p>
+            <button id="close-message-modal-btn" class="w-full py-2 bg-blue-500 text-white font-bold rounded-lg hover:bg-blue-600 transition duration-300">Cerrar</button>
+        </div>
+    </div>
+    
+    <!-- Modal de Autenticación (Login/Register) -->
+    <div id="auth-modal" class="fixed inset-0 bg-gray-600 bg-opacity-70 hidden items-center justify-center p-4 z-[60]">
+        <div class="bg-white p-6 rounded-xl shadow-2xl max-w-sm w-full">
+            <h3 class="text-2xl font-bold mb-2 text-purple-700">Iniciar Sesión</h3>
+            <p class="text-sm text-gray-600 mb-4">Ingresa tus datos para continuar.</p>
+            <form id="auth-form" class="space-y-4">
+                <label for="auth-email" class="block text-sm font-medium text-gray-700">Email</label>
+                <input type="email" id="auth-email" placeholder="tu.correo@ejemplo.com" required class="w-full p-3 border border-gray-300 rounded-lg focus:ring-purple-500">
+                
+                <label for="auth-password" class="block text-sm font-medium text-gray-700">Contraseña (Mín. 6 caracteres)</label>
+                <input type="password" id="auth-password" placeholder="••••••••" required class="w-full p-3 border border-gray-300 rounded-lg focus:ring-purple-500">
+                
+                <div class="grid grid-cols-2 gap-4 pt-2">
+                    <button type="submit" id="auth-login-btn" class="w-full py-3 bg-indigo-500 text-white font-bold rounded-xl hover:bg-indigo-600 transition">
+                        <i class="fas fa-sign-in-alt"></i> Iniciar Sesión
+                    </button>
+                    <button type="submit" id="auth-register-btn" class="w-full py-3 bg-purple-500 text-white font-bold rounded-xl hover:bg-purple-600 transition">
+                        <i class="fas fa-user-plus"></i> Registrar
+                    </button>
+                </div>
+            </form>
+            <button id="close-auth-modal-btn" class="w-full mt-4 py-2 bg-gray-300 text-gray-800 font-bold rounded-lg hover:bg-gray-400 transition duration-300">Cancelar</button>
+        </div>
+    </div>
+    
+    <!-- Modal de Confirmación de Cierre de Sesión -->
+    <div id="logout-confirm-modal" class="fixed inset-0 bg-gray-600 bg-opacity-70 hidden items-center justify-center p-4 z-[60]">
+        <div class="bg-white p-6 rounded-xl shadow-2xl max-w-sm w-full">
+            <h3 class="text-xl font-bold mb-4 text-red-700">Confirmar Cierre de Sesión</h3>
+            <p class="mb-6 text-gray-600">
+                ¿Estás seguro de que quieres cerrar la sesión?
+            </p>
+            <div class="grid grid-cols-2 gap-3">
+                <button id="confirm-logout-btn" class="py-2 bg-red-500 text-white font-bold rounded-lg hover:bg-red-600 transition">
+                    Sí, Cerrar Sesión
+                </button>
+                <button id="cancel-logout-btn" class="py-2 bg-gray-300 text-gray-800 font-bold rounded-lg hover:bg-gray-400 transition">
+                    Cancelar
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ========================================================================================= -->
+    <!-- SCRIPT DE FUNCIONALIDAD -->
+    <!-- ========================================================================================= -->
+    <script type="module">
+        // Importaciones de Firebase
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, onAuthStateChanged, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+
+        // --- Selectores de Elementos DOM ---
+        const body = document.body;
+        const authWallOverlay = document.getElementById('auth-wall-overlay');
+        const authStatus = document.getElementById('auth-status');
+        const mainAuthBtn = document.getElementById('auth-action-btn');
+        const mainLogoutBtn = document.getElementById('logout-btn');
+        const wallAuthBtn = document.getElementById('open-auth-modal-from-wall');
+        const authModal = document.getElementById('auth-modal');
+        const messageModal = document.getElementById('message-modal');
+        const logoutConfirmModal = document.getElementById('logout-confirm-modal');
+        
+        const REDIRECT_URL_LOGOUT = window.location.pathname.includes('/app.html') 
+            ? window.location.pathname.replace('/app.html', '/index.html') 
+            : 'index.html';
+
+        // --- Configuración de Firebase ---
+        const firebaseConfig = {
+            apiKey: "AIzaSyA63OZWFM30Tu17DGxAmbtVsNFWeQU3k4s",
+            authDomain: "qipu-d1dcd.firebaseapp.com",
+            projectId: "qipu-d1dcd",
+            storageBucket: "qipu-d1dcd.firebasestorage.app",
+            messagingSenderId: "398775085739",
+            appId: "1:398775085739:web:be8643b5d9fea9ef8da5ee"
+        };
+
+        let auth;
+
+        try {
+            const app = initializeApp(firebaseConfig);
+            auth = getAuth(app);
+        } catch (error) {
+            console.error("Error al inicializar Firebase:", error);
+            showMessage("Error de Configuración", "No se pudo conectar a Firebase. Revisa las credenciales en el script.");
+            authStatus.innerHTML = `<span class="sync-indicator sync-red"></span> ❌ **Error de Firebase.** Revisa la consola.`;
+        }
+        
+        // --- Funciones de UI ---
+        
+        function updateUI(user) {
+            if (user) { // Estado: Logueado
+                // Redirige a la aplicación principal si el usuario está autenticado
+                window.location.href = 'app.html';
+            } else { // Estado: Deslogueado
+                authWallOverlay.classList.add('active');
+                authStatus.innerHTML = `<span class="sync-indicator sync-red"></span> ⚠️ **Desconectado.** Inicia sesión para continuar.`;
+                mainAuthBtn.classList.remove('hidden');
+                mainLogoutBtn.classList.add('hidden');
+                body.classList.add('no-scroll');
+            }
+        }
+
+        // --- Funciones de Modales ---
+
+        function openModal(modal) {
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+            body.classList.add('no-scroll');
+        }
+
+        function closeModal(modal) {
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+            // Solo quita el no-scroll si hay un usuario logueado (muro inactivo)
+            if (auth.currentUser) {
+                body.classList.remove('no-scroll');
+            }
+        }
+        
+        function showMessage(title, text) {
+            document.getElementById('message-modal-title').textContent = title;
+            document.getElementById('message-modal-text').textContent = text;
+            openModal(messageModal);
+        }
+
+        // --- Lógica de Autenticación con Firebase ---
+
+        async function handleAuthSubmit(e) {
+            e.preventDefault();
+            const email = document.getElementById('auth-email').value;
+            const password = document.getElementById('auth-password').value;
+            const isRegister = e.submitter.id === 'auth-register-btn';
+
+            try {
+                if (isRegister) {
+                    await createUserWithEmailAndPassword(auth, email, password);
+                    // onAuthStateChanged se encargará de la redirección
+                } else {
+                    await signInWithEmailAndPassword(auth, email, password);
+                    // onAuthStateChanged se encargará de la redirección
+                }
+                closeModal(authModal);
+            } catch (error) {
+                console.error("Error de autenticación:", error.code, error.message);
+                // Traducir errores comunes de Firebase
+                let friendlyMessage = "Ocurrió un error. Por favor, intenta de nuevo.";
+                if (error.code === 'auth/invalid-credential') {
+                    friendlyMessage = "Correo o contraseña incorrectos. Por favor, verifica tus datos.";
+                } else if (error.code === 'auth/email-already-in-use') {
+                    friendlyMessage = "Este correo electrónico ya está registrado. Intenta iniciar sesión.";
+                } else if (error.code === 'auth/weak-password') {
+                    friendlyMessage = "La contraseña es muy débil. Debe tener al menos 6 caracteres.";
+                }
+                showMessage("Error de Autenticación", friendlyMessage);
+            }
+        }
+        
+        async function handleLogout() {
+            try {
+                await signOut(auth);
+                // onAuthStateChanged se encargará de mostrar el muro. La redirección es por si el logout se llama desde app.html
+                if(window.location.pathname.includes('app.html')) {
+                    window.location.href = REDIRECT_URL_LOGOUT;
+                }
+            } catch (error) {
+                console.error("Error al cerrar sesión:", error);
+                showMessage("Error", "No se pudo cerrar la sesión.");
+            }
+        }
+
+        // --- Configuración de Event Listeners ---
+        
+        mainAuthBtn.addEventListener('click', () => openModal(authModal));
+        wallAuthBtn.addEventListener('click', () => openModal(authModal));
+        document.getElementById('close-auth-modal-btn').addEventListener('click', () => closeModal(authModal));
+        mainLogoutBtn.addEventListener('click', () => openModal(logoutConfirmModal));
+        document.getElementById('confirm-logout-btn').addEventListener('click', handleLogout);
+        document.getElementById('cancel-logout-btn').addEventListener('click', () => closeModal(logoutConfirmModal));
+        document.getElementById('close-message-modal-btn').addEventListener('click', () => closeModal(messageModal));
+        document.getElementById('auth-form').addEventListener('submit', handleAuthSubmit);
+        
+        // --- Listener principal de Firebase ---
+        if (auth) {
+            onAuthStateChanged(auth, (user) => {
+                updateUI(user);
+            });
+        }
+    </script>
+
+</body>
+</html>
+
