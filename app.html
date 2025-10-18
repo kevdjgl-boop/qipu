@@ -1,0 +1,2207 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Monedero V.1.22 (Edición Completa)</title>
+    <!-- Incluye Tailwind CSS para estilizado rápido y responsive -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Incluye Font Awesome para íconos de balance -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <!-- Incluye Chart.js para la gráfica de gastos -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Configuración para usar la fuente Inter -->
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap');
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f3f4f6;
+            overflow-x: hidden;
+            padding-bottom: 4rem; 
+        }
+       
+        .no-scroll {
+            overflow-y: hidden !important;
+        }
+
+        .section-card {
+            background-color: white;
+            padding: 1.5rem;
+            border-radius: 1rem;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1);
+        }
+        /* Dashboard principal - Estilo destacado */
+        #global-main-card {
+            background-color: #111827; /* Gray-900 */
+            color: white;
+            border-bottom: 4px solid #4F46E5; /* Indigo */
+        }
+        /* Estilo para los métricos dentro del dark card */
+        .metric-value {
+             font-size: 2rem; /* 32px */
+             font-weight: 800; /* Extra bold */
+             line-height: 1.2;
+             margin-top: 0.5rem;
+             display: block;
+        }
+        .metric-label {
+             font-size: 0.75rem; /* 12px */
+             font-weight: 600;
+             text-transform: uppercase;
+        }
+        /* Colores específicos de las métricas */
+        .metric-remaining { color: #10B981; } /* Green */
+        .metric-spent { color: #EF4444; } /* Red */
+        .metric-fixed { color: #FBBF24; } /* Amber */
+        .metric-savings { color: #A78BFA; } /* Violet */
+
+
+        .balance-positive { color: #10B981; } /* Green */
+        .balance-negative { color: #EF4444; } /* Red */
+
+        /* Estilo para hacer la tarjeta de gasto clickeable */
+        .expense-header {
+            cursor: pointer;
+            user-select: none;
+        }
+        /* Estilo específico para la tarjeta de participante (más grueso) */
+        .participant-card {
+            border: 1px solid #d8b4fe; /* Purple-300 */
+            background-color: #f3e8ff; /* Purple-50 */
+            padding: 1.25rem;
+            border-radius: 0.75rem;
+            box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+        }
+
+        /* --- ESTILOS CRÍTICOS DEL SIDEBAR --- */
+        #participant-sidebar {
+            position: fixed;
+            top: 0;
+            right: 0;
+            width: 100%;
+            max-width: 400px; /* Ancho máximo en escritorio */
+            height: 100%;
+            background-color: #ffffff;
+            box-shadow: -5px 0 15px rgba(0, 0, 0, 0.2);
+            transform: translateX(100%);
+            transition: transform 0.3s ease-out;
+            z-index: 50; /* Mayor que modales normales */
+            overflow-y: auto;
+        }
+
+        #participant-sidebar.open {
+            transform: translateX(0);
+        }
+       
+        .backdrop {
+            position: fixed;
+            inset: 0;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 40;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.3s ease-out, visibility 0s linear 0.3s;
+        }
+       
+        .backdrop.open {
+            opacity: 1;
+            visibility: visible;
+            transition: opacity 0.3s ease-out, visibility 0s linear 0s;
+        }
+        /* --- FIN ESTILOS SIDEBAR --- */
+
+        /* CRITICAL: New CSS for conditional privacy (blur) */
+        .private-blur {
+            filter: blur(5px);
+            transition: filter 0.3s;
+            color: transparent !important; /* Hide text color */
+            text-shadow: 0 0 15px rgba(0,0,0,0.5); /* Make it look blurry black */
+            background-color: #e5e7eb;
+            pointer-events: none; 
+        }
+       
+        /* Asegurar que el Balance ocupe toda la altura */
+        .balance-col {
+            min-height: 100%;
+        }
+
+        /* Estilo para el botón de participantes */
+        #open-participants-sidebar-btn {
+            background-color: #4F46E5; /* Indigo-600 */
+            color: white;
+            padding: 0.5rem 1rem;
+            border-radius: 0.5rem;
+            font-weight: bold;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+            transition: background-color 0.2s;
+        }
+        #open-participants-sidebar-btn:hover {
+            background-color: #4338CA; /* Indigo-700 */
+        }
+
+        /* Estilo para el indicador de conexión */
+        .sync-indicator {
+            display: inline-block;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            margin-right: 6px;
+            transition: background-color 0.3s;
+        }
+        .sync-green { background-color: #10B981; } /* Green */
+        .sync-red { background-color: #EF4444; } /* Red */
+
+        /* --- ESTILOS PARA CUSTOM SELECT --- */
+        .custom-select-options {
+            max-height: 160px; /* Limitar altura */
+            overflow-y: auto;
+            -ms-overflow-style: none;  /* IE and Edge */
+            scrollbar-width: none;  /* Firefox */
+        }
+        .custom-select-options::-webkit-scrollbar {
+            display: none; /* Chrome, Safari, Opera */
+        }
+        .custom-select-option {
+            padding: 0.75rem 1rem;
+            cursor: pointer;
+            transition: background-color 0.2s;
+            font-size: 0.9rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .custom-select-option:hover {
+            background-color: #f3f4f6; /* gray-100 */
+        }
+        .custom-select-option.selected {
+            background-color: #eef2ff; /* indigo-50 */
+            font-weight: 600;
+            color: #4f46e5; /* indigo-600 */
+        }
+        /* --- FIN ESTILOS CUSTOM SELECT --- */
+
+        /* --- NUEVO: ESTILOS PARA BARRA DE PROGRESO --- */
+        .progress-bar-container {
+            background-color: #e5e7eb; /* gray-200 */
+            border-radius: 9999px;
+            height: 8px;
+            width: 100%;
+            overflow: hidden;
+        }
+        .progress-bar-fill {
+            height: 100%;
+            border-radius: 9999px;
+            transition: width 0.5s ease-out, background-color 0.5s ease-out;
+        }
+
+    </style>
+    <!-- Incluye GSAP para animaciones -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+</head>
+<body class="min-h-screen">
+
+    <!-- Backdrop para el Sidebar -->
+    <div id="sidebar-backdrop" class="backdrop"></div>
+
+    <!-- Auth Status - SIMPLIFICADO -->
+    <div class="max-w-7xl mx-auto px-4 md:px-8 pt-4">
+        <div id="auth-status-container" class="flex justify-between items-center bg-white rounded-lg shadow-sm p-2 transition duration-300 relative z-50">
+            <!-- Muestra el estado actual de la conexión SIMPLIFICADO -->
+            <p id="auth-status" class="text-xs text-gray-600">
+                <span id="connection-dot" class="sync-indicator sync-red"></span> **Monedero Principal**. Sesión activa.
+            </p>
+             <!-- Botón de Cierre de Sesión (Se mantiene, pero requiere Auth Gate para manejar la sesión) -->
+            <div class="flex space-x-2 items-center">
+                 <button id="logout-btn" class="bg-red-500 text-white text-xs font-bold py-1 px-2 rounded-lg hover:bg-red-600 transition">
+                     Cerrar Sesión
+                 </button>
+            </div>
+        </div>
+    </div>
+   
+    <!-- PANTALLA DE CARGA INICIAL (Solo para datos) -->
+    <div id="initial-loading-screen" class="max-w-7xl mx-auto px-4 md:px-8 pt-20 flex justify-center items-center h-64">
+        <div class="text-center">
+            <i class="fas fa-spinner fa-spin text-4xl text-indigo-500"></i>
+            <p class="mt-3 text-gray-600 font-semibold">Cargando datos financieros...</p>
+        </div>
+    </div>
+
+
+    <!-- Contenido principal de la aplicación (Secciones 1, 2, 3) -->
+    <div id="main-content-wrapper" class="hidden">
+        <!-- ========================================================================================= -->
+        <!-- SECCIÓN 1: DASHBOARD PRINCIPAL Y PARTICIPANTES (100% ANCHO) -->
+        <!-- ========================================================================================= -->
+        <section class="max-w-7xl mx-auto px-4 md:px-8 pt-6 space-y-6">
+            <div class="flex justify-between items-center border-b pb-2 mb-4">
+                <h1 class="text-3xl font-extrabold text-gray-800 flex items-center">
+                    Dashboard Principal 
+                </h1>
+                 <!-- Botón de Abrir Sidebar (Participantes y Sincronización) -->
+                <button id="open-participants-sidebar-btn" class="flex items-center space-x-2">
+                    <i class="fas fa-users-cog"></i> <span>Configuración</span>
+                </button>
+            </div>
+
+            <!-- Dashboard Layout: 3 Columnas principales (2/3 + 1/3) -->
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 h-full">
+
+                <!-- COLUMNA 1 & 2 (8/12 - Resúmenes y Tarjetas) -->
+                <div class="lg:col-span-2 space-y-6 h-full">
+                   
+                    <!-- 1. FILA DE SINCRONIZACIÓN -->
+                    <div id="sync-row-dashboard" class="grid grid-cols-1 gap-4">
+                        <div id="auth-action-card" class="section-card border-l-4 border-purple-500 p-4 bg-purple-50 flex items-center justify-center col-span-full hidden">
+                             <!-- El botón de sincronización de cuenta ya no está aquí -->
+                        </div>
+                    </div>
+
+                    <!-- 2. CARD GLOBAL CONSOLIDADO (2 Métricas principales en un solo contenedor oscuro) -->
+                    <div id="global-main-card" class="section-card border-b-4 border-indigo-500 p-4">
+                        <div class="grid grid-cols-2 gap-4 text-center">
+                           
+                            <!-- Métrica 1: Saldo Global Restante -->
+                            <div>
+                                <p class="metric-label text-indigo-300">Saldo Global</p>
+                                <span id="display-remaining-budget" class="metric-value metric-remaining">S/ 0.00</span>
+                            </div>
+
+                            <!-- Métrica 2: Gasto Total del Ciclo -->
+                            <div>
+                                <p class="metric-label text-red-300">Gasto Total</p>
+                                <span id="display-total-spent" class="metric-value metric-spent">S/ 0.00</span>
+                            </div>
+
+                        </div>
+                    </div>
+                   
+                    <!-- 3. CARDS INDIVIDUALES Y AHORRO MUTUO -->
+                    <div class="section-card border-t-4 border-teal-500 space-y-4">
+                        <h3 class="text-lg font-bold text-gray-700">Saldos Individuales y Metas</h3>
+                       
+                        <!-- Resumen de Participantes -->
+                        <div id="participant-summary-cards" class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <!-- Tarjetas de resumen individual se renderizan aquí -->
+                        </div>
+                       
+                        <!-- FILA SEPARADA PARA METAS GLOBALES (Gastos Fijos y Ahorro Mutuo) -->
+                        <div class="grid grid-cols-2 gap-4 pt-2 border-t border-gray-200">
+                           
+                            <!-- Total Gastos Fijos (Movido de nuevo aquí) -->
+                            <div class="section-card border-l-4 border-yellow-500 p-4 text-center bg-yellow-50">
+                                <p class="text-sm font-semibold uppercase text-yellow-700">Gastos Fijos Total</p>
+                                <span id="display-fixed-total" class="text-2xl font-extrabold text-yellow-600 block mt-2">S/ 0.00</span>
+                            </div>
+
+                            <!-- Meta Ahorro Mutuo (Movido de nuevo aquí) -->
+                            <div class="section-card border-l-4 border-purple-500 p-4 text-center bg-purple-50">
+                                <p class="text-sm font-semibold uppercase text-purple-700">Meta Ahorro Mutuo</p>
+                                <span id="display-shared-savings-goal" class="text-2xl font-extrabold text-purple-600 block mt-2">S/ 0.00</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- COLUMNA 3 (4/12 - Balance Compartido y Liquidación) -->
+                <div class="lg:col-span-1 balance-col">
+                    <!-- 4. CARD BALANCE DE CUENTAS COMPARTIDAS (Contiene ahora el botón) -->
+                    <div class="section-card border-l-4 border-indigo-500 h-full flex flex-col justify-between">
+                        <div>
+                            <h2 class="text-lg font-bold text-indigo-700 mb-4 flex items-center">
+                                <i class="fas fa-balance-scale mr-2"></i> Balance de Cuentas Compartidas
+                            </h2 >
+                            <div id="shared-balance-summary" class="space-y-3 text-sm">
+                                <p class="text-gray-500 italic">Calculando balance...</p>
+                            </div>
+                        </div>
+                       
+                        <!-- BOTÓN DE LIQUIDACIÓN DE CUENTAS (MOVIDO ADENTRO y simplificado) -->
+                        <div class="mt-4 pt-4 border-t border-gray-200">
+                            <button id="liquidate-month-btn" class="w-full py-3 bg-red-600 text-white font-bold rounded-xl shadow-lg hover:bg-red-700 transition duration-300">
+                                <i class="fas fa-handshake mr-2"></i> LIQUIDAR
+                            </button>
+                            <p class="text-xs text-gray-600 mt-2 text-center">Ajuste de saldos para poner las cuentas compartidas en cero.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- NOTE: La configuración de participantes se ha movido al Sidebar -->
+
+        </section>
+
+        <!-- ========================================================================================= -->
+        <!-- SECCIÓN 2: REGISTRO DE GASTO Y BOTONES DE CONFIGURACIÓN (100% ANCHO) -->
+        <!-- ========================================================================================= -->
+        <div class="max-w-7xl mx-auto px-4 md:px-8 pt-6">
+            <main class="space-y-6">
+                <section class="section-card border-t-4 border-red-500">
+                    <div class="flex justify-between items-center mb-4">
+                        <h2 class="text-xl font-bold text-red-700">Registrar Nuevo Gasto</h2>
+                       
+                        <!-- Botones de Configuración Rápida (Movidos aquí) -->
+                        <div class="flex space-x-2">
+                            <button id="open-categories-modal-btn" class="py-1 px-3 bg-green-500 text-white font-bold rounded-xl hover:bg-green-600 transition duration-300 text-xs">
+                                Categorías
+                            </button>
+                            <button id="open-payment-methods-modal-btn" class="py-1 px-3 bg-yellow-500 text-white font-bold rounded-xl hover:bg-yellow-600 transition duration-300 text-xs">
+                                Métodos Pago
+                            </button>
+                        </div>
+                    </div>
+                    <form id="expense-form" class="space-y-4">
+                       
+                        <!-- Fila 1: Descripción, Monto -->
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <div class="md:col-span-2">
+                                <label for="expense-description" class="block text-sm font-medium text-gray-700">Descripción</label>
+                                <input type="text" id="expense-description" required class="w-full mt-1 p-3 border border-gray-300 rounded-lg focus:ring-red-500 focus:border-red-500">
+                            </div>
+                            <div>
+                                <label for="expense-amount" class="block text-sm font-medium text-gray-700">Monto (S/)</label>
+                                <input type="number" id="expense-amount" min="0.01" step="0.01" required class="w-full mt-1 p-3 border border-gray-300 rounded-lg focus:ring-red-500 focus:border-red-500">
+                            </div>
+                        </div>
+                       
+                        <!-- Fila 2: Pagador, Tipo de Gasto, Método de Pago -->
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <!-- Pagado Por (Custom Select) -->
+                            <div>
+                                <label for="expense-paid-by-button" class="block text-sm font-medium text-gray-700">Pagado Por</label>
+                                <div class="relative custom-select-container mt-1">
+                                    <button type="button" id="expense-paid-by-button" class="custom-select-button w-full text-left p-3 border border-gray-300 rounded-lg bg-white flex justify-between items-center transition duration-150 ease-in-out focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                                        <span class="custom-select-display text-gray-500">Selecciona quién pagó</span>
+                                        <i class="fas fa-chevron-down text-gray-400 transition-transform duration-200"></i>
+                                    </button>
+                                    <div class="custom-select-options absolute hidden mt-1 w-full bg-white rounded-lg shadow-lg z-20 border border-gray-200">
+                                        <!-- Opciones populadas por JS -->
+                                    </div>
+                                    <input type="hidden" id="expense-paid-by" required>
+                                </div>
+                            </div>
+                            <!-- Tipo de Gasto (Custom Select) -->
+                            <div>
+                                <label for="expense-type-button" class="block text-sm font-medium text-gray-700">Tipo de Gasto</label>
+                                <div class="relative custom-select-container mt-1">
+                                    <button type="button" id="expense-type-button" class="custom-select-button w-full text-left p-3 border border-gray-300 rounded-lg bg-white flex justify-between items-center transition duration-150 ease-in-out focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                                        <span class="custom-select-display">Personal</span>
+                                        <i class="fas fa-chevron-down text-gray-400 transition-transform duration-200"></i>
+                                    </button>
+                                    <div class="custom-select-options absolute hidden mt-1 w-full bg-white rounded-lg shadow-lg z-20 border border-gray-200">
+                                        <div class="custom-select-option selected" data-value="personal">Personal</div>
+                                        <div class="custom-select-option" data-value="shared">Compartido (Dividido por igual)</div>
+                                        <div class="custom-select-option" data-value="fixed">Gasto Fijo (Mensual)</div>
+                                    </div>
+                                    <input type="hidden" id="expense-type" value="personal" required>
+                                </div>
+                            </div>
+                            <!-- Método de Pago (Custom Select) -->
+                            <div>
+                                <label for="expense-payment-method-id-button" class="block text-sm font-medium text-gray-700">Método de Pago</label>
+                                <div class="relative custom-select-container mt-1">
+                                    <button type="button" id="expense-payment-method-id-button" class="custom-select-button w-full text-left p-3 border border-gray-300 rounded-lg bg-white flex justify-between items-center transition duration-150 ease-in-out focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                                        <span class="custom-select-display text-gray-500">Selecciona método</span>
+                                        <i class="fas fa-chevron-down text-gray-400 transition-transform duration-200"></i>
+                                    </button>
+                                    <div class="custom-select-options absolute hidden mt-1 w-full bg-white rounded-lg shadow-lg z-20 border border-gray-200">
+                                        <!-- Opciones populadas por JS -->
+                                    </div>
+                                    <input type="hidden" id="expense-payment-method-id" required>
+                                </div>
+                            </div>
+                        </div>
+
+
+                        <!-- Fila 3: Categoría, Subcategoría y Gasto Fijo (Recurrencia) -->
+                        <div class="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
+                            <!-- Categoría (Custom Select) -->
+                            <div class="md:col-span-1">
+                                <label for="expense-category-button" class="block text-sm font-medium text-gray-700">Categoría</label>
+                                <div class="relative custom-select-container mt-1">
+                                    <button type="button" id="expense-category-button" class="custom-select-button w-full text-left p-3 border border-gray-300 rounded-lg bg-white flex justify-between items-center transition duration-150 ease-in-out focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                                        <span class="custom-select-display text-gray-500">Selecciona categoría</span>
+                                        <i class="fas fa-chevron-down text-gray-400 transition-transform duration-200"></i>
+                                    </button>
+                                    <div class="custom-select-options absolute hidden mt-1 w-full bg-white rounded-lg shadow-lg z-20 border border-gray-200">
+                                        <!-- Opciones populadas por JS -->
+                                    </div>
+                                    <input type="hidden" id="expense-category" required>
+                                </div>
+                            </div>
+                            <!-- Subcategoría (Custom Select) -->
+                            <div class="md:col-span-1">
+                                <label for="expense-subcategory-button" class="block text-sm font-medium text-gray-700">Subcategoría</label>
+                                <div class="relative custom-select-container mt-1">
+                                    <button type="button" id="expense-subcategory-button" disabled class="custom-select-button w-full text-left p-3 border border-gray-300 rounded-lg bg-gray-100 flex justify-between items-center transition duration-150 ease-in-out focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                                        <span class="custom-select-display text-gray-500">Selecciona subcategoría</span>
+                                        <i class="fas fa-chevron-down text-gray-400 transition-transform duration-200"></i>
+                                    </button>
+                                    <div class="custom-select-options absolute hidden mt-1 w-full bg-white rounded-lg shadow-lg z-20 border border-gray-200">
+                                        <!-- Opciones populadas por JS -->
+                                    </div>
+                                    <input type="hidden" id="expense-subcategory">
+                                </div>
+                            </div>
+                            <!-- Campo de Recurrencia para Gastos Fijos (Oculto por defecto) -->
+                            <div id="fixed-recurrence-container" class="hidden">
+                                <label for="fixed-recurrence-months" class="block text-sm font-medium text-red-700">Meses de Gasto Fijo</label>
+                                <input type="number" id="fixed-recurrence-months" min="1" max="60" value="12" required class="w-full mt-1 p-3 border border-red-300 rounded-lg focus:ring-red-500 focus:border-red-500">
+                            </div>
+                            <!-- Botón de Añadir Gasto -->
+                            <div class="md:col-span-2">
+                                <button type="submit" class="w-full py-3 bg-red-500 text-white font-bold rounded-xl shadow-lg hover:bg-red-600 transition duration-300">
+                                    Añadir Gasto
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Información de Ciclo de Tarjeta de Crédito (Condicional) -->
+                        <div id="credit-card-details" class="space-y-2 p-3 border border-yellow-300 rounded-lg bg-yellow-50 hidden">
+                            <p class="font-bold text-xs text-yellow-800">Detalles de Facturación:</p>
+                            <div class="flex justify-between text-xs">
+                                <span class="text-gray-700">Inicio de Ciclo: <strong id="cc-cycle-start-display" class="font-semibold"></strong></span>
+                                <span class="text-gray-700">Límite de Pago: <strong id="cc-payment-date-display" class="font-semibold"></strong></span>
+                            </div>
+                        </div>
+                    </form>
+                </section>
+            </main>
+        </div>
+
+        <!-- ========================================================================================= -->
+        <!-- SECCIÓN 3: INFORMES (GASTOS FIJOS, CALENDARIO, HISTORIAL) -->
+        <!-- ========================================================================================= -->
+        <div class="max-w-7xl mx-auto px-4 md:px-8 mt-6">
+            <section class="section-card border-t-4 border-gray-500 space-y-6">
+               
+                <!-- Encabezado del Informe y Filtro de Mes -->
+                <div class="flex justify-between items-center pb-2 mb-4">
+                    <h2 class="text-xl font-bold text-gray-800">Informe de Gastos por Categoría</h2>
+                   
+                    <!-- Ciclo de Visualización (Movido aquí para alinearse a la derecha) -->
+                    <div id="month-selector" class="flex items-center justify-between p-2 bg-gray-50 rounded-lg border border-gray-200 w-full max-w-xs md:max-w-sm">
+                        <button id="prev-month-btn" class="p-2 bg-white rounded-lg hover:bg-gray-200 transition font-bold text-lg shadow-sm">
+                            &lt;
+                        </button>
+                        <div class="text-center">
+                            <h3 id="current-month-name" class="text-xl font-extrabold text-gray-800 leading-none">Cargando</h3>
+                            <p id="current-year" class="text-sm text-gray-500 -mt-1">...</p>
+                        </div>
+                        <button id="next-month-btn" class="p-2 bg-white rounded-lg hover:bg-gray-200 transition font-bold text-lg shadow-sm">
+                            &gt;
+                        </button>
+                    </div>
+                </div>
+               
+                <!-- CAMBIO: Rejilla de Informes (2/3 Gráfico e Historial + 1/3 Gastos Fijos) -->
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+                    <!-- Columna 1 y 2 (2/3): Gráfico y Historial de Transacciones -->
+                    <div class="lg:col-span-2">
+                        <div class="grid grid-cols-1 xl:grid-cols-2 gap-6 items-start">
+                            <!-- Columna del Gráfico -->
+                            <div class="section-card h-full">
+                                <h3 class="text-xl font-bold text-gray-700 mb-4">Distribución de Gastos</h3>
+                                <div class="relative h-64 md:h-80 lg:h-96">
+                                    <canvas id="category-chart"></canvas>
+                                    <p id="chart-no-data" class="absolute inset-0 flex items-center justify-center text-gray-500 italic hidden">No hay datos para mostrar en el gráfico.</p>
+                                </div>
+                            </div>
+
+                            <!-- Columna del Historial de Transacciones -->
+                            <div>
+                                <h3 class="text-xl font-bold text-gray-700">Historial de Transacciones</h3>
+                                <span class="text-xs text-purple-600 font-semibold block my-2" id="expense-diagnostic"></span>
+                                <div id="expense-report-by-category" class="space-y-3 max-h-[28rem] overflow-y-auto pr-2">
+                                    <p class="text-gray-500 text-center py-4 italic">No hay gastos en este ciclo.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Columna 3 (1/3): Próximos Gastos Fijos -->
+                    <aside class="lg:col-span-1">
+                        <div class="section-card border-l-4 border-red-500 h-full">
+                            <h3 class="text-lg font-bold text-red-700 mb-4 flex items-center">
+                                <i class="fas fa-calendar-alt mr-2"></i> Próximos Gastos Fijos
+                            </h3>
+                            <div id="fixed-expenses-summary" class="space-y-2 text-sm">
+                                <p class="text-gray-500 italic">No hay gastos fijos registrados.</p>
+                            </div>
+                        </div>
+                    </aside>
+
+                </div>
+            </section>
+        </div>
+    </div>
+   
+    <!-- MOBILE MENU (oculto en escritorio) -->
+    <div id="mobile-menu" class="lg:hidden bg-white border-t border-gray-200 p-3 shadow-2xl flex justify-around fixed bottom-0 left-0 right-0 z-40">
+        <button onclick="document.querySelector('main').scrollIntoView({ behavior: 'smooth' })" class="text-red-500 text-xs text-center"><i class="fas fa-plus-circle text-2xl"></i><br>Gasto</button>
+        <button onclick="document.querySelector('#participants-config-section').scrollIntoView({ behavior: 'smooth' })" class="text-purple-500 text-xs text-center"><i class="fas fa-users text-2xl"></i><br>Participantes</button>
+        <button onclick="document.querySelector('section:last-of-type').scrollIntoView({ behavior: 'smooth' })" class="text-gray-500 text-xs text-center"><i class="fas fa-list-alt text-2xl"></i><br>Informe</button>
+    </div>
+   
+    <!-- ========================================================================================= -->
+    <!-- SIDEBAR DE CONFIGURACIÓN DE PARTICIPANTES (NUEVO) -->
+    <!-- ========================================================================================= -->
+    <div id="participant-sidebar">
+        <div class="p-6">
+            <div class="flex justify-between items-center border-b pb-4 mb-4">
+                <h2 class="text-2xl font-bold text-purple-700">Configuración</h2>
+                <button id="close-sidebar-btn" class="text-gray-500 hover:text-gray-900 transition">
+                    <i class="fas fa-times text-2xl"></i>
+                </button>
+            </div>
+           
+            <h3 class="text-xl font-bold text-purple-700 mb-4">Participantes Activos</h3>
+
+            <!-- Botón de Añadir (Dentro del Sidebar) -->
+            <button id="open-add-participant-modal-sidebar" class="w-full py-2 mb-4 bg-purple-500 text-white font-bold rounded-lg hover:bg-purple-600 transition">
+                + Añadir Nuevo
+            </button>
+           
+            <div id="participants-list" class="space-y-4">
+                <!-- Lista dinámica de participantes (Compacta) se renderiza aquí -->
+            </div>
+
+            <!-- SECCIÓN DE SINCRONIZACIÓN (NUEVO) -->
+            <div id="sync-section-container">
+                <h3 class="text-xl font-bold text-indigo-700 mt-6 mb-4 border-t pt-4">Sincronización de Dispositivos</h3>
+                <p id="current-user-id" class="text-xs text-gray-600 break-words mb-4">
+                    ID de Usuario: Cargando...
+                </p>
+                 <!-- Restauramos el formulario de importación en el Sidebar -->
+                <form id="sync-form-sidebar" class="space-y-3 p-4 border border-indigo-200 rounded-lg bg-indigo-50">
+                    <h4 class="font-bold text-indigo-700">Importar Cuenta Existente</h4>
+                    <p class="text-xs text-gray-700">Para sincronizar el mismo perfil en otro dispositivo, pega el ID de Usuario de la sesión principal aquí.</p>
+                    <!-- Input de Sync ID (Se mantiene para la sincronización manual) -->
+                    <input type="text" id="sync-user-id-sidebar" placeholder="Pegar ID de Usuario" required class="w-full p-2 border border-gray-300 rounded-lg">
+                    <button type="submit" class="w-full py-2 bg-indigo-500 text-white font-bold rounded-xl hover:bg-indigo-600 transition">
+                        Sincronizar Dispositivo
+                    </button>
+                </form>
+               
+                 <!-- NUEVO: Botón de Restauración de Emergencia -->
+                <div class="mt-6 pt-4 border-t border-gray-300">
+                    <button id="restore-json-btn" class="w-full py-2 text-xs bg-gray-600 text-white font-bold rounded-lg hover:bg-gray-700 transition">
+                        🛠️ Restaurar Datos (JSON)
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- MODALES (Todos los modales se mantienen sin cambios de estructura HTML) -->
+    <!-- Modal de Mensajes -->
+    <div id="message-modal" class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden items-center justify-center p-4 z-50">
+        <div class="bg-white p-6 rounded-xl shadow-2xl max-w-sm w-full">
+            <h3 class="text-xl font-bold mb-4 text-gray-800" id="modal-title">Atención</h3>
+            <p id="modal-text" class="mb-4 text-gray-600"></p>
+           
+            <!-- NUEVA ÁREA DE DETALLE DE ERROR -->
+            <div id="modal-error-detail" class="bg-red-50 p-3 rounded-lg border border-red-200 mt-4 hidden">
+                <p class="text-xs font-semibold text-red-700 mb-1">Detalle Técnico:</p>
+                <code id="modal-error-code" class="text-xs text-red-600 break-words block"></code>
+            </div>
+            <!-- FIN NUEVA ÁREA DE DETALLE DE ERROR -->
+           
+            <button id="close-modal-btn" class="w-full py-2 bg-blue-500 text-white font-bold rounded-lg hover:bg-blue-600 transition duration-300">Cerrar</button>
+        </div>
+    </div>
+   
+    <!-- Modal de Categorías -->
+    <div id="categories-modal" class="fixed inset-0 bg-gray-600 bg-opacity-70 hidden items-center justify-center p-4 z-50">
+        <div class="bg-white p-6 rounded-xl shadow-2xl max-w-lg w-full">
+            <h3 class="text-2xl font-bold mb-4 text-green-700">Configuración de Categorías y Presupuestos</h3>
+            <form id="category-form" class="space-y-3 mb-6 p-4 border border-green-200 rounded-lg bg-green-50">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    <input type="text" id="category-name" placeholder="Nueva Categoría (Ej: Hogar)" required class="w-full p-2 border border-gray-300 rounded-lg">
+                    <input type="number" id="category-budget" placeholder="Presupuesto Mensual (S/)" min="0" class="w-full p-2 border border-gray-300 rounded-lg">
+                </div>
+                <input type="text" id="subcategory-list" placeholder="Subcategorías (Separadas por coma: Servicios, Comida, ...)" class="w-full p-2 border border-gray-300 rounded-lg">
+                <button type="submit" class="w-full py-2 bg-green-500 text-white font-bold rounded-xl hover:bg-green-600 transition duration-300">
+                    Guardar Categoría
+                </button>
+            </form>
+           
+            <h4 class="font-bold text-gray-700 mb-3">Categorías Existentes:</h4>
+            <div id="categories-display" class="space-y-2 max-h-64 overflow-y-auto">
+                <p class="text-sm text-gray-500 italic" id="no-categories">No hay categorías definidas.</p>
+                <!-- Categorías se cargan aquí -->
+            </div>
+           
+            <button id="close-categories-modal-btn" class="w-full mt-6 py-2 bg-gray-300 text-gray-800 font-bold rounded-lg hover:bg-gray-400 transition duration-300">Cerrar</button>
+        </div>
+    </div>
+   
+    <!-- Modal de Métodos de Pago -->
+    <div id="payment-methods-modal" class="fixed inset-0 bg-gray-600 bg-opacity-70 hidden items-center justify-center p-4 z-50">
+        <div class="bg-white p-6 rounded-xl shadow-2xl max-w-lg w-full">
+            <h3 class="text-2xl font-bold mb-4 text-yellow-700">Configuración de Métodos de Pago</h3>
+           
+            <h4 class="font-bold text-gray-700 mb-3">Métodos Existentes:</h4>
+            <div id="payment-methods-display" class="space-y-2 mb-6 max-h-48 overflow-y-auto">
+                <p class="text-sm text-gray-500 italic">No hay métodos definidos.</p>
+                <!-- Métodos se cargan aquí con botón de edición -->
+            </div>
+           
+            <h4 class="font-bold text-gray-700 mb-3" id="payment-form-title">Añadir Nuevo Método:</h4>
+            <form id="payment-method-form" class="space-y-3 p-4 border border-yellow-200 rounded-lg bg-yellow-50">
+                <input type="hidden" id="method-id-to-edit">
+                <input type="text" id="method-name" placeholder="Nombre del Método (Ej: Visa Banco X)" required class="w-full p-2 border border-gray-300 rounded-lg">
+                <select id="method-type" class="w-full p-2 border border-gray-300 rounded-lg bg-white" required>
+                    <option value="cash">Efectivo/Débito</option>
+                    <option value="credit">Tarjeta de Crédito</option>
+                </select>
+               
+                <div id="cc-config-fields" class="space-y-3 hidden">
+                    <h4 class="font-bold text-yellow-800">Configuración de Ciclo (Crédito)</h4>
+                    <label for="cc-config-cycle-day" class="block text-sm font-medium text-gray-700">Día de Inicio de Ciclo/Facturación (1-31)</label>
+                    <input type="number" id="cc-config-cycle-day" min="1" max="31" placeholder="Ej: 1 (Día 1 del mes)" class="w-full p-2 border border-gray-300 rounded-lg">
+                    <label for="cc-config-payment-day" class="block text-sm font-medium text-gray-700">Día Límite de Pago (1-31)</label>
+                    <input type="number" id="cc-config-payment-day" min="1" max="31" placeholder="Ej: 25 (Día 25 del mes)" class="w-full p-2 border border-gray-300 rounded-lg">
+                </div>
+               
+                <button type="submit" id="save-method-btn" class="w-full py-2 bg-yellow-500 text-white font-bold rounded-xl shadow-lg hover:bg-yellow-600 transition duration-300">
+                    Añadir Método
+                </button>
+                <button type="button" id="cancel-edit-method-btn" class="w-full py-2 bg-gray-300 text-gray-800 font-bold rounded-xl hover:bg-gray-400 transition duration-300 hidden">
+                    Cancelar Edición
+                </button>
+            </form>
+           
+            <button id="close-payment-methods-modal-btn" class="w-full mt-6 py-2 bg-gray-300 text-gray-800 font-bold rounded-lg hover:bg-gray-400 transition duration-300">Cerrar</button>
+        </div>
+    </div>
+   
+    <!-- Modal de Añadir/Editar Participante -->
+    <div id="add-participant-modal" class="fixed inset-0 bg-gray-600 bg-opacity-70 hidden items-center justify-center p-4 z-50">
+        <div class="bg-white p-6 rounded-xl shadow-2xl max-w-sm w-full">
+            <h3 class="text-2xl font-bold mb-4 text-purple-700" id="participant-modal-title">Añadir Participante</h3>
+            <form id="participant-form" class="space-y-4">
+                <input type="hidden" id="participant-id-to-edit">
+               
+                <label for="p-name" class="block text-sm font-medium text-gray-700">Nombre</label>
+                <input type="text" id="p-name" required class="w-full p-3 border border-gray-300 rounded-lg focus:ring-purple-500">
+               
+                <label for="p-budget" class="block text-sm font-medium text-gray-700">Monto Total del Mes (S/)</label>
+                <input type="number" id="p-budget" min="0" required class="w-full p-3 border border-gray-300 rounded-lg focus:ring-purple-500">
+               
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label for="p-shared-savings" class="block text-sm font-medium text-purple-700">Ahorro Mutuo (%):</label>
+                        <input type="number" id="p-shared-savings" min="0" max="100" required class="w-full mt-1 p-3 border border-purple-300 rounded-lg">
+                    </div>
+                    <div>
+                        <label for="p-independent-savings" class="block text-sm font-medium text-purple-700">Ahorro Indep. (%):</label>
+                        <input type="number" id="p-independent-savings" min="0" max="100" required class="w-full mt-1 p-3 border border-purple-300 rounded-lg">
+                    </div>
+                </div>
+               
+                <button type="submit" id="save-participant-btn" class="w-full py-3 bg-purple-500 text-white font-bold rounded-xl hover:bg-purple-600 transition duration-300">
+                    Guardar Participante
+                </button>
+            </form>
+            <button id="close-participant-modal-btn" class="w-full mt-4 py-2 bg-gray-300 text-gray-800 font-bold rounded-lg hover:bg-gray-400 transition duration-300">Cerrar</button>
+        </div>
+    </div>
+
+    <!-- Modal de Edición de Gasto -->
+    <div id="edit-expense-modal" class="fixed inset-0 bg-gray-600 bg-opacity-70 hidden items-center justify-center p-4 z-50">
+        <div class="bg-white p-6 rounded-xl shadow-2xl max-w-lg w-full">
+            <h3 class="text-2xl font-bold mb-4 text-red-700">Editar Gasto</h3>
+            <form id="edit-expense-form" class="space-y-4">
+                <input type="hidden" id="edit-expense-id">
+                
+                <!-- Fila 1: Descripción y Monto -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div class="md:col-span-2">
+                        <label for="edit-expense-description" class="block text-sm font-medium text-gray-700">Descripción</label>
+                        <input type="text" id="edit-expense-description" required class="w-full mt-1 p-3 border border-gray-300 rounded-lg">
+                    </div>
+                    <div>
+                        <label for="edit-expense-amount" class="block text-sm font-medium text-gray-700">Monto (S/)</label>
+                        <input type="number" id="edit-expense-amount" min="0.01" step="0.01" required class="w-full mt-1 p-3 border border-gray-300 rounded-lg">
+                    </div>
+                </div>
+
+                <!-- Fila 2: Pagador, Tipo, Método de Pago -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div>
+                        <label for="edit-expense-payer-button" class="block text-sm font-medium text-gray-700">Pagado Por</label>
+                        <div class="relative custom-select-container mt-1">
+                            <button type="button" id="edit-expense-payer-button" class="custom-select-button w-full text-left p-3 border border-gray-300 rounded-lg bg-white flex justify-between items-center">
+                                <span class="custom-select-display text-gray-500">Selecciona pagador</span>
+                                <i class="fas fa-chevron-down text-gray-400"></i>
+                            </button>
+                            <div class="custom-select-options absolute hidden mt-1 w-full bg-white rounded-lg shadow-lg z-30"></div>
+                            <input type="hidden" id="edit-expense-payer">
+                        </div>
+                         <button type="button" id="add-guest-payer-btn" class="mt-2 w-full text-xs py-1 bg-gray-200 hover:bg-gray-300 rounded-lg font-semibold">
+                            + Añadir Invitado
+                        </button>
+                    </div>
+                    <div>
+                        <label for="edit-expense-type-button" class="block text-sm font-medium text-gray-700">Tipo de Gasto</label>
+                        <div class="relative custom-select-container mt-1">
+                            <button type="button" id="edit-expense-type-button" class="custom-select-button w-full text-left p-3 border border-gray-300 rounded-lg bg-white flex justify-between items-center">
+                                <span class="custom-select-display"></span>
+                                <i class="fas fa-chevron-down text-gray-400"></i>
+                            </button>
+                            <div class="custom-select-options absolute hidden mt-1 w-full bg-white rounded-lg shadow-lg z-30">
+                                 <div class="custom-select-option" data-value="personal">Personal</div>
+                                 <div class="custom-select-option" data-value="shared">Compartido</div>
+                                 <div class="custom-select-option" data-value="fixed">Gasto Fijo</div>
+                            </div>
+                            <input type="hidden" id="edit-expense-type">
+                        </div>
+                    </div>
+                    <div>
+                        <label for="edit-expense-payment-method-id-button" class="block text-sm font-medium text-gray-700">Método de Pago</label>
+                        <div class="relative custom-select-container mt-1">
+                            <button type="button" id="edit-expense-payment-method-id-button" class="custom-select-button w-full text-left p-3 border border-gray-300 rounded-lg bg-white flex justify-between items-center">
+                                <span class="custom-select-display text-gray-500">Selecciona método</span>
+                                <i class="fas fa-chevron-down text-gray-400"></i>
+                            </button>
+                            <div class="custom-select-options absolute hidden mt-1 w-full bg-white rounded-lg shadow-lg z-30"></div>
+                            <input type="hidden" id="edit-expense-payment-method-id">
+                        </div>
+                    </div>
+                </div>
+                <div id="guest-payer-input-container" class="hidden">
+                     <label for="guest-payer-name" class="block text-sm font-medium text-gray-700">Nombre del Invitado</label>
+                     <input type="text" id="guest-payer-name" class="w-full mt-1 p-3 border border-gray-300 rounded-lg">
+                </div>
+
+                <!-- Fila 3: Categoría y Subcategoría -->
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label for="edit-expense-category-button" class="block text-sm font-medium text-gray-700">Categoría</label>
+                         <div class="relative custom-select-container mt-1">
+                            <button type="button" id="edit-expense-category-button" class="custom-select-button w-full text-left p-3 border border-gray-300 rounded-lg bg-white flex justify-between items-center">
+                                <span class="custom-select-display text-gray-500">Selecciona categoría</span>
+                                <i class="fas fa-chevron-down text-gray-400"></i>
+                            </button>
+                            <div class="custom-select-options absolute hidden mt-1 w-full bg-white rounded-lg shadow-lg z-20"></div>
+                            <input type="hidden" id="edit-expense-category" required>
+                        </div>
+                    </div>
+                    <div>
+                        <label for="edit-expense-subcategory-button" class="block text-sm font-medium text-gray-700">Subcategoría</label>
+                        <div class="relative custom-select-container mt-1">
+                            <button type="button" id="edit-expense-subcategory-button" class="custom-select-button w-full text-left p-3 border border-gray-300 rounded-lg bg-white flex justify-between items-center">
+                                <span class="custom-select-display text-gray-500">Selecciona subcategoría</span>
+                                <i class="fas fa-chevron-down text-gray-400"></i>
+                            </button>
+                            <div class="custom-select-options absolute hidden mt-1 w-full bg-white rounded-lg shadow-lg z-20"></div>
+                            <input type="hidden" id="edit-expense-subcategory">
+                        </div>
+                    </div>
+                </div>
+                
+                <button type="submit" class="w-full py-3 bg-red-500 text-white font-bold rounded-xl hover:bg-red-600 transition duration-300 mt-4">
+                    Guardar Cambios
+                </button>
+            </form>
+            <button id="close-edit-expense-modal-btn" class="w-full mt-4 py-2 bg-gray-300 text-gray-800 font-bold rounded-lg hover:bg-gray-400 transition duration-300">Cerrar</button>
+        </div>
+    </div>
+   
+    <!-- Modal de Confirmación de Cierre de Sesión -->
+    <div id="logout-confirm-modal" class="fixed inset-0 bg-gray-600 bg-opacity-70 hidden items-center justify-center p-4 z-50">
+        <div class="bg-white p-6 rounded-xl shadow-2xl max-w-sm w-full">
+            <h3 class="text-xl font-bold mb-4 text-red-700">Confirmar Cierre de Sesión</h3>
+            <p class="mb-6 text-gray-600">
+                ¿Estás seguro de que quieres cerrar la sesión? Serás redirigido al portal de inicio de sesión.
+            </p>
+            <div class="grid grid-cols-2 gap-3">
+                <button id="confirm-logout-btn" class="py-2 bg-red-500 text-white font-bold rounded-lg hover:bg-red-600 transition">
+                    Sí, Cerrar Sesión
+                </button>
+                <button id="cancel-logout-btn" class="py-2 bg-gray-300 text-gray-800 font-bold rounded-lg hover:bg-gray-400 transition">
+                    Cancelar
+                </button>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- Scripts de Firebase (SOLO LÓGICA DE DATOS Y SESIÓN EXISTENTE) -->
+    <script type="module">
+        // Importaciones de Firebase
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInWithCustomToken, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, setDoc, onSnapshot, getDoc, updateDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { setLogLevel } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+       
+        setLogLevel('Debug');
+
+        // ====================================================================================
+        // --- VARIABLES DE CONFIGURACIÓN Y REDIRECCIÓN ---
+        // ====================================================================================
+       
+        // 1. CONFIGURACIÓN DEL PROYECTO DE FIREBASE
+        const myFirebaseConfig = {
+            apiKey: "AIzaSyA63OZWFM30Tu17DGxAmbtVsNFWeQU3k4s",
+            authDomain: "qipu-d1dcd.firebaseapp.com",
+            projectId: "qipu-d1dcd",
+            storageBucket: "qipu-d1dcd.firebasestorage.app",
+            messagingSenderId: "398775085739",
+            appId: "1:398775085739:web:be8643b5d9fea9ef8da5ee",
+        };
+
+        // Modificamos la URL de LOGOUT para apuntar correctamente al archivo de autenticación (index.html)
+        const REDIRECT_URL_LOGOUT = window.location.pathname.includes('/app.html') 
+            ? window.location.pathname.replace('/app.html', '/index.html') 
+            : 'index.html'; 
+
+        // 2. DETECCIÓN DEL ENTORNO
+        const IS_CANVAS_ENV = typeof __initial_auth_token !== 'undefined';
+       
+        let firebaseConfig = {};
+        if (IS_CANVAS_ENV) {
+            firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : myFirebaseConfig;
+        } else {
+            firebaseConfig = myFirebaseConfig;
+        }
+
+        // 3. ESTADO GLOBAL
+        const appId = typeof __app_id !== 'undefined' ? __app_id : firebaseConfig.projectId || 'default-app-id';
+        const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+       
+        let app, db, auth;
+        let userId = 'loading';
+        let isFirebaseActive = Object.keys(firebaseConfig).length > 0 && !Object.keys(firebaseConfig).some(k => firebaseConfig[k].startsWith('TU_')); 
+
+        const FINANCE_DOC_ID = 'main_finance_state'; 
+        const getFinanceDocRef = (db) => doc(db, 'artifacts', appId, 'users', userId, 'finance_tracker', FINANCE_DOC_ID);
+        const LOCAL_STORAGE_KEY = 'finance_tracker_local_data';
+
+        const MONTH_NAMES = [
+            'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 
+            'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'
+        ];
+
+        let appState = {
+            participants: [
+                { id: 'p1', name: 'Alice', budget: 1000, sharedSavingsPercent: 10, independentSavingsPercent: 5, firebaseUid: null },
+                { id: 'p2', name: 'Bob', budget: 1200, sharedSavingsPercent: 10, independentSavingsPercent: 5, firebaseUid: null },
+            ],
+            categories: [
+                { name: 'Hogar', subcategories: ['Servicios', 'Comida', 'Limpieza', 'Mascotas'], budget: 500 },
+                { name: 'Salidas', subcategories: ['Restaurantes', 'Cine', 'Bar'], budget: 300 }
+            ],
+            paymentMethods: [
+                { id: 'm1', name: 'Efectivo', type: 'cash' },
+                { id: 'm2', name: 'Débito', type: 'cash' },
+            ],
+            expenses: []
+        };
+       
+        let currentFilterDate = new Date();
+        currentFilterDate.setDate(1); 
+       
+        let myParticipantId = null; 
+        let unsubscribeListener = null;
+        let categoryChart = null;
+
+        // --- Utilidades ---
+        const generateUUID = () => crypto.randomUUID();
+       
+        const showModal = (message, errorCode = null, title = "Atención") => {
+            document.getElementById('modal-title').textContent = title;
+            document.getElementById('modal-text').textContent = message;
+           
+            const errorDetailEl = document.getElementById('modal-error-detail');
+            const errorCodeEl = document.getElementById('modal-error-code');
+
+            if (errorCode) {
+                errorCodeEl.textContent = errorCode;
+                errorDetailEl.classList.remove('hidden');
+            } else {
+                errorDetailEl.classList.add('hidden');
+            }
+           
+            document.getElementById('message-modal').classList.remove('hidden');
+            document.getElementById('message-modal').classList.add('flex');
+            document.body.classList.add('no-scroll');
+        };
+
+        document.getElementById('close-modal-btn').addEventListener('click', () => {
+            document.getElementById('message-modal').classList.add('hidden');
+            document.getElementById('message-modal').classList.remove('flex');
+            document.body.classList.remove('no-scroll');
+        });
+       
+        const formatCurrency = (value) => new Intl.NumberFormat('es-PE', { style: 'currency', currency: 'PEN', minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(value);
+        const formatDate = (isoString) => {
+            if (!isoString) return '';
+            const [year, month, day] = isoString.split('-').map(Number);
+            const date = new Date(year, month - 1, day); 
+            return date.toLocaleDateString('es-ES', { day: '2-digit' });
+        }
+        const getFilterMonthString = (date) => {
+            const year = date.getFullYear();
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            return `${year}-${month}`;
+        }
+       
+        function getCycleDates(method) {
+            if (method.type !== 'credit' || !method.cycleStartDay || !method.paymentDay) return { cycleStart: null, paymentDate: null };
+
+            const now = new Date(currentFilterDate);
+            let year = now.getFullYear();
+            let month = now.getMonth();
+           
+            if (now.getDate() < method.cycleStartDay) {
+                month = month === 0 ? 11 : month - 1;
+                year = now.getMonth() === 0 ? year - 1 : year;
+            }
+
+            const cycleStart = new Date(year, month, method.cycleStartDay);
+           
+            let paymentMonth = cycleStart.getMonth() + 1;
+            let paymentYear = cycleStart.getFullYear();
+            if (paymentMonth > 11) {
+                paymentMonth = 0;
+                paymentYear++;
+            }
+           
+            const paymentDate = new Date(paymentYear, paymentMonth, method.paymentDay);
+           
+            return {
+                cycleStart: cycleStart.toISOString().split('T')[0],
+                paymentDate: paymentDate.toISOString().split('T')[0]
+            };
+        }
+
+        // --- Funciones de Autenticación (REDUCIDAS) ---
+       
+        function openLogoutConfirmModal() {
+            document.getElementById('logout-confirm-modal').classList.add('flex');
+            document.getElementById('logout-confirm-modal').classList.remove('hidden');
+        }
+
+        function closeLogoutConfirmModal() {
+            document.getElementById('logout-confirm-modal').classList.add('hidden');
+             document.getElementById('logout-confirm-modal').classList.remove('flex');
+        }
+       
+        document.getElementById('confirm-logout-btn').addEventListener('click', async () => {
+            closeLogoutConfirmModal();
+            try {
+                if (unsubscribeListener) {
+                    unsubscribeListener();
+                    unsubscribeListener = null;
+                }
+                await signOut(auth);
+                window.location.href = REDIRECT_URL_LOGOUT;
+            } catch (e) {
+                showModal(`No se pudo cerrar la sesión: ${e.message}`, e.message, "Fallo al Cerrar Sesión");
+            }
+        });
+
+        document.getElementById('cancel-logout-btn').addEventListener('click', closeLogoutConfirmModal);
+
+        // --- Inicialización SIMPLIFICADA (Solo carga y escucha) ---
+        async function initializeFirebase() {
+            if (!isFirebaseActive) {
+                loadLocalState();
+                document.getElementById('auth-status').textContent = "⚠️ MODO LOCAL DE EMERGENCIA.";
+                document.getElementById('initial-loading-screen').classList.add('hidden');
+                document.getElementById('main-content-wrapper').classList.remove('hidden');
+                setupUILogic(false);
+                return;
+            }
+
+            try {
+                app = initializeApp(firebaseConfig);
+                db = getFirestore(app);
+                auth = getAuth(app);
+               
+                if (initialAuthToken) {
+                    await signInWithCustomToken(auth, initialAuthToken);
+                } 
+
+                onAuthStateChanged(auth, (user) => {
+                    document.getElementById('initial-loading-screen').classList.add('hidden');
+                    document.getElementById('main-content-wrapper').classList.remove('hidden');
+                    myParticipantId = null;
+
+                    if (user && user.uid !== 'anonymous') {
+                        userId = user.uid;
+                        const statusText = user.email || 'Usuario Sincronizado';
+                        document.getElementById('auth-status').innerHTML = `<span id="connection-dot" class="sync-indicator sync-green"></span> ✅ Conectado como: <strong>${statusText}</strong>.`;
+                        document.getElementById('logout-btn').onclick = openLogoutConfirmModal;
+                        document.getElementById('logout-btn').classList.remove('hidden');
+                        setupUILogic(true);
+                        setupRealTimeDataListener();
+                    } else if (IS_CANVAS_ENV && !user) {
+                         userId = 'anonymous_canvas';
+                         document.getElementById('auth-status').innerHTML = `<span id="connection-dot" class="sync-indicator sync-green"></span> 🌐 Sesión de Canvas Activa.`;
+                         setupUILogic(true);
+                         setupRealTimeDataListener();
+                    } else {
+                         if (unsubscribeListener) {
+                             unsubscribeListener();
+                             unsubscribeListener = null;
+                         }
+                         window.location.href = REDIRECT_URL_LOGOUT;
+                    }
+                });
+            } catch (error) {
+                console.error("Error al inicializar Firebase:", error);
+                document.getElementById('initial-loading-screen').classList.add('hidden');
+                document.getElementById('main-content-wrapper').classList.remove('hidden');
+                showModal("Error crítico al inicializar Firebase.", error.message, "Fallo de Conexión");
+                loadLocalState(); 
+                setupUILogic(false);
+            }
+        }
+       
+        function setupRealTimeDataListener() {
+             if (!db || userId === 'loading') return;
+             if (unsubscribeListener) unsubscribeListener();
+             
+            const docRef = getFinanceDocRef(db);
+           
+            unsubscribeListener = onSnapshot(docRef, docSnap => {
+                if (docSnap.exists()) {
+                    const loadedData = docSnap.data();
+                    const defaultState = { participants: [], categories: [], paymentMethods: [], expenses: [] };
+                    appState = { ...defaultState, ...appState, ...loadedData };
+                } else {
+                    appState.participants.forEach(p => p.firebaseUid = p.firebaseUid || null);
+                    appState.categories.forEach(c => c.budget = c.budget || 0);
+                    setDoc(docRef, appState);
+                }
+               
+                const linkedParticipant = appState.participants.find(p => p.firebaseUid === userId);
+                myParticipantId = linkedParticipant ? linkedParticipant.id : null;
+               
+                const currentUserEl = document.getElementById('current-user-id');
+                if (currentUserEl) {
+                     currentUserEl.innerHTML = `UID: <strong>${userId}</strong><br>Participante: ${linkedParticipant ? linkedParticipant.name : 'Ninguno'}`;
+                }
+
+                renderUI(); 
+            }, error => {
+                if (error.code === 'permission-denied' && !auth.currentUser) return;
+                console.error("Error en Firestore:", error);
+                showModal("Error al cargar datos.", error.message, "Error de Datos");
+            });
+        }
+
+        // --- Funciones de Soporte ---
+        function loadLocalState() {
+            const savedData = localStorage.getItem(LOCAL_STORAGE_KEY);
+            if (savedData) {
+                try {
+                    const loadedData = JSON.parse(savedData);
+                    appState = { ...appState, ...loadedData };
+                } catch (e) { console.error("Error al cargar estado local:", e); }
+            }
+        }
+
+        async function saveState(updates) {
+            appState = { ...appState, ...updates };
+            if (isFirebaseActive && db && userId !== 'loading') {
+                try {
+                    await setDoc(getFinanceDocRef(db), appState, { merge: true });
+                } catch (error) {
+                    localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(appState));
+                    showModal("Error al guardar en la nube. Se guardó localmente.", error.message, "Fallo de Guardado");
+                }
+            } else {
+                localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(appState));
+                renderUI(); 
+            }
+        }
+       
+        function linkParticipantToUser(participantId) {
+            if (!userId || userId === 'anonymous_canvas' || userId === 'loading') {
+                return showModal("Debes estar autenticado para vincular una cuenta.", null, "Acceso Denegado");
+            }
+            if (myParticipantId) {
+                return showModal("Tu cuenta ya está vinculada a " + appState.participants.find(p => p.id === myParticipantId)?.name, null, "Ya Vinculado");
+            }
+
+            const newParticipants = appState.participants.map(p => {
+                if (p.firebaseUid === userId) p.firebaseUid = null;
+                if (p.id === participantId) p.firebaseUid = userId;
+                return p;
+            });
+
+            saveState({ participants: newParticipants });
+            showModal("¡Cuenta vinculada exitosamente!", null, "Vinculación Exitosa");
+        }
+
+        function setupUILogic(isFirebaseMode) {
+            setupCustomSelects();
+            setupMonthSelectorListeners(); 
+            setupCategoryModalListeners();
+            setupPaymentMethodListeners();
+            setupParticipantModalListeners(); 
+            setupExpenseFormListeners();
+            setupExpenseModalListeners(); 
+            setupLiquidateListeners(); 
+            setupRestoreJsonListeners(); 
+            if (!isFirebaseMode) renderUI(); 
+        }
+
+        // --- Lógica para los menús desplegables personalizados ---
+        function setupCustomSelects() {
+            window.addEventListener('click', (e) => {
+                document.querySelectorAll('.custom-select-container').forEach(container => {
+                    if (!container.contains(e.target)) {
+                        container.querySelector('.custom-select-options').classList.add('hidden');
+                        container.querySelector('.fa-chevron-down')?.classList.remove('rotate-180');
+                    }
+                });
+            });
+
+            document.querySelectorAll('.custom-select-container').forEach(container => {
+                const button = container.querySelector('.custom-select-button');
+                const optionsContainer = container.querySelector('.custom-select-options');
+                
+                button.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    document.querySelectorAll('.custom-select-options').forEach(otherOptions => {
+                        if (otherOptions !== optionsContainer) {
+                            otherOptions.classList.add('hidden');
+                            otherOptions.closest('.custom-select-container').querySelector('.fa-chevron-down')?.classList.remove('rotate-180');
+                        }
+                    });
+                    optionsContainer.classList.toggle('hidden');
+                    button.querySelector('.fa-chevron-down')?.classList.toggle('rotate-180');
+                });
+
+                optionsContainer.addEventListener('click', (e) => {
+                    const option = e.target.closest('.custom-select-option');
+                    if (option) {
+                        const hiddenInput = container.querySelector('input[type="hidden"]');
+                        const display = button.querySelector('.custom-select-display');
+                        
+                        display.textContent = option.textContent.trim();
+                        display.classList.remove('text-gray-500');
+                        hiddenInput.value = option.dataset.value;
+
+                        optionsContainer.querySelectorAll('.custom-select-option').forEach(opt => opt.classList.remove('selected'));
+                        option.classList.add('selected');
+
+                        optionsContainer.classList.add('hidden');
+                        button.querySelector('.fa-chevron-down')?.classList.remove('rotate-180');
+                        hiddenInput.dispatchEvent(new Event('change', { bubbles: true }));
+                    }
+                });
+            });
+        }
+       
+        /** Manejador para el envío de formularios de sincronización. */
+        async function handleSyncSubmit(e) {
+            e.preventDefault();
+            const targetUserId = document.getElementById('sync-user-id-sidebar').value.trim();
+            if (!targetUserId || targetUserId === userId || !db) { 
+                return showModal("ID inválido o error de conexión.", null, "Fallo de Sincronización");
+            }
+
+            try {
+                const targetDocRef = doc(db, 'artifacts', appId, 'users', targetUserId, 'finance_tracker', FINANCE_DOC_ID);
+                const targetDocSnap = await getDoc(targetDocRef);
+
+                if (!targetDocSnap.exists()) {
+                    return showModal("No se encontraron datos para ese ID.", null, "Fallo de Sincronización");
+                }
+
+                await setDoc(getFinanceDocRef(db), targetDocSnap.data(), { merge: false });
+                showModal("¡Datos importados y sincronizados!", null, "Sincronización Exitosa");
+                document.getElementById('sync-user-id-sidebar').value = '';
+            } catch (error) {
+                showModal("Error al importar datos. Revisa los permisos y el ID.", error.message, "Fallo de Importación");
+            }
+        }
+
+        function setupLiquidateListeners() {
+            document.getElementById('liquidate-month-btn').addEventListener('click', liquidateMonth);
+        }
+
+        async function liquidateMonth() {
+            if (!db || userId === 'loading') return showModal("La base de datos no está lista.");
+            
+            const { participantData, guestDebtTotal } = calculateSummary(appState, appState.expenses.filter(e => e.date.startsWith(getFilterMonthString(currentFilterDate))));
+            const balances = participantData.filter(p => Math.abs(p.balance) > 0.01);
+            if (balances.length === 0 && guestDebtTotal === 0) return showModal("Las cuentas ya están claras.", null, "Liquidación Completa");
+            
+            if (window.prompt(`Se crearán transacciones de ajuste. Escribe 'LIQUIDAR' para confirmar.`) !== 'LIQUIDAR') return showModal("Liquidación cancelada.");
+
+            const newExpenses = [...appState.expenses];
+            const now = new Date().toISOString().split('T')[0];
+            let numSettlements = 0;
+
+            const debtors = balances.filter(p => p.balance < 0).sort((a, b) => a.balance - b.balance); 
+            const creditors = balances.filter(p => p.balance > 0).sort((a, b) => b.balance - a.balance); 
+
+            let i = 0, j = 0;
+            while (i < debtors.length && j < creditors.length) {
+                let debtor = debtors[i], creditor = creditors[j];
+                const amount = Math.min(Math.abs(debtor.balance), creditor.balance);
+
+                if (amount > 0.01) {
+                    newExpenses.push({ id: generateUUID(), type: 'personal', description: `REEMBOLSO: ${debtor.name} a ${creditor.name}`, amount, payerId: debtor.id, category: 'Liquidación', subcategory: 'Reembolso', paymentMethodId: 'm1', date: now, dateCreated: new Date().toISOString() });
+                    numSettlements++;
+                    debtor.balance += amount;
+                    creditor.balance -= amount;
+                }
+                if (Math.abs(debtor.balance) < 0.01) i++;
+                if (creditor.balance < 0.01) j++;
+            }
+            await saveState({ expenses: newExpenses });
+            showModal(`¡Liquidación completada! Se crearon ${numSettlements} ajustes.`, null, "Liquidación Exitosa");
+        }
+
+        function setupRestoreJsonListeners() {
+            document.getElementById('restore-json-btn').addEventListener('click', () => {
+                const jsonString = window.prompt("Pega la cadena de texto JSON de respaldo aquí:");
+                if (jsonString) {
+                    try {
+                        const importedState = JSON.parse(jsonString);
+                        if (importedState && importedState.participants && importedState.expenses) {
+                            saveState(importedState);
+                            showModal("Datos restaurados.", null, "Restauración Completa");
+                        } else throw new Error("Formato de JSON inválido.");
+                    } catch (e) { showModal(`Error al procesar el JSON: ${e.message}`, null, "Error"); }
+                }
+            });
+        }
+        
+        function setupParticipantModalListeners() {
+            const modal = document.getElementById('add-participant-modal');
+            const form = document.getElementById('participant-form');
+            const sidebar = document.getElementById('participant-sidebar');
+            const backdrop = document.getElementById('sidebar-backdrop');
+           
+            const toggleSidebar = (open) => {
+                sidebar.classList.toggle('open', open);
+                backdrop.classList.toggle('open', open);
+                document.body.classList.toggle('no-scroll', open);
+            };
+           
+            document.getElementById('open-participants-sidebar-btn').addEventListener('click', () => toggleSidebar(true));
+            document.getElementById('close-sidebar-btn').addEventListener('click', () => toggleSidebar(false));
+            backdrop.addEventListener('click', () => toggleSidebar(false));
+
+            document.getElementById('open-add-participant-modal-sidebar').addEventListener('click', () => {
+                document.getElementById('participant-id-to-edit').value = '';
+                document.getElementById('participant-modal-title').textContent = 'Añadir Participante';
+                form.reset();
+                modal.classList.add('flex');
+                modal.classList.remove('hidden');
+            });
+           
+            document.getElementById('close-participant-modal-btn').addEventListener('click', () => {
+                modal.classList.add('hidden');
+                modal.classList.remove('flex');
+            });
+
+            form.addEventListener('submit', (e) => {
+                e.preventDefault();
+                const id = document.getElementById('participant-id-to-edit').value;
+                const name = document.getElementById('p-name').value.trim();
+                const budget = parseFloat(document.getElementById('p-budget').value) || 0;
+                const ssa = parseFloat(document.getElementById('p-shared-savings').value) || 0;
+                const isa = parseFloat(document.getElementById('p-independent-savings').value) || 0;
+
+                if (ssa + isa > 100) return showModal("La suma de ahorros no puede superar el 100%.");
+
+                if (id) {
+                    const participants = appState.participants.map(p => p.id === id ? { ...p, name, budget, sharedSavingsPercent: ssa, independentSavingsPercent: isa } : p);
+                    saveState({ participants });
+                } else {
+                    const newParticipant = { id: `p${generateUUID()}`, name, budget, sharedSavingsPercent: ssa, independentSavingsPercent: isa, firebaseUid: null };
+                    saveState({ participants: [...appState.participants, newParticipant] });
+                }
+                modal.classList.add('hidden');
+            });
+            document.getElementById('sync-form-sidebar')?.addEventListener('submit', handleSyncSubmit);
+        }
+
+        function openParticipantEditModal(id) {
+            const p = appState.participants.find(p => p.id === id);
+            if (!p) return;
+            document.getElementById('participant-id-to-edit').value = id;
+            document.getElementById('participant-modal-title').textContent = `Editar Participante: ${p.name}`;
+            document.getElementById('p-name').value = p.name;
+            document.getElementById('p-budget').value = p.budget;
+            document.getElementById('p-shared-savings').value = p.sharedSavingsPercent;
+            document.getElementById('p-independent-savings').value = p.independentSavingsPercent;
+            const modal = document.getElementById('add-participant-modal');
+            modal.classList.add('flex');
+            modal.classList.remove('hidden');
+            document.body.classList.add('no-scroll');
+        }
+
+        function removeParticipant(id) {
+            if (appState.participants.length <= 1) {
+                return showModal("Debe haber al menos un participante.");
+            }
+            const newParticipants = appState.participants.filter(p => p.id !== id);
+            const newExpenses = appState.expenses.filter(e => e.payerId !== id);
+            saveState({ participants: newParticipants, expenses: newExpenses });
+            showModal(`Participante y sus gastos asociados eliminados.`);
+        }
+
+        function renderMonthSelector() {
+            const monthNameEl = document.getElementById('current-month-name');
+            const yearEl = document.getElementById('current-year');
+            if (monthNameEl && yearEl) {
+                monthNameEl.textContent = MONTH_NAMES[currentFilterDate.getMonth()];
+                yearEl.textContent = currentFilterDate.getFullYear();
+            }
+        }
+
+        function setupMonthSelectorListeners() {
+            document.getElementById('prev-month-btn').addEventListener('click', () => {
+                currentFilterDate.setMonth(currentFilterDate.getMonth() - 1);
+                renderUI();
+            });
+            document.getElementById('next-month-btn').addEventListener('click', () => {
+                currentFilterDate.setMonth(currentFilterDate.getMonth() + 1);
+                renderUI();
+            });
+        }
+        
+        function removeExpense(id) {
+            if (confirm('¿Estás seguro de que quieres eliminar este gasto?')) {
+                const newExpenses = appState.expenses.filter(e => e.id !== id);
+                saveState({ expenses: newExpenses });
+            }
+        }
+
+        function setupCategoryModalListeners() {
+            const modal = document.getElementById('categories-modal');
+            document.getElementById('open-categories-modal-btn').addEventListener('click', () => {
+                modal.classList.remove('hidden');
+                modal.classList.add('flex');
+            });
+            document.getElementById('close-categories-modal-btn').addEventListener('click', () => {
+                modal.classList.add('hidden');
+                modal.classList.remove('flex');
+            });
+        
+            document.getElementById('category-form').addEventListener('submit', (e) => {
+                e.preventDefault();
+                const name = document.getElementById('category-name').value.trim();
+                const budget = parseFloat(document.getElementById('category-budget').value) || 0;
+                const subcategoriesString = document.getElementById('subcategory-list').value.trim();
+                if (!name) return;
+
+                const subcategories = subcategoriesString ? subcategoriesString.split(',').map(s => s.trim()).filter(s => s) : [];
+                const newCategories = [...appState.categories];
+                const existingIndex = newCategories.findIndex(c => c.name.toLowerCase() === name.toLowerCase());
+
+                if (existingIndex !== -1) {
+                    newCategories[existingIndex].budget = budget;
+                    newCategories[existingIndex].subcategories = Array.from(new Set([...newCategories[existingIndex].subcategories, ...subcategories]));
+                } else {
+                    newCategories.push({ name, subcategories, budget });
+                }
+
+                saveState({ categories: newCategories });
+                showModal(`Categoría '${name}' guardada.`);
+                e.target.reset();
+            });
+        }
+
+        function setupPaymentMethodListeners() {
+            const modal = document.getElementById('payment-methods-modal');
+            document.getElementById('open-payment-methods-modal-btn').addEventListener('click', () => {
+                modal.classList.remove('hidden');
+                modal.classList.add('flex');
+            });
+            document.getElementById('close-payment-methods-modal-btn').addEventListener('click', () => {
+                modal.classList.add('hidden');
+                modal.classList.remove('flex');
+                resetPaymentForm();
+            });
+            document.getElementById('method-type').addEventListener('change', (e) => {
+                document.getElementById('cc-config-fields').classList.toggle('hidden', e.target.value !== 'credit');
+            });
+            document.getElementById('cancel-edit-method-btn').addEventListener('click', resetPaymentForm);
+
+            document.getElementById('payment-method-form').addEventListener('submit', (e) => {
+                e.preventDefault();
+                const id = document.getElementById('method-id-to-edit').value;
+                const name = document.getElementById('method-name').value.trim();
+                const type = document.getElementById('method-type').value;
+                const method = { name, type };
+
+                if (type === 'credit') {
+                    const cycleDay = parseInt(document.getElementById('cc-config-cycle-day').value);
+                    const paymentDay = parseInt(document.getElementById('cc-config-payment-day').value);
+                    if (isNaN(cycleDay) || cycleDay < 1 || cycleDay > 31 || isNaN(paymentDay) || paymentDay < 1 || paymentDay > 31) {
+                        return showModal("Los días de ciclo y pago para tarjetas de crédito deben ser válidos (1-31).");
+                    }
+                    method.cycleStartDay = cycleDay;
+                    method.paymentDay = paymentDay;
+                }
+
+                let newMethods;
+                if (id) {
+                    newMethods = appState.paymentMethods.map(m => m.id === id ? { ...m, ...method } : m);
+                } else {
+                    method.id = `m${generateUUID()}`;
+                    newMethods = [...appState.paymentMethods, method];
+                }
+                saveState({ paymentMethods: newMethods });
+                modal.classList.add('hidden');
+                resetPaymentForm();
+            });
+        }
+
+        function setupExpenseFormListeners() {
+            document.getElementById('expense-type').addEventListener('change', (e) => {
+                document.getElementById('fixed-recurrence-container').classList.toggle('hidden', e.target.value !== 'fixed');
+            });
+
+            document.getElementById('expense-category').addEventListener('change', (e) => {
+                const categoryName = e.target.value;
+                const subCatContainer = document.querySelector('#expense-subcategory-button').closest('.custom-select-container');
+                const subCatOptions = subCatContainer.querySelector('.custom-select-options');
+                const subCatDisplay = subCatContainer.querySelector('.custom-select-display');
+                const subCatInput = subCatContainer.querySelector('input[type="hidden"]');
+                const subCatButton = subCatContainer.querySelector('button');
+
+                subCatOptions.innerHTML = '';
+                subCatDisplay.textContent = 'Selecciona subcategoría';
+                subCatInput.value = '';
+
+                const selectedCategory = appState.categories.find(c => c.name === categoryName);
+                if (selectedCategory && selectedCategory.subcategories.length > 0) {
+                    selectedCategory.subcategories.forEach(sub => {
+                        subCatOptions.insertAdjacentHTML('beforeend', `<div class="custom-select-option" data-value="${sub}">${sub}</div>`);
+                    });
+                    subCatButton.disabled = false;
+                    subCatButton.classList.remove('bg-gray-100');
+                } else {
+                    subCatButton.disabled = true;
+                    subCatButton.classList.add('bg-gray-100');
+                }
+            });
+
+            document.getElementById('expense-payment-method-id').addEventListener('change', (e) => {
+                const selectedMethodId = e.target.value;
+                const method = appState.paymentMethods.find(m => m.id === selectedMethodId);
+                const ccDetails = document.getElementById('credit-card-details');
+                if (method && method.type === 'credit') {
+                    ccDetails.classList.remove('hidden');
+                    const { cycleStart, paymentDate } = getCycleDates(method);
+                    document.getElementById('cc-cycle-start-display').textContent = formatDate(cycleStart);
+                    document.getElementById('cc-payment-date-display').textContent = formatDate(paymentDate);
+                } else {
+                    ccDetails.classList.add('hidden');
+                }
+            });
+
+            document.getElementById('expense-form').addEventListener('submit', (e) => {
+                e.preventDefault();
+                try {
+                    const description = document.getElementById('expense-description').value.trim();
+                    const amount = parseFloat(document.getElementById('expense-amount').value);
+                    const payerId = document.getElementById('expense-paid-by').value;
+                    const type = document.getElementById('expense-type').value;
+                    const category = document.getElementById('expense-category').value;
+                    const subcategory = document.getElementById('expense-subcategory').value;
+                    const paymentMethodId = document.getElementById('expense-payment-method-id').value;
+                    
+                    if (!description || !amount || !payerId || !category || !paymentMethodId) {
+                        return showModal("Por favor, completa todos los campos requeridos.");
+                    }
+
+                    const paymentMethod = appState.paymentMethods.find(m => m.id === paymentMethodId);
+                    const { cycleStart, paymentDate } = paymentMethod.type === 'credit' ? getCycleDates(paymentMethod) : {};
+                    const fixedRecurrenceMonths = type === 'fixed' ? parseInt(document.getElementById('fixed-recurrence-months').value) || 1 : 0;
+
+                    const newExpense = {
+                        id: generateUUID(), description, amount, payerId, type, category, subcategory, paymentMethodId,
+                        date: new Date().toISOString().split('T')[0],
+                        dateCreated: new Date().toISOString(),
+                        ccCycleStart: cycleStart || null,
+                        ccPaymentDate: paymentDate || null,
+                        fixedRecurrenceMonths,
+                    };
+                    saveState({ expenses: [...appState.expenses, newExpense] });
+                    e.target.reset();
+                    document.querySelectorAll('.custom-select-display').forEach(d => {
+                        d.textContent = 'Selecciona una opción';
+                        d.classList.add('text-gray-500');
+                    });
+                    document.querySelector('#expense-type-button .custom-select-display').textContent = 'Personal';
+                } catch (error) {
+                    showModal("Error al añadir el gasto.", error.message);
+                }
+            });
+        }
+
+        function setupExpenseModalListeners() {
+            const modal = document.getElementById('edit-expense-modal');
+            const guestContainer = document.getElementById('guest-payer-input-container');
+            const guestInput = document.getElementById('guest-payer-name');
+
+            document.getElementById('close-edit-expense-modal-btn').addEventListener('click', () => {
+                modal.classList.add('hidden');
+            });
+
+            document.getElementById('add-guest-payer-btn').addEventListener('click', () => {
+                guestContainer.classList.toggle('hidden');
+                
+                const payerButton = document.getElementById('edit-expense-payer-button');
+                const payerDisplay = payerButton.querySelector('.custom-select-display');
+                const payerInput = document.getElementById('edit-expense-payer');
+
+                payerInput.value = '';
+                payerDisplay.textContent = 'Selecciona pagador';
+                payerDisplay.classList.add('text-gray-500');
+
+                if (!guestContainer.classList.contains('hidden')) {
+                    guestInput.focus();
+                }
+            });
+            
+            document.getElementById('edit-expense-category').addEventListener('change', (e) => {
+                const categoryName = e.target.value;
+                const subCatContainer = document.querySelector('#edit-expense-subcategory-button').closest('.custom-select-container');
+                const subCatOptions = subCatContainer.querySelector('.custom-select-options');
+                const subCatDisplay = subCatContainer.querySelector('.custom-select-display');
+                const subCatInput = subCatContainer.querySelector('input[type="hidden"]');
+                const subCatButton = subCatContainer.querySelector('button');
+
+                subCatOptions.innerHTML = '';
+                subCatDisplay.textContent = 'Selecciona subcategoría';
+                subCatInput.value = '';
+
+                const selectedCategory = appState.categories.find(c => c.name === categoryName);
+                if (selectedCategory && selectedCategory.subcategories.length > 0) {
+                    selectedCategory.subcategories.forEach(sub => {
+                        subCatOptions.insertAdjacentHTML('beforeend', `<div class="custom-select-option" data-value="${sub}">${sub}</div>`);
+                    });
+                    subCatButton.disabled = false;
+                    subCatButton.classList.remove('bg-gray-100');
+                } else {
+                    subCatButton.disabled = true;
+                    subCatButton.classList.add('bg-gray-100');
+                }
+            });
+
+            document.getElementById('edit-expense-form').addEventListener('submit', (e) => {
+                e.preventDefault();
+                const id = document.getElementById('edit-expense-id').value;
+                const newDescription = document.getElementById('edit-expense-description').value.trim();
+                const newAmount = parseFloat(document.getElementById('edit-expense-amount').value);
+                const newCategory = document.getElementById('edit-expense-category').value;
+                const newSubcategory = document.getElementById('edit-expense-subcategory').value;
+                const newType = document.getElementById('edit-expense-type').value;
+                const newPaymentMethodId = document.getElementById('edit-expense-payment-method-id').value;
+                let newPayerId = document.getElementById('edit-expense-payer').value;
+                let newPayerName = '';
+
+                if (!guestContainer.classList.contains('hidden') && guestInput.value.trim()) {
+                    newPayerId = `guest_${generateUUID()}`;
+                    newPayerName = guestInput.value.trim();
+                } else if (!newPayerId) {
+                    return showModal("Selecciona un pagador o añade un invitado.");
+                }
+
+                if (newAmount <= 0 || !newDescription || !newCategory) {
+                    return showModal("Completa todos los campos: descripción, monto, y categoría.");
+                }
+
+                const updatedExpenses = appState.expenses.map(exp => {
+                    if (exp.id === id) {
+                        return { 
+                            ...exp, 
+                            description: newDescription, 
+                            amount: newAmount, 
+                            category: newCategory, 
+                            subcategory: newSubcategory,
+                            type: newType,
+                            paymentMethodId: newPaymentMethodId,
+                            payerId: newPayerId, 
+                            payerNameGuest: newPayerName 
+                        };
+                    }
+                    return exp;
+                });
+
+                saveState({ expenses: updatedExpenses });
+                modal.classList.add('hidden');
+            });
+        }
+
+        function calculateSummary(state, filteredExpenses) {
+            const participants = state.participants;
+            const participantData = participants.map(p => ({
+                ...p,
+                spent: 0,
+                contributionPaid: 0,
+                expectedContribution: 0,
+                sharedSavingsGoal: (p.budget * p.sharedSavingsPercent) / 100,
+                independentSavingsGoal: (p.budget * p.independentSavingsPercent) / 100,
+                availableForSpending: p.budget * (1 - (p.sharedSavingsPercent + p.independentSavingsPercent) / 100)
+            }));
+            
+            const participantMap = new Map(participantData.map(p => [p.id, p]));
+            let totalSpent = 0;
+            let guestDebtTotal = 0;
+
+            filteredExpenses.forEach(expense => {
+                const amount = expense.amount || 0;
+                totalSpent += amount;
+                const payer = participantMap.get(expense.payerId);
+                if (payer) payer.contributionPaid += amount;
+
+                if (expense.type === 'personal' || expense.type === 'fixed') {
+                    if (payer) {
+                        payer.expectedContribution += amount;
+                        payer.spent += amount;
+                    }
+                } else if (expense.type === 'shared') {
+                    const numPayees = expense.payerId.startsWith('guest_') ? participants.length + 1 : participants.length;
+                    const splitAmount = amount / numPayees;
+                    participantData.forEach(p => p.expectedContribution += splitAmount);
+                    if (expense.payerId.startsWith('guest_')) guestDebtTotal += splitAmount;
+                    expense.splitAmount = splitAmount;
+                }
+            });
+
+            let globalTotalRemainingBudget = 0;
+            let globalSharedSavingsGoal = 0;
+
+            participantData.forEach(p => {
+                p.remainingBudget = p.availableForSpending - p.spent;
+                p.balance = p.contributionPaid - p.expectedContribution;
+                globalTotalRemainingBudget += p.budget - p.spent - p.sharedSavingsGoal - p.independentSavingsGoal;
+                globalSharedSavingsGoal += p.sharedSavingsGoal;
+            });
+
+            return {
+                globalTotalRemainingBudget,
+                globalSharedSavingsGoal,
+                totalSpent,
+                guestDebtTotal: Math.round(guestDebtTotal * 100) / 100,
+                participantData,
+            };
+        }
+
+        function animateNumber(elementId, finalValue) {
+            const element = document.getElementById(elementId);
+            if (!element) return;
+            const currentValueText = element.textContent.replace(/[S/$,]/g, '').trim().replace(',', '.');
+            const currentValue = parseFloat(currentValueText) || 0;
+            const data = { value: currentValue };
+            gsap.to(data, {
+                value: finalValue,
+                duration: 1.0,
+                ease: "power2.out",
+                onUpdate: () => {
+                    element.textContent = formatCurrency(data.value);
+                    element.classList.toggle('metric-spent', data.value < 0);
+                    element.classList.toggle('metric-remaining', data.value >= 0);
+                }
+            });
+        }
+
+        function renderDashboard(summary) {
+            animateNumber('display-remaining-budget', summary.globalTotalRemainingBudget);
+            document.getElementById('display-total-spent').textContent = formatCurrency(summary.totalSpent);
+            document.getElementById('display-shared-savings-goal').textContent = formatCurrency(summary.globalSharedSavingsGoal);
+            const totalFixed = appState.expenses
+                .filter(e => e.type === 'fixed')
+                .reduce((sum, exp) => sum + exp.amount, 0);
+            document.getElementById('display-fixed-total').textContent = formatCurrency(totalFixed);
+            const participantCardsEl = document.getElementById('participant-summary-cards');
+            participantCardsEl.innerHTML = summary.participantData.map(p => {
+                const remainingColor = p.remainingBudget < 0 ? 'text-red-600' : 'text-green-600';
+                return `
+                <div class="section-card border-l-4 border-teal-500 p-4 text-left">
+                    <p class="text-sm font-semibold text-gray-700">${p.name}</p>
+                    <div class="mt-1">
+                        <p class="text-xs text-gray-500">Saldo Restante:</p>
+                        <span class="text-xl font-bold ${remainingColor}">${formatCurrency(p.remainingBudget)}</span>
+                    </div>
+                    <div class="flex justify-between text-xs mt-2 pt-2 border-t">
+                        <span>Ahorro: <strong class="text-teal-600">${formatCurrency(p.independentSavingsGoal)}</strong></span>
+                        <span>Gasto: <strong class="text-red-600">${formatCurrency(p.spent)}</strong></span>
+                    </div>
+                </div>`;
+            }).join('');
+        }
+
+        function renderParticipantsConfig(participants, summary) {
+            const listEl = document.getElementById('participants-list');
+            listEl.innerHTML = participants.map(p => {
+                const summaryData = summary.participantData.find(pd => pd.id === p.id) || {};
+                const balanceColor = summaryData.remainingBudget < 0 ? 'text-red-600' : 'text-green-600';
+                
+                let linkButtonHtml = '';
+                if (participants.length > 1) { // Lógica para ocultar el botón
+                    const isLinkedToMe = p.firebaseUid === userId;
+                    const isLinkedToSomeoneElse = p.firebaseUid && p.firebaseUid !== userId;
+
+                    if (isLinkedToMe) {
+                        linkButtonHtml = `<span class="text-xs text-green-700 font-bold flex items-center justify-center py-1 mt-2 bg-green-100 rounded-lg"><i class="fas fa-link mr-1"></i> Vinculado a ti</span>`;
+                    } else if (isLinkedToSomeoneElse) {
+                        linkButtonHtml = `<span class="text-xs text-gray-700 font-bold flex items-center justify-center py-1 mt-2 bg-gray-100 rounded-lg"><i class="fas fa-user-lock mr-1"></i> Vinculado (otro)</span>`;
+                    } else if (userId && userId !== 'anonymous_canvas' && !myParticipantId) {
+                        linkButtonHtml = `<button data-id="${p.id}" class="link-participant-btn w-full py-1 mt-2 bg-indigo-500 text-white text-xs font-bold rounded-lg hover:bg-indigo-600">Vincular mi Cuenta</button>`;
+                    }
+                }
+
+                return `
+                <div class="participant-card space-y-2 relative">
+                    <button data-id="${p.id}" class="remove-participant-btn absolute top-2 right-2 text-gray-400 hover:text-red-600 p-1"><i class="fas fa-times"></i></button>
+                    <h4 class="font-extrabold text-xl text-purple-900">${p.name}</h4>
+                    <p class="text-sm text-gray-600">Presupuesto: <span class="font-semibold">${formatCurrency(p.budget)}</span></p>
+                    <p class="text-lg font-extrabold border-t pt-2">Saldo: <span class="${balanceColor}">${formatCurrency(summaryData.remainingBudget)}</span></p>
+                    ${linkButtonHtml}
+                    <button data-id="${p.id}" class="edit-participant-btn w-full py-1 mt-2 bg-purple-400 text-white text-sm font-bold rounded-lg hover:bg-purple-500">Editar</button>
+                </div>`;
+            }).join('');
+
+            listEl.querySelectorAll('.edit-participant-btn').forEach(btn => btn.addEventListener('click', e => openParticipantEditModal(e.currentTarget.dataset.id)));
+            listEl.querySelectorAll('.remove-participant-btn').forEach(btn => btn.addEventListener('click', e => removeParticipant(e.currentTarget.dataset.id)));
+            listEl.querySelectorAll('.link-participant-btn').forEach(btn => btn.addEventListener('click', e => linkParticipantToUser(e.currentTarget.dataset.id)));
+            updateExpenseFormParticipants(participants);
+        }
+
+        function renderCategoriesModal(categories) {
+            const displayEl = document.getElementById('categories-display');
+            const optionsContainer = document.querySelector('#expense-category-button').nextElementSibling;
+            const editCategoryOptions = document.querySelector('#edit-expense-category-button')?.nextElementSibling;
+
+            displayEl.innerHTML = '';
+            optionsContainer.innerHTML = '';
+            if(editCategoryOptions) editCategoryOptions.innerHTML = '';
+
+            if (categories.length === 0) {
+                displayEl.innerHTML = '<p class="text-sm italic">No hay categorías definidas.</p>';
+            } else {
+                categories.forEach(cat => {
+                    const budgetInfo = cat.budget > 0 ? `Presupuesto: ${formatCurrency(cat.budget)}` : 'Sin presupuesto';
+                    displayEl.insertAdjacentHTML('beforeend', `
+                    <div class="p-3 bg-white rounded-lg border flex justify-between items-start">
+                        <div>
+                            <span class="font-bold">${cat.name}</span>
+                            <p class="text-xs text-gray-600">${budgetInfo}</p>
+                            <p class="text-xs text-gray-500 mt-1">Subcategorías: ${cat.subcategories.join(', ') || 'Ninguna'}</p>
+                        </div>
+                        <button data-name="${cat.name}" class="remove-category-btn text-gray-400 hover:text-red-600"><i class="fas fa-trash"></i></button>
+                    </div>`);
+                    const optionHTML = `<div class="custom-select-option" data-value="${cat.name}">${cat.name}</div>`;
+                    optionsContainer.insertAdjacentHTML('beforeend', optionHTML);
+                    if(editCategoryOptions) editCategoryOptions.insertAdjacentHTML('beforeend', optionHTML);
+                });
+                displayEl.querySelectorAll('.remove-category-btn').forEach(btn => {
+                    btn.addEventListener('click', (e) => removeCategory(e.currentTarget.dataset.name));
+                });
+            }
+        }
+
+        function removeCategory(nameToRemove) {
+            saveState({ categories: appState.categories.filter(c => c.name !== nameToRemove) });
+        }
+
+        function openExpenseEditModal(expenseId) {
+            const expense = appState.expenses.find(e => e.id === expenseId);
+            if (!expense) return;
+            const modal = document.getElementById('edit-expense-modal');
+
+            // Set basic values
+            document.getElementById('edit-expense-id').value = expense.id;
+            document.getElementById('edit-expense-description').value = expense.description;
+            document.getElementById('edit-expense-amount').value = expense.amount;
+
+            // Helper to set custom select value
+            const setCustomSelect = (type, value) => {
+                const button = document.getElementById(`edit-expense-${type}-button`);
+                const display = button.querySelector('.custom-select-display');
+                const input = document.getElementById(`edit-expense-${type}`);
+                const options = Array.from(button.nextElementSibling.querySelectorAll('.custom-select-option')).map(opt => ({ value: opt.dataset.value, text: opt.textContent }));
+                const option = options.find(o => o.value === value);
+
+                display.textContent = option ? option.text : `Seleccionar`;
+                display.classList.toggle('text-gray-500', !option);
+                input.value = value;
+                
+                button.nextElementSibling.querySelectorAll('.custom-select-option').forEach(opt => {
+                    opt.classList.toggle('selected', opt.dataset.value === value);
+                });
+            };
+
+            // Populate and set selects
+            setCustomSelect('payer', expense.payerId);
+            setCustomSelect('type', expense.type);
+            setCustomSelect('payment-method-id', expense.paymentMethodId);
+            
+            // Handle category and subcategory
+            const categoryInput = document.getElementById('edit-expense-category');
+            setCustomSelect('category', expense.category);
+
+            // Dispatch change to populate subcategories
+            categoryInput.dispatchEvent(new Event('change', { bubbles: true }));
+
+            // Set subcategory AFTER options are populated
+            setTimeout(() => {
+                setCustomSelect('subcategory', expense.subcategory);
+            }, 0);
+
+
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+        }
+
+        function updateExpenseFormParticipants(participants) {
+            const payerOptions = document.querySelector('#expense-paid-by-button').nextElementSibling;
+            const editPayerOptions = document.querySelector('#edit-expense-payer-button').nextElementSibling;
+            payerOptions.innerHTML = '';
+            editPayerOptions.innerHTML = '';
+            participants.forEach(p => {
+                const optionHtml = `<div class="custom-select-option" data-value="${p.id}">${p.name}</div>`;
+                payerOptions.insertAdjacentHTML('beforeend', optionHtml);
+                editPayerOptions.insertAdjacentHTML('beforeend', optionHtml);
+            });
+        }
+
+        function resetPaymentForm() {
+            document.getElementById('payment-method-form').reset();
+            document.getElementById('method-id-to-edit').value = '';
+            document.getElementById('cc-config-fields').classList.add('hidden');
+            document.getElementById('payment-form-title').textContent = 'Añadir Nuevo Método:';
+            document.getElementById('save-method-btn').textContent = 'Añadir Método';
+            document.getElementById('cancel-edit-method-btn').classList.add('hidden');
+        }
+
+        function openPaymentMethodEditModal(id) {
+            const method = appState.paymentMethods.find(m => m.id === id);
+            if (!method) return;
+            resetPaymentForm();
+            document.getElementById('method-id-to-edit').value = id;
+            document.getElementById('method-name').value = method.name;
+            document.getElementById('method-type').value = method.type;
+            document.getElementById('payment-form-title').textContent = `Editar: ${method.name}`;
+            document.getElementById('save-method-btn').textContent = 'Guardar Cambios';
+            document.getElementById('cancel-edit-method-btn').classList.remove('hidden');
+            if (method.type === 'credit') {
+                document.getElementById('cc-config-fields').classList.remove('hidden');
+                document.getElementById('cc-config-cycle-day').value = method.cycleStartDay;
+                document.getElementById('cc-config-payment-day').value = method.paymentDay;
+            }
+        }
+
+        function removePaymentMethod(idToRemove) {
+            if (['m1', 'm2'].includes(idToRemove)) return showModal("No puedes eliminar los métodos de pago predeterminados.");
+            saveState({ paymentMethods: appState.paymentMethods.filter(m => m.id !== idToRemove) });
+        }
+
+        function renderPaymentMethodsModal(methods) {
+            const displayEl = document.getElementById('payment-methods-display');
+            const optionsContainer = document.querySelector('#expense-payment-method-id-button').nextElementSibling;
+            const editOptionsContainer = document.querySelector('#edit-expense-payment-method-id-button').nextElementSibling;
+            
+            displayEl.innerHTML = '';
+            optionsContainer.innerHTML = '';
+            if(editOptionsContainer) editOptionsContainer.innerHTML = '';
+
+            methods.forEach(m => {
+                const details = m.type === 'credit' ? `Ciclo: Día ${m.cycleStartDay} | Pago: Día ${m.paymentDay}` : 'Transacción inmediata.';
+                displayEl.insertAdjacentHTML('beforeend', `
+                <div class="p-3 bg-white border flex justify-between items-center">
+                    <div><span class="font-bold">${m.name}</span><p class="text-xs text-gray-600">${details}</p></div>
+                    <div class="flex space-x-2">
+                        <button data-id="${m.id}" class="edit-method-btn text-blue-500 hover:text-blue-700"><i class="fas fa-edit"></i></button>
+                        ${!['m1', 'm2'].includes(m.id) ? `<button data-id="${m.id}" class="remove-method-btn text-red-500 hover:text-red-700"><i class="fas fa-trash"></i></button>` : ''}
+                    </div>
+                </div>`);
+                const optionHTML = `<div class="custom-select-option" data-value="${m.id}">${m.name}</div>`;
+                optionsContainer.insertAdjacentHTML('beforeend', optionHTML);
+                if(editOptionsContainer) editOptionsContainer.insertAdjacentHTML('beforeend', optionHTML);
+            });
+
+            displayEl.querySelectorAll('.remove-method-btn').forEach(btn => btn.addEventListener('click', e => removePaymentMethod(e.currentTarget.dataset.id)));
+            displayEl.querySelectorAll('.edit-method-btn').forEach(btn => btn.addEventListener('click', e => openPaymentMethodEditModal(e.currentTarget.dataset.id)));
+        }
+
+        function createExpenseCardHTML(expense, participantsMap, paymentMethodsMap, showAmount = true) {
+            let payerName = participantsMap.get(expense.payerId) || expense.payerNameGuest || 'Desconocido';
+            const isShared = expense.type === 'shared';
+            const isFixed = expense.type === 'fixed';
+            const color = isShared ? 'red' : (isFixed ? 'purple' : 'blue');
+            const blurClass = (isShared || (myParticipantId && expense.payerId === myParticipantId)) ? '' : 'private-blur';
+            
+            const subcategoryLabel = expense.subcategory ? ` (${expense.subcategory})` : '';
+            const descriptionHTML = `<p class='font-bold text-gray-800'>${expense.description}${subcategoryLabel}</p>`;
+            
+            const subtitleHTML = `<p class='text-xs text-gray-500 mt-1'>${isShared ? 'Compartido' : 'Personal'} | Día: ${formatDate(expense.date)}</p>`;
+
+            const amountHTML = showAmount ? `<p class='text-2xl font-extrabold text-${color}-600'>${formatCurrency(expense.amount)}</p>` : '';
+
+            let balanceTags = '';
+            if (isShared) {
+                const splitAmount = expense.splitAmount || 0;
+                appState.participants.forEach(p => {
+                    if (p.id === expense.payerId) {
+                        balanceTags += `<span class='inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 mr-1'>${p.name}: Pagó (Total): ${formatCurrency(expense.amount)}</span>`;
+                    } else {
+                        balanceTags += `<span class='inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800 mr-1'>${p.name}: Debe: ${formatCurrency(splitAmount)}</span>`;
+                    }
+                });
+            }
+
+            const detailSectionHTML = `
+                <div id='detail-${expense.id}' class='expense-detail hidden'>
+                    <div class='mt-3 pt-3 border-t border-dashed border-gray-200'>
+                        ${isShared ? `<div class='flex flex-wrap gap-1 mb-3'>${balanceTags}</div>` : ''}
+                        <div class='flex gap-4 mt-2 justify-end'>
+                            <button data-id='${expense.id}' class='edit-expense-btn text-gray-500 hover:text-blue-500 transition duration-150 text-xs font-bold flex items-center gap-1'>
+                                <i class='fas fa-edit'></i> Editar
+                            </button>
+                            <button data-id='${expense.id}' class='delete-btn text-gray-500 hover:text-red-500 transition duration-150 text-xs font-bold flex items-center gap-1'>
+                                <i class='fas fa-trash'></i> Eliminar
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            return `
+            <div class='p-3 bg-white border border-gray-200 rounded-lg shadow-sm transition duration-300 expense-item-enter ${blurClass}' data-expense-id='${expense.id}'>
+                <div class='flex justify-between items-start expense-header' data-toggle='${expense.id}'>
+                    <div class='flex-1 min-w-0'>
+                        ${descriptionHTML}
+                        ${subtitleHTML}
+                    </div>
+                    <div class='flex flex-col items-end ml-4'>
+                        ${amountHTML}
+                    </div>
+                </div>
+                ${detailSectionHTML}
+            </div>`;
+        }
+
+        function renderExpenseReportByCategory(filteredExpenses, summary) {
+            const reportEl = document.getElementById('expense-report-by-category');
+            reportEl.innerHTML = '';
+            if (filteredExpenses.length === 0) {
+                reportEl.innerHTML = `<p class='text-gray-500 text-center py-8 italic'>No hay gastos en este ciclo.</p>`;
+                return;
+            }
+            
+            const participantsMap = new Map(appState.participants.map(p => [p.id, p.name]));
+            const paymentMethodsMap = new Map(appState.paymentMethods.map(m => [m.id, m]));
+            
+            const groupedExpenses = filteredExpenses.reduce((acc, expense) => {
+                const category = expense.category || 'Sin Categoría';
+                if (!acc[category]) acc[category] = [];
+                acc[category].push(expense);
+                return acc;
+            }, {});
+
+            Object.keys(groupedExpenses).sort().forEach(categoryName => {
+                const expenses = groupedExpenses[categoryName];
+                const categoryTotal = expenses.reduce((sum, exp) => sum + exp.amount, 0);
+                const categoryConfig = appState.categories.find(c => c.name === categoryName);
+                const budget = categoryConfig?.budget || 0;
+                const percentage = budget > 0 ? Math.min((categoryTotal / budget) * 100, 100) : 0;
+                const showAmountInCard = expenses.length > 1;
+                
+                let progressBarColor = 'bg-green-500';
+                if (percentage > 85) progressBarColor = 'bg-yellow-500';
+                if (percentage >= 100) progressBarColor = 'bg-red-500';
+
+                let budgetHTML = '';
+                if (budget > 0) {
+                    budgetHTML = `
+                    <div class="mt-2">
+                        <div class="flex justify-between text-xs font-semibold text-gray-600 mb-1">
+                            <span>${formatCurrency(categoryTotal)}</span>
+                            <span>${formatCurrency(budget)}</span>
+                        </div>
+                        <div class="progress-bar-container">
+                            <div class="progress-bar-fill ${progressBarColor}" style="width: ${percentage}%;"></div>
+                        </div>
+                    </div>`;
+                }
+
+                const categoryContainer = document.createElement('div');
+                categoryContainer.className = "bg-gray-50 p-4 rounded-xl border";
+                categoryContainer.innerHTML = `
+                    <div class='flex justify-between items-center pb-2 mb-2 border-b'>
+                        <h4 class='text-lg font-bold text-gray-700'>${categoryName}</h4>
+                        <span class='font-semibold'>${formatCurrency(categoryTotal)}</span>
+                    </div>
+                    ${budgetHTML}
+                    <div class='space-y-3 mt-3'>
+                        ${expenses.sort((a,b) => new Date(b.date) - new Date(a.date)).map(exp => createExpenseCardHTML(exp, participantsMap, paymentMethodsMap, showAmountInCard)).join('')}
+                    </div>`;
+                reportEl.appendChild(categoryContainer);
+            });
+
+            reportEl.removeEventListener('click', handleExpenseReportClick);
+            reportEl.addEventListener('click', handleExpenseReportClick);
+        }
+
+        function handleExpenseReportClick(e) {
+            const target = e.target.closest('button, .expense-header');
+            if (!target) return;
+            const id = target.dataset.id;
+            const expenseId = target.dataset.toggle;
+
+            if (expenseId) {
+                const detailEl = document.getElementById(`detail-${expenseId}`);
+                detailEl?.classList.toggle('hidden');
+            } else if (id && target.classList.contains('edit-expense-btn')) {
+                openExpenseEditModal(id);
+            } else if (id && target.classList.contains('delete-btn')) {
+                removeExpense(id);
+            }
+        }
+
+        function renderFixedExpensesSummary(summary) {
+            const fixedEl = document.getElementById('fixed-expenses-summary');
+            const fixedExpenses = appState.expenses.filter(e => e.type === 'fixed');
+
+            if (fixedExpenses.length === 0) {
+                 fixedEl.innerHTML = '<p class="text-gray-500 italic">No hay gastos fijos registrados.</p>';
+                 return;
+            }
+
+            fixedEl.innerHTML = fixedExpenses.map(exp => {
+                const totalAmount = formatCurrency(exp.amount * exp.fixedRecurrenceMonths);
+                const payerName = appState.participants.find(p => p.id === exp.payerId)?.name || 'N/A';
+               
+                return `
+                    <div class="p-3 bg-red-50 rounded-lg border border-red-300">
+                        <p class="font-bold text-red-800 text-sm">${exp.description}</p>
+                        <p class="text-xs text-gray-700">Pagador: ${payerName} | ${exp.fixedRecurrenceMonths} meses</p>
+                        <p class="text-xs text-red-600 font-semibold">Total: ${totalAmount}</p>
+                    </div>
+                `;
+            }).join('');
+        }
+       
+        function renderSharedBalanceSummary(summary) {
+            const sharedBalanceEl = document.getElementById('shared-balance-summary');
+            const balances = summary.participantData.filter(p => Math.abs(p.balance) > 0.01);
+           
+            let balanceHtml = '';
+           
+            if (summary.guestDebtTotal > 0) {
+                 balanceHtml += `<div class="p-3 bg-yellow-100 border-yellow-400 rounded-lg flex items-center justify-between"><span class="font-bold text-yellow-800"><i class="fas fa-users mr-2"></i> Invitados Deben</span><p class="font-extrabold text-red-600">${formatCurrency(summary.guestDebtTotal)}</p></div>`;
+            }
+
+            if (balances.length === 0 && summary.guestDebtTotal === 0) {
+                sharedBalanceEl.innerHTML = `<div class="text-center p-4 bg-indigo-50 rounded-lg"><i class="fas fa-handshake text-indigo-500 text-3xl mb-2"></i><p class="font-bold">¡Cuentas claras!</p></div>`;
+                return;
+            }
+           
+            balanceHtml += balances.map(p => {
+                const isPositive = p.balance > 0;
+                return `
+                    <div class="p-3 bg-white border rounded-lg flex items-center justify-between">
+                        <span class="font-semibold">${p.name}</span>
+                        <p class="font-extrabold text-sm ${isPositive ? 'balance-positive' : 'balance-negative'} flex items-center"><i class="fas ${isPositive ? 'fa-arrow-up' : 'fa-arrow-down'} mr-2"></i>${isPositive ? 'Le deben' : 'Debe'}: ${formatCurrency(Math.abs(p.balance))}</p>
+                    </div>`;
+            }).join('');
+           
+            sharedBalanceEl.innerHTML = balanceHtml;
+        }
+
+        function renderCategoryChart(filteredExpenses) {
+            const ctx = document.getElementById('category-chart').getContext('2d');
+            const noDataEl = document.getElementById('chart-no-data');
+
+            if (categoryChart) categoryChart.destroy();
+            if (filteredExpenses.length === 0) return noDataEl.classList.remove('hidden');
+            
+            noDataEl.classList.add('hidden');
+
+            const groupedData = filteredExpenses.reduce((acc, expense) => {
+                const category = expense.category || 'Sin Categoría';
+                acc[category] = (acc[category] || 0) + expense.amount;
+                return acc;
+            }, {});
+
+            const labels = Object.keys(groupedData);
+            const data = Object.values(groupedData);
+            const backgroundColors = labels.map((_, i) => ['#4F46E5', '#10B981', '#EF4444', '#F59E0B', '#6366F1', '#8B5CF6'][i % 6]);
+
+            categoryChart = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        data: data,
+                        backgroundColor: backgroundColors,
+                        borderColor: '#ffffff',
+                        borderWidth: 2,
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { position: 'bottom' },
+                        tooltip: {
+                            callbacks: {
+                                label: (context) => `${context.label}: ${formatCurrency(context.parsed)}`
+                            }
+                        }
+                    }
+                }
+            });
+        }
+        
+        // --- Main Render Function ---
+        function renderUI() {
+            const filterMonthString = getFilterMonthString(currentFilterDate);
+            let filteredExpenses = appState.expenses.filter(e => e.date && e.date.startsWith(filterMonthString));
+
+            if (filteredExpenses.length === 0 && appState.expenses.length > 0 && filterMonthString !== getFilterMonthString(new Date())) {
+                 const latestExpenseDate = new Date(Math.max(...appState.expenses.map(e => new Date(e.date))));
+                 if(latestExpenseDate && !isNaN(latestExpenseDate)) {
+                    currentFilterDate = latestExpenseDate;
+                    filteredExpenses = appState.expenses.filter(e => e.date && e.date.startsWith(getFilterMonthString(currentFilterDate)));
+                 }
+            }
+
+            const summary = calculateSummary(appState, filteredExpenses);
+           
+            renderMonthSelector();
+            renderDashboard(summary);
+            renderParticipantsConfig(appState.participants, summary);
+            renderCategoriesModal(appState.categories);
+            renderPaymentMethodsModal(appState.paymentMethods);
+            renderExpenseReportByCategory(filteredExpenses, summary);
+            renderCategoryChart(filteredExpenses);
+            renderFixedExpensesSummary(summary);
+            renderSharedBalanceSummary(summary);
+           
+            document.getElementById('expense-diagnostic').textContent = `Gastos en este ciclo: ${filteredExpenses.length}`;
+            
+            document.getElementById('expense-payment-method-id').dispatchEvent(new Event('change'));
+            document.getElementById('expense-category').dispatchEvent(new Event('change'));
+        }
+
+        window.onload = initializeFirebase;
+        window.onerror = function (message, source, lineno, colno, error) {
+            console.error("Error global:", message, error);
+            showModal("Ocurrió un error inesperado.", error?.message || message, "Error Crítico");
+            return true; 
+        };
+    </script>
+</body>
+</html>
+
