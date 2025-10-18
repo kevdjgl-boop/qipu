@@ -1074,6 +1074,7 @@
                     const loadedData = docSnap.data();
                     const defaultState = { participants: [], categories: [], paymentMethods: [], expenses: [] };
                     appState = { ...defaultState, ...appState, ...loadedData };
+                    localStorage.setItem('finance_tracker_preview', JSON.stringify(appState));                    
                 } else {
                     appState.participants.forEach(p => p.firebaseUid = p.firebaseUid || null);
                     appState.categories.forEach(c => c.budget = c.budget || 0);
@@ -1094,8 +1095,8 @@
                 console.error("Error en Firestore:", error);
                 showModal("Error al cargar datos.", error.message, "Error de Datos");
             });
-        }
-
+        } 
+        
         // --- Funciones de Soporte ---
         function loadLocalState() {
             const savedData = localStorage.getItem(LOCAL_STORAGE_KEY);
