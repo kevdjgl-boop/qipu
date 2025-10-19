@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Monedero V.1.24 (UI Refinada)</title>
+    <title>Monedero V.1.25 (Correcciones y Mejoras)</title>
     <!-- Incluye Tailwind CSS para estilizado rápido y responsive -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Incluye Font Awesome para íconos de balance -->
@@ -1365,10 +1365,10 @@
         }
         
         function removeExpense(id) {
-            if (confirm('¿Estás seguro de que quieres eliminar este gasto?')) {
-                const newExpenses = appState.expenses.filter(e => e.id !== id);
-                saveState({ expenses: newExpenses });
-            }
+            // Reemplazando confirm con una acción directa para evitar congelamiento en iframe
+            const newExpenses = appState.expenses.filter(e => e.id !== id);
+            saveState({ expenses: newExpenses });
+            showModal('Gasto eliminado.');
         }
 
         function setupCategoryModalListeners() {
@@ -1817,16 +1817,22 @@
             // Helper to set custom select value
             const setCustomSelect = (type, value) => {
                 const button = document.getElementById(`edit-expense-${type}-button`);
+                if (!button) return; 
                 const display = button.querySelector('.custom-select-display');
-                const input = document.getElementById(`edit-expense-${type.replace('-id', '')}`);
-                const options = Array.from(button.nextElementSibling.querySelectorAll('.custom-select-option')).map(opt => ({ value: opt.dataset.value, text: opt.textContent.trim() }));
-                const option = options.find(o => o.value === value);
+                const input = document.getElementById(`edit-expense-${type}`);
+                if (!input) {
+                    console.error(`Input not found for type: edit-expense-${type}`);
+                    return; 
+                }
+                
+                const optionsContainer = button.nextElementSibling;
+                const option = Array.from(optionsContainer.querySelectorAll('.custom-select-option')).find(opt => opt.dataset.value === value);
 
-                display.textContent = option ? option.text : `Seleccionar`;
+                display.textContent = option ? option.textContent.trim() : `Seleccionar`;
                 display.classList.toggle('text-gray-500', !option);
                 input.value = value;
                 
-                button.nextElementSibling.querySelectorAll('.custom-select-option').forEach(opt => {
+                optionsContainer.querySelectorAll('.custom-select-option').forEach(opt => {
                     opt.classList.toggle('selected', opt.dataset.value === value);
                 });
             };
@@ -1846,7 +1852,7 @@
             // Set subcategory AFTER options are populated
             setTimeout(() => {
                 setCustomSelect('subcategory', expense.subcategory);
-            }, 0);
+            }, 0); // Timeout ensures options are rendered before selection
 
 
             modal.classList.remove('hidden');
@@ -2061,25 +2067,51 @@
 
         function renderFixedExpensesSummary(summary) {
             const fixedEl = document.getElementById('fixed-expenses-summary');
-            const fixedExpenses = appState.expenses.filter(e => e.type === 'fixed');
+            const filterString = getFilterMonthString(currentFilterDate);
+            const fixedExpenses = appState.expenses.filter(e => e.type === 'fixed' && e.date.startsWith(filterString));
 
             if (fixedExpenses.length === 0) {
-                 fixedEl.innerHTML = '<p class="text-gray-500 italic">No hay gastos fijos registrados.</p>';
+                 fixedEl.innerHTML = '<p class="text-gray-500 italic">No hay gastos fijos para este ciclo.</p>';
                  return;
             }
+            
+            const participantsMap = new Map(appState.participants.map(p => [p.id, p.name]));
 
-            fixedEl.innerHTML = fixedExpenses.map(exp => {
-                const totalAmount = formatCurrency(exp.amount * exp.fixedRecurrenceMonths);
-                const payerName = appState.participants.find(p => p.id === exp.payerId)?.name || 'N/A';
-               
-                return `
-                    <div class="p-3 bg-red-50 rounded-lg border border-red-300">
-                        <p class="font-bold text-red-800 text-sm">${exp.description}</p>
-                        <p class="text-xs text-gray-700">Pagador: ${payerName} | ${exp.fixedRecurrenceMonths} meses</p>
-                        <p class="text-xs text-red-600 font-semibold">Total: ${totalAmount}</p>
-                    </div>
-                `;
-            }).join('');
+            const groupedByPayer = fixedExpenses.reduce((acc, exp) => {
+                const payerId = exp.payerId;
+                if (!acc[payerId]) {
+                    acc[payerId] = [];
+                }
+                acc[payerId].push(exp);
+                return acc;
+            }, {});
+
+            let html = '';
+            for (const payerId in groupedByPayer) {
+                const payerName = participantsMap.get(payerId) || 'Desconocido';
+                const expenses = groupedByPayer[payerId];
+                
+                html += `<div class="mb-4">
+                            <h4 class="font-bold text-sm text-purple-800 bg-purple-100 p-2 rounded-t-lg">${payerName}</h4>
+                            <div class="space-y-2 border border-t-0 border-purple-200 p-2 rounded-b-lg">`;
+                
+                html += expenses.map(exp => {
+                    const monthlyAmount = formatCurrency(exp.amount);
+                    return `
+                        <div class="p-2 bg-white rounded-md border border-gray-200">
+                            <div class="flex justify-between items-center">
+                                <p class="font-semibold text-gray-800 text-sm">${exp.description}</p>
+                                <p class="font-bold text-purple-600 text-sm">${monthlyAmount}</p>
+                            </div>
+                            ${exp.fixedRecurrenceMonths > 0 ? `<p class="text-xs text-gray-500">${exp.fixedRecurrenceMonths} meses</p>` : ''}
+                        </div>
+                    `;
+                }).join('');
+
+                html += `</div></div>`;
+            }
+
+            fixedEl.innerHTML = html;
         }
        
         function renderSharedBalanceSummary(summary) {
@@ -2176,7 +2208,7 @@
             renderPaymentMethodsModal(appState.paymentMethods);
             renderExpenseReportByCategory(filteredExpenses, summary);
             renderCategoryChart(filteredExpenses);
-            renderFixedExpensesSummary(summary);
+            renderFixedExpensesSummary();
             renderSharedBalanceSummary(summary);
            
             document.getElementById('expense-diagnostic').textContent = `Gastos en este ciclo: ${filteredExpenses.length}`;
