@@ -1671,19 +1671,25 @@
                 const amount = expense.amount || 0;
                 totalSpent += amount;
                 const payer = participantMap.get(expense.payerId);
-                if (payer) payer.contributionPaid += amount;
+                if (payer) {
+                    payer.contributionPaid += amount;
+                }
                 
                 const isShared = expense.type === 'shared';
 
                 if (isShared) { // Handle shared logic
                     const numPayees = expense.payerId.startsWith('guest_') ? participants.length + 1 : participants.length;
                     const splitAmount = amount / numPayees;
-                    participantData.forEach(p => p.expectedContribution += splitAmount);
-                    if (expense.payerId.startsWith('guest_')) guestDebtTotal += splitAmount;
+                    participantData.forEach(p => {
+                        p.spent += splitAmount;
+                    });
+                    if (expense.payerId.startsWith('guest_')) {
+                        guestDebtTotal += splitAmount;
+                    }
                     expense.splitAmount = splitAmount;
                 } else { // Handle personal logic
                      if (payer) {
-                        payer.expectedContribution += amount;
+                        payer.spent += amount;
                     }
                 }
             });
@@ -1692,12 +1698,12 @@
             let globalSharedSavingsGoal = 0;
 
             participantData.forEach(p => {
-                p.spent = p.expectedContribution;
+                p.balance = p.contributionPaid - p.spent;
                 p.remainingBudget = p.availableForSpending - p.spent;
-                p.balance = p.contributionPaid - p.expectedContribution;
-                globalTotalRemainingBudget += p.budget - p.spent - p.sharedSavingsGoal - p.independentSavingsGoal;
+                globalTotalRemainingBudget += p.remainingBudget; // Simplified calculation
                 globalSharedSavingsGoal += p.sharedSavingsGoal;
             });
+
 
             return {
                 globalTotalRemainingBudget,
