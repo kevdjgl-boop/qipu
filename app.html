@@ -1529,7 +1529,7 @@
                     }
 
                     const paymentMethod = appState.paymentMethods.find(m => m.id === paymentMethodId);
-                    const { cycleStart, paymentDate } = paymentMethod.type === 'credit' ? getCycleDates(method) : {};
+                    const { cycleStart, paymentDate } = paymentMethod && paymentMethod.type === 'credit' ? getCycleDates(paymentMethod) : {};
                     const fixedRecurrenceMonths = isFixed ? parseInt(document.getElementById('fixed-recurrence-months').value) || 1 : 0;
 
                     const newExpense = {
@@ -1954,7 +1954,6 @@
                 colorClass = 'red';
             }
             if(isFixed) {
-                colorClass = 'purple';
                 borderColorClass = 'border-purple-400';
                 typeLabel += ' Fijo';
             } else if (isShared) {
