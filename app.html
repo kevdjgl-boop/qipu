@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Monedero V.1.30 (Dashboard Mejorado)</title>
+    <title>Monedero V.1.31 (Balance Fijo)</title>
     <!-- Incluye Tailwind CSS para estilizado rápido y responsive -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Incluye Font Awesome para íconos de balance -->
@@ -272,7 +272,7 @@
                 
                 <!-- COLUMNA 3: Balance de Cuentas Plegable -->
                 <div class="lg:col-span-1">
-                    <div class="section-card border-l-4 border-indigo-500">
+                    <div class="section-card border-l-4 border-indigo-500 h-full flex flex-col">
                         <div id="balance-header" class="flex items-center justify-between cursor-pointer">
                             <h2 class="text-lg font-bold text-indigo-700 flex items-center">
                                 <i class="fas fa-balance-scale mr-2"></i> Balance de Cuentas
@@ -280,7 +280,7 @@
                             <i id="balance-chevron" class="fas fa-chevron-down transition-transform"></i>
                         </div>
                         
-                        <div id="balance-content" class="hidden mt-4">
+                        <div id="balance-content" class="hidden mt-4 flex-grow flex flex-col justify-between">
                             <div id="shared-balance-summary" class="space-y-3 text-sm">
                                 <!-- Contenido del balance renderizado por JS -->
                             </div>
@@ -386,10 +386,10 @@
                         </div>
 
 
-                        <!-- Fila 3: Categoría, Subcategoría y Gasto Fijo -->
-                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
+                        <!-- Fila 3: Categoría y Subcategoría -->
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <!-- Categoría (Custom Select) -->
-                            <div class="md:col-span-1">
+                            <div>
                                 <label for="expense-category-button" class="block text-sm font-medium text-gray-700">Categoría</label>
                                 <div class="relative custom-select-container mt-1">
                                     <button type="button" id="expense-category-button" class="custom-select-button w-full text-left p-3 border border-gray-300 rounded-lg bg-white flex justify-between items-center">
@@ -401,7 +401,7 @@
                                 </div>
                             </div>
                             <!-- Subcategoría (Custom Select) -->
-                            <div class="md:col-span-1">
+                            <div>
                                 <label for="expense-subcategory-button" class="block text-sm font-medium text-gray-700">Subcategoría</label>
                                 <div class="relative custom-select-container mt-1">
                                     <button type="button" id="expense-subcategory-button" disabled class="custom-select-button w-full text-left p-3 border border-gray-300 rounded-lg bg-gray-100 flex justify-between items-center">
@@ -412,23 +412,25 @@
                                     <input type="hidden" id="expense-subcategory">
                                 </div>
                             </div>
-                             <!-- Checkbox Gasto Fijo -->
-                            <div class="flex items-center justify-start md:justify-center h-full pb-2">
-                                <div class="flex items-center h-full">
+                        </div>
+
+                        <!-- Fila 4: Opciones y Botón de Añadir -->
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 pt-4 items-end">
+                            <!-- Columna 1 y 2: Gasto Fijo y Recurrencia -->
+                            <div class="flex items-end space-x-4 md:col-span-2">
+                                <div class="flex items-center h-12">
                                     <input id="expense-is-fixed" type="checkbox" class="h-4 w-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500">
                                     <label for="expense-is-fixed" class="ml-2 block text-sm font-medium text-gray-900">Gasto Fijo</label>
                                 </div>
+                                <div id="fixed-recurrence-container" class="hidden">
+                                    <label for="fixed-recurrence-months" class="block text-sm font-medium text-red-700">Meses</label>
+                                    <input type="number" id="fixed-recurrence-months" min="1" max="60" value="12" class="w-24 mt-1 p-3 border border-gray-300 rounded-lg">
+                                </div>
                             </div>
-                        </div>
-
-                        <!-- Fila 4: Recurrencia y Botón de Añadir -->
-                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
-                             <div id="fixed-recurrence-container" class="hidden md:col-span-1">
-                                <label for="fixed-recurrence-months" class="block text-sm font-medium text-red-700">Meses de Recurrencia</label>
-                                <input type="number" id="fixed-recurrence-months" min="1" max="60" value="12" class="w-full mt-1 p-3 border border-red-300 rounded-lg">
-                            </div>
-                            <div class="md:col-start-2 md:col-span-2">
-                                <button type="submit" class="w-full py-3 bg-red-500 text-white font-bold rounded-xl shadow-lg hover:bg-red-600 transition">
+                            
+                            <!-- Columna 3: Botón de Añadir Gasto -->
+                            <div class="md:col-span-1">
+                                <button type="submit" class="w-full py-3 bg-red-500 text-white font-bold rounded-xl shadow-lg hover:bg-red-600 transition duration-300">
                                     Añadir Gasto
                                 </button>
                             </div>
@@ -1833,28 +1835,36 @@
             if (!expense) return;
             const modal = document.getElementById('edit-expense-modal');
 
+            // Set basic values
             document.getElementById('edit-expense-id').value = expense.id;
             document.getElementById('edit-expense-description').value = expense.description;
             document.getElementById('edit-expense-amount').value = expense.amount;
             document.getElementById('edit-expense-is-fixed').checked = expense.isFixed || expense.type === 'fixed';
 
+            // Helper to set custom select value
             const setCustomSelect = (type, value) => {
                 const button = document.getElementById(`edit-expense-${type}-button`);
-                if (!button) return;
+                if (!button) return; 
                 const display = button.querySelector('.custom-select-display');
                 const input = document.getElementById(`edit-expense-${type}`);
-                if (!input) return;
-
+                if (!input) {
+                    console.error(`Input not found for type: edit-expense-${type}`);
+                    return; 
+                }
+                
                 const optionsContainer = button.nextElementSibling;
                 const option = Array.from(optionsContainer.querySelectorAll('.custom-select-option')).find(opt => opt.dataset.value === value);
-                
+
                 display.textContent = option ? option.textContent.trim() : `Seleccionar`;
                 display.classList.toggle('text-gray-500', !option);
                 input.value = value;
                 
-                optionsContainer.querySelectorAll('.custom-select-option').forEach(opt => opt.classList.toggle('selected', opt.dataset.value === value));
+                optionsContainer.querySelectorAll('.custom-select-option').forEach(opt => {
+                    opt.classList.toggle('selected', opt.dataset.value === value);
+                });
             };
 
+            // Populate and set selects
             setCustomSelect('payer', expense.payerId);
             setCustomSelect('type', expense.type === 'fixed' ? 'personal' : expense.type);
             setCustomSelect('payment-method-id', expense.paymentMethodId);
@@ -2240,3 +2250,4 @@
     </script>
 </body>
 </html>
+
