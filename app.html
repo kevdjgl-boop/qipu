@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Monedero V.1.29 (Balance Integrado)</title>
+    <title>Monedero V.1.30 (Dashboard Mejorado)</title>
     <!-- Incluye Tailwind CSS para estilizado rápido y responsive -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Incluye Font Awesome para íconos de balance -->
@@ -251,32 +251,20 @@
                         </div>
                     </div>
                 
-                    <!-- Grid para Saldos y Gráfico -->
-                    <div class="grid grid-cols-1 xl:grid-cols-2 gap-6">
-                        <!-- CARDS INDIVIDUALES Y AHORRO MUTUO -->
-                        <div class="section-card border-t-4 border-teal-500 space-y-4">
-                            <h3 class="text-lg font-bold text-gray-700">Saldos Individuales y Metas</h3>
-                            <div id="participant-summary-cards" class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                <!-- Tarjetas de resumen individual se renderizan aquí -->
-                            </div>
-                            <div class="grid grid-cols-2 gap-4 pt-2 border-t border-gray-200">
-                                <div class="section-card border-l-4 border-yellow-500 p-4 text-center bg-yellow-50">
-                                    <p class="text-sm font-semibold uppercase text-yellow-700">Gastos Fijos Total</p>
-                                    <span id="display-fixed-total" class="text-2xl font-extrabold text-yellow-600 block mt-2">S/ 0.00</span>
-                                </div>
-                                <div class="section-card border-l-4 border-purple-500 p-4 text-center bg-purple-50">
-                                    <p class="text-sm font-semibold uppercase text-purple-700">Meta Ahorro Mutuo</p>
-                                    <span id="display-shared-savings-goal" class="text-2xl font-extrabold text-purple-600 block mt-2">S/ 0.00</span>
-                                </div>
-                            </div>
+                    <!-- CARDS INDIVIDUALES Y AHORRO MUTUO -->
+                    <div class="section-card border-t-4 border-teal-500 space-y-4">
+                        <h3 class="text-lg font-bold text-gray-700">Saldos Individuales y Metas</h3>
+                        <div id="participant-summary-cards" class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <!-- Tarjetas de resumen individual se renderizan aquí -->
                         </div>
-
-                        <!-- GRÁFICO DE DISTRIBUCIÓN DE GASTOS -->
-                        <div class="section-card h-full">
-                            <h3 class="text-xl font-bold text-gray-700 mb-4">Distribución de Gastos</h3>
-                            <div class="relative h-64 md:h-72">
-                                <canvas id="category-chart"></canvas>
-                                <p id="chart-no-data" class="absolute inset-0 flex items-center justify-center text-gray-500 italic hidden">No hay datos para mostrar.</p>
+                        <div class="grid grid-cols-2 gap-4 pt-2 border-t border-gray-200">
+                            <div class="section-card border-l-4 border-yellow-500 p-4 text-center bg-yellow-50">
+                                <p class="text-sm font-semibold uppercase text-yellow-700">Gastos Fijos Total</p>
+                                <span id="display-fixed-total" class="text-2xl font-extrabold text-yellow-600 block mt-2">S/ 0.00</span>
+                            </div>
+                            <div class="section-card border-l-4 border-purple-500 p-4 text-center bg-purple-50">
+                                <p class="text-sm font-semibold uppercase text-purple-700">Meta Ahorro Mutuo</p>
+                                <span id="display-shared-savings-goal" class="text-2xl font-extrabold text-purple-600 block mt-2">S/ 0.00</span>
                             </div>
                         </div>
                     </div>
@@ -284,7 +272,7 @@
                 
                 <!-- COLUMNA 3: Balance de Cuentas Plegable -->
                 <div class="lg:col-span-1">
-                    <div class="section-card border-l-4 border-indigo-500 h-full flex flex-col">
+                    <div class="section-card border-l-4 border-indigo-500">
                         <div id="balance-header" class="flex items-center justify-between cursor-pointer">
                             <h2 class="text-lg font-bold text-indigo-700 flex items-center">
                                 <i class="fas fa-balance-scale mr-2"></i> Balance de Cuentas
@@ -292,7 +280,7 @@
                             <i id="balance-chevron" class="fas fa-chevron-down transition-transform"></i>
                         </div>
                         
-                        <div id="balance-content" class="hidden mt-4 flex-grow flex flex-col justify-between">
+                        <div id="balance-content" class="hidden mt-4">
                             <div id="shared-balance-summary" class="space-y-3 text-sm">
                                 <!-- Contenido del balance renderizado por JS -->
                             </div>
@@ -305,6 +293,14 @@
                             </div>
                         </div>
                     </div>
+                </div>
+            </div>
+            <!-- GRÁFICO DE DISTRIBUCIÓN DE GASTOS (Full Width) -->
+            <div class="section-card">
+                <h3 class="text-xl font-bold text-gray-700 mb-4">Distribución de Gastos</h3>
+                <div class="relative h-64 md:h-80">
+                    <canvas id="category-chart"></canvas>
+                    <p id="chart-no-data" class="absolute inset-0 flex items-center justify-center text-gray-500 italic hidden">No hay datos para mostrar.</p>
                 </div>
             </div>
         </section>
@@ -368,8 +364,7 @@
                                     </button>
                                     <div class="custom-select-options absolute hidden mt-1 w-full bg-white rounded-lg shadow-lg z-20 border border-gray-200">
                                         <div class="custom-select-option selected" data-value="personal">Personal</div>
-                                        <div class="custom-select-option" data-value="shared">Compartido (Dividido por igual)</div>
-                                        <div class="custom-select-option" data-value="fixed">Gasto Fijo (Mensual)</div>
+                                        <div class="custom-select-option" data-value="shared">Compartido</div>
                                     </div>
                                     <input type="hidden" id="expense-type" value="personal" required>
                                 </div>
@@ -391,19 +386,17 @@
                         </div>
 
 
-                        <!-- Fila 3: Categoría, Subcategoría y Gasto Fijo (Recurrencia) -->
-                        <div class="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
+                        <!-- Fila 3: Categoría, Subcategoría y Gasto Fijo -->
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
                             <!-- Categoría (Custom Select) -->
                             <div class="md:col-span-1">
                                 <label for="expense-category-button" class="block text-sm font-medium text-gray-700">Categoría</label>
                                 <div class="relative custom-select-container mt-1">
-                                    <button type="button" id="expense-category-button" class="custom-select-button w-full text-left p-3 border border-gray-300 rounded-lg bg-white flex justify-between items-center transition duration-150 ease-in-out focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                                    <button type="button" id="expense-category-button" class="custom-select-button w-full text-left p-3 border border-gray-300 rounded-lg bg-white flex justify-between items-center">
                                         <span class="custom-select-display text-gray-500">Selecciona categoría</span>
-                                        <i class="fas fa-chevron-down text-gray-400 transition-transform duration-200"></i>
+                                        <i class="fas fa-chevron-down text-gray-400"></i>
                                     </button>
-                                    <div class="custom-select-options absolute hidden mt-1 w-full bg-white rounded-lg shadow-lg z-20 border border-gray-200">
-                                        <!-- Opciones populadas por JS -->
-                                    </div>
+                                    <div class="custom-select-options absolute hidden mt-1 w-full bg-white rounded-lg shadow-lg z-20"></div>
                                     <input type="hidden" id="expense-category" required>
                                 </div>
                             </div>
@@ -411,24 +404,31 @@
                             <div class="md:col-span-1">
                                 <label for="expense-subcategory-button" class="block text-sm font-medium text-gray-700">Subcategoría</label>
                                 <div class="relative custom-select-container mt-1">
-                                    <button type="button" id="expense-subcategory-button" disabled class="custom-select-button w-full text-left p-3 border border-gray-300 rounded-lg bg-gray-100 flex justify-between items-center transition duration-150 ease-in-out focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                                    <button type="button" id="expense-subcategory-button" disabled class="custom-select-button w-full text-left p-3 border border-gray-300 rounded-lg bg-gray-100 flex justify-between items-center">
                                         <span class="custom-select-display text-gray-500">Selecciona subcategoría</span>
-                                        <i class="fas fa-chevron-down text-gray-400 transition-transform duration-200"></i>
+                                        <i class="fas fa-chevron-down text-gray-400"></i>
                                     </button>
-                                    <div class="custom-select-options absolute hidden mt-1 w-full bg-white rounded-lg shadow-lg z-20 border border-gray-200">
-                                        <!-- Opciones populadas por JS -->
-                                    </div>
+                                    <div class="custom-select-options absolute hidden mt-1 w-full bg-white rounded-lg shadow-lg z-20"></div>
                                     <input type="hidden" id="expense-subcategory">
                                 </div>
                             </div>
-                            <!-- Campo de Recurrencia para Gastos Fijos (Oculto por defecto) -->
-                            <div id="fixed-recurrence-container" class="hidden">
-                                <label for="fixed-recurrence-months" class="block text-sm font-medium text-red-700">Meses de Gasto Fijo</label>
-                                <input type="number" id="fixed-recurrence-months" min="1" max="60" value="12" required class="w-full mt-1 p-3 border border-red-300 rounded-lg focus:ring-red-500 focus:border-red-500">
+                             <!-- Checkbox Gasto Fijo -->
+                            <div class="flex items-center justify-start md:justify-center h-full pb-2">
+                                <div class="flex items-center h-full">
+                                    <input id="expense-is-fixed" type="checkbox" class="h-4 w-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500">
+                                    <label for="expense-is-fixed" class="ml-2 block text-sm font-medium text-gray-900">Gasto Fijo</label>
+                                </div>
                             </div>
-                            <!-- Botón de Añadir Gasto -->
-                            <div class="md:col-span-2">
-                                <button type="submit" class="w-full py-3 bg-red-500 text-white font-bold rounded-xl shadow-lg hover:bg-red-600 transition duration-300">
+                        </div>
+
+                        <!-- Fila 4: Recurrencia y Botón de Añadir -->
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
+                             <div id="fixed-recurrence-container" class="hidden md:col-span-1">
+                                <label for="fixed-recurrence-months" class="block text-sm font-medium text-red-700">Meses de Recurrencia</label>
+                                <input type="number" id="fixed-recurrence-months" min="1" max="60" value="12" class="w-full mt-1 p-3 border border-red-300 rounded-lg">
+                            </div>
+                            <div class="md:col-start-2 md:col-span-2">
+                                <button type="submit" class="w-full py-3 bg-red-500 text-white font-bold rounded-xl shadow-lg hover:bg-red-600 transition">
                                     Añadir Gasto
                                 </button>
                             </div>
@@ -725,7 +725,6 @@
                             <div class="custom-select-options absolute hidden mt-1 w-full bg-white rounded-lg shadow-lg z-30">
                                  <div class="custom-select-option" data-value="personal">Personal</div>
                                  <div class="custom-select-option" data-value="shared">Compartido</div>
-                                 <div class="custom-select-option" data-value="fixed">Gasto Fijo</div>
                             </div>
                             <input type="hidden" id="edit-expense-type">
                         </div>
@@ -773,6 +772,12 @@
                     </div>
                 </div>
                 
+                 <!-- Checkbox Gasto Fijo -->
+                <div class="flex items-center">
+                    <input id="edit-expense-is-fixed" type="checkbox" class="h-4 w-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500">
+                    <label for="edit-expense-is-fixed" class="ml-2 block text-sm text-gray-900">Marcar como Gasto Fijo</label>
+                </div>
+
                 <button type="submit" class="w-full py-3 bg-red-500 text-white font-bold rounded-xl hover:bg-red-600 transition duration-300 mt-4">
                     Guardar Cambios
                 </button>
@@ -1042,8 +1047,29 @@
             unsubscribeListener = onSnapshot(docRef, docSnap => {
                 if (docSnap.exists()) {
                     const loadedData = docSnap.data();
+                    let needsUpdate = false;
+                    
+                    if (loadedData.expenses) {
+                        loadedData.expenses = loadedData.expenses.map(exp => {
+                            if (exp.type === 'fixed') {
+                                needsUpdate = true;
+                                return { ...exp, type: 'personal', isFixed: true };
+                            }
+                            if (typeof exp.isFixed === 'undefined') {
+                                needsUpdate = true;
+                                return { ...exp, isFixed: false };
+                            }
+                            return exp;
+                        });
+                    }
+
                     const defaultState = { participants: [], categories: [], paymentMethods: [], expenses: [] };
                     appState = { ...defaultState, ...appState, ...loadedData };
+                    
+                    if (needsUpdate) {
+                        saveState({ expenses: appState.expenses });
+                    }
+
                 } else {
                     appState.participants.forEach(p => p.firebaseUid = p.firebaseUid || null);
                     appState.categories.forEach(c => c.budget = c.budget || 0);
@@ -1444,8 +1470,8 @@
         }
 
         function setupExpenseFormListeners() {
-            document.getElementById('expense-type').addEventListener('change', (e) => {
-                document.getElementById('fixed-recurrence-container').classList.toggle('hidden', e.target.value !== 'fixed');
+            document.getElementById('expense-is-fixed').addEventListener('change', (e) => {
+                document.getElementById('fixed-recurrence-container').classList.toggle('hidden', !e.target.checked);
             });
 
             document.getElementById('expense-category').addEventListener('change', (e) => {
@@ -1497,17 +1523,19 @@
                     const category = document.getElementById('expense-category').value;
                     const subcategory = document.getElementById('expense-subcategory').value;
                     const paymentMethodId = document.getElementById('expense-payment-method-id').value;
-                    
+                    const isFixed = document.getElementById('expense-is-fixed').checked;
+
                     if (!description || !amount || !payerId || !category || !paymentMethodId) {
                         return showModal("Por favor, completa todos los campos requeridos.");
                     }
 
                     const paymentMethod = appState.paymentMethods.find(m => m.id === paymentMethodId);
-                    const { cycleStart, paymentDate } = paymentMethod.type === 'credit' ? getCycleDates(paymentMethod) : {};
-                    const fixedRecurrenceMonths = type === 'fixed' ? parseInt(document.getElementById('fixed-recurrence-months').value) || 1 : 0;
+                    const { cycleStart, paymentDate } = paymentMethod.type === 'credit' ? getCycleDates(method) : {};
+                    const fixedRecurrenceMonths = isFixed ? parseInt(document.getElementById('fixed-recurrence-months').value) || 1 : 0;
 
                     const newExpense = {
                         id: generateUUID(), description, amount, payerId, type, category, subcategory, paymentMethodId,
+                        isFixed,
                         date: new Date().toISOString().split('T')[0],
                         dateCreated: new Date().toISOString(),
                         ccCycleStart: cycleStart || null,
@@ -1586,6 +1614,7 @@
                 const newSubcategory = document.getElementById('edit-expense-subcategory').value;
                 const newType = document.getElementById('edit-expense-type').value;
                 const newPaymentMethodId = document.getElementById('edit-expense-payment-method-id').value;
+                const newIsFixed = document.getElementById('edit-expense-is-fixed').checked;
                 let newPayerId = document.getElementById('edit-expense-payer').value;
                 let newPayerName = '';
 
@@ -1609,6 +1638,7 @@
                             category: newCategory, 
                             subcategory: newSubcategory,
                             type: newType,
+                            isFixed: newIsFixed,
                             paymentMethodId: newPaymentMethodId,
                             payerId: newPayerId, 
                             payerNameGuest: newPayerName 
@@ -1643,18 +1673,21 @@
                 totalSpent += amount;
                 const payer = participantMap.get(expense.payerId);
                 if (payer) payer.contributionPaid += amount;
+                
+                const isLegacyFixed = expense.type === 'fixed';
+                const isShared = expense.type === 'shared';
 
-                if (expense.type === 'personal' || expense.type === 'fixed') {
-                    if (payer) {
-                        payer.expectedContribution += amount;
-                        payer.spent += amount;
-                    }
-                } else if (expense.type === 'shared') {
+                if (isShared || (isLegacyFixed && isShared)) { // Handle shared logic
                     const numPayees = expense.payerId.startsWith('guest_') ? participants.length + 1 : participants.length;
                     const splitAmount = amount / numPayees;
                     participantData.forEach(p => p.expectedContribution += splitAmount);
                     if (expense.payerId.startsWith('guest_')) guestDebtTotal += splitAmount;
                     expense.splitAmount = splitAmount;
+                } else { // Handle personal logic
+                     if (payer) {
+                        payer.expectedContribution += amount;
+                        payer.spent += amount;
+                    }
                 }
             });
 
@@ -1700,7 +1733,7 @@
             document.getElementById('display-total-spent').textContent = formatCurrency(summary.totalSpent);
             document.getElementById('display-shared-savings-goal').textContent = formatCurrency(summary.globalSharedSavingsGoal);
             const totalFixed = appState.expenses
-                .filter(e => e.type === 'fixed')
+                .filter(e => e.isFixed || e.type === 'fixed')
                 .reduce((sum, exp) => sum + exp.amount, 0);
             document.getElementById('display-fixed-total').textContent = formatCurrency(totalFixed);
             const participantCardsEl = document.getElementById('participant-summary-cards');
@@ -1800,51 +1833,39 @@
             if (!expense) return;
             const modal = document.getElementById('edit-expense-modal');
 
-            // Set basic values
             document.getElementById('edit-expense-id').value = expense.id;
             document.getElementById('edit-expense-description').value = expense.description;
             document.getElementById('edit-expense-amount').value = expense.amount;
+            document.getElementById('edit-expense-is-fixed').checked = expense.isFixed || expense.type === 'fixed';
 
-            // Helper to set custom select value
             const setCustomSelect = (type, value) => {
                 const button = document.getElementById(`edit-expense-${type}-button`);
-                if (!button) return; 
+                if (!button) return;
                 const display = button.querySelector('.custom-select-display');
                 const input = document.getElementById(`edit-expense-${type}`);
-                if (!input) {
-                    console.error(`Input not found for type: edit-expense-${type}`);
-                    return; 
-                }
-                
+                if (!input) return;
+
                 const optionsContainer = button.nextElementSibling;
                 const option = Array.from(optionsContainer.querySelectorAll('.custom-select-option')).find(opt => opt.dataset.value === value);
-
+                
                 display.textContent = option ? option.textContent.trim() : `Seleccionar`;
                 display.classList.toggle('text-gray-500', !option);
                 input.value = value;
                 
-                optionsContainer.querySelectorAll('.custom-select-option').forEach(opt => {
-                    opt.classList.toggle('selected', opt.dataset.value === value);
-                });
+                optionsContainer.querySelectorAll('.custom-select-option').forEach(opt => opt.classList.toggle('selected', opt.dataset.value === value));
             };
 
-            // Populate and set selects
             setCustomSelect('payer', expense.payerId);
-            setCustomSelect('type', expense.type);
+            setCustomSelect('type', expense.type === 'fixed' ? 'personal' : expense.type);
             setCustomSelect('payment-method-id', expense.paymentMethodId);
             
-            // Handle category and subcategory
             const categoryInput = document.getElementById('edit-expense-category');
             setCustomSelect('category', expense.category);
-
-            // Dispatch change to populate subcategories
             categoryInput.dispatchEvent(new Event('change', { bubbles: true }));
 
-            // Set subcategory AFTER options are populated
             setTimeout(() => {
                 setCustomSelect('subcategory', expense.subcategory);
-            }, 0); // Timeout ensures options are rendered before selection
-
+            }, 0);
 
             modal.classList.remove('hidden');
             modal.classList.add('flex');
@@ -1924,19 +1945,22 @@
         function createExpenseCardHTML(expense, participantsMap, paymentMethodsMap, showAmount = true) {
             let payerName = participantsMap.get(expense.payerId) || expense.payerNameGuest || 'Desconocido';
             const isShared = expense.type === 'shared';
-            const isFixed = expense.type === 'fixed';
-            const color = isShared ? 'red' : (isFixed ? 'purple' : 'blue');
+            const isFixed = expense.isFixed || expense.type === 'fixed';
+            const color = isShared ? 'red' : 'blue';
             
             const subcategoryLabel = expense.subcategory ? ` (${expense.subcategory})` : '';
             const descriptionHTML = `<p class='font-bold text-gray-800'>${expense.description}${subcategoryLabel}</p>`;
             
-            const subtitleHTML = `<p class='text-xs text-gray-500 mt-1'>${isShared ? 'Compartido' : 'Personal'} | Día: ${formatDate(expense.date)}</p>`;
+            let typeLabel = isShared ? 'Compartido' : 'Personal';
+            if (isFixed) typeLabel += ' Fijo';
+
+            const subtitleHTML = `<p class='text-xs text-gray-500 mt-1'>${typeLabel} | Día: ${formatDate(expense.date)}</p>`;
 
             const amountHTML = showAmount ? `<p class='text-2xl font-extrabold text-${color}-600'>${formatCurrency(expense.amount)}</p>` : '';
 
             let balanceTags = '';
             if (isShared) {
-                const splitAmount = expense.splitAmount || 0;
+                const splitAmount = expense.splitAmount || (expense.amount / appState.participants.length);
                 appState.participants.forEach(p => {
                     if (p.id === expense.payerId) {
                         balanceTags += `<span class='inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 mr-1'>${p.name}: Pagó (Total): ${formatCurrency(expense.amount)}</span>`;
@@ -1963,7 +1987,7 @@
             `;
 
             return `
-            <div class='p-3 bg-white border ${isShared ? 'border-gray-200' : (isFixed ? 'border-l-4 border-purple-400' : 'border-l-4 border-blue-400')} rounded-lg shadow-sm transition duration-300 expense-item-enter' data-expense-id='${expense.id}'>
+            <div class='p-3 bg-white border ${isFixed ? 'border-l-4 border-purple-400' : 'border-l-4 border-gray-200'} rounded-lg shadow-sm transition duration-300 expense-item-enter' data-expense-id='${expense.id}'>
                 <div class='flex justify-between items-start expense-header' data-toggle='${expense.id}'>
                     <div class='flex-1 min-w-0'>
                         ${descriptionHTML}
@@ -2058,7 +2082,7 @@
         function renderFixedExpensesSummary() {
             const fixedEl = document.getElementById('fixed-expenses-summary');
             const filterString = getFilterMonthString(currentFilterDate);
-            const fixedExpenses = appState.expenses.filter(e => e.type === 'fixed' && e.date.startsWith(filterString));
+            const fixedExpenses = appState.expenses.filter(e => (e.isFixed || e.type === 'fixed') && e.date.startsWith(filterString));
 
             if (fixedExpenses.length === 0) {
                  fixedEl.innerHTML = '<p class="text-gray-500 italic">No hay gastos fijos para este ciclo.</p>';
@@ -2216,4 +2240,3 @@
     </script>
 </body>
 </html>
-
