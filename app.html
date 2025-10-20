@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Monedero V.1.25 (Correcciones y Mejoras)</title>
+    <title>Monedero V.1.29 (Balance Integrado)</title>
     <!-- Incluye Tailwind CSS para estilizado rápido y responsive -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Incluye Font Awesome para íconos de balance -->
@@ -78,8 +78,6 @@
             position: fixed;
             top: 0;
             right: 0;
-            width: 100%;
-            max-width: 400px; /* Ancho máximo en escritorio */
             height: 100%;
             background-color: #ffffff;
             box-shadow: -5px 0 15px rgba(0, 0, 0, 0.2);
@@ -87,6 +85,8 @@
             transition: transform 0.3s ease-out;
             z-index: 50; /* Mayor que modales normales */
             overflow-y: auto;
+            width: 100%;
+            max-width: 400px;
         }
 
         #participant-sidebar.open {
@@ -110,13 +110,7 @@
         }
         /* --- FIN ESTILOS SIDEBAR --- */
        
-        /* Asegurar que el Balance ocupe toda la altura */
-        .balance-col {
-            min-height: 100%;
-        }
-
-        /* Estilo para el botón de participantes */
-        #open-participants-sidebar-btn {
+        .header-btn {
             background-color: #4F46E5; /* Indigo-600 */
             color: white;
             padding: 0.5rem 1rem;
@@ -124,10 +118,14 @@
             font-weight: bold;
             box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
             transition: background-color 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
         }
         #open-participants-sidebar-btn:hover {
             background-color: #4338CA; /* Indigo-700 */
         }
+
 
         /* Estilo para el indicador de conexión */
         .sync-indicator {
@@ -228,97 +226,87 @@
                 <h1 class="text-3xl font-extrabold text-gray-800 flex items-center">
                     Dashboard Principal 
                 </h1>
-                 <!-- Botón de Abrir Sidebar (Participantes y Sincronización) -->
-                <button id="open-participants-sidebar-btn" class="flex items-center space-x-2">
-                    <i class="fas fa-users-cog"></i> <span>Configuración</span>
-                </button>
+                 <!-- Botones de la Cabecera -->
+                <div class="flex items-center space-x-2">
+                    <button id="open-participants-sidebar-btn" class="header-btn">
+                        <i class="fas fa-users-cog"></i> <span>Configuración</span>
+                    </button>
+                </div>
             </div>
 
-            <!-- Dashboard Layout: 3 Columnas principales (2/3 + 1/3) -->
-            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 h-full">
-
-                <!-- COLUMNA 1 & 2 (8/12 - Resúmenes y Tarjetas) -->
-                <div class="lg:col-span-2 space-y-6 h-full">
-                   
-                    <!-- 1. FILA DE SINCRONIZACIÓN -->
-                    <div id="sync-row-dashboard" class="grid grid-cols-1 gap-4">
-                        <div id="auth-action-card" class="section-card border-l-4 border-purple-500 p-4 bg-purple-50 flex items-center justify-center col-span-full hidden">
-                             <!-- El botón de sincronización de cuenta ya no está aquí -->
-                        </div>
-                    </div>
-
-                    <!-- 2. CARD GLOBAL CONSOLIDADO (2 Métricas principales en un solo contenedor oscuro) -->
-                    <div id="global-main-card" class="section-card border-b-4 border-indigo-500 p-4">
+            <!-- Dashboard Layout (Contenido Principal) -->
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <div class="lg:col-span-2 space-y-6">
+                    <!-- CARD GLOBAL CONSOLIDADO -->
+                    <div id="global-main-card" class="section-card">
                         <div class="grid grid-cols-2 gap-4 text-center">
-                           
-                            <!-- Métrica 1: Saldo Global Restante -->
                             <div>
                                 <p class="metric-label text-indigo-300">Saldo Global</p>
                                 <span id="display-remaining-budget" class="metric-value metric-remaining">S/ 0.00</span>
                             </div>
-
-                            <!-- Métrica 2: Gasto Total del Ciclo -->
                             <div>
                                 <p class="metric-label text-red-300">Gasto Total</p>
                                 <span id="display-total-spent" class="metric-value metric-spent">S/ 0.00</span>
                             </div>
-
                         </div>
                     </div>
-                   
-                    <!-- 3. CARDS INDIVIDUALES Y AHORRO MUTUO -->
-                    <div class="section-card border-t-4 border-teal-500 space-y-4">
-                        <h3 class="text-lg font-bold text-gray-700">Saldos Individuales y Metas</h3>
-                       
-                        <!-- Resumen de Participantes -->
-                        <div id="participant-summary-cards" class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                            <!-- Tarjetas de resumen individual se renderizan aquí -->
-                        </div>
-                       
-                        <!-- FILA SEPARADA PARA METAS GLOBALES (Gastos Fijos y Ahorro Mutuo) -->
-                        <div class="grid grid-cols-2 gap-4 pt-2 border-t border-gray-200">
-                           
-                            <!-- Total Gastos Fijos (Movido de nuevo aquí) -->
-                            <div class="section-card border-l-4 border-yellow-500 p-4 text-center bg-yellow-50">
-                                <p class="text-sm font-semibold uppercase text-yellow-700">Gastos Fijos Total</p>
-                                <span id="display-fixed-total" class="text-2xl font-extrabold text-yellow-600 block mt-2">S/ 0.00</span>
+                
+                    <!-- Grid para Saldos y Gráfico -->
+                    <div class="grid grid-cols-1 xl:grid-cols-2 gap-6">
+                        <!-- CARDS INDIVIDUALES Y AHORRO MUTUO -->
+                        <div class="section-card border-t-4 border-teal-500 space-y-4">
+                            <h3 class="text-lg font-bold text-gray-700">Saldos Individuales y Metas</h3>
+                            <div id="participant-summary-cards" class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                <!-- Tarjetas de resumen individual se renderizan aquí -->
                             </div>
+                            <div class="grid grid-cols-2 gap-4 pt-2 border-t border-gray-200">
+                                <div class="section-card border-l-4 border-yellow-500 p-4 text-center bg-yellow-50">
+                                    <p class="text-sm font-semibold uppercase text-yellow-700">Gastos Fijos Total</p>
+                                    <span id="display-fixed-total" class="text-2xl font-extrabold text-yellow-600 block mt-2">S/ 0.00</span>
+                                </div>
+                                <div class="section-card border-l-4 border-purple-500 p-4 text-center bg-purple-50">
+                                    <p class="text-sm font-semibold uppercase text-purple-700">Meta Ahorro Mutuo</p>
+                                    <span id="display-shared-savings-goal" class="text-2xl font-extrabold text-purple-600 block mt-2">S/ 0.00</span>
+                                </div>
+                            </div>
+                        </div>
 
-                            <!-- Meta Ahorro Mutuo (Movido de nuevo aquí) -->
-                            <div class="section-card border-l-4 border-purple-500 p-4 text-center bg-purple-50">
-                                <p class="text-sm font-semibold uppercase text-purple-700">Meta Ahorro Mutuo</p>
-                                <span id="display-shared-savings-goal" class="text-2xl font-extrabold text-purple-600 block mt-2">S/ 0.00</span>
+                        <!-- GRÁFICO DE DISTRIBUCIÓN DE GASTOS -->
+                        <div class="section-card h-full">
+                            <h3 class="text-xl font-bold text-gray-700 mb-4">Distribución de Gastos</h3>
+                            <div class="relative h-64 md:h-72">
+                                <canvas id="category-chart"></canvas>
+                                <p id="chart-no-data" class="absolute inset-0 flex items-center justify-center text-gray-500 italic hidden">No hay datos para mostrar.</p>
                             </div>
                         </div>
                     </div>
                 </div>
-
-                <!-- COLUMNA 3 (4/12 - Balance Compartido y Liquidación) -->
-                <div class="lg:col-span-1 balance-col">
-                    <!-- 4. CARD BALANCE DE CUENTAS COMPARTIDAS (Contiene ahora el botón) -->
-                    <div class="section-card border-l-4 border-indigo-500 h-full flex flex-col justify-between">
-                        <div>
-                            <h2 class="text-lg font-bold text-indigo-700 mb-4 flex items-center">
-                                <i class="fas fa-balance-scale mr-2"></i> Balance de Cuentas Compartidas
-                            </h2 >
-                            <div id="shared-balance-summary" class="space-y-3 text-sm">
-                                <p class="text-gray-500 italic">Calculando balance...</p>
-                            </div>
+                
+                <!-- COLUMNA 3: Balance de Cuentas Plegable -->
+                <div class="lg:col-span-1">
+                    <div class="section-card border-l-4 border-indigo-500 h-full flex flex-col">
+                        <div id="balance-header" class="flex items-center justify-between cursor-pointer">
+                            <h2 class="text-lg font-bold text-indigo-700 flex items-center">
+                                <i class="fas fa-balance-scale mr-2"></i> Balance de Cuentas
+                            </h2>
+                            <i id="balance-chevron" class="fas fa-chevron-down transition-transform"></i>
                         </div>
+                        
+                        <div id="balance-content" class="hidden mt-4 flex-grow flex flex-col justify-between">
+                            <div id="shared-balance-summary" class="space-y-3 text-sm">
+                                <!-- Contenido del balance renderizado por JS -->
+                            </div>
                        
-                        <!-- BOTÓN DE LIQUIDACIÓN DE CUENTAS (MOVIDO ADENTRO y simplificado) -->
-                        <div class="mt-4 pt-4 border-t border-gray-200">
-                            <button id="liquidate-month-btn" class="w-full py-3 bg-red-600 text-white font-bold rounded-xl shadow-lg hover:bg-red-700 transition duration-300">
-                                <i class="fas fa-handshake mr-2"></i> LIQUIDAR
-                            </button>
-                            <p class="text-xs text-gray-600 mt-2 text-center">Ajuste de saldos para poner las cuentas compartidas en cero.</p>
+                            <div class="mt-4 pt-4 border-t border-gray-200">
+                                <button id="liquidate-month-btn" class="w-full py-3 bg-red-600 text-white font-bold rounded-xl shadow-lg hover:bg-red-700 transition duration-300">
+                                    <i class="fas fa-handshake mr-2"></i> LIQUIDAR
+                                </button>
+                                <p class="text-xs text-gray-600 mt-2 text-center">Ajusta los saldos a cero.</p>
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
-
-            <!-- NOTE: La configuración de participantes se ha movido al Sidebar -->
-
         </section>
 
         <!-- ========================================================================================= -->
@@ -484,28 +472,16 @@
                     </div>
                 </div>
                
-                <!-- CAMBIO: Rejilla de Informes -->
+                <!-- Rejilla de Informes -->
                 <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
 
-                    <!-- Columna 1 y 2: Gráfico y Historial de Transacciones -->
+                    <!-- Columna 1 y 2: Historial de Transacciones -->
                     <div class="lg:col-span-2">
-                        <div class="grid grid-cols-1 xl:grid-cols-5 gap-6 items-start">
-                            <!-- Columna del Gráfico -->
-                            <div class="section-card h-full xl:col-span-2">
-                                <h3 class="text-xl font-bold text-gray-700 mb-4">Distribución de Gastos</h3>
-                                <div class="relative h-64 md:h-72">
-                                    <canvas id="category-chart"></canvas>
-                                    <p id="chart-no-data" class="absolute inset-0 flex items-center justify-center text-gray-500 italic hidden">No hay datos para mostrar.</p>
-                                </div>
-                            </div>
-
-                            <!-- Columna del Historial de Transacciones -->
-                            <div class="xl:col-span-3">
-                                <h3 class="text-xl font-bold text-gray-700">Historial de Transacciones</h3>
-                                <span class="text-xs text-purple-600 font-semibold block my-2" id="expense-diagnostic"></span>
-                                <div id="expense-report-by-category" class="space-y-3 max-h-[28rem] overflow-y-auto pr-2">
-                                    <p class="text-gray-500 text-center py-4 italic">No hay gastos en este ciclo.</p>
-                                </div>
+                        <div class="space-y-4">
+                            <h3 class="text-xl font-bold text-gray-700">Historial de Transacciones</h3>
+                            <span class="text-xs text-purple-600 font-semibold block -mt-2" id="expense-diagnostic"></span>
+                            <div id="expense-report-by-category" class="space-y-3">
+                                <p class="text-gray-500 text-center py-4 italic">No hay gastos en este ciclo.</p>
                             </div>
                         </div>
                     </div>
@@ -535,7 +511,7 @@
     </div>
    
     <!-- ========================================================================================= -->
-    <!-- SIDEBAR DE CONFIGURACIÓN DE PARTICIPANTES (NUEVO) -->
+    <!-- SIDEBAR DE CONFIGURACIÓN DE PARTICIPANTES -->
     <!-- ========================================================================================= -->
     <div id="participant-sidebar">
         <div class="p-6">
@@ -557,7 +533,7 @@
                 <!-- Lista dinámica de participantes (Compacta) se renderiza aquí -->
             </div>
 
-            <!-- SECCIÓN DE SINCRONIZACIÓN (NUEVO) -->
+            <!-- SECCIÓN DE SINCRONIZACIÓN -->
             <div id="sync-section-container">
                 <h3 class="text-xl font-bold text-indigo-700 mt-6 mb-4 border-t pt-4">Sincronización de Dispositivos</h3>
                 <p id="current-user-id" class="text-xs text-gray-600 break-words mb-4">
@@ -583,6 +559,10 @@
             </div>
         </div>
     </div>
+
+    <!-- ========================================================================================= -->
+    <!-- SIDEBAR DE BALANCE DE CUENTAS (REMOVED) -->
+    <!-- ========================================================================================= -->
 
 
     <!-- MODALES (Todos los modales se mantienen sin cambios de estructura HTML) -->
@@ -1131,15 +1111,25 @@
         }
 
         function setupUILogic(isFirebaseMode) {
+            const backdrop = document.getElementById('sidebar-backdrop');
+            const participantSidebar = document.getElementById('participant-sidebar');
+            
             setupCustomSelects();
             setupMonthSelectorListeners(); 
             setupCategoryModalListeners();
             setupPaymentMethodListeners();
-            setupParticipantModalListeners(); 
+            setupParticipantModalListeners(backdrop, participantSidebar); 
             setupExpenseFormListeners();
             setupExpenseModalListeners(); 
             setupLiquidateListeners(); 
             setupRestoreJsonListeners(); 
+            
+            // Setup for collapsible balance card
+            document.getElementById('balance-header')?.addEventListener('click', () => {
+                document.getElementById('balance-content').classList.toggle('hidden');
+                document.getElementById('balance-chevron').classList.toggle('rotate-180');
+            });
+
             if (!isFirebaseMode) renderUI(); 
         }
 
@@ -1268,11 +1258,9 @@
             });
         }
         
-        function setupParticipantModalListeners() {
+        function setupParticipantModalListeners(backdrop, sidebar) {
             const modal = document.getElementById('add-participant-modal');
             const form = document.getElementById('participant-form');
-            const sidebar = document.getElementById('participant-sidebar');
-            const backdrop = document.getElementById('sidebar-backdrop');
            
             const toggleSidebar = (open) => {
                 sidebar.classList.toggle('open', open);
@@ -1282,7 +1270,11 @@
            
             document.getElementById('open-participants-sidebar-btn').addEventListener('click', () => toggleSidebar(true));
             document.getElementById('close-sidebar-btn').addEventListener('click', () => toggleSidebar(false));
-            backdrop.addEventListener('click', () => toggleSidebar(false));
+            backdrop.addEventListener('click', () => {
+                if (sidebar.classList.contains('open')) {
+                    toggleSidebar(false);
+                }
+            });
 
             document.getElementById('open-add-participant-modal-sidebar').addEventListener('click', () => {
                 document.getElementById('participant-id-to-edit').value = '';
@@ -1365,7 +1357,6 @@
         }
         
         function removeExpense(id) {
-            // Reemplazando confirm con una acción directa para evitar congelamiento en iframe
             const newExpenses = appState.expenses.filter(e => e.id !== id);
             saveState({ expenses: newExpenses });
             showModal('Gasto eliminado.');
@@ -1935,7 +1926,6 @@
             const isShared = expense.type === 'shared';
             const isFixed = expense.type === 'fixed';
             const color = isShared ? 'red' : (isFixed ? 'purple' : 'blue');
-            const blurClass = ''; // Se eliminó la lógica de desenfoque
             
             const subcategoryLabel = expense.subcategory ? ` (${expense.subcategory})` : '';
             const descriptionHTML = `<p class='font-bold text-gray-800'>${expense.description}${subcategoryLabel}</p>`;
@@ -1973,7 +1963,7 @@
             `;
 
             return `
-            <div class='p-3 bg-white border ${isShared ? 'border-gray-200' : (isFixed ? 'border-l-4 border-purple-400' : 'border-l-4 border-blue-400')} rounded-lg shadow-sm transition duration-300 expense-item-enter ${blurClass}' data-expense-id='${expense.id}'>
+            <div class='p-3 bg-white border ${isShared ? 'border-gray-200' : (isFixed ? 'border-l-4 border-purple-400' : 'border-l-4 border-blue-400')} rounded-lg shadow-sm transition duration-300 expense-item-enter' data-expense-id='${expense.id}'>
                 <div class='flex justify-between items-start expense-header' data-toggle='${expense.id}'>
                     <div class='flex-1 min-w-0'>
                         ${descriptionHTML}
@@ -2065,7 +2055,7 @@
             }
         }
 
-        function renderFixedExpensesSummary(summary) {
+        function renderFixedExpensesSummary() {
             const fixedEl = document.getElementById('fixed-expenses-summary');
             const filterString = getFilterMonthString(currentFilterDate);
             const fixedExpenses = appState.expenses.filter(e => e.type === 'fixed' && e.date.startsWith(filterString));
