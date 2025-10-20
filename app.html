@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Monedero V.1.32 (Lógica Corregida)</title>
+    <title>Monedero V.1.33 (Tarjetas Mejoradas)</title>
     <!-- Incluye Tailwind CSS para estilizado rápido y responsive -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Incluye Font Awesome para íconos de balance -->
@@ -1735,23 +1735,45 @@
             animateNumber('display-remaining-budget', summary.globalTotalRemainingBudget);
             document.getElementById('display-total-spent').textContent = formatCurrency(summary.totalSpent);
             document.getElementById('display-shared-savings-goal').textContent = formatCurrency(summary.globalSharedSavingsGoal);
+            
             const totalFixed = appState.expenses
                 .filter(e => e.isFixed)
                 .reduce((sum, exp) => sum + exp.amount, 0);
             document.getElementById('display-fixed-total').textContent = formatCurrency(totalFixed);
+            
             const participantCardsEl = document.getElementById('participant-summary-cards');
             participantCardsEl.innerHTML = summary.participantData.map(p => {
                 const remainingColor = p.remainingBudget < 0 ? 'text-red-600' : 'text-green-600';
+                const personalFixedExpenses = appState.expenses
+                    .filter(e => e.isFixed && e.type === 'personal' && e.payerId === p.id)
+                    .reduce((sum, exp) => sum + exp.amount, 0);
+
                 return `
-                <div class="section-card border-l-4 border-teal-500 p-4 text-left">
-                    <p class="text-sm font-semibold text-gray-700">${p.name}</p>
-                    <div class="mt-1">
-                        <p class="text-xs text-gray-500">Saldo Restante:</p>
-                        <span class="text-xl font-bold ${remainingColor}">${formatCurrency(p.remainingBudget)}</span>
+                <div class="section-card border-l-4 border-teal-500 p-4 flex flex-col justify-between">
+                    <div>
+                        <p class="text-sm font-semibold text-gray-700">${p.name}</p>
+                        <div class="mt-1">
+                            <p class="text-xs text-gray-500">Saldo Restante:</p>
+                            <span class="text-xl font-bold ${remainingColor}">${formatCurrency(p.remainingBudget)}</span>
+                        </div>
                     </div>
-                    <div class="flex justify-between text-xs mt-2 pt-2 border-t">
-                        <span>Ahorro: <strong class="text-teal-600">${formatCurrency(p.independentSavingsGoal)}</strong></span>
-                        <span>Gasto: <strong class="text-red-600">${formatCurrency(p.spent)}</strong></span>
+                    <div class="text-xs mt-3 pt-3 border-t space-y-1">
+                         <div class="flex justify-between">
+                            <span>Ahorro Personal:</span>
+                            <strong class="text-teal-600">${formatCurrency(p.independentSavingsGoal)}</strong>
+                        </div>
+                        <div class="flex justify-between">
+                            <span>Aporte Ahorro Mutuo:</span>
+                            <strong class="text-purple-600">${formatCurrency(p.sharedSavingsGoal)}</strong>
+                        </div>
+                        <div class="flex justify-between">
+                            <span>Gastos Fijos Pers.:</span>
+                            <strong class="text-yellow-600">${formatCurrency(personalFixedExpenses)}</strong>
+                        </div>
+                        <div class="flex justify-between font-bold">
+                            <span>Gasto Total:</span>
+                            <strong class="text-red-600">${formatCurrency(p.spent)}</strong>
+                        </div>
                     </div>
                 </div>`;
             }).join('');
