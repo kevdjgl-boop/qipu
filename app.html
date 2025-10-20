@@ -1528,7 +1528,7 @@
                     }
 
                     const paymentMethod = appState.paymentMethods.find(m => m.id === paymentMethodId);
-                    const { cycleStart, paymentDate } = paymentMethod && paymentMethod.type === 'credit' ? getCycleDates(method) : {};
+                    const { cycleStart, paymentDate } = paymentMethod && paymentMethod.type === 'credit' ? getCycleDates(paymentMethod) : {};
                     const fixedRecurrenceMonths = isFixed ? parseInt(document.getElementById('fixed-recurrence-months').value) || 1 : 0;
 
                     const newExpense = {
@@ -1963,7 +1963,12 @@
             const subcategoryLabel = expense.subcategory ? ` (${expense.subcategory})` : '';
             const descriptionHTML = `<p class='font-bold text-gray-800'>${expense.description}${subcategoryLabel}</p>`;
             
-            const subtitleHTML = `<p class='text-xs text-gray-500 mt-1'>${typeLabel} | Día: ${formatDate(expense.date)}</p>`;
+            let subtitleContent = `${typeLabel} | Día: ${formatDate(expense.date)}`;
+            if (!isShared) {
+                subtitleContent += ` | Pagó: ${payerName}`;
+            }
+            const subtitleHTML = `<p class='text-xs text-gray-500 mt-1'>${subtitleContent}</p>`;
+            
             const amountHTML = showAmount ? `<p class='text-lg font-extrabold text-${colorClass}-600'>${formatCurrency(expense.amount)}</p>` : '';
             
             const isCollapsible = isShared;
@@ -1984,8 +1989,6 @@
                     }
                 }).join('');
                 detailContent = `<div class='flex flex-wrap gap-1 mb-3'>${balanceTags}</div>` + detailContent;
-            } else {
-                 subtitleHTML.innerHTML += ` | Pagó: ${payerName}`;
             }
 
             const detailSectionHTML = `
