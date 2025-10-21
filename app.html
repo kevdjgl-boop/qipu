@@ -486,7 +486,12 @@
                     <!-- Columna 1 y 2: Historial de Transacciones -->
                     <div class="lg:col-span-2">
                         <div class="space-y-4">
-                            <h3 class="text-xl font-bold text-gray-700">Historial de Transacciones</h3>
+                            <div class="flex flex-col sm:flex-row justify-between sm:items-center gap-4">
+                                <h3 class="text-xl font-bold text-gray-700">Historial de Transacciones</h3>
+                                <div id="participant-filter-container" class="flex flex-wrap items-center gap-2">
+                                    <!-- Buttons will be rendered by JS -->
+                                </div>
+                           </div>
                             <span class="text-xs text-purple-600 font-semibold block -mt-2" id="expense-diagnostic"></span>
                             <div id="expense-report-by-category" class="space-y-3">
                                 <p class="text-gray-500 text-center py-4 italic">No hay gastos en este ciclo.</p>
@@ -917,6 +922,7 @@
         currentFilterDate.setDate(1); 
         
         let myParticipantId = null; 
+        let participantFilterId = 'all';
         let unsubscribeListener = null;
         let categoryChart = null;
 
@@ -2511,6 +2517,26 @@
             }
         }
         
+        function renderParticipantFilter() {
+            const container = document.getElementById('participant-filter-container');
+            if (!container) return;
+
+            let buttonsHTML = `<button data-id="all" class="participant-filter-btn px-3 py-1 text-sm font-semibold rounded-full transition ${participantFilterId === 'all' ? 'bg-indigo-600 text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'}">Todos</button>`;
+            
+            (appState.participants || []).forEach(p => {
+                buttonsHTML += `<button data-id="${p.id}" class="participant-filter-btn px-3 py-1 text-sm font-semibold rounded-full transition ${participantFilterId === p.id ? 'bg-indigo-600 text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'}">${p.name}</button>`;
+            });
+
+            container.innerHTML = buttonsHTML;
+
+            container.querySelectorAll('.participant-filter-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    participantFilterId = btn.dataset.id;
+                    renderUI(); // Re-render everything to apply the filter
+                });
+            });
+        }
+
         // --- Main Render Function ---
         function renderUI() {
             if (!appState) return;
@@ -2526,19 +2552,25 @@
             }
 
             const summary = calculateSummary(appState, filteredExpenses);
+
+            let expensesForReport = filteredExpenses;
+            if (participantFilterId !== 'all') {
+                expensesForReport = expensesForReport.filter(exp => exp.payerId === participantFilterId);
+            }
             
             renderMonthSelector();
             renderDashboard(summary);
             renderParticipantsConfig(appState.participants, summary);
             renderCategoriesModal(appState.categories);
             renderPaymentMethodsModal(appState.paymentMethods);
-            renderCreditCardSummary(appState.expenses); // <-- AHORA USA TODOS LOS GASTOS
-            renderExpenseReportByCategory(filteredExpenses, summary);
+            renderCreditCardSummary(appState.expenses); 
+            renderParticipantFilter();
+            renderExpenseReportByCategory(expensesForReport, summary);
             renderCategoryChart(filteredExpenses);
             renderFixedExpensesSummary();
             renderSharedBalanceSummary(summary);
             
-            document.getElementById('expense-diagnostic').textContent = `Gastos en este ciclo: ${filteredExpenses.length}`;
+            document.getElementById('expense-diagnostic').textContent = `Mostrando ${expensesForReport.length} de ${filteredExpenses.length} gastos en este ciclo.`;
             
             document.getElementById('expense-payment-method-id').dispatchEvent(new Event('change'));
             document.getElementById('expense-category').dispatchEvent(new Event('change'));
@@ -2553,6 +2585,4 @@
     </script>
 </body>
 </html>
-
-
 
