@@ -681,10 +681,8 @@
                 
                 <div id="cc-config-fields" class="space-y-3 hidden">
                     <h4 class="font-bold text-yellow-800">Configuración de Ciclo (Crédito)</h4>
-                    <label for="cc-config-cycle-day" class="block text-sm font-medium text-gray-700">Día de Inicio de Ciclo/Facturación (1-31)</label>
-                    <input type="number" id="cc-config-cycle-day" min="1" max="31" placeholder="Ej: 1 (Día 1 del mes)" class="w-full p-2 border border-gray-300 rounded-lg">
                     <label for="cc-config-payment-day" class="block text-sm font-medium text-gray-700">Día Límite de Pago (1-31)</label>
-                    <input type="number" id="cc-config-payment-day" min="1" max="31" placeholder="Ej: 25 (Día 25 del mes)" class="w-full p-2 border border-gray-300 rounded-lg">
+                    <input type="number" id="cc-config-payment-day" min="1" max="31" placeholder="Ej: 5 (pagas el 5 de cada mes)" class="w-full p-2 border border-gray-300 rounded-lg">
                 </div>
                 
                 <button type="submit" id="save-method-btn" class="w-full py-2 bg-yellow-500 text-white font-bold rounded-xl shadow-lg hover:bg-yellow-600 transition duration-300">
@@ -953,8 +951,7 @@
         const formatCurrency = (value) => new Intl.NumberFormat('es-PE', { style: 'currency', currency: 'PEN', minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(value);
         const formatDate = (isoString) => {
             if (!isoString) return '';
-            const [year, month, day] = isoString.split('-').map(Number);
-            const date = new Date(year, month - 1, day); 
+            const date = new Date(isoString + "T00:00:00");
             return date.toLocaleDateString('es-ES', { day: '2-digit' });
         }
         const getFilterMonthString = (date) => {
@@ -964,33 +961,51 @@
         }
         
         function getCycleDates(method) {
-            if (method.type !== 'credit' || !method.cycleStartDay || !method.paymentDay) return { cycleStart: null, paymentDate: null };
-
-            const now = new Date(); // <-- CORREGIDO: Siempre usa la fecha actual
-            let year = now.getFullYear();
-            let month = now.getMonth();
-            
-            if (now.getDate() < method.cycleStartDay) {
-                month = month === 0 ? 11 : month - 1;
-                year = now.getMonth() === 0 ? year - 1 : year;
+            if (method.type !== 'credit' || !method.paymentDay) {
+                return { startDate: null, closingDate: null, paymentDate: null };
             }
 
-            const cycleStart = new Date(year, month, method.cycleStartDay);
+            const today = new Date();
+            const paymentDay = method.paymentDay;
+            const gracePeriodDays = 25; // Standard grace period assumption (e.g., 25 days from closing to payment)
+
+            // 1. Determine the upcoming or current payment date
+            let paymentDate = new Date(today.getFullYear(), today.getMonth(), paymentDay);
+
+            // Calculate the theoretical closing date for this payment date
+            let theoreticalClosing = new Date(paymentDate.getTime());
+            theoreticalClosing.setDate(theoreticalClosing.getDate() - gracePeriodDays);
             
-            let paymentMonth = cycleStart.getMonth() + 1;
-            let paymentYear = cycleStart.getFullYear();
-            if (paymentMonth > 11) {
-                paymentMonth = 0;
-                paymentYear++;
+            // If today is AFTER the theoretical closing date, it means we are in the NEXT cycle.
+            // So, the relevant payment date is the one for the following month.
+            if (today > theoreticalClosing) {
+                paymentDate.setMonth(paymentDate.getMonth() + 1);
+            }
+
+            // Now, we have the correct upcoming payment date. Let's calculate the cycle for IT.
+            let closingDate = new Date(paymentDate.getTime());
+            closingDate.setDate(closingDate.getDate() - gracePeriodDays);
+
+            // 2. Adjust closing date for weekends (move to Friday if it's Sat/Sun)
+            const dayOfWeek = closingDate.getDay(); // Sunday = 0, Saturday = 6
+            if (dayOfWeek === 0) { // Sunday
+                closingDate.setDate(closingDate.getDate() - 2); // Move to Friday
+            } else if (dayOfWeek === 6) { // Saturday
+                closingDate.setDate(closingDate.getDate() - 1); // Move to Friday
             }
             
-            const paymentDate = new Date(paymentYear, paymentMonth, method.paymentDay);
-            
+            // 3. Calculate start date based on the adjusted closing date
+            let startDate = new Date(closingDate.getTime());
+            startDate.setMonth(startDate.getMonth() - 1);
+            startDate.setDate(startDate.getDate() + 1);
+
             return {
-                cycleStart: cycleStart.toISOString().split('T')[0],
+                startDate: startDate.toISOString().split('T')[0],
+                closingDate: closingDate.toISOString().split('T')[0],
                 paymentDate: paymentDate.toISOString().split('T')[0]
             };
         }
+
 
         // --- Funciones de Autenticación (REDUCIDAS) ---
         
@@ -1644,12 +1659,10 @@
                 const method = { name, type };
 
                 if (type === 'credit') {
-                    const cycleDay = parseInt(document.getElementById('cc-config-cycle-day').value);
                     const paymentDay = parseInt(document.getElementById('cc-config-payment-day').value);
-                    if (isNaN(cycleDay) || cycleDay < 1 || cycleDay > 31 || isNaN(paymentDay) || paymentDay < 1 || paymentDay > 31) {
-                        return showModal("Los días de ciclo y pago para tarjetas de crédito deben ser válidos (1-31).");
+                    if (isNaN(paymentDay) || paymentDay < 1 || paymentDay > 31) {
+                        return showModal("El día de pago para tarjetas de crédito debe ser válido (1-31).");
                     }
-                    method.cycleStartDay = cycleDay;
                     method.paymentDay = paymentDay;
                 }
 
@@ -1702,8 +1715,8 @@
                 const ccDetails = document.getElementById('credit-card-details');
                 if (method && method.type === 'credit') {
                     ccDetails.classList.remove('hidden');
-                    const { cycleStart, paymentDate } = getCycleDates(method);
-                    document.getElementById('cc-cycle-start-display').textContent = formatDate(cycleStart);
+                    const { startDate, paymentDate } = getCycleDates(method);
+                    document.getElementById('cc-cycle-start-display').textContent = formatDate(startDate);
                     document.getElementById('cc-payment-date-display').textContent = formatDate(paymentDate);
                 } else {
                     ccDetails.classList.add('hidden');
@@ -1727,7 +1740,7 @@
                     }
 
                     const paymentMethod = appState.paymentMethods.find(m => m.id === paymentMethodId);
-                    const { cycleStart, paymentDate } = paymentMethod && paymentMethod.type === 'credit' ? getCycleDates(paymentMethod) : {};
+                    const { startDate, paymentDate } = paymentMethod && paymentMethod.type === 'credit' ? getCycleDates(paymentMethod) : {};
                     const fixedRecurrenceMonths = isFixed ? parseInt(document.getElementById('fixed-recurrence-months').value) || 1 : 0;
 
                     const newExpense = {
@@ -1735,7 +1748,7 @@
                         isFixed,
                         date: new Date().toISOString().split('T')[0],
                         dateCreated: new Date().toISOString(),
-                        ccCycleStart: cycleStart || null,
+                        ccCycleStart: startDate || null,
                         ccPaymentDate: paymentDate || null,
                         fixedRecurrenceMonths,
                     };
@@ -2128,7 +2141,6 @@
             document.getElementById('cancel-edit-method-btn').classList.remove('hidden');
             if (method.type === 'credit') {
                 document.getElementById('cc-config-fields').classList.remove('hidden');
-                document.getElementById('cc-config-cycle-day').value = method.cycleStartDay;
                 document.getElementById('cc-config-payment-day').value = method.paymentDay;
             }
         }
@@ -2148,7 +2160,7 @@
             if(editOptionsContainer) editOptionsContainer.innerHTML = '';
 
             methods.forEach(m => {
-                const details = m.type === 'credit' ? `Ciclo: Día ${m.cycleStartDay} | Pago: Día ${m.paymentDay}` : 'Transacción inmediata.';
+                const details = m.type === 'credit' ? `Pago: Día ${m.paymentDay}` : 'Transacción inmediata.';
                 displayEl.insertAdjacentHTML('beforeend', `
                 <div class="p-3 bg-white border flex justify-between items-center">
                     <div><span class="font-bold">${m.name}</span><p class="text-xs text-gray-600">${details}</p></div>
@@ -2455,27 +2467,27 @@
             container.innerHTML = '';
 
             creditCards.forEach(card => {
-                const { cycleStart, paymentDate } = getCycleDates(card);
-                if (!cycleStart) return;
+                const { startDate, closingDate, paymentDate } = getCycleDates(card);
+                if (!startDate) return;
 
-                const startDate = new Date(cycleStart + "T00:00:00");
-                const endDate = new Date(startDate.getFullYear(), startDate.getMonth() + 1, startDate.getDate() - 1);
+                const startDateObj = new Date(startDate + "T00:00:00");
+                const closingDateObj = new Date(closingDate + "T00:00:00");
 
                 const cardExpensesInCycle = (allExpenses || []).filter(exp => {
                     if (!exp.date) return false;
                     const expDate = new Date(exp.date + "T00:00:00");
-                    return exp.paymentMethodId === card.id && expDate >= startDate && expDate <= endDate;
+                    return exp.paymentMethodId === card.id && expDate >= startDateObj && expDate <= closingDateObj;
                 });
                 
                 const totalSpent = cardExpensesInCycle.reduce((sum, exp) => sum + exp.amount, 0);
 
                 const today = new Date();
-                const totalDuration = endDate.getTime() - startDate.getTime();
-                const elapsedDuration = today.getTime() - startDate.getTime();
+                const totalDuration = closingDateObj.getTime() - startDateObj.getTime();
+                const elapsedDuration = today.getTime() - startDateObj.getTime();
                 let progress = totalDuration > 0 ? (elapsedDuration / totalDuration) * 100 : 0;
                 progress = Math.max(0, Math.min(progress, 100));
                 
-                const endDateFormatted = endDate.toLocaleDateString('es-ES', { day: '2-digit' });
+                const closingDateFormatted = closingDateObj.toLocaleDateString('es-ES', { day: '2-digit' });
 
                 const cardHTML = `
                     <div class="p-4 rounded-lg border bg-cyan-50">
@@ -2483,13 +2495,13 @@
                         <p class="text-2xl font-extrabold text-cyan-900 mt-1">${formatCurrency(totalSpent)}</p>
                         <div class="mt-3">
                             <div class="flex justify-between text-xs text-gray-600">
-                                <span>Inicio: ${formatDate(cycleStart)}</span>
-                                <span>Cierre: ${endDateFormatted}</span>
+                                <span>Inicio: ${formatDate(startDate)}</span>
+                                <span>Cierre: ${closingDateFormatted}</span>
                             </div>
                             <div class="progress-bar-container mt-1">
                                 <div class="progress-bar-fill bg-cyan-500" style="width: ${progress}%"></div>
                             </div>
-                            <p class="text-xs text-gray-600 mt-1 text-right">Próximo Pago: <strong class="text-red-600">${formatDate(paymentDate)}</strong></p>
+                            <p class="text-xs text-gray-600 mt-1 text-right">Fecha de Pago: <strong class="text-red-600">${formatDate(paymentDate)}</strong></p>
                         </div>
                     </div>
                 `;
@@ -2542,3 +2554,4 @@
     </script>
 </body>
 </html>
+
