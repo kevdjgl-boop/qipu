@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Herramienta de Exportación de Datos Antiguos</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 flex items-center justify-center min-h-screen p-4">
+    <div class="max-w-xl w-full bg-white p-8 rounded-lg shadow-xl text-center">
+        <h1 class="text-2xl font-bold mb-2 text-gray-800">Herramienta de Migración de Datos</h1>
+        <p class="text-gray-600 mb-6">Usa esta página UNA SOLA VEZ para exportar los datos de la versión antigua de la app. Sigue los pasos indicados.</p>
+        
+        <div id="status" class="mb-4 p-3 rounded-lg bg-gray-200 text-gray-700 font-semibold transition-colors duration-300">Conectando a Firebase...</div>
+        
+        <button id="export-btn" class="w-full py-3 bg-blue-600 text-white font-bold rounded-lg hover:bg-blue-700 transition disabled:bg-gray-400 disabled:cursor-not-allowed" disabled>
+            Paso 1: Conectar y Cargar Datos Antiguos
+        </button>
+        
+        <div class="mt-6 text-left">
+            <label for="data-output" class="font-semibold text-gray-700">Paso 2: Copia TODO este texto:</label>
+            <textarea id="data-output" readonly class="w-full h-48 mt-2 p-3 border rounded bg-gray-50 text-xs font-mono focus:ring-2 focus:ring-blue-500"></textarea>
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, onAuthStateChanged, signInAnonymously } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyA63OZWFM30Tu17DGxAmbtVsNFWeQU3k4s",
+            authDomain: "qipu-d1dcd.firebaseapp.com",
+            projectId: "qipu-d1dcd",
+            storageBucket: "qipu-d1dcd.firebasestorage.app",
+            messagingSenderId: "398775085739",
+            appId: "1:398775085739:web:be8643b5d9fea9ef8da5ee",
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        const auth = getAuth(app);
+
+        const statusEl = document.getElementById('status');
+        const exportBtn = document.getElementById('export-btn');
+        const dataOutput = document.getElementById('data-output');
+
+        let currentUserId = null;
+
+        onAuthStateChanged(auth, (user) => {
+            if (user) {
+                currentUserId = user.uid;
+                statusEl.textContent = `Conectado como usuario anónimo. ¡Listo para exportar!`;
+                statusEl.classList.remove('bg-gray-200', 'text-gray-700');
+                statusEl.classList.add('bg-green-100', 'text-green-800');
+                exportBtn.disabled = false;
+            } else {
+                statusEl.textContent = "Iniciando sesión anónima para encontrar tus datos...";
+                signInAnonymously(auth).catch(error => {
+                    statusEl.textContent = `Error de autenticación: ${error.message}`;
+                    statusEl.classList.remove('bg-gray-200', 'text-gray-700');
+                    statusEl.classList.add('bg-red-100', 'text-red-800');
+                });
+            }
+        });
+
+        exportBtn.addEventListener('click', async () => {
+            if (!currentUserId) {
+                dataOutput.value = "Error: No se ha podido obtener un ID de usuario anónimo. Por favor, recarga la página.";
+                return;
+            }
+
+            statusEl.textContent = "Buscando datos antiguos en la base de datos...";
+            exportBtn.disabled = true;
+            exportBtn.textContent = "Buscando...";
+
+            try {
+                const appId = firebaseConfig.projectId || 'default-app-id';
+                const oldDataRef = doc(db, 'artifacts', appId, 'users', currentUserId, 'finance_tracker', 'main_finance_state');
+                const docSnap = await getDoc(oldDataRef);
+
+                if (docSnap.exists()) {
+                    const data = docSnap.data();
+                    dataOutput.value = JSON.stringify(data, null, 2); // Pretty print JSON
+                    statusEl.textContent = "¡Éxito! Datos encontrados y mostrados abajo. Cópialos y sigue al siguiente paso.";
+                    statusEl.classList.remove('bg-yellow-100', 'text-yellow-800', 'bg-gray-200');
+                    statusEl.classList.add('bg-green-100', 'text-green-800');
+                    dataOutput.select();
+                    document.execCommand('copy');
+                    alert('¡Texto de respaldo copiado al portapapeles!');
+                } else {
+                    dataOutput.value = "";
+                    statusEl.textContent = "No se encontraron datos antiguos asociados a tu sesión en este navegador.";
+                    statusEl.classList.remove('bg-gray-200', 'text-gray-700');
+                    statusEl.classList.add('bg-yellow-100', 'text-yellow-800');
+                }
+            } catch (error) {
+                dataOutput.value = `Error al leer de Firestore: ${error.message}`;
+                statusEl.textContent = "Ocurrió un error al intentar leer tus datos.";
+                statusEl.classList.remove('bg-gray-200', 'text-gray-700');
+                statusEl.classList.add('bg-red-100', 'text-red-800');
+            }
+        });
+    </script>
+</body>
+</html>
