@@ -488,12 +488,18 @@
                         <div class="space-y-4">
                             <div class="flex flex-col sm:flex-row justify-between sm:items-center gap-4">
                                 <h3 class="text-xl font-bold text-gray-700">Historial de Transacciones</h3>
+                                
+                            </div>
+                             <div class="flex flex-col md:flex-row gap-4">
                                 <div id="participant-filter-container" class="flex flex-wrap items-center gap-2">
                                     <!-- Buttons will be rendered by JS -->
                                 </div>
+                                <div id="credit-card-filter-container" class="flex flex-wrap items-center gap-2 border-t md:border-t-0 md:border-l pt-2 md:pt-0 md:pl-4">
+                                    <!-- CC Buttons will be rendered by JS -->
+                                </div>
                            </div>
                             <span class="text-xs text-purple-600 font-semibold block -mt-2" id="expense-diagnostic"></span>
-                            <div id="expense-report-by-category" class="space-y-3">
+                            <div id="expense-report-container" class="space-y-3">
                                 <p class="text-gray-500 text-center py-4 italic">No hay gastos en este ciclo.</p>
                             </div>
                         </div>
@@ -895,7 +901,7 @@
         
         let app, db, auth;
         let userId = 'loading';
-        let currentWalletId = null; // NUEVO: ID del monedero compartido actual
+        let currentWalletId = null; 
         let isFirebaseActive = Object.keys(firebaseConfig).length > 0 && !Object.keys(firebaseConfig).some(k => firebaseConfig[k].startsWith('TU_')); 
 
         // --- NUEVAS RUTAS DE FIRESTORE ---
@@ -923,6 +929,7 @@
         
         let myParticipantId = null; 
         let participantFilterId = 'all';
+        let creditCardFilterId = 'all';
         let unsubscribeListener = null;
         let categoryChart = null;
 
@@ -2183,7 +2190,7 @@
             displayEl.querySelectorAll('.edit-method-btn').forEach(btn => btn.addEventListener('click', e => openPaymentMethodEditModal(e.currentTarget.dataset.id)));
         }
 
-        function createExpenseCardHTML(expense, participantsMap, paymentMethodsMap, showAmount = true) {
+        function createExpenseCardHTML(expense, participantsMap) {
             let payerName = participantsMap.get(expense.payerId) || expense.payerNameGuest || 'Desconocido';
             const isShared = expense.type === 'shared';
             const isFixed = expense.isFixed;
@@ -2199,13 +2206,13 @@
             const subcategoryLabel = expense.subcategory ? ` (${expense.subcategory})` : '';
             const descriptionHTML = `<p class='font-bold text-gray-800'>${expense.description}${subcategoryLabel}</p>`;
             
-            let subtitleContent = `${typeLabel} | Día: ${formatDate(expense.date)}`;
+            let subtitleContent = `<span class='inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800 mr-2'>${expense.category}</span> ${typeLabel} | Día: ${formatDate(expense.date)}`;
             if (!isShared) {
                 subtitleContent += ` | Pagó: ${payerName}`;
             }
-            const subtitleHTML = `<p class='text-xs text-gray-500 mt-1'>${subtitleContent}</p>`;
+            const subtitleHTML = `<p class='text-xs text-gray-500 mt-1 flex items-center flex-wrap'>${subtitleContent}</p>`;
             
-            const amountHTML = showAmount ? `<p class='text-lg font-extrabold text-${colorClass}-600'>${formatCurrency(expense.amount)}</p>` : '';
+            const amountHTML = `<p class='text-lg font-extrabold text-${colorClass}-600'>${formatCurrency(expense.amount)}</p>`;
             
             const isCollapsible = isShared;
             
@@ -2249,43 +2256,20 @@
             </div>`;
         }
 
-        function renderExpenseReportByCategory(filteredExpenses, summary) {
-            const reportEl = document.getElementById('expense-report-by-category');
+
+        function renderExpenseReport(filteredExpenses) {
+            const reportEl = document.getElementById('expense-report-container');
             reportEl.innerHTML = '';
             if (filteredExpenses.length === 0) {
-                reportEl.innerHTML = `<p class='text-gray-500 text-center py-8 italic'>No hay gastos en este ciclo.</p>`;
+                reportEl.innerHTML = `<p class='text-gray-500 text-center py-8 italic'>No hay gastos que coincidan con los filtros seleccionados.</p>`;
                 return;
             }
             
             const participantsMap = new Map(appState.participants.map(p => [p.id, p.name]));
-            const paymentMethodsMap = new Map(appState.paymentMethods.map(m => [m.id, m]));
             
-            const groupedExpenses = filteredExpenses.reduce((acc, expense) => {
-                const category = expense.category || 'Sin Categoría';
-                if (!acc[category]) acc[category] = [];
-                acc[category].push(expense);
-                return acc;
-            }, {});
-
-            Object.keys(groupedExpenses).sort().forEach(categoryName => {
-                const expenses = groupedExpenses[categoryName];
-                const categoryTotal = expenses.reduce((sum, exp) => sum + exp.amount, 0);
-                const categoryConfig = appState.categories.find(c => c.name === categoryName);
-                const budget = categoryConfig?.budget || 0;
-                const showAmountInCard = expenses.length > 1;
-                
-                const categoryContainer = document.createElement('div');
-                categoryContainer.className = "bg-gray-50 p-4 rounded-xl border";
-                categoryContainer.innerHTML = `
-                    <div class='flex justify-between items-center pb-2 mb-2 border-b'>
-                        <h4 class='text-lg font-bold text-gray-700'>${categoryName}</h4>
-                        <span class='font-semibold'>${formatCurrency(categoryTotal)}</span>
-                    </div>
-                    <div class='space-y-3 mt-3'>
-                        ${expenses.sort((a,b) => new Date(b.date) - new Date(a.date)).map(exp => createExpenseCardHTML(exp, participantsMap, paymentMethodsMap, showAmountInCard)).join('')}
-                    </div>`;
-                reportEl.appendChild(categoryContainer);
-            });
+            const sortedExpenses = filteredExpenses.sort((a, b) => new Date(b.date) - new Date(a.date));
+            
+            reportEl.innerHTML = sortedExpenses.map(exp => createExpenseCardHTML(exp, participantsMap)).join('');
 
             reportEl.removeEventListener('click', handleExpenseReportClick);
             reportEl.addEventListener('click', handleExpenseReportClick);
@@ -2537,6 +2521,33 @@
             });
         }
 
+        function renderCreditCardFilter() {
+            const container = document.getElementById('credit-card-filter-container');
+            if (!container) return;
+
+            const creditCards = (appState.paymentMethods || []).filter(m => m.type === 'credit');
+            if(creditCards.length === 0) {
+                container.innerHTML = '';
+                return;
+            }
+
+            let buttonsHTML = `<button data-id="all" class="cc-filter-btn px-3 py-1 text-sm font-semibold rounded-full transition ${creditCardFilterId === 'all' ? 'bg-cyan-600 text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'}">T. Crédito (Todas)</button>`;
+            
+            creditCards.forEach(card => {
+                buttonsHTML += `<button data-id="${card.id}" class="cc-filter-btn px-3 py-1 text-sm font-semibold rounded-full transition ${creditCardFilterId === card.id ? 'bg-cyan-600 text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'}">${card.name}</button>`;
+            });
+
+            container.innerHTML = buttonsHTML;
+
+            container.querySelectorAll('.cc-filter-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    creditCardFilterId = btn.dataset.id;
+                    renderUI();
+                });
+            });
+        }
+
+
         // --- Main Render Function ---
         function renderUI() {
             if (!appState) return;
@@ -2557,6 +2568,9 @@
             if (participantFilterId !== 'all') {
                 expensesForReport = expensesForReport.filter(exp => exp.payerId === participantFilterId);
             }
+            if (creditCardFilterId !== 'all') {
+                expensesForReport = expensesForReport.filter(exp => exp.paymentMethodId === creditCardFilterId);
+            }
             
             renderMonthSelector();
             renderDashboard(summary);
@@ -2565,7 +2579,8 @@
             renderPaymentMethodsModal(appState.paymentMethods);
             renderCreditCardSummary(appState.expenses); 
             renderParticipantFilter();
-            renderExpenseReportByCategory(expensesForReport, summary);
+            renderCreditCardFilter();
+            renderExpenseReport(expensesForReport);
             renderCategoryChart(filteredExpenses);
             renderFixedExpensesSummary();
             renderSharedBalanceSummary(summary);
