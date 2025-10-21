@@ -1016,66 +1016,74 @@
                 auth = getAuth(app);
                 
                 onAuthStateChanged(auth, async (user) => {
-                    // Si estamos en Canvas y no hay usuario, intentar logueo con token
-                    if (IS_CANVAS_ENV && !user && initialAuthToken) {
-                        try {
-                            await signInWithCustomToken(auth, initialAuthToken);
-                            // El listener se volverá a ejecutar con el nuevo estado, así que salimos.
-                            return; 
-                        } catch (e) {
-                            console.error("Fallo el inicio de sesión en Canvas:", e);
-                            // Si falla, operar en modo local.
-                            loadLocalState(); 
-                            setupUILogic(false);
-                            return;
-                        }
-                    }
-
-                    // Si hay un usuario (de cualquier método), proceder.
-                    if (user) {
-                        userId = user.uid;
-                        document.getElementById('current-user-id').innerHTML = `Mi UID: <strong>${userId}</strong>`;
-                        
-                        // Revisar si el usuario ya está en un monedero
-                        const userProfileRef = getUserProfileRef(db, userId);
-                        const userProfileSnap = await getDoc(userProfileRef);
-
-                        if (userProfileSnap.exists() && userProfileSnap.data().walletId) {
-                            // El usuario ya tiene un monedero, cargar datos
-                            currentWalletId = userProfileSnap.data().walletId;
-                            document.getElementById('initial-loading-screen').classList.add('hidden');
-                            document.getElementById('main-content-wrapper').classList.remove('hidden');
-                            setupUILogic(true);
-                            setupRealTimeDataListener();
-                        } else {
-                            // Es un usuario nuevo o sin monedero, guiarlo a la configuración
-                            document.getElementById('initial-loading-screen').classList.add('hidden');
-                            document.getElementById('main-content-wrapper').classList.remove('hidden');
-                            setupUILogic(true); 
-                            updateWalletSidebarView(false); 
-                            
-                            const sidebar = document.getElementById('participant-sidebar');
-                            if (!sidebar.classList.contains('open')) {
-                                const backdrop = document.getElementById('sidebar-backdrop');
-                                sidebar.classList.add('open');
-                                backdrop.classList.add('open');
-                                document.body.classList.add('no-scroll');
+                    try { // <-- ADDED TRY BLOCK FOR ROBUSTNESS
+                        // Si estamos en Canvas y no hay usuario, intentar logueo con token
+                        if (IS_CANVAS_ENV && !user && initialAuthToken) {
+                            try {
+                                await signInWithCustomToken(auth, initialAuthToken);
+                                // El listener se volverá a ejecutar con el nuevo estado, así que salimos.
+                                return; 
+                            } catch (e) {
+                                console.error("Fallo el inicio de sesión en Canvas:", e);
+                                // Si falla, operar en modo local.
+                                loadLocalState(); 
+                                setupUILogic(false);
+                                return;
                             }
-                            showModal("Bienvenido. Para empezar, crea un nuevo monedero o únete a uno existente.", null, "Primeros Pasos");
                         }
-                    } else {
-                        // Si NO hay usuario y NO estamos en Canvas, redirigir al login.
-                        if (!IS_CANVAS_ENV) {
-                            window.location.href = REDIRECT_URL_LOGOUT;
+
+                        // Si hay un usuario (de cualquier método), proceder.
+                        if (user) {
+                            userId = user.uid;
+                            document.getElementById('current-user-id').innerHTML = `Mi UID: <strong>${userId}</strong>`;
+                            
+                            // Revisar si el usuario ya está en un monedero
+                            const userProfileRef = getUserProfileRef(db, userId);
+                            const userProfileSnap = await getDoc(userProfileRef);
+
+                            if (userProfileSnap.exists() && userProfileSnap.data().walletId) {
+                                // El usuario ya tiene un monedero, cargar datos
+                                currentWalletId = userProfileSnap.data().walletId;
+                                document.getElementById('initial-loading-screen').classList.add('hidden');
+                                document.getElementById('main-content-wrapper').classList.remove('hidden');
+                                setupUILogic(true);
+                                setupRealTimeDataListener();
+                            } else {
+                                // Es un usuario nuevo o sin monedero, guiarlo a la configuración
+                                document.getElementById('initial-loading-screen').classList.add('hidden');
+                                document.getElementById('main-content-wrapper').classList.remove('hidden');
+                                setupUILogic(true); 
+                                updateWalletSidebarView(false); 
+                                
+                                const sidebar = document.getElementById('participant-sidebar');
+                                if (!sidebar.classList.contains('open')) {
+                                    const backdrop = document.getElementById('sidebar-backdrop');
+                                    sidebar.classList.add('open');
+                                    backdrop.classList.add('open');
+                                    document.body.classList.add('no-scroll');
+                                }
+                                showModal("Bienvenido. Para empezar, crea un nuevo monedero o únete a uno existente.", null, "Primeros Pasos");
+                            }
                         } else {
-                            // Estado sin autenticación dentro de Canvas (modo local)
-                            userId = 'anonymous_canvas';
-                            loadLocalState();
-                            document.getElementById('initial-loading-screen').classList.add('hidden');
-                            document.getElementById('main-content-wrapper').classList.remove('hidden');
-                            document.getElementById('auth-status').innerHTML = `<span id="connection-dot" class="sync-indicator sync-green"></span> 🌐 Sesión de Canvas Activa.`;
-                            setupUILogic(false);
+                            // Si NO hay usuario y NO estamos en Canvas, redirigir al login.
+                            if (!IS_CANVAS_ENV) {
+                                window.location.href = REDIRECT_URL_LOGOUT;
+                            } else {
+                                // Estado sin autenticación dentro de Canvas (modo local)
+                                userId = 'anonymous_canvas';
+                                loadLocalState();
+                                document.getElementById('initial-loading-screen').classList.add('hidden');
+                                document.getElementById('main-content-wrapper').classList.remove('hidden');
+                                document.getElementById('auth-status').innerHTML = `<span id="connection-dot" class="sync-indicator sync-green"></span> 🌐 Sesión de Canvas Activa.`;
+                                setupUILogic(false);
+                            }
                         }
+                    } catch (error) { // <-- ADDED CATCH BLOCK
+                        console.error("Error durante el cambio de estado de autenticación:", error);
+                        showModal("Ocurrió un error al verificar tu sesión. Por favor, intenta recargar la página.", error.message, "Error de Autenticación");
+                        document.getElementById('initial-loading-screen').classList.add('hidden');
+                        document.getElementById('main-content-wrapper').classList.remove('hidden');
+                        document.getElementById('auth-status').innerHTML = `<span id="connection-dot" class="sync-indicator sync-red"></span> Error de conexión.`;
                     }
                 });
             } catch (error) {
@@ -2449,4 +2457,5 @@
     </script>
 </body>
 </html>
+
 
