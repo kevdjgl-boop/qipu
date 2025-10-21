@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Monedero V.2.1 (Sincronización en Vivo)</title>
+    <title>Monedero V.2.2 (Sincronización en Vivo)</title>
     <!-- Incluye Tailwind CSS para estilizado rápido y responsive -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Incluye Font Awesome para íconos de balance -->
@@ -960,38 +960,40 @@
             return `${year}-${month}`;
         }
        
-        // CORREGIDO: AHORA ACEPTA UNA FECHA DE REFERENCIA
+        // CORREGIDO: Lógica de cálculo de ciclo de tarjeta de crédito mejorada
         function getCycleDates(method, referenceDate) {
             if (method.type !== 'credit' || !method.paymentDay) {
                 return { startDate: null, closingDate: null, paymentDate: null };
             }
 
-            const today = referenceDate; // USA LA FECHA DE REFERENCIA
             const paymentDay = method.paymentDay;
-            const gracePeriodDays = 25; 
+            const gracePeriodDays = 25; // Días desde el cierre hasta el pago.
 
-            let paymentDate = new Date(today.getFullYear(), today.getMonth(), paymentDay);
-
-            let theoreticalClosing = new Date(paymentDate.getTime());
-            theoreticalClosing.setDate(theoreticalClosing.getDate() - gracePeriodDays);
-           
-            if (today > theoreticalClosing) {
-                paymentDate.setMonth(paymentDate.getMonth() + 1);
-            }
-
-            let closingDate = new Date(paymentDate.getTime());
+            // 1. Empezar calculando la fecha de cierre para el mes de la fecha de referencia.
+            let closingDate = new Date(referenceDate.getFullYear(), referenceDate.getMonth(), paymentDay);
             closingDate.setDate(closingDate.getDate() - gracePeriodDays);
 
-            const dayOfWeek = closingDate.getDay(); 
-            if (dayOfWeek === 0) { // Sunday
+            // 2. Si la fecha de referencia es posterior a esta fecha de cierre, significa que estamos en el siguiente ciclo de facturación.
+            // Por lo tanto, debemos calcular el ciclo basándonos en la fecha de cierre del mes siguiente.
+            if (referenceDate > closingDate) {
+                closingDate.setMonth(closingDate.getMonth() + 1);
+            }
+            
+            // 3. Ajustar la fecha de cierre por si cae en fin de semana (mover al viernes anterior)
+            const dayOfWeek = closingDate.getDay(); // Domingo = 0, Sábado = 6
+            if (dayOfWeek === 0) { // Domingo
                 closingDate.setDate(closingDate.getDate() - 2); 
-            } else if (dayOfWeek === 6) { // Saturday
+            } else if (dayOfWeek === 6) { // Sábado
                 closingDate.setDate(closingDate.getDate() - 1); 
             }
-           
+
+            // 4. Ahora que tenemos la fecha de cierre correcta, calculamos las fechas de inicio y de pago.
             let startDate = new Date(closingDate.getTime());
             startDate.setMonth(startDate.getMonth() - 1);
             startDate.setDate(startDate.getDate() + 1);
+
+            let paymentDate = new Date(closingDate.getTime());
+            paymentDate.setDate(paymentDate.getDate() + gracePeriodDays);
 
             return {
                 startDate: startDate.toISOString().split('T')[0],
@@ -1709,7 +1711,7 @@
                 const ccDetails = document.getElementById('credit-card-details');
                 if (method && method.type === 'credit') {
                     ccDetails.classList.remove('hidden');
-                    const { startDate, paymentDate } = getCycleDates(method, new Date()); // CORREGIDO: Usa la fecha actual para el formulario
+                    const { startDate, paymentDate } = getCycleDates(method, new Date()); // Usa la fecha actual para el formulario
                     document.getElementById('cc-cycle-start-display').textContent = formatDate(startDate);
                     document.getElementById('cc-payment-date-display').textContent = formatDate(paymentDate);
                 } else {
@@ -1734,7 +1736,7 @@
                     }
 
                     const paymentMethod = appState.paymentMethods.find(m => m.id === paymentMethodId);
-                    const { startDate, paymentDate } = paymentMethod && paymentMethod.type === 'credit' ? getCycleDates(paymentMethod, new Date()) : {}; // CORREGIDO: Usa la fecha actual para el formulario
+                    const { startDate, paymentDate } = paymentMethod && paymentMethod.type === 'credit' ? getCycleDates(paymentMethod, new Date()) : {}; // Usa la fecha actual para el formulario
                     const fixedRecurrenceMonths = isFixed ? parseInt(document.getElementById('fixed-recurrence-months').value) || 1 : 0;
 
                     const newExpense = {
@@ -2549,3 +2551,4 @@
     </script>
 </body>
 </html>
+
