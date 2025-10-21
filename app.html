@@ -1381,6 +1381,8 @@
                 document.execCommand('copy');
                 showModal('ID del monedero copiado al portapapeles.', null, 'Copiado');
             });
+             document.getElementById('create-wallet-btn').addEventListener('click', handleCreateWallet);
+            document.getElementById('join-wallet-form').addEventListener('submit', handleJoinWallet);
             
             if (!isFirebaseMode) renderUI(); 
         }
@@ -2523,9 +2525,6 @@
             document.getElementById('expense-category').dispatchEvent(new Event('change'));
         }
 
-        document.getElementById('create-wallet-btn').addEventListener('click', handleCreateWallet);
-        document.getElementById('join-wallet-form').addEventListener('submit', handleJoinWallet);
-
         window.onload = initializeFirebase;
         window.onerror = function (message, source, lineno, colno, error) {
             console.error("Error global:", message, error);
@@ -2535,3 +2534,4 @@
     </script>
 </body>
 </html>
+
