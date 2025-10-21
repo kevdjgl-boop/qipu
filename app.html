@@ -966,33 +966,34 @@
             }
 
             const today = new Date();
+            today.setHours(0, 0, 0, 0); // Normalizar a medianoche para comparaciones precisas
             const paymentDay = method.paymentDay;
-            // CORREGIDO: Ajustado el periodo de gracia para que coincida con el ejemplo del usuario (pago el 5/Dic -> cierre el 11/Nov)
-            const gracePeriodDays = 24; 
+            const gracePeriodDays = 24; // Deducido del ejemplo: Cierre 11/Nov -> Pago 5/Dic
 
-            // 1. Determinar la próxima fecha de pago relevante
+            // 1. Empezar con una fecha de pago potencial para este mes.
             let paymentDate = new Date(today.getFullYear(), today.getMonth(), paymentDay);
-            let theoreticalClosing = new Date(paymentDate.getTime());
-            theoreticalClosing.setDate(theoreticalClosing.getDate() - gracePeriodDays);
-            
-            // Si hoy ya pasó la fecha de cierre teórica, estamos en el siguiente ciclo de facturación.
-            if (today > theoreticalClosing) {
-                paymentDate.setMonth(paymentDate.getMonth() + 1);
-            }
 
-            // 2. Calcular la fecha de cierre basada en la fecha de pago correcta
+            // 2. Usar un bucle para encontrar la PRIMERA fecha de cierre que sea en el futuro.
             let closingDate = new Date(paymentDate.getTime());
             closingDate.setDate(closingDate.getDate() - gracePeriodDays);
 
-            // 3. Ajustar la fecha de cierre si cae en fin de semana (adelantar a viernes)
+            while (today > closingDate) {
+                // Si la fecha de hoy ya pasó la fecha de cierre, significa que estamos en el siguiente ciclo.
+                // Avanzamos un mes y recalculamos.
+                paymentDate.setMonth(paymentDate.getMonth() + 1);
+                closingDate = new Date(paymentDate.getTime());
+                closingDate.setDate(closingDate.getDate() - gracePeriodDays);
+            }
+
+            // 3. Ahora que tenemos la fecha de cierre correcta, la ajustamos si cae en fin de semana.
             const dayOfWeek = closingDate.getDay(); // Domingo = 0, Sábado = 6
             if (dayOfWeek === 0) { // Domingo
-                closingDate.setDate(closingDate.getDate() - 2);
+                closingDate.setDate(closingDate.getDate() - 2); // Retroceder a viernes
             } else if (dayOfWeek === 6) { // Sábado
-                closingDate.setDate(closingDate.getDate() - 1);
+                closingDate.setDate(closingDate.getDate() - 1); // Retroceder a viernes
             }
             
-            // 4. Calcular la fecha de inicio basándose en la fecha de cierre ya ajustada
+            // 4. Calcular la fecha de inicio basándose en la fecha de cierre ya ajustada.
             let startDate = new Date(closingDate.getTime());
             startDate.setMonth(startDate.getMonth() - 1);
             startDate.setDate(startDate.getDate() + 1);
@@ -2552,5 +2553,6 @@
     </script>
 </body>
 </html>
+
 
 
