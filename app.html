@@ -2442,7 +2442,7 @@
             });
         }
 
-        function renderCreditCardSummary(filteredExpenses) {
+        function renderCreditCardSummary(allExpenses) {
             const creditCards = appState.paymentMethods.filter(m => m.type === 'credit');
             const container = document.getElementById('credit-card-summary-cards');
             const section = document.getElementById('credit-card-summary-section');
@@ -2458,21 +2458,24 @@
                 const { cycleStart, paymentDate } = getCycleDates(card);
                 if (!cycleStart) return;
 
-                const startDate = new Date(cycleStart);
-                const endDate = new Date(startDate.getFullYear(), startDate.getMonth() + 1, startDate.getDate() -1);
+                const startDate = new Date(cycleStart + "T00:00:00");
+                const endDate = new Date(startDate.getFullYear(), startDate.getMonth() + 1, startDate.getDate() - 1);
 
-                const cardExpenses = filteredExpenses.filter(exp => {
-                    const expDate = new Date(exp.date);
+                const cardExpensesInCycle = (allExpenses || []).filter(exp => {
+                    if (!exp.date) return false;
+                    const expDate = new Date(exp.date + "T00:00:00");
                     return exp.paymentMethodId === card.id && expDate >= startDate && expDate <= endDate;
                 });
                 
-                const totalSpent = cardExpenses.reduce((sum, exp) => sum + exp.amount, 0);
+                const totalSpent = cardExpensesInCycle.reduce((sum, exp) => sum + exp.amount, 0);
 
                 const today = new Date();
                 const totalDuration = endDate.getTime() - startDate.getTime();
                 const elapsedDuration = today.getTime() - startDate.getTime();
                 let progress = totalDuration > 0 ? (elapsedDuration / totalDuration) * 100 : 0;
                 progress = Math.max(0, Math.min(progress, 100));
+                
+                const endDateFormatted = endDate.toLocaleDateString('es-ES', { day: '2-digit' });
 
                 const cardHTML = `
                     <div class="p-4 rounded-lg border bg-cyan-50">
@@ -2481,7 +2484,7 @@
                         <div class="mt-3">
                             <div class="flex justify-between text-xs text-gray-600">
                                 <span>Inicio: ${formatDate(cycleStart)}</span>
-                                <span>Cierre: ${endDate.toLocaleDateString('es-ES', { day: '2-digit' })}</span>
+                                <span>Cierre: ${endDateFormatted}</span>
                             </div>
                             <div class="progress-bar-container mt-1">
                                 <div class="progress-bar-fill bg-cyan-500" style="width: ${progress}%"></div>
@@ -2493,7 +2496,7 @@
                 container.insertAdjacentHTML('beforeend', cardHTML);
             });
              if (container.innerHTML === '') {
-                container.innerHTML = '<p class="text-gray-500 italic text-sm col-span-full">No hay consumos con tarjetas de crédito en este ciclo.</p>';
+                container.innerHTML = '<p class="text-gray-500 italic text-sm col-span-full">No hay consumos con tarjetas de crédito en los ciclos actuales.</p>';
             }
         }
         
@@ -2503,7 +2506,7 @@
             const filterMonthString = getFilterMonthString(currentFilterDate);
             let filteredExpenses = (appState.expenses || []).filter(e => e.date && e.date.startsWith(filterMonthString));
 
-            if (filteredExpenses.length === 0 && appState.expenses.length > 0 && filterMonthString !== getFilterMonthString(new Date())) {
+            if (filteredExpenses.length === 0 && appState.expenses && appState.expenses.length > 0 && filterMonthString !== getFilterMonthString(new Date())) {
                  const latestExpenseDate = new Date(Math.max(...appState.expenses.map(e => new Date(e.date))));
                  if(latestExpenseDate && !isNaN(latestExpenseDate)) {
                     currentFilterDate = latestExpenseDate;
@@ -2518,7 +2521,7 @@
             renderParticipantsConfig(appState.participants, summary);
             renderCategoriesModal(appState.categories);
             renderPaymentMethodsModal(appState.paymentMethods);
-            renderCreditCardSummary(filteredExpenses); // <-- NUEVA LLAMADA
+            renderCreditCardSummary(appState.expenses); // <-- AHORA USA TODOS LOS GASTOS
             renderExpenseReportByCategory(filteredExpenses, summary);
             renderCategoryChart(filteredExpenses);
             renderFixedExpensesSummary();
@@ -2539,5 +2542,3 @@
     </script>
 </body>
 </html>
-
-
