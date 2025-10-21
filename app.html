@@ -1136,54 +1136,59 @@
         }
 
         async function handleCreateWallet() {
-            const newWalletRef = await addDoc(getWalletsCollectionRef(db), { createdAt: new Date().toISOString(), owner: userId });
-            currentWalletId = newWalletRef.id;
+            try {
+                const newWalletRef = await addDoc(getWalletsCollectionRef(db), { createdAt: new Date().toISOString(), owner: userId });
+                currentWalletId = newWalletRef.id;
 
-            const defaultWalletState = {
-                participants: [],
-                categories: [],
-                paymentMethods: [{ id: 'm1', name: 'Efectivo', type: 'cash' }, { id: 'm2', name: 'Débito', type: 'cash' }],
-                expenses: []
-            };
+                const defaultWalletState = {
+                    participants: [],
+                    categories: [],
+                    paymentMethods: [{ id: 'm1', name: 'Efectivo', type: 'cash' }, { id: 'm2', name: 'Débito', type: 'cash' }],
+                    expenses: []
+                };
 
-            let walletData;
+                let walletData;
 
-            const oldDataRef = getOldUserFinanceDocRef(db, userId);
-            const oldDataSnap = await getDoc(oldDataRef);
+                const oldDataRef = getOldUserFinanceDocRef(db, userId);
+                const oldDataSnap = await getDoc(oldDataRef);
 
-            if (oldDataSnap.exists()) {
-                // Migrar datos viejos, asegurando que todas las propiedades existan
-                walletData = { ...defaultWalletState, ...oldDataSnap.data() };
-                
-                // Asegurarse de que al menos un participante esté vinculado al usuario actual
-                const currentUserIsParticipant = walletData.participants.some(p => p.firebaseUid === userId);
-                if (!currentUserIsParticipant && walletData.participants.length > 0) {
-                    walletData.participants[0].firebaseUid = userId;
-                } else if (walletData.participants.length === 0) {
-                    // Si los datos migrados no tenían participantes, añadir al usuario actual.
+                if (oldDataSnap.exists()) {
+                    // Migrar datos viejos, asegurando que todas las propiedades existan
+                    walletData = { ...defaultWalletState, ...oldDataSnap.data() };
+                    
+                    // Asegurarse de que al menos un participante esté vinculado al usuario actual
+                    const currentUserIsParticipant = walletData.participants.some(p => p.firebaseUid === userId);
+                    if (!currentUserIsParticipant && walletData.participants.length > 0) {
+                        walletData.participants[0].firebaseUid = userId;
+                    } else if (walletData.participants.length === 0) {
+                        // Si los datos migrados no tenían participantes, añadir al usuario actual.
+                        walletData.participants.push({ id: generateUUID(), name: 'Yo', budget: 1000, sharedSavingsPercent: 10, independentSavingsPercent: 5, firebaseUid: userId });
+                    }
+                } else {
+                    // Crear un monedero nuevo desde cero
+                    walletData = { ...defaultWalletState };
                     walletData.participants.push({ id: generateUUID(), name: 'Yo', budget: 1000, sharedSavingsPercent: 10, independentSavingsPercent: 5, firebaseUid: userId });
                 }
-            } else {
-                // Crear un monedero nuevo desde cero
-                walletData = { ...defaultWalletState };
-                walletData.participants.push({ id: generateUUID(), name: 'Yo', budget: 1000, sharedSavingsPercent: 10, independentSavingsPercent: 5, firebaseUid: userId });
+                
+                const batch = writeBatch(db);
+                batch.set(getWalletDocRef(db, currentWalletId), walletData); // Establecer datos en el nuevo monedero
+                batch.set(getUserProfileRef(db, userId), { walletId: currentWalletId }); // Vincular usuario al monedero
+
+                await batch.commit();
+                
+                // Cerrar sidebar y cargar la UI principal
+                const sidebar = document.getElementById('participant-sidebar');
+                const backdrop = document.getElementById('sidebar-backdrop');
+                sidebar.classList.remove('open');
+                backdrop.classList.remove('open');
+                document.body.classList.remove('no-scroll');
+
+                setupUILogic(true);
+                setupRealTimeDataListener();
+            } catch (error) {
+                console.error("Error al crear el monedero:", error);
+                showModal("No se pudo crear el monedero. Revisa tu conexión y los permisos de la base de datos.", error.message, "Error Crítico");
             }
-            
-            const batch = writeBatch(db);
-            batch.set(getWalletDocRef(db, currentWalletId), walletData); // Establecer datos en el nuevo monedero
-            batch.set(getUserProfileRef(db, userId), { walletId: currentWalletId }); // Vincular usuario al monedero
-
-            await batch.commit();
-            
-            // Cerrar sidebar y cargar la UI principal
-            const sidebar = document.getElementById('participant-sidebar');
-            const backdrop = document.getElementById('sidebar-backdrop');
-            sidebar.classList.remove('open');
-            backdrop.classList.remove('open');
-            document.body.classList.remove('no-scroll');
-
-            setupUILogic(true);
-            setupRealTimeDataListener();
         }
 
         async function handleJoinWallet(e) {
@@ -2534,4 +2539,5 @@
     </script>
 </body>
 </html>
+
 
