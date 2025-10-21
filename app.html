@@ -858,9 +858,7 @@
             appId: "1:398775085739:web:be8643b5d9fea9ef8da5ee",
         };
 
-        const REDIRECT_URL_LOGOUT = window.location.pathname.includes('/app.html') 
-            ? window.location.pathname.replace('/app.html', '/index.html') 
-            : 'index.html'; 
+        const REDIRECT_URL_LOGOUT = 'index.html';
 
         const IS_CANVAS_ENV = typeof __initial_auth_token !== 'undefined';
         
@@ -993,7 +991,7 @@
                     unsubscribeListener = null;
                 }
                 await signOut(auth);
-                window.location.href = REDIRECT_URL_LOGOUT;
+                // La redirección la manejará onAuthStateChanged
             } catch (e) {
                 showModal(`No se pudo cerrar la sesión: ${e.message}`, e.message, "Fallo al Cerrar Sesión");
             }
@@ -1017,34 +1015,45 @@
                 db = getFirestore(app);
                 auth = getAuth(app);
                 
-                if (initialAuthToken) {
-                    await signInWithCustomToken(auth, initialAuthToken);
-                } 
-
                 onAuthStateChanged(auth, async (user) => {
-                    if (user && user.uid !== 'anonymous') {
+                    // Si estamos en Canvas y no hay usuario, intentar logueo con token
+                    if (IS_CANVAS_ENV && !user && initialAuthToken) {
+                        try {
+                            await signInWithCustomToken(auth, initialAuthToken);
+                            // El listener se volverá a ejecutar con el nuevo estado, así que salimos.
+                            return; 
+                        } catch (e) {
+                            console.error("Fallo el inicio de sesión en Canvas:", e);
+                            // Si falla, operar en modo local.
+                            loadLocalState(); 
+                            setupUILogic(false);
+                            return;
+                        }
+                    }
+
+                    // Si hay un usuario (de cualquier método), proceder.
+                    if (user) {
                         userId = user.uid;
                         document.getElementById('current-user-id').innerHTML = `Mi UID: <strong>${userId}</strong>`;
                         
-                        // 1. Revisar si el usuario ya está en un monedero
+                        // Revisar si el usuario ya está en un monedero
                         const userProfileRef = getUserProfileRef(db, userId);
                         const userProfileSnap = await getDoc(userProfileRef);
 
                         if (userProfileSnap.exists() && userProfileSnap.data().walletId) {
-                             // El usuario ya tiene un monedero, cargar datos
+                            // El usuario ya tiene un monedero, cargar datos
                             currentWalletId = userProfileSnap.data().walletId;
                             document.getElementById('initial-loading-screen').classList.add('hidden');
                             document.getElementById('main-content-wrapper').classList.remove('hidden');
                             setupUILogic(true);
                             setupRealTimeDataListener();
                         } else {
-                             // Es un usuario nuevo o sin monedero, guiarlo a la configuración
+                            // Es un usuario nuevo o sin monedero, guiarlo a la configuración
                             document.getElementById('initial-loading-screen').classList.add('hidden');
                             document.getElementById('main-content-wrapper').classList.remove('hidden');
-                            setupUILogic(true); // Se necesita para que funcione el sidebar
-                            updateWalletSidebarView(false); // Mostrar controles de crear/unirse
+                            setupUILogic(true); 
+                            updateWalletSidebarView(false); 
                             
-                            // Abrir sidebar y mostrar mensaje de bienvenida
                             const sidebar = document.getElementById('participant-sidebar');
                             if (!sidebar.classList.contains('open')) {
                                 const backdrop = document.getElementById('sidebar-backdrop');
@@ -1052,20 +1061,21 @@
                                 backdrop.classList.add('open');
                                 document.body.classList.add('no-scroll');
                             }
-                            showModal("Bienvenido. Para empezar, crea un nuevo monedero o únete a uno existente desde este panel.", null, "Primeros Pasos");
+                            showModal("Bienvenido. Para empezar, crea un nuevo monedero o únete a uno existente.", null, "Primeros Pasos");
                         }
-
-                    } else if (IS_CANVAS_ENV && !user) {
-                        userId = 'anonymous_canvas';
-                         // Lógica para Canvas sin usuario (puede ser modo local o de solo lectura)
-                        loadLocalState();
-                        document.getElementById('initial-loading-screen').classList.add('hidden');
-                        document.getElementById('main-content-wrapper').classList.remove('hidden');
-                        document.getElementById('auth-status').innerHTML = `<span id="connection-dot" class="sync-indicator sync-green"></span> 🌐 Sesión de Canvas Activa.`;
-                        setupUILogic(false); // Operar en modo local
                     } else {
-                        if (unsubscribeListener) unsubscribeListener();
-                        window.location.href = REDIRECT_URL_LOGOUT;
+                        // Si NO hay usuario y NO estamos en Canvas, redirigir al login.
+                        if (!IS_CANVAS_ENV) {
+                            window.location.href = REDIRECT_URL_LOGOUT;
+                        } else {
+                            // Estado sin autenticación dentro de Canvas (modo local)
+                            userId = 'anonymous_canvas';
+                            loadLocalState();
+                            document.getElementById('initial-loading-screen').classList.add('hidden');
+                            document.getElementById('main-content-wrapper').classList.remove('hidden');
+                            document.getElementById('auth-status').innerHTML = `<span id="connection-dot" class="sync-indicator sync-green"></span> 🌐 Sesión de Canvas Activa.`;
+                            setupUILogic(false);
+                        }
                     }
                 });
             } catch (error) {
@@ -2439,3 +2449,4 @@
     </script>
 </body>
 </html>
+
