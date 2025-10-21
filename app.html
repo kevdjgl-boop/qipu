@@ -579,10 +579,14 @@
                             Mi UID: Cargando...
                         </p>
                     </div>
-                     <!-- Botón de Restauración de Emergencia -->
-                    <div class="mt-6 pt-4 border-t border-gray-300">
+                     <!-- HERRAMIENTAS DE DATOS -->
+                    <div id="data-management-section" class="mt-6 pt-4 border-t border-gray-300 space-y-2">
+                        <h4 class="text-sm font-bold text-gray-700">Herramientas de Datos</h4>
+                        <button id="export-json-btn" class="w-full py-2 text-xs bg-blue-600 text-white font-bold rounded-lg hover:bg-blue-700 transition">
+                            <i class="fas fa-file-export"></i> Exportar Datos a Texto
+                        </button>
                         <button id="restore-json-btn" class="w-full py-2 text-xs bg-gray-600 text-white font-bold rounded-lg hover:bg-gray-700 transition">
-                            🛠️ Restaurar Datos (JSON)
+                            <i class="fas fa-file-import"></i> Importar/Restaurar Datos
                         </button>
                     </div>
                 </div>
@@ -594,10 +598,27 @@
     <!-- MODALES -->
     <!-- ========================================================================================= -->
 
-    <!-- Modal de Gestión de Monedero (ELIMINADO) -->
+    <!-- NUEVO: Modal de Importación de Datos -->
+    <div id="import-json-modal" class="fixed inset-0 bg-gray-600 bg-opacity-70 hidden items-center justify-center p-4 z-[60]">
+        <div class="bg-white p-6 rounded-xl shadow-2xl max-w-lg w-full">
+            <h3 class="text-2xl font-bold mb-4 text-gray-800">Importar/Restaurar Datos</h3>
+            <p class="text-sm text-gray-600 mb-4">Pega el texto de respaldo (JSON) en el siguiente campo para restaurar tus datos. Esto sobrescribirá todos los datos del monedero actual.</p>
+            <form id="import-json-form">
+                <textarea id="json-input-area" class="w-full h-48 p-3 border rounded bg-gray-50 text-xs font-mono focus:ring-2 focus:ring-indigo-500" placeholder="Pega el texto JSON aquí..."></textarea>
+                <div class="grid grid-cols-2 gap-3 mt-6">
+                    <button type="submit" id="confirm-import-btn" class="py-2 bg-indigo-600 text-white font-bold rounded-lg hover:bg-indigo-700 transition">
+                        Confirmar Importación
+                    </button>
+                    <button type="button" id="cancel-import-btn" class="py-2 bg-gray-300 text-gray-800 font-bold rounded-lg hover:bg-gray-400 transition">
+                        Cancelar
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
     
     <!-- Modal de Mensajes -->
-    <div id="message-modal" class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden items-center justify-center p-4 z-[60]">
+    <div id="message-modal" class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden items-center justify-center p-4 z-[70]">
         <div class="bg-white p-6 rounded-xl shadow-2xl max-w-sm w-full">
             <h3 class="text-xl font-bold mb-4 text-gray-800" id="modal-title">Atención</h3>
             <p id="modal-text" class="mb-4 text-gray-600"></p>
@@ -906,7 +927,7 @@
         
         const showModal = (message, errorCode = null, title = "Atención") => {
             document.getElementById('modal-title').textContent = title;
-            document.getElementById('modal-text').textContent = message;
+            document.getElementById('modal-text').innerHTML = message; // Use innerHTML to allow textarea
             
             const errorDetailEl = document.getElementById('modal-error-detail');
             const errorCodeEl = document.getElementById('modal-error-code');
@@ -1191,6 +1212,78 @@
             setupRealTimeDataListener();
         }
 
+        function setupDataManagementListeners() {
+            // --- Export Logic (no changes) ---
+            document.getElementById('export-json-btn').addEventListener('click', () => {
+                const jsonString = JSON.stringify(appState);
+                const modalTextEl = document.getElementById('modal-text');
+                
+                showModal("Copia este texto. Es el respaldo completo de tus datos.", null, "Exportar Datos");
+                
+                modalTextEl.innerHTML = "Copia este texto. Es el respaldo completo de tus datos." + 
+                `<textarea readonly class="w-full h-32 mt-2 p-2 border rounded bg-gray-100 text-xs font-mono">${jsonString}</textarea>`;
+                
+                modalTextEl.querySelector('textarea').select();
+            });
+
+            // --- Import Logic (New Modal System) ---
+            const importModal = document.getElementById('import-json-modal');
+            const importForm = document.getElementById('import-json-form');
+            const jsonInputArea = document.getElementById('json-input-area');
+            const cancelImportBtn = document.getElementById('cancel-import-btn');
+
+            // Open the modal
+            document.getElementById('restore-json-btn').addEventListener('click', () => {
+                importModal.classList.remove('hidden');
+                importModal.classList.add('flex');
+            });
+
+            // Close the modal
+            cancelImportBtn.addEventListener('click', () => {
+                importModal.classList.add('hidden');
+                importModal.classList.remove('flex');
+                jsonInputArea.value = ''; // Clear textarea
+            });
+
+            // Handle the import submission
+            importForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const jsonString = jsonInputArea.value.trim();
+                
+                if (!jsonString) {
+                    showModal("El campo de texto está vacío. Por favor, pega tus datos de respaldo.", null, "Error");
+                    return;
+                }
+
+                try {
+                    const importedState = JSON.parse(jsonString);
+                    if (importedState && typeof importedState.participants !== 'undefined' && typeof importedState.expenses !== 'undefined') {
+                        if (isFirebaseActive && db && currentWalletId) {
+                            await setDoc(getWalletDocRef(db, currentWalletId), importedState);
+                            
+                            // Close import modal before showing success message
+                            importModal.classList.add('hidden');
+                            importModal.classList.remove('flex');
+                            jsonInputArea.value = '';
+
+                            showModal("Datos restaurados y sincronizados. La página se recargará.", null, "Restauración Completa");
+                            setTimeout(() => window.location.reload(), 2000);
+                        } else {
+                             // Fallback for local mode
+                            appState = importedState;
+                            localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(appState));
+                            renderUI();
+                            showModal("Datos restaurados localmente.", null, "Restauración Completa");
+                        }
+                    } else {
+                       throw new Error("El formato del JSON no es válido. Faltan propiedades esenciales (participants/expenses).");
+                    }
+                } catch (error) { 
+                   showModal(`Error al procesar el JSON: ${error.message}`, error.stack, "Error de Importación"); 
+               }
+            });
+        }
+
         function setupRealTimeDataListener() {
              if (!db || !currentWalletId) return;
              if (unsubscribeListener) unsubscribeListener();
@@ -1279,7 +1372,7 @@
             setupExpenseFormListeners();
             setupExpenseModalListeners(); 
             setupLiquidateListeners(); 
-            setupRestoreJsonListeners(); 
+            setupDataManagementListeners(); // <-- AÑADIDO
             
             // Listeners de la nueva lógica de monederos
             document.getElementById('copy-wallet-id-btn').addEventListener('click', () => {
@@ -1380,21 +1473,6 @@
             }
             await saveState({ expenses: newExpenses });
             showModal(`¡Liquidación completada! Se crearon ${numSettlements} ajustes.`, null, "Liquidación Exitosa");
-        }
-
-        function setupRestoreJsonListeners() {
-            document.getElementById('restore-json-btn').addEventListener('click', () => {
-                const jsonString = window.prompt("Pega la cadena de texto JSON de respaldo aquí:");
-                if (jsonString) {
-                    try {
-                        const importedState = JSON.parse(jsonString);
-                        if (importedState && importedState.participants && importedState.expenses) {
-                            saveState(importedState);
-                            showModal("Datos restaurados.", null, "Restauración Completa");
-                        } else throw new Error("Formato de JSON inválido.");
-                    } catch (e) { showModal(`Error al procesar el JSON: ${e.message}`, null, "Error"); }
-                }
-            });
         }
         
         function setupParticipantModalListeners(backdrop, sidebar) {
@@ -2457,5 +2535,3 @@
     </script>
 </body>
 </html>
-
-
