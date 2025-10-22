@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Monedero V.2.8 (Errores Corregidos)</title>
+    <title>Monedero V.2.9 (Filtro por Método Pago)</title>
     <!-- Incluye Tailwind CSS para estilizado rápido y responsive -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Incluye Font Awesome para íconos de balance -->
@@ -185,6 +185,8 @@
         /* --- ESTILOS PARA POPOVER DE FILTROS Y ETIQUETAS --- */
         #filter-popover {
             transition: opacity 0.2s ease-out, visibility 0.2s ease-out, transform 0.2s ease-out;
+            max-height: 400px; /* Limitar altura máxima */
+            overflow-y: auto; /* Scroll si es necesario */
         }
         #filter-popover.hidden {
            opacity: 0;
@@ -220,6 +222,12 @@
             color: #5b21b6; /* purple-800 */
             border-color: #e9d5ff; /* purple-200 */
         }
+        /* NUEVO: Estilo para etiquetas de método de pago */
+        .filter-tag.payment-method-tag {
+             background-color: #d1fae5; /* green-100 */
+             color: #065f46; /* green-800 */
+             border-color: #a7f3d0; /* green-200 */
+         }
         .filter-tag:hover {
              box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.3); /* Ring effect on hover */
         }
@@ -232,6 +240,11 @@
          .filter-tag.participant-tag.active {
              background-color: #7e22ce; /* purple-700 */
              border-color: #7e22ce;
+         }
+          /* NUEVO: Estilo activo para etiquetas de método de pago */
+         .filter-tag.payment-method-tag.active {
+             background-color: #047857; /* green-700 */
+             border-color: #047857;
          }
         /* Estilos para las etiquetas en las tarjetas de gasto */
         .expense-card-tag {
@@ -251,6 +264,11 @@
          .expense-card-tag.participant {
              background-color: #fef3c7; /* amber-100 */
              color: #92400e; /* amber-800 */
+         }
+         /* NUEVO: Estilo para etiqueta de método de pago en tarjeta */
+         .expense-card-tag.payment-method {
+              background-color: #e0f2fe; /* cyan-100 */
+              color: #0e7490; /* cyan-800 */
          }
 
 
@@ -593,6 +611,14 @@
                             <div id="filter-tag-participants" class="flex flex-wrap -m-1">
                                  <!-- Etiquetas de participante se generarán aquí -->
                                  <span class="text-xs text-gray-500 italic m-1">Cargando participantes...</span>
+                            </div>
+                        </div>
+                         <!-- NUEVO: Filtro por etiquetas de Método de Pago -->
+                         <div>
+                            <label class="block text-xs font-medium text-gray-600 mb-1">Filtrar por Método de Pago:</label>
+                            <div id="filter-tag-payment-methods" class="flex flex-wrap -m-1">
+                                 <!-- Etiquetas de método de pago se generarán aquí -->
+                                 <span class="text-xs text-gray-500 italic m-1">Cargando métodos...</span>
                             </div>
                         </div>
                         <button id="reset-filters-btn" class="w-full py-2 text-sm bg-gray-200 text-gray-700 font-medium rounded-lg hover:bg-gray-300 mt-4">
@@ -1047,7 +1073,8 @@
         let activeFilters = {
              description: '',
              category: null, // Almacenará el nombre de la categoría
-             participant: null // Almacenará el ID del participante
+             participant: null, // Almacenará el ID del participante
+             paymentMethod: null // NUEVO: Almacenará el ID del método de pago
         };
 
 
@@ -1520,6 +1547,7 @@
             const descriptionInput = document.getElementById('filter-description');
             const categoryTagsContainer = document.getElementById('filter-tag-categories');
             const participantTagsContainer = document.getElementById('filter-tag-participants');
+            const paymentMethodTagsContainer = document.getElementById('filter-tag-payment-methods'); // NUEVO
             const selectedTagsContainer = document.getElementById('selected-filter-tags');
 
             // Abrir/Cerrar Popover
@@ -1549,9 +1577,8 @@
                 const target = e.target.closest('.filter-tag.category-tag');
                 if (target) {
                     const categoryName = target.dataset.value;
-                    // Si ya estaba seleccionada, deseleccionarla (null). Si no, seleccionarla.
                     activeFilters.category = activeFilters.category === categoryName ? null : categoryName;
-                    renderUI(); // Volver a renderizar para aplicar el filtro y actualizar UI
+                    renderUI(); 
                 }
             });
 
@@ -1564,19 +1591,28 @@
                     renderUI(); 
                 }
             });
+            
+             // NUEVO: Manejar clicks en las etiquetas de método de pago
+            paymentMethodTagsContainer.addEventListener('click', (e) => {
+                 const target = e.target.closest('.filter-tag.payment-method-tag');
+                 if (target) {
+                    const methodId = target.dataset.value;
+                    activeFilters.paymentMethod = activeFilters.paymentMethod === methodId ? null : methodId;
+                    renderUI(); 
+                }
+             });
 
             // Botón para limpiar filtros
             resetFiltersButton.addEventListener('click', () => {
-                 descriptionInput.value = ''; // Limpiar también el input de descripción
+                 descriptionInput.value = ''; 
                  activeFilters.description = '';
                  activeFilters.category = null;
                  activeFilters.participant = null;
+                 activeFilters.paymentMethod = null; // NUEVO
                  renderUI(); 
-                 // No cerramos el popover aquí, el usuario puede querer aplicar otros filtros
-                 // popover.classList.add('hidden'); 
             });
 
-             // NUEVO: Delegación para remover etiquetas seleccionadas
+             // MODIFICADO: Delegación para remover etiquetas seleccionadas
             selectedTagsContainer.addEventListener('click', (e) => {
                  const target = e.target.closest('.selected-tag-remove');
                  if(target) {
@@ -1585,22 +1621,25 @@
                          activeFilters.category = null;
                      } else if (filterType === 'participant') {
                          activeFilters.participant = null;
+                     } else if (filterType === 'paymentMethod') { // NUEVO
+                         activeFilters.paymentMethod = null;
                      }
                      renderUI();
                  }
             });
         }
         
-        // NUEVO: Función para actualizar el estado visual del botón de filtros y las etiquetas seleccionadas
+        // MODIFICADO: Función para actualizar el estado visual del botón de filtros y las etiquetas seleccionadas
         function updateFilterUIState() {
             const popoverButton = document.getElementById('filter-popover-button');
             const selectedTagsContainer = document.getElementById('selected-filter-tags');
             const noFiltersLabel = document.getElementById('no-filters-label');
             
-            const descActive = !!activeFilters.description; // Verificar si hay texto en descripción
+            const descActive = !!activeFilters.description; 
             const catActive = !!activeFilters.category;
             const partActive = !!activeFilters.participant;
-            const isActive = descActive || catActive || partActive;
+            const pmActive = !!activeFilters.paymentMethod; // NUEVO
+            const isActive = descActive || catActive || partActive || pmActive; // Modificado
 
             // Actualizar botón principal
             popoverButton.classList.toggle('active', isActive);
@@ -1632,11 +1671,22 @@
                      hasSelectedTags = true;
                  }
             }
-             // No mostramos etiqueta para descripción, pero sí afecta el estado 'activo'
+             // NUEVO: Añadir etiqueta seleccionada para método de pago
+             if (pmActive) {
+                 const paymentMethod = appState.paymentMethods.find(m => m.id === activeFilters.paymentMethod);
+                 if(paymentMethod) {
+                    selectedTagsContainer.insertAdjacentHTML('beforeend', `
+                        <span class="filter-tag payment-method-tag active">
+                            ${paymentMethod.name}
+                            <button data-type="paymentMethod" class="selected-tag-remove ml-1.5 text-green-100 hover:text-white">&times;</button>
+                        </span>
+                    `);
+                    hasSelectedTags = true;
+                 }
+             }
              
             // Mostrar/ocultar el label "No hay filtros"
-            // Solo ocultar si hay etiquetas de CAT o PART activas
-             if(noFiltersLabel) noFiltersLabel.classList.toggle('hidden', catActive || partActive);
+             if(noFiltersLabel) noFiltersLabel.classList.toggle('hidden', catActive || partActive || pmActive); // Modificado
 
 
             // Actualizar estado 'active' de las etiquetas clickeables en las listas
@@ -1646,6 +1696,10 @@
             document.querySelectorAll('#filter-tag-participants .filter-tag').forEach(tag => {
                  tag.classList.toggle('active', tag.dataset.value === activeFilters.participant);
             });
+             // NUEVO: Actualizar estado activo de etiquetas de método de pago
+             document.querySelectorAll('#filter-tag-payment-methods .filter-tag').forEach(tag => {
+                  tag.classList.toggle('active', tag.dataset.value === activeFilters.paymentMethod);
+             });
             
              // Sincronizar el input de descripción con el estado (si fue limpiado por 'reset')
              const descriptionInput = document.getElementById('filter-description');
@@ -2330,9 +2384,11 @@
         function updateDynamicFilterTagOptions() {
             const categoryTagsContainer = document.getElementById('filter-tag-categories');
             const participantTagsContainer = document.getElementById('filter-tag-participants');
+            const paymentMethodTagsContainer = document.getElementById('filter-tag-payment-methods'); // NUEVO
             
             categoryTagsContainer.innerHTML = ''; // Limpiar
             participantTagsContainer.innerHTML = ''; // Limpiar
+            paymentMethodTagsContainer.innerHTML = ''; // Limpiar
 
             // Añadir etiquetas de categoría
             if (appState.categories.length > 0) {
@@ -2357,6 +2413,18 @@
             } else {
                  participantTagsContainer.innerHTML = '<span class="text-xs text-gray-500 italic m-1">No hay participantes.</span>';
             }
+
+             // NUEVO: Añadir etiquetas de método de pago
+             if(appState.paymentMethods.length > 0) {
+                 appState.paymentMethods.forEach(m => {
+                     const isActive = activeFilters.paymentMethod === m.id;
+                     paymentMethodTagsContainer.insertAdjacentHTML('beforeend', 
+                        `<button data-value="${m.id}" class="filter-tag payment-method-tag ${isActive ? 'active' : ''}">${m.name}</button>`
+                     );
+                 });
+             } else {
+                 paymentMethodTagsContainer.innerHTML = '<span class="text-xs text-gray-500 italic m-1">No hay métodos de pago.</span>';
+             }
         }
 
 
@@ -2487,6 +2555,10 @@
 
         function removePaymentMethod(idToRemove) {
             if (['m1', 'm2'].includes(idToRemove)) return showModal("No puedes eliminar los métodos de pago predeterminados.");
+            // NUEVO: Desactivar filtro si se elimina el método activo
+            if(activeFilters.paymentMethod === idToRemove) {
+                activeFilters.paymentMethod = null;
+            }
             saveState({ paymentMethods: appState.paymentMethods.filter(m => m.id !== idToRemove) });
         }
 
@@ -2516,11 +2588,14 @@
 
             displayEl.querySelectorAll('.remove-method-btn').forEach(btn => btn.addEventListener('click', e => removePaymentMethod(e.currentTarget.dataset.id)));
             displayEl.querySelectorAll('.edit-method-btn').forEach(btn => btn.addEventListener('click', e => openPaymentMethodEditModal(e.currentTarget.dataset.id)));
+             // NUEVO: Actualizar etiquetas de filtro de método de pago
+            updateDynamicFilterTagOptions();
         }
 
-        // CORREGIDO: Eliminar comentarios restantes
+        // MODIFICADO: Añadir etiquetas a la tarjeta de gasto
         function createExpenseCardHTML(expense, participantsMap, paymentMethodsMap, showAmount = true) {
             let payerName = participantsMap.get(expense.payerId) || expense.payerNameGuest || 'Desconocido';
+            const paymentMethod = paymentMethodsMap.get(expense.paymentMethodId);
             const isShared = expense.type === 'shared';
             const isFixed = expense.isFixed;
             let colorClass = isShared ? 'red' : 'blue';
@@ -2535,9 +2610,12 @@
             const subcategoryLabel = expense.subcategory ? ` (${expense.subcategory})` : '';
             const descriptionHTML = `<p class='font-bold text-gray-800'>${expense.description}${subcategoryLabel}</p>`;
            
+            // NUEVO: Crear etiquetas para categoría, pagador y método de pago
             const categoryTag = expense.category ? `<span class="expense-card-tag category">${expense.category}</span>` : '';
             const participantTag = `<span class="expense-card-tag participant">${payerName}</span>`;
-            const tagsHTML = `<div class="mt-1">${categoryTag}${participantTag}</div>`;
+            const paymentMethodTag = paymentMethod ? `<span class="expense-card-tag payment-method">${paymentMethod.name}</span>` : ''; // NUEVO
+            const tagsHTML = `<div class="mt-1">${categoryTag}${participantTag}${paymentMethodTag}</div>`; // Modificado
+
 
             let subtitleContent = `${typeLabel} | Día: ${formatDate(expense.date)}`;
             const subtitleHTML = `<p class='text-xs text-gray-500 mt-1'>${subtitleContent}</p>`;
@@ -2599,6 +2677,7 @@
             const descriptionFilter = activeFilters.description;
             const categoryFilter = activeFilters.category;
             const participantFilter = activeFilters.participant;
+            const paymentMethodFilter = activeFilters.paymentMethod; // NUEVO
 
             // Filtrar los gastos
             let filteredExpenses = allExpensesInMonth;
@@ -2613,8 +2692,11 @@
                 filteredExpenses = filteredExpenses.filter(e => e.category === categoryFilter);
             }
             if (participantFilter) {
-                // Filtrar por pagador (tanto personal como el pagador original de gastos compartidos)
                 filteredExpenses = filteredExpenses.filter(e => e.payerId === participantFilter);
+            }
+             // NUEVO: Aplicar filtro de método de pago
+            if (paymentMethodFilter) {
+                 filteredExpenses = filteredExpenses.filter(e => e.paymentMethodId === paymentMethodFilter);
             }
             
             // Actualizar diagnóstico con el número de gastos *después* de filtrar
@@ -2773,6 +2855,7 @@
             const descriptionFilter = activeFilters.description;
             const categoryFilter = activeFilters.category;
             const participantFilter = activeFilters.participant;
+            const paymentMethodFilter = activeFilters.paymentMethod; // NUEVO
 
 
             let chartFilteredExpenses = filteredExpenses;
@@ -2788,6 +2871,10 @@
             if (participantFilter) {
                  chartFilteredExpenses = chartFilteredExpenses.filter(e => e.payerId === participantFilter);
             }
+            if (paymentMethodFilter) { // NUEVO
+                 chartFilteredExpenses = chartFilteredExpenses.filter(e => e.paymentMethodId === paymentMethodFilter);
+            }
+
 
             if (chartFilteredExpenses.length === 0) {
                 noDataEl.classList.remove('hidden');
@@ -2957,7 +3044,7 @@
             renderDashboard(summary);
             renderParticipantsConfig(appState.participants, summary); // Usa el summary original, actualiza etiquetas de filtro
             renderCategoriesModal(appState.categories); // Popula filtros y modal, actualiza etiquetas de filtro
-            renderPaymentMethodsModal(appState.paymentMethods);
+            renderPaymentMethodsModal(appState.paymentMethods); // Popula filtros y modal
             renderCreditCardSummary(); 
              // Pasar los gastos del mes *antes* de aplicar filtros dinámicos
             renderExpenseReportByCategory(expensesForMonth, summary); 
