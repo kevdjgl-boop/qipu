@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Monedero V.2.6 (Filtros con Etiquetas)</title>
+    <title>Monedero V.2.7 (Comentarios Corregidos)</title>
     <!-- Incluye Tailwind CSS para estilizado rápido y responsive -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Incluye Font Awesome para íconos de balance -->
@@ -2580,7 +2580,6 @@
 
             return `
             <div class='p-3 bg-white border-l-4 ${borderColorClass} rounded-lg shadow-sm' data-expense-id='${expense.id}'>
-                 {/* Cambiado: Hacer click en CUALQUIER PARTE de la cabecera (si es colapsable) */}
                 <div class='flex justify-between items-start ${isCollapsible ? "expense-header" : ""}' ${isCollapsible ? `data-toggle='${expense.id}'` : ""}>
                     <div class='flex-1 min-w-0'>
                         ${descriptionHTML}
@@ -2589,7 +2588,6 @@
                     </div>
                     <div class='flex flex-col items-end ml-4'>
                         ${amountHTML}
-                         {/* Añadir icono chevron si es colapsable */}
                          ${isCollapsible ? '<i class="fas fa-chevron-down text-gray-400 text-xs mt-1 transition-transform duration-200"></i>' : ''}
                     </div>
                 </div>
