@@ -1567,12 +1567,13 @@
 
             // Botón para limpiar filtros
             resetFiltersButton.addEventListener('click', () => {
-                 descriptionInput.value = '';
+                 descriptionInput.value = ''; // Limpiar también el input de descripción
                  activeFilters.description = '';
                  activeFilters.category = null;
                  activeFilters.participant = null;
                  renderUI(); 
-                 popover.classList.add('hidden'); 
+                 // No cerramos el popover aquí, el usuario puede querer aplicar otros filtros
+                 // popover.classList.add('hidden'); 
             });
 
              // NUEVO: Delegación para remover etiquetas seleccionadas
@@ -1596,7 +1597,7 @@
             const selectedTagsContainer = document.getElementById('selected-filter-tags');
             const noFiltersLabel = document.getElementById('no-filters-label');
             
-            const descActive = !!activeFilters.description;
+            const descActive = !!activeFilters.description; // Verificar si hay texto en descripción
             const catActive = !!activeFilters.category;
             const partActive = !!activeFilters.participant;
             const isActive = descActive || catActive || partActive;
@@ -1631,18 +1632,26 @@
                      hasSelectedTags = true;
                  }
             }
-
+             // No mostramos etiqueta para descripción, pero sí afecta el estado 'activo'
+             
             // Mostrar/ocultar el label "No hay filtros"
-             noFiltersLabel.classList.toggle('hidden', hasSelectedTags);
+            // Solo ocultar si hay etiquetas de CAT o PART activas
+             noFiltersLabel.classList.toggle('hidden', catActive || partActive);
 
 
-            // Actualizar estado 'active' de las etiquetas clickeables
+            // Actualizar estado 'active' de las etiquetas clickeables en las listas
             document.querySelectorAll('#filter-tag-categories .filter-tag').forEach(tag => {
                  tag.classList.toggle('active', tag.dataset.value === activeFilters.category);
             });
             document.querySelectorAll('#filter-tag-participants .filter-tag').forEach(tag => {
                  tag.classList.toggle('active', tag.dataset.value === activeFilters.participant);
             });
+            
+             // Sincronizar el input de descripción con el estado (si fue limpiado por 'reset')
+             const descriptionInput = document.getElementById('filter-description');
+             if(descriptionInput.value !== activeFilters.description) {
+                 descriptionInput.value = activeFilters.description;
+             }
         }
 
 
@@ -1685,22 +1694,33 @@
             window.addEventListener('click', (e) => {
                 document.querySelectorAll('.custom-select-container').forEach(container => {
                     if (!container.contains(e.target)) {
-                        container.querySelector('.custom-select-options').classList.add('hidden');
+                        const optionsDiv = container.querySelector('.custom-select-options');
+                        if (optionsDiv) optionsDiv.classList.add('hidden'); // CORREGIDO: Añadir chequeo
                         container.querySelector('.fa-chevron-down')?.classList.remove('rotate-180');
                     }
                 });
-            });
+             });
+
 
             document.querySelectorAll('.custom-select-container').forEach(container => {
                 const button = container.querySelector('.custom-select-button');
                 const optionsContainer = container.querySelector('.custom-select-options');
                
+                // Asegurarse que button y optionsContainer existen
+                if (!button || !optionsContainer) {
+                    console.warn('Custom select missing button or options container:', container);
+                    return;
+                }
+
                 button.addEventListener('click', (e) => {
                     e.stopPropagation();
                     document.querySelectorAll('.custom-select-options').forEach(otherOptions => {
                         if (otherOptions !== optionsContainer) {
                             otherOptions.classList.add('hidden');
-                            otherOptions.closest('.custom-select-container').querySelector('.fa-chevron-down')?.classList.remove('rotate-180');
+                            const parentContainer = otherOptions.closest('.custom-select-container');
+                             if (parentContainer) {
+                                parentContainer.querySelector('.fa-chevron-down')?.classList.remove('rotate-180');
+                            }
                         }
                     });
                     optionsContainer.classList.toggle('hidden');
@@ -1713,6 +1733,8 @@
                         const hiddenInput = container.querySelector('input[type="hidden"]');
                         const display = button.querySelector('.custom-select-display');
                        
+                        if (!hiddenInput || !display) return; // Chequeo adicional
+
                         display.textContent = option.textContent.trim();
                         display.classList.remove('text-gray-500');
                         hiddenInput.value = option.dataset.value;
@@ -1836,6 +1858,10 @@
         function removeParticipant(id) {
             if (appState.participants.length <= 1) {
                 return showModal("Debe haber al menos un participante.");
+            }
+             // NUEVO: Desactivar filtro si se elimina el participante activo
+            if(activeFilters.participant === id) {
+                activeFilters.participant = null;
             }
             const newParticipants = appState.participants.filter(p => p.id !== id);
             const newExpenses = appState.expenses.filter(e => e.payerId !== id);
@@ -2508,21 +2534,19 @@
            
             // NUEVO: Crear etiquetas para categoría y pagador
             const categoryTag = expense.category ? `<span class="expense-card-tag category">${expense.category}</span>` : '';
-            // Solo mostrar etiqueta de pagador si NO es compartido (para evitar redundancia)
-            const participantTag = !isShared ? `<span class="expense-card-tag participant">${payerName}</span>` : '';
+            // Mostrar etiqueta de pagador SIEMPRE (incluso en compartidos, indicando quién pagó)
+            const participantTag = `<span class="expense-card-tag participant">${payerName}</span>`;
             const tagsHTML = `<div class="mt-1">${categoryTag}${participantTag}</div>`;
 
 
             let subtitleContent = `${typeLabel} | Día: ${formatDate(expense.date)}`;
-            // Quitar el pagador del subtítulo si ya está en la etiqueta
-            // if (!isShared) {
-            //     subtitleContent += ` | Pagó: ${payerName}`;
-            // }
+            
             const subtitleHTML = `<p class='text-xs text-gray-500 mt-1'>${subtitleContent}</p>`;
            
             const amountHTML = showAmount ? `<p class='text-lg font-extrabold text-${colorClass}-600'>${formatCurrency(expense.amount)}</p>` : '';
            
-            const isCollapsible = isShared;
+            // Cambiado: Ahora solo los gastos compartidos son colapsables por defecto
+            const isCollapsible = isShared; // Solo compartidos son colapsables
            
             let detailContent = `
                 <div class='flex gap-4 mt-2 justify-end'>
@@ -2530,22 +2554,23 @@
                     <button data-id='${expense.id}' class='delete-btn text-gray-500 hover:text-red-500 text-xs font-bold flex items-center gap-1'><i class='fas fa-trash'></i> Eliminar</button>
                 </div>`;
            
+            // Mostrar división solo para compartidos
             if (isShared) {
-                // Mostrar quién pagó originalmente el gasto compartido
-                detailContent = `<p class="text-xs text-gray-600 mb-2">Pagado originalmente por: <strong>${payerName}</strong></p>` + detailContent;
-                
-                // Mantenemos los detalles de división si se desea, aunque las etiquetas ya dan info
-                // const splitAmount = expense.splitAmount || (expense.amount / appState.participants.length);
-                // let balanceTags = appState.participants.map(p => {
-                //     if (p.id === expense.payerId) {
-                //         return `<span class='inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 mr-1'>${p.name}: Pagó (Total): ${formatCurrency(expense.amount)}</span>`;
-                //     } else {
-                //         return `<span class='inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800 mr-1'>${p.name}: Debe: ${formatCurrency(splitAmount)}</span>`;
-                //     }
-                // }).join('');
-                // detailContent = `<div class='flex flex-wrap gap-1 mb-3'>${balanceTags}</div>` + detailContent;
+                 const splitAmount = expense.splitAmount || (expense.amount / appState.participants.length);
+                 let balanceTags = appState.participants.map(p => {
+                    // No mostrar "Pagó" aquí ya que está en la etiqueta principal
+                    if (p.id !== expense.payerId) {
+                         return `<span class='inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800 mr-1'>${p.name}: Debe: ${formatCurrency(splitAmount)}</span>`;
+                    }
+                    return ''; // No mostrar nada para el pagador en esta sección
+                 }).join('');
+                 // Añadir solo si hay algo que mostrar (más de 1 participante)
+                 if(appState.participants.length > 1) {
+                    detailContent = `<div class='flex flex-wrap gap-1 mb-3'>${balanceTags}</div>` + detailContent;
+                 }
             }
 
+            // Cambiado: El detalle SIEMPRE se genera, pero su visibilidad depende de 'isCollapsible'
             const detailSectionHTML = `
                 <div id='detail-${expense.id}' class='expense-detail ${isCollapsible ? 'hidden' : ''}'>
                     <div class='mt-3 pt-3 border-t border-dashed border-gray-200'>
@@ -2555,6 +2580,7 @@
 
             return `
             <div class='p-3 bg-white border-l-4 ${borderColorClass} rounded-lg shadow-sm' data-expense-id='${expense.id}'>
+                 {/* Cambiado: Hacer click en CUALQUIER PARTE de la cabecera (si es colapsable) */}
                 <div class='flex justify-between items-start ${isCollapsible ? "expense-header" : ""}' ${isCollapsible ? `data-toggle='${expense.id}'` : ""}>
                     <div class='flex-1 min-w-0'>
                         ${descriptionHTML}
@@ -2563,6 +2589,8 @@
                     </div>
                     <div class='flex flex-col items-end ml-4'>
                         ${amountHTML}
+                         {/* Añadir icono chevron si es colapsable */}
+                         ${isCollapsible ? '<i class="fas fa-chevron-down text-gray-400 text-xs mt-1 transition-transform duration-200"></i>' : ''}
                     </div>
                 </div>
                 ${detailSectionHTML}
@@ -2593,8 +2621,7 @@
                 filteredExpenses = filteredExpenses.filter(e => e.category === categoryFilter);
             }
             if (participantFilter) {
-                // Si es gasto compartido, verificar si el pagador original coincide
-                // Si es gasto personal, verificar si el pagador coincide
+                // Filtrar por pagador (tanto personal como el pagador original de gastos compartidos)
                 filteredExpenses = filteredExpenses.filter(e => e.payerId === participantFilter);
             }
             
@@ -2632,8 +2659,8 @@
                         <span class='font-semibold'>${formatCurrency(categoryTotal)}</span>
                     </div>
                     <div class='space-y-3 mt-3'>
-                        ${expenses.sort((a,b) => new Date(b.date) - new Date(a.date)).map(exp => createExpenseCardHTML(exp, participantsMap, paymentMethodsMap, showAmountInCard)).join('')}
-                    </div>`;
+                        ${expenses.sort((a,b) => new Date(b.dateCreated || b.date) - new Date(a.dateCreated || a.date)).map(exp => createExpenseCardHTML(exp, participantsMap, paymentMethodsMap, showAmountInCard)).join('')}
+                    </div>`; // Ordenar por fecha de creación o fecha de gasto
                 reportEl.appendChild(categoryContainer);
             });
 
@@ -2641,21 +2668,30 @@
             reportEl.addEventListener('click', handleExpenseReportClick);
         }
 
+        // MODIFICADO: Añadir rotación de icono chevron al expandir/colapsar
         function handleExpenseReportClick(e) {
             const target = e.target.closest('button, .expense-header');
             if (!target) return;
             const id = target.dataset.id;
-            const expenseId = target.dataset.toggle;
+            const expenseId = target.dataset.toggle; // ID para expandir/colapsar
 
-            if (expenseId) {
+            if (expenseId) { // Si se hizo clic en la cabecera colapsable
                 const detailEl = document.getElementById(`detail-${expenseId}`);
-                detailEl?.classList.toggle('hidden');
+                const headerEl = target.closest('.expense-header'); // Obtener la cabecera
+                const chevronIcon = headerEl?.querySelector('.fa-chevron-down'); // Buscar el icono dentro de la cabecera
+
+                if (detailEl) {
+                    detailEl.classList.toggle('hidden');
+                    // Rotar el icono si existe
+                    chevronIcon?.classList.toggle('rotate-180');
+                }
             } else if (id && target.classList.contains('edit-expense-btn')) {
                 openExpenseEditModal(id);
             } else if (id && target.classList.contains('delete-btn')) {
                 removeExpense(id);
             }
         }
+
 
         function renderFixedExpensesSummary() {
             const fixedEl = document.getElementById('fixed-expenses-summary');
@@ -2927,8 +2963,8 @@
            
             renderMonthSelector();
             renderDashboard(summary);
-            renderParticipantsConfig(appState.participants, summary); // Usa el summary original
-            renderCategoriesModal(appState.categories); // Popula filtros y modal
+            renderParticipantsConfig(appState.participants, summary); // Usa el summary original, actualiza etiquetas de filtro
+            renderCategoriesModal(appState.categories); // Popula filtros y modal, actualiza etiquetas de filtro
             renderPaymentMethodsModal(appState.paymentMethods);
             renderCreditCardSummary(); 
              // Pasar los gastos del mes *antes* de aplicar filtros dinámicos
