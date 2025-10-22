@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Monedero V.2.3 (Sincronización en Vivo)</title>
+    <title>Monedero V.2.4 (Filtro Dinámico)</title>
     <!-- Incluye Tailwind CSS para estilizado rápido y responsive -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Incluye Font Awesome para íconos de balance -->
@@ -462,10 +462,10 @@
             <section class="section-card border-t-4 border-gray-500 space-y-6">
                
                 <!-- Encabezado del Informe y Filtro de Mes -->
-                <div class="flex justify-between items-center pb-2 mb-4">
+                <div class="flex flex-col md:flex-row justify-between md:items-center pb-2 mb-4 gap-4">
                     <h2 class="text-xl font-bold text-gray-800">Informe de Gastos por Categoría</h2>
                    
-                    <!-- Ciclo de Visualización (Movido aquí para alinearse a la derecha) -->
+                    <!-- Ciclo de Visualización -->
                     <div id="month-selector" class="flex items-center justify-between p-2 bg-gray-50 rounded-lg border border-gray-200 w-full max-w-xs md:max-w-sm">
                         <button id="prev-month-btn" class="p-2 bg-white rounded-lg hover:bg-gray-200 transition font-bold text-lg shadow-sm">
                             &lt;
@@ -479,6 +479,30 @@
                         </button>
                     </div>
                 </div>
+
+                <!-- NUEVO: Filtros Dinámicos -->
+                <div id="dynamic-filters" class="grid grid-cols-1 md:grid-cols-3 gap-4 p-4 bg-gray-100 rounded-lg border">
+                    <div>
+                        <label for="filter-description" class="block text-xs font-medium text-gray-600 mb-1">Buscar por Descripción:</label>
+                        <input type="text" id="filter-description" placeholder="Ej: Supermercado, Luz..." class="w-full p-2 border border-gray-300 rounded-lg text-sm focus:ring-indigo-500 focus:border-indigo-500">
+                    </div>
+                    <div>
+                        <label for="filter-category" class="block text-xs font-medium text-gray-600 mb-1">Filtrar por Categoría:</label>
+                        <select id="filter-category" class="w-full p-2 border border-gray-300 rounded-lg text-sm bg-white focus:ring-indigo-500 focus:border-indigo-500">
+                            <option value="">Todas las Categorías</option>
+                            <!-- Opciones se llenarán dinámicamente -->
+                        </select>
+                    </div>
+                    <div>
+                        <label for="filter-participant" class="block text-xs font-medium text-gray-600 mb-1">Filtrar por Pagador:</label>
+                        <select id="filter-participant" class="w-full p-2 border border-gray-300 rounded-lg text-sm bg-white focus:ring-indigo-500 focus:border-indigo-500">
+                            <option value="">Todos los Pagadores</option>
+                            <!-- Opciones se llenarán dinámicamente -->
+                        </select>
+                    </div>
+                </div>
+                <!-- FIN Filtros Dinámicos -->
+
                
                 <!-- Rejilla de Informes -->
                 <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -1380,6 +1404,17 @@
             showModal("¡Cuenta vinculada exitosamente!", null, "Vinculación Exitosa");
         }
 
+        // NUEVO: Función para configurar los listeners de los filtros dinámicos
+        function setupDynamicFilterListeners() {
+            const descriptionInput = document.getElementById('filter-description');
+            const categorySelect = document.getElementById('filter-category');
+            const participantSelect = document.getElementById('filter-participant');
+
+            descriptionInput.addEventListener('input', renderUI); // Renderizar al escribir
+            categorySelect.addEventListener('change', renderUI); // Renderizar al cambiar selección
+            participantSelect.addEventListener('change', renderUI); // Renderizar al cambiar selección
+        }
+
         function setupUILogic(isFirebaseMode) {
             const backdrop = document.getElementById('sidebar-backdrop');
             const participantSidebar = document.getElementById('participant-sidebar');
@@ -1394,6 +1429,7 @@
             setupExpenseModalListeners(); 
             setupLiquidateListeners(); 
             setupDataManagementListeners(); 
+            setupDynamicFilterListeners(); // <-- NUEVO: Añadir listeners para filtros
            
             // CORREGIDO: Añadir listener para el botón de logout principal
             document.getElementById('logout-btn').addEventListener('click', openLogoutConfirmModal);
@@ -2026,7 +2062,42 @@
             listEl.querySelectorAll('.remove-participant-btn').forEach(btn => btn.addEventListener('click', e => removeParticipant(e.currentTarget.dataset.id)));
             listEl.querySelectorAll('.link-participant-btn').forEach(btn => btn.addEventListener('click', e => linkParticipantToUser(e.currentTarget.dataset.id)));
             updateExpenseFormParticipants(participants);
+            // NUEVO: Actualizar filtro de participantes
+            updateDynamicFilterOptions();
         }
+
+        // NUEVO: Función para poblar los selects de los filtros dinámicos
+        function updateDynamicFilterOptions() {
+            const categorySelect = document.getElementById('filter-category');
+            const participantSelect = document.getElementById('filter-participant');
+            
+            // Guardar valores actuales para restaurarlos si es posible
+            const currentCat = categorySelect.value;
+            const currentPart = participantSelect.value;
+
+            // Limpiar opciones existentes (excepto la primera "Todos")
+            categorySelect.innerHTML = '<option value="">Todas las Categorías</option>';
+            participantSelect.innerHTML = '<option value="">Todos los Pagadores</option>';
+
+            // Añadir categorías
+            appState.categories.forEach(cat => {
+                categorySelect.insertAdjacentHTML('beforeend', `<option value="${cat.name}">${cat.name}</option>`);
+            });
+
+            // Añadir participantes
+            appState.participants.forEach(p => {
+                participantSelect.insertAdjacentHTML('beforeend', `<option value="${p.id}">${p.name}</option>`);
+            });
+
+            // Restaurar selección anterior si aún existe
+             if (Array.from(categorySelect.options).some(opt => opt.value === currentCat)) {
+                 categorySelect.value = currentCat;
+             }
+             if (Array.from(participantSelect.options).some(opt => opt.value === currentPart)) {
+                 participantSelect.value = currentPart;
+             }
+        }
+
 
         function renderCategoriesModal(categories) {
             const displayEl = document.getElementById('categories-display');
@@ -2059,6 +2130,8 @@
                     btn.addEventListener('click', (e) => removeCategory(e.currentTarget.dataset.name));
                 });
             }
+             // NUEVO: Actualizar filtro de categorías
+            updateDynamicFilterOptions();
         }
 
         function removeCategory(nameToRemove) {
@@ -2246,11 +2319,38 @@
             </div>`;
         }
 
-        function renderExpenseReportByCategory(filteredExpenses, summary) {
+        // MODIFICADO: Aplicar filtros antes de renderizar el reporte
+        function renderExpenseReportByCategory(allExpensesInMonth, summary) {
             const reportEl = document.getElementById('expense-report-by-category');
             reportEl.innerHTML = '';
+            
+            // Obtener valores de los filtros
+            const descriptionFilter = document.getElementById('filter-description').value.toLowerCase();
+            const categoryFilter = document.getElementById('filter-category').value;
+            const participantFilter = document.getElementById('filter-participant').value;
+
+            // Filtrar los gastos
+            let filteredExpenses = allExpensesInMonth;
+
+            if (descriptionFilter) {
+                filteredExpenses = filteredExpenses.filter(e => 
+                    e.description.toLowerCase().includes(descriptionFilter) || 
+                    (e.subcategory && e.subcategory.toLowerCase().includes(descriptionFilter))
+                );
+            }
+            if (categoryFilter) {
+                filteredExpenses = filteredExpenses.filter(e => e.category === categoryFilter);
+            }
+            if (participantFilter) {
+                filteredExpenses = filteredExpenses.filter(e => e.payerId === participantFilter);
+            }
+            
+            // Actualizar diagnóstico con el número de gastos *después* de filtrar
+             document.getElementById('expense-diagnostic').textContent = `Mostrando ${filteredExpenses.length} de ${allExpensesInMonth.length} gastos en este ciclo.`;
+
+
             if (filteredExpenses.length === 0) {
-                reportEl.innerHTML = `<p class='text-gray-500 text-center py-8 italic'>No hay gastos en este ciclo.</p>`;
+                reportEl.innerHTML = `<p class='text-gray-500 text-center py-8 italic'>No hay gastos que coincidan con los filtros aplicados.</p>`;
                 return;
             }
            
@@ -2387,11 +2487,39 @@
             const noDataEl = document.getElementById('chart-no-data');
 
             if (categoryChart) categoryChart.destroy();
-            if (filteredExpenses.length === 0) return noDataEl.classList.remove('hidden');
+            
+             // Aplicar filtros dinámicos también al gráfico
+            const descriptionFilter = document.getElementById('filter-description').value.toLowerCase();
+            const categoryFilter = document.getElementById('filter-category').value;
+            const participantFilter = document.getElementById('filter-participant').value;
+
+            let chartFilteredExpenses = filteredExpenses;
+            if (descriptionFilter) {
+                chartFilteredExpenses = chartFilteredExpenses.filter(e => 
+                    e.description.toLowerCase().includes(descriptionFilter) || 
+                    (e.subcategory && e.subcategory.toLowerCase().includes(descriptionFilter))
+                );
+            }
+            if (categoryFilter) {
+                chartFilteredExpenses = chartFilteredExpenses.filter(e => e.category === categoryFilter);
+            }
+            if (participantFilter) {
+                 chartFilteredExpenses = chartFilteredExpenses.filter(e => e.payerId === participantFilter);
+            }
+
+            if (chartFilteredExpenses.length === 0) {
+                noDataEl.classList.remove('hidden');
+                 // Destruir gráfico si no hay datos filtrados
+                if (categoryChart) {
+                    categoryChart.destroy();
+                    categoryChart = null;
+                }
+                return;
+            }
            
             noDataEl.classList.add('hidden');
 
-            const groupedData = filteredExpenses.reduce((acc, expense) => {
+            const groupedData = chartFilteredExpenses.reduce((acc, expense) => {
                 const category = expense.category || 'Sin Categoría';
                 acc[category] = (acc[category] || 0) + expense.amount;
                 return acc;
@@ -2523,10 +2651,10 @@
         function renderUI() {
             if (!appState) return;
             const filterMonthString = getFilterMonthString(currentFilterDate);
-            let filteredExpenses = (appState.expenses || []).filter(e => e.date && e.date.startsWith(filterMonthString));
+            let expensesForMonth = (appState.expenses || []).filter(e => e.date && e.date.startsWith(filterMonthString));
 
             // Si no hay gastos en el mes actual y hay gastos en total Y no es el mes actual, intenta ir al mes del último gasto
-            if (filteredExpenses.length === 0 && appState.expenses && appState.expenses.length > 0 && filterMonthString !== getFilterMonthString(new Date())) {
+            if (expensesForMonth.length === 0 && appState.expenses && appState.expenses.length > 0 && filterMonthString !== getFilterMonthString(new Date())) {
                 const validExpenseDates = appState.expenses.map(e => e.date ? new Date(e.date + "T00:00:00Z").getTime() : 0).filter(t => t > 0);
                 if (validExpenseDates.length > 0) {
                     const latestExpenseTime = Math.max(...validExpenseDates);
@@ -2535,26 +2663,25 @@
                     if (getFilterMonthString(latestExpenseDate) !== filterMonthString) {
                          console.log("No expenses found for current filter, jumping to last expense month:", latestExpenseDate);
                          currentFilterDate = latestExpenseDate;
-                         filteredExpenses = (appState.expenses || []).filter(e => e.date && e.date.startsWith(getFilterMonthString(currentFilterDate)));
+                         expensesForMonth = (appState.expenses || []).filter(e => e.date && e.date.startsWith(getFilterMonthString(currentFilterDate)));
                     }
                 }
             }
 
 
-            const summary = calculateSummary(appState, filteredExpenses);
+            const summary = calculateSummary(appState, expensesForMonth); // Calcular summary con gastos SIN filtrar dinámicamente
            
             renderMonthSelector();
             renderDashboard(summary);
-            renderParticipantsConfig(appState.participants, summary);
-            renderCategoriesModal(appState.categories);
+            renderParticipantsConfig(appState.participants, summary); // Usa el summary original
+            renderCategoriesModal(appState.categories); // Popula filtros y modal
             renderPaymentMethodsModal(appState.paymentMethods);
-            renderCreditCardSummary(); // CORREGIDO: Ya no necesita argumentos
-            renderExpenseReportByCategory(filteredExpenses, summary);
-            renderCategoryChart(filteredExpenses);
-            renderFixedExpensesSummary();
-            renderSharedBalanceSummary(summary);
-           
-            document.getElementById('expense-diagnostic').textContent = `Gastos en este ciclo: ${filteredExpenses.length}`;
+            renderCreditCardSummary(); 
+             // Pasar los gastos del mes *antes* de aplicar filtros dinámicos
+            renderExpenseReportByCategory(expensesForMonth, summary); 
+            renderCategoryChart(expensesForMonth); // Renderizar gráfico con gastos del mes (filtrados dinámicamente dentro)
+            renderFixedExpensesSummary(); // Usa appState.expenses, no necesita cambios
+            renderSharedBalanceSummary(summary); // Usa el summary original
            
             // Trigger change events para asegurar que los selects personalizados se actualicen si es necesario
             document.getElementById('expense-payment-method-id').dispatchEvent(new Event('change'));
