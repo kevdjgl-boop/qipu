@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Monedero V.2.4 (Filtro Dinámico)</title>
+    <title>Monedero V.2.6 (Filtros con Etiquetas)</title>
     <!-- Incluye Tailwind CSS para estilizado rápido y responsive -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Incluye Font Awesome para íconos de balance -->
@@ -168,7 +168,7 @@
         }
         /* --- FIN ESTILOS CUSTOM SELECT --- */
 
-        /* --- NUEVO: ESTILOS PARA BARRA DE PROGRESO --- */
+        /* --- ESTILOS PARA BARRA DE PROGRESO --- */
         .progress-bar-container {
             background-color: #e5e7eb; /* gray-200 */
             border-radius: 9999px;
@@ -181,6 +181,78 @@
             border-radius: 9999px;
             transition: width 0.5s ease-out, background-color 0.5s ease-out;
         }
+        
+        /* --- ESTILOS PARA POPOVER DE FILTROS Y ETIQUETAS --- */
+        #filter-popover {
+            transition: opacity 0.2s ease-out, visibility 0.2s ease-out, transform 0.2s ease-out;
+        }
+        #filter-popover.hidden {
+           opacity: 0;
+           visibility: hidden;
+           transform: translateY(-10px);
+        }
+         #filter-popover-button .active-indicator {
+            display: none;
+         }
+         #filter-popover-button.active .active-indicator {
+            display: inline-block;
+         }
+         /* Estilos para las etiquetas de filtro en el popover */
+        .filter-tag {
+            display: inline-flex;
+            align-items: center;
+            padding: 0.25rem 0.75rem;
+            margin: 0.25rem;
+            border-radius: 9999px; /* fully rounded */
+            font-size: 0.75rem; /* text-xs */
+            font-weight: 500; /* medium */
+            cursor: pointer;
+            transition: background-color 0.2s, color 0.2s, box-shadow 0.2s;
+            border: 1px solid transparent;
+        }
+        .filter-tag.category-tag {
+            background-color: #e0e7ff; /* indigo-100 */
+            color: #3730a3; /* indigo-800 */
+            border-color: #c7d2fe; /* indigo-200 */
+        }
+         .filter-tag.participant-tag {
+            background-color: #f3e8ff; /* purple-100 */
+            color: #5b21b6; /* purple-800 */
+            border-color: #e9d5ff; /* purple-200 */
+        }
+        .filter-tag:hover {
+             box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.3); /* Ring effect on hover */
+        }
+        .filter-tag.active {
+            background-color: #4f46e5; /* indigo-600 */
+            color: white;
+            border-color: #4f46e5;
+            font-weight: 600;
+        }
+         .filter-tag.participant-tag.active {
+             background-color: #7e22ce; /* purple-700 */
+             border-color: #7e22ce;
+         }
+        /* Estilos para las etiquetas en las tarjetas de gasto */
+        .expense-card-tag {
+            display: inline-flex;
+            align-items: center;
+            padding: 0.1rem 0.5rem;
+            border-radius: 0.375rem; /* rounded-md */
+            font-size: 0.65rem; /* Smaller than text-xs */
+            font-weight: 600; /* semibold */
+            margin-right: 0.25rem;
+            line-height: 1;
+        }
+        .expense-card-tag.category {
+             background-color: #dbeafe; /* blue-100 */
+             color: #1e40af; /* blue-800 */
+        }
+         .expense-card-tag.participant {
+             background-color: #fef3c7; /* amber-100 */
+             color: #92400e; /* amber-800 */
+         }
+
 
     </style>
     <!-- Incluye GSAP para animaciones -->
@@ -480,28 +552,55 @@
                     </div>
                 </div>
 
-                <!-- NUEVO: Filtros Dinámicos -->
-                <div id="dynamic-filters" class="grid grid-cols-1 md:grid-cols-3 gap-4 p-4 bg-gray-100 rounded-lg border">
-                    <div>
-                        <label for="filter-description" class="block text-xs font-medium text-gray-600 mb-1">Buscar por Descripción:</label>
-                        <input type="text" id="filter-description" placeholder="Ej: Supermercado, Luz..." class="w-full p-2 border border-gray-300 rounded-lg text-sm focus:ring-indigo-500 focus:border-indigo-500">
-                    </div>
-                    <div>
-                        <label for="filter-category" class="block text-xs font-medium text-gray-600 mb-1">Filtrar por Categoría:</label>
-                        <select id="filter-category" class="w-full p-2 border border-gray-300 rounded-lg text-sm bg-white focus:ring-indigo-500 focus:border-indigo-500">
-                            <option value="">Todas las Categorías</option>
-                            <!-- Opciones se llenarán dinámicamente -->
-                        </select>
-                    </div>
-                    <div>
-                        <label for="filter-participant" class="block text-xs font-medium text-gray-600 mb-1">Filtrar por Pagador:</label>
-                        <select id="filter-participant" class="w-full p-2 border border-gray-300 rounded-lg text-sm bg-white focus:ring-indigo-500 focus:border-indigo-500">
-                            <option value="">Todos los Pagadores</option>
-                            <!-- Opciones se llenarán dinámicamente -->
-                        </select>
+                <!-- MODIFICADO: Contenedor para el botón de filtros y el popover -->
+                <div class="relative mb-4">
+                     <!-- Botón para abrir/cerrar el popover de filtros -->
+                    <button id="filter-popover-button" class="inline-flex items-center px-4 py-2 bg-white border border-gray-300 rounded-lg shadow-sm text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                        <i class="fas fa-filter mr-2"></i>
+                        Filtros
+                        <!-- Indicador visual si hay filtros activos -->
+                        <span class="active-indicator ml-2 h-2 w-2 bg-indigo-500 rounded-full"></span>
+                    </button>
+
+                     <!-- El Popover de Filtros (inicialmente oculto) -->
+                    <div id="filter-popover" class="absolute hidden mt-2 w-full max-w-md bg-white rounded-lg shadow-xl border border-gray-200 z-30 p-4 space-y-4">
+                         <!-- Botón para cerrar el popover -->
+                        <button id="close-filter-popover-btn" class="absolute top-2 right-2 text-gray-400 hover:text-gray-600">
+                            <i class="fas fa-times"></i>
+                        </button>
+                        <h4 class="text-lg font-semibold text-gray-800">Filtrar Transacciones</h4>
+                        <!-- Área para mostrar etiquetas seleccionadas -->
+                        <div id="selected-filter-tags" class="flex flex-wrap gap-1 border-b pb-2 mb-2 min-h-[2rem]">
+                            <!-- Etiquetas seleccionadas se añadirán aquí -->
+                             <span id="no-filters-label" class="text-xs text-gray-500 italic">No hay filtros aplicados.</span>
+                        </div>
+                        <!-- Filtro por descripción -->
+                        <div>
+                            <label for="filter-description" class="block text-xs font-medium text-gray-600 mb-1">Buscar por Descripción:</label>
+                            <input type="text" id="filter-description" placeholder="Ej: Supermercado, Luz..." class="w-full p-2 border border-gray-300 rounded-lg text-sm focus:ring-indigo-500 focus:border-indigo-500">
+                        </div>
+                         <!-- Filtro por etiquetas de Categoría -->
+                        <div>
+                            <label class="block text-xs font-medium text-gray-600 mb-1">Filtrar por Categoría:</label>
+                            <div id="filter-tag-categories" class="flex flex-wrap -m-1">
+                                <!-- Etiquetas de categoría se generarán aquí -->
+                                <span class="text-xs text-gray-500 italic m-1">Cargando categorías...</span>
+                            </div>
+                        </div>
+                         <!-- Filtro por etiquetas de Participante -->
+                        <div>
+                            <label class="block text-xs font-medium text-gray-600 mb-1">Filtrar por Pagador:</label>
+                            <div id="filter-tag-participants" class="flex flex-wrap -m-1">
+                                 <!-- Etiquetas de participante se generarán aquí -->
+                                 <span class="text-xs text-gray-500 italic m-1">Cargando participantes...</span>
+                            </div>
+                        </div>
+                        <button id="reset-filters-btn" class="w-full py-2 text-sm bg-gray-200 text-gray-700 font-medium rounded-lg hover:bg-gray-300 mt-4">
+                            Limpiar Filtros
+                        </button>
                     </div>
                 </div>
-                <!-- FIN Filtros Dinámicos -->
+                <!-- FIN Contenedor Filtros/Popover -->
 
                
                 <!-- Rejilla de Informes -->
@@ -914,7 +1013,7 @@
        
         let app, db, auth;
         let userId = 'loading';
-        let currentWalletId = null; // NUEVO: ID del monedero compartido actual
+        let currentWalletId = null; 
         let isFirebaseActive = Object.keys(firebaseConfig).length > 0 && !Object.keys(firebaseConfig).some(k => firebaseConfig[k].startsWith('TU_')); 
 
         // --- NUEVAS RUTAS DE FIRESTORE ---
@@ -943,6 +1042,14 @@
         let myParticipantId = null; 
         let unsubscribeListener = null;
         let categoryChart = null;
+
+        // NUEVO: Estado para los filtros activos
+        let activeFilters = {
+             description: '',
+             category: null, // Almacenará el nombre de la categoría
+             participant: null // Almacenará el ID del participante
+        };
+
 
         // --- Utilidades ---
         const generateUUID = () => crypto.randomUUID();
@@ -1404,16 +1511,140 @@
             showModal("¡Cuenta vinculada exitosamente!", null, "Vinculación Exitosa");
         }
 
-        // NUEVO: Función para configurar los listeners de los filtros dinámicos
+        // NUEVO: Función para configurar los listeners de los filtros dinámicos y el popover
         function setupDynamicFilterListeners() {
+            const popoverButton = document.getElementById('filter-popover-button');
+            const popover = document.getElementById('filter-popover');
+            const closePopoverButton = document.getElementById('close-filter-popover-btn');
+            const resetFiltersButton = document.getElementById('reset-filters-btn');
             const descriptionInput = document.getElementById('filter-description');
-            const categorySelect = document.getElementById('filter-category');
-            const participantSelect = document.getElementById('filter-participant');
+            const categoryTagsContainer = document.getElementById('filter-tag-categories');
+            const participantTagsContainer = document.getElementById('filter-tag-participants');
+            const selectedTagsContainer = document.getElementById('selected-filter-tags');
 
-            descriptionInput.addEventListener('input', renderUI); // Renderizar al escribir
-            categorySelect.addEventListener('change', renderUI); // Renderizar al cambiar selección
-            participantSelect.addEventListener('change', renderUI); // Renderizar al cambiar selección
+            // Abrir/Cerrar Popover
+            popoverButton.addEventListener('click', (e) => {
+                e.stopPropagation(); 
+                popover.classList.toggle('hidden');
+            });
+            closePopoverButton.addEventListener('click', () => {
+                popover.classList.add('hidden');
+            });
+
+            // Cerrar popover si se hace click fuera
+            document.addEventListener('click', (e) => {
+                 if (!popover.classList.contains('hidden') && !popover.contains(e.target) && e.target !== popoverButton && !popoverButton.contains(e.target)) {
+                    popover.classList.add('hidden');
+                 }
+            });
+
+            // Aplicar filtro de descripción al escribir
+            descriptionInput.addEventListener('input', (e) => {
+                activeFilters.description = e.target.value.toLowerCase();
+                renderUI(); 
+            }); 
+
+            // Manejar clicks en las etiquetas de categoría
+            categoryTagsContainer.addEventListener('click', (e) => {
+                const target = e.target.closest('.filter-tag.category-tag');
+                if (target) {
+                    const categoryName = target.dataset.value;
+                    // Si ya estaba seleccionada, deseleccionarla (null). Si no, seleccionarla.
+                    activeFilters.category = activeFilters.category === categoryName ? null : categoryName;
+                    renderUI(); // Volver a renderizar para aplicar el filtro y actualizar UI
+                }
+            });
+
+            // Manejar clicks en las etiquetas de participante
+            participantTagsContainer.addEventListener('click', (e) => {
+                const target = e.target.closest('.filter-tag.participant-tag');
+                 if (target) {
+                    const participantId = target.dataset.value;
+                    activeFilters.participant = activeFilters.participant === participantId ? null : participantId;
+                    renderUI(); 
+                }
+            });
+
+            // Botón para limpiar filtros
+            resetFiltersButton.addEventListener('click', () => {
+                 descriptionInput.value = '';
+                 activeFilters.description = '';
+                 activeFilters.category = null;
+                 activeFilters.participant = null;
+                 renderUI(); 
+                 popover.classList.add('hidden'); 
+            });
+
+             // NUEVO: Delegación para remover etiquetas seleccionadas
+            selectedTagsContainer.addEventListener('click', (e) => {
+                 const target = e.target.closest('.selected-tag-remove');
+                 if(target) {
+                     const filterType = target.dataset.type;
+                     if(filterType === 'category') {
+                         activeFilters.category = null;
+                     } else if (filterType === 'participant') {
+                         activeFilters.participant = null;
+                     }
+                     renderUI();
+                 }
+            });
         }
+        
+        // NUEVO: Función para actualizar el estado visual del botón de filtros y las etiquetas seleccionadas
+        function updateFilterUIState() {
+            const popoverButton = document.getElementById('filter-popover-button');
+            const selectedTagsContainer = document.getElementById('selected-filter-tags');
+            const noFiltersLabel = document.getElementById('no-filters-label');
+            
+            const descActive = !!activeFilters.description;
+            const catActive = !!activeFilters.category;
+            const partActive = !!activeFilters.participant;
+            const isActive = descActive || catActive || partActive;
+
+            // Actualizar botón principal
+            popoverButton.classList.toggle('active', isActive);
+            popoverButton.classList.toggle('bg-indigo-100', isActive);
+            popoverButton.classList.toggle('text-indigo-700', isActive);
+
+            // Actualizar etiquetas seleccionadas en el popover
+            selectedTagsContainer.innerHTML = ''; // Limpiar
+            let hasSelectedTags = false;
+
+             if (catActive) {
+                selectedTagsContainer.insertAdjacentHTML('beforeend', `
+                    <span class="filter-tag category-tag active">
+                        ${activeFilters.category}
+                        <button data-type="category" class="selected-tag-remove ml-1.5 text-indigo-100 hover:text-white">&times;</button>
+                    </span>
+                `);
+                hasSelectedTags = true;
+            }
+             if (partActive) {
+                 const participant = appState.participants.find(p => p.id === activeFilters.participant);
+                 if (participant) {
+                     selectedTagsContainer.insertAdjacentHTML('beforeend', `
+                        <span class="filter-tag participant-tag active">
+                            ${participant.name}
+                            <button data-type="participant" class="selected-tag-remove ml-1.5 text-purple-100 hover:text-white">&times;</button>
+                        </span>
+                     `);
+                     hasSelectedTags = true;
+                 }
+            }
+
+            // Mostrar/ocultar el label "No hay filtros"
+             noFiltersLabel.classList.toggle('hidden', hasSelectedTags);
+
+
+            // Actualizar estado 'active' de las etiquetas clickeables
+            document.querySelectorAll('#filter-tag-categories .filter-tag').forEach(tag => {
+                 tag.classList.toggle('active', tag.dataset.value === activeFilters.category);
+            });
+            document.querySelectorAll('#filter-tag-participants .filter-tag').forEach(tag => {
+                 tag.classList.toggle('active', tag.dataset.value === activeFilters.participant);
+            });
+        }
+
 
         function setupUILogic(isFirebaseMode) {
             const backdrop = document.getElementById('sidebar-backdrop');
@@ -1429,7 +1660,7 @@
             setupExpenseModalListeners(); 
             setupLiquidateListeners(); 
             setupDataManagementListeners(); 
-            setupDynamicFilterListeners(); // <-- NUEVO: Añadir listeners para filtros
+            setupDynamicFilterListeners(); // Configura listeners del popover y filtros internos
            
             // CORREGIDO: Añadir listener para el botón de logout principal
             document.getElementById('logout-btn').addEventListener('click', openLogoutConfirmModal);
@@ -2062,40 +2293,41 @@
             listEl.querySelectorAll('.remove-participant-btn').forEach(btn => btn.addEventListener('click', e => removeParticipant(e.currentTarget.dataset.id)));
             listEl.querySelectorAll('.link-participant-btn').forEach(btn => btn.addEventListener('click', e => linkParticipantToUser(e.currentTarget.dataset.id)));
             updateExpenseFormParticipants(participants);
-            // NUEVO: Actualizar filtro de participantes
-            updateDynamicFilterOptions();
+            // MODIFICADO: Actualizar etiquetas de filtro de participantes
+            updateDynamicFilterTagOptions();
         }
 
-        // NUEVO: Función para poblar los selects de los filtros dinámicos
-        function updateDynamicFilterOptions() {
-            const categorySelect = document.getElementById('filter-category');
-            const participantSelect = document.getElementById('filter-participant');
+        // MODIFICADO: Poblar contenedores de etiquetas en el popover
+        function updateDynamicFilterTagOptions() {
+            const categoryTagsContainer = document.getElementById('filter-tag-categories');
+            const participantTagsContainer = document.getElementById('filter-tag-participants');
             
-            // Guardar valores actuales para restaurarlos si es posible
-            const currentCat = categorySelect.value;
-            const currentPart = participantSelect.value;
+            categoryTagsContainer.innerHTML = ''; // Limpiar
+            participantTagsContainer.innerHTML = ''; // Limpiar
 
-            // Limpiar opciones existentes (excepto la primera "Todos")
-            categorySelect.innerHTML = '<option value="">Todas las Categorías</option>';
-            participantSelect.innerHTML = '<option value="">Todos los Pagadores</option>';
+            // Añadir etiquetas de categoría
+            if (appState.categories.length > 0) {
+                appState.categories.forEach(cat => {
+                    const isActive = activeFilters.category === cat.name;
+                    categoryTagsContainer.insertAdjacentHTML('beforeend', 
+                        `<button data-value="${cat.name}" class="filter-tag category-tag ${isActive ? 'active' : ''}">${cat.name}</button>`
+                    );
+                });
+            } else {
+                 categoryTagsContainer.innerHTML = '<span class="text-xs text-gray-500 italic m-1">No hay categorías.</span>';
+            }
 
-            // Añadir categorías
-            appState.categories.forEach(cat => {
-                categorySelect.insertAdjacentHTML('beforeend', `<option value="${cat.name}">${cat.name}</option>`);
-            });
-
-            // Añadir participantes
-            appState.participants.forEach(p => {
-                participantSelect.insertAdjacentHTML('beforeend', `<option value="${p.id}">${p.name}</option>`);
-            });
-
-            // Restaurar selección anterior si aún existe
-             if (Array.from(categorySelect.options).some(opt => opt.value === currentCat)) {
-                 categorySelect.value = currentCat;
-             }
-             if (Array.from(participantSelect.options).some(opt => opt.value === currentPart)) {
-                 participantSelect.value = currentPart;
-             }
+            // Añadir etiquetas de participante
+            if (appState.participants.length > 0) {
+                appState.participants.forEach(p => {
+                    const isActive = activeFilters.participant === p.id;
+                    participantTagsContainer.insertAdjacentHTML('beforeend', 
+                        `<button data-value="${p.id}" class="filter-tag participant-tag ${isActive ? 'active' : ''}">${p.name}</button>`
+                    );
+                });
+            } else {
+                 participantTagsContainer.innerHTML = '<span class="text-xs text-gray-500 italic m-1">No hay participantes.</span>';
+            }
         }
 
 
@@ -2130,11 +2362,15 @@
                     btn.addEventListener('click', (e) => removeCategory(e.currentTarget.dataset.name));
                 });
             }
-             // NUEVO: Actualizar filtro de categorías
-            updateDynamicFilterOptions();
+             // MODIFICADO: Actualizar etiquetas de filtro de categorías
+            updateDynamicFilterTagOptions();
         }
 
         function removeCategory(nameToRemove) {
+            // NUEVO: Desactivar filtro si se elimina la categoría activa
+            if(activeFilters.category === nameToRemove) {
+                activeFilters.category = null;
+            }
             saveState({ categories: appState.categories.filter(c => c.name !== nameToRemove) });
         }
 
@@ -2253,6 +2489,7 @@
             displayEl.querySelectorAll('.edit-method-btn').forEach(btn => btn.addEventListener('click', e => openPaymentMethodEditModal(e.currentTarget.dataset.id)));
         }
 
+        // MODIFICADO: Añadir etiquetas a la tarjeta de gasto
         function createExpenseCardHTML(expense, participantsMap, paymentMethodsMap, showAmount = true) {
             let payerName = participantsMap.get(expense.payerId) || expense.payerNameGuest || 'Desconocido';
             const isShared = expense.type === 'shared';
@@ -2269,10 +2506,18 @@
             const subcategoryLabel = expense.subcategory ? ` (${expense.subcategory})` : '';
             const descriptionHTML = `<p class='font-bold text-gray-800'>${expense.description}${subcategoryLabel}</p>`;
            
+            // NUEVO: Crear etiquetas para categoría y pagador
+            const categoryTag = expense.category ? `<span class="expense-card-tag category">${expense.category}</span>` : '';
+            // Solo mostrar etiqueta de pagador si NO es compartido (para evitar redundancia)
+            const participantTag = !isShared ? `<span class="expense-card-tag participant">${payerName}</span>` : '';
+            const tagsHTML = `<div class="mt-1">${categoryTag}${participantTag}</div>`;
+
+
             let subtitleContent = `${typeLabel} | Día: ${formatDate(expense.date)}`;
-            if (!isShared) {
-                subtitleContent += ` | Pagó: ${payerName}`;
-            }
+            // Quitar el pagador del subtítulo si ya está en la etiqueta
+            // if (!isShared) {
+            //     subtitleContent += ` | Pagó: ${payerName}`;
+            // }
             const subtitleHTML = `<p class='text-xs text-gray-500 mt-1'>${subtitleContent}</p>`;
            
             const amountHTML = showAmount ? `<p class='text-lg font-extrabold text-${colorClass}-600'>${formatCurrency(expense.amount)}</p>` : '';
@@ -2286,15 +2531,19 @@
                 </div>`;
            
             if (isShared) {
-                const splitAmount = expense.splitAmount || (expense.amount / appState.participants.length);
-                let balanceTags = appState.participants.map(p => {
-                    if (p.id === expense.payerId) {
-                        return `<span class='inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 mr-1'>${p.name}: Pagó (Total): ${formatCurrency(expense.amount)}</span>`;
-                    } else {
-                        return `<span class='inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800 mr-1'>${p.name}: Debe: ${formatCurrency(splitAmount)}</span>`;
-                    }
-                }).join('');
-                detailContent = `<div class='flex flex-wrap gap-1 mb-3'>${balanceTags}</div>` + detailContent;
+                // Mostrar quién pagó originalmente el gasto compartido
+                detailContent = `<p class="text-xs text-gray-600 mb-2">Pagado originalmente por: <strong>${payerName}</strong></p>` + detailContent;
+                
+                // Mantenemos los detalles de división si se desea, aunque las etiquetas ya dan info
+                // const splitAmount = expense.splitAmount || (expense.amount / appState.participants.length);
+                // let balanceTags = appState.participants.map(p => {
+                //     if (p.id === expense.payerId) {
+                //         return `<span class='inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 mr-1'>${p.name}: Pagó (Total): ${formatCurrency(expense.amount)}</span>`;
+                //     } else {
+                //         return `<span class='inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800 mr-1'>${p.name}: Debe: ${formatCurrency(splitAmount)}</span>`;
+                //     }
+                // }).join('');
+                // detailContent = `<div class='flex flex-wrap gap-1 mb-3'>${balanceTags}</div>` + detailContent;
             }
 
             const detailSectionHTML = `
@@ -2309,6 +2558,7 @@
                 <div class='flex justify-between items-start ${isCollapsible ? "expense-header" : ""}' ${isCollapsible ? `data-toggle='${expense.id}'` : ""}>
                     <div class='flex-1 min-w-0'>
                         ${descriptionHTML}
+                        ${tagsHTML} {/* Añadido aquí */}
                         ${subtitleHTML}
                     </div>
                     <div class='flex flex-col items-end ml-4'>
@@ -2319,15 +2569,16 @@
             </div>`;
         }
 
+
         // MODIFICADO: Aplicar filtros antes de renderizar el reporte
         function renderExpenseReportByCategory(allExpensesInMonth, summary) {
             const reportEl = document.getElementById('expense-report-by-category');
             reportEl.innerHTML = '';
             
-            // Obtener valores de los filtros
-            const descriptionFilter = document.getElementById('filter-description').value.toLowerCase();
-            const categoryFilter = document.getElementById('filter-category').value;
-            const participantFilter = document.getElementById('filter-participant').value;
+            // Obtener valores de los filtros desde el estado global `activeFilters`
+            const descriptionFilter = activeFilters.description;
+            const categoryFilter = activeFilters.category;
+            const participantFilter = activeFilters.participant;
 
             // Filtrar los gastos
             let filteredExpenses = allExpensesInMonth;
@@ -2342,6 +2593,8 @@
                 filteredExpenses = filteredExpenses.filter(e => e.category === categoryFilter);
             }
             if (participantFilter) {
+                // Si es gasto compartido, verificar si el pagador original coincide
+                // Si es gasto personal, verificar si el pagador coincide
                 filteredExpenses = filteredExpenses.filter(e => e.payerId === participantFilter);
             }
             
@@ -2489,9 +2742,10 @@
             if (categoryChart) categoryChart.destroy();
             
              // Aplicar filtros dinámicos también al gráfico
-            const descriptionFilter = document.getElementById('filter-description').value.toLowerCase();
-            const categoryFilter = document.getElementById('filter-category').value;
-            const participantFilter = document.getElementById('filter-participant').value;
+            const descriptionFilter = activeFilters.description;
+            const categoryFilter = activeFilters.category;
+            const participantFilter = activeFilters.participant;
+
 
             let chartFilteredExpenses = filteredExpenses;
             if (descriptionFilter) {
@@ -2682,6 +2936,10 @@
             renderCategoryChart(expensesForMonth); // Renderizar gráfico con gastos del mes (filtrados dinámicamente dentro)
             renderFixedExpensesSummary(); // Usa appState.expenses, no necesita cambios
             renderSharedBalanceSummary(summary); // Usa el summary original
+            
+            // NUEVO: Actualizar estado visual del botón de filtros y las etiquetas
+            updateFilterUIState();
+
            
             // Trigger change events para asegurar que los selects personalizados se actualicen si es necesario
             document.getElementById('expense-payment-method-id').dispatchEvent(new Event('change'));
