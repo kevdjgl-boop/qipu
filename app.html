@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Monedero V.2.0 (Sincronización en Vivo)</title>
+    <title>Monedero V.2.3 (Sincronización en Vivo)</title>
     <!-- Incluye Tailwind CSS para estilizado rápido y responsive -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Incluye Font Awesome para íconos de balance -->
@@ -17,9 +17,9 @@
             font-family: 'Inter', sans-serif;
             background-color: #f3f4f6;
             overflow-x: hidden;
-            padding-bottom: 4rem;
+            padding-bottom: 4rem; 
         }
-
+       
         .no-scroll {
             overflow-y: hidden !important;
         }
@@ -92,7 +92,7 @@
         #participant-sidebar.open {
             transform: translateX(0);
         }
-
+       
         .backdrop {
             position: fixed;
             inset: 0;
@@ -102,14 +102,14 @@
             visibility: hidden;
             transition: opacity 0.3s ease-out, visibility 0s linear 0.3s;
         }
-
+       
         .backdrop.open {
             opacity: 1;
             visibility: visible;
             transition: opacity 0.3s ease-out, visibility 0s linear 0s;
         }
         /* --- FIN ESTILOS SIDEBAR --- */
-
+       
         .header-btn {
             background-color: #4F46E5; /* Indigo-600 */
             color: white;
@@ -206,7 +206,7 @@
             </div>
         </div>
     </div>
-
+   
     <!-- PANTALLA DE CARGA INICIAL (Solo para datos) -->
     <div id="initial-loading-screen" class="max-w-7xl mx-auto px-4 md:px-8 pt-20 flex justify-center items-center h-64">
         <div class="text-center">
@@ -224,7 +224,7 @@
         <section class="max-w-7xl mx-auto px-4 md:px-8 pt-6 space-y-6">
             <div class="flex justify-between items-center border-b pb-2 mb-4">
                 <h1 class="text-3xl font-extrabold text-gray-800 flex items-center">
-                    Dashboard Principal
+                    Dashboard Principal 
                 </h1>
                  <!-- Botones de la Cabecera -->
                 <div class="flex items-center space-x-2">
@@ -250,7 +250,7 @@
                             </div>
                         </div>
                     </div>
-
+               
                     <!-- CARDS INDIVIDUALES Y AHORRO MUTUO -->
                     <div class="section-card border-t-4 border-teal-500 space-y-4">
                         <h3 class="text-lg font-bold text-gray-700">Saldos Individuales y Metas</h3>
@@ -278,7 +278,7 @@
                         </div>
                     </div>
                 </div>
-
+               
                 <!-- COLUMNA 3: Balance de Cuentas (Siempre visible) -->
                 <div class="lg:col-span-1">
                     <div class="section-card border-l-4 border-indigo-500 h-full flex flex-col">
@@ -319,7 +319,7 @@
                 <section class="section-card border-t-4 border-red-500">
                     <div class="flex justify-between items-center mb-4">
                         <h2 class="text-xl font-bold text-red-700">Registrar Nuevo Gasto</h2>
-
+                       
                         <!-- Botones de Configuración Rápida (Movidos aquí) -->
                         <div class="flex space-x-2">
                             <button id="open-categories-modal-btn" class="py-1 px-3 bg-green-500 text-white font-bold rounded-xl hover:bg-green-600 transition duration-300 text-xs">
@@ -331,7 +331,7 @@
                         </div>
                     </div>
                     <form id="expense-form" class="space-y-4">
-
+                       
                         <!-- Fila 1: Descripción, Monto -->
                         <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                             <div class="md:col-span-2">
@@ -343,7 +343,7 @@
                                 <input type="number" id="expense-amount" min="0.01" step="0.01" required class="w-full mt-1 p-3 border border-gray-300 rounded-lg focus:ring-red-500 focus:border-red-500">
                             </div>
                         </div>
-
+                       
                         <!-- Fila 2: Pagador, Tipo de Gasto, Método de Pago -->
                         <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                             <!-- Pagado Por (Custom Select) -->
@@ -433,7 +433,7 @@
                                     <input type="number" id="fixed-recurrence-months" min="1" max="60" value="12" class="w-24 mt-1 p-3 border border-gray-300 rounded-lg">
                                 </div>
                             </div>
-
+                           
                             <!-- Columna 3: Botón de Añadir Gasto -->
                             <div class="md:col-span-1">
                                 <button type="submit" class="w-full py-3 bg-red-500 text-white font-bold rounded-xl shadow-lg hover:bg-red-600 transition duration-300">
@@ -460,11 +460,11 @@
         <!-- ========================================================================================= -->
         <div class="max-w-7xl mx-auto px-4 md:px-8 mt-6">
             <section class="section-card border-t-4 border-gray-500 space-y-6">
-
+               
                 <!-- Encabezado del Informe y Filtro de Mes -->
                 <div class="flex justify-between items-center pb-2 mb-4">
                     <h2 class="text-xl font-bold text-gray-800">Informe de Gastos por Categoría</h2>
-
+                   
                     <!-- Ciclo de Visualización (Movido aquí para alinearse a la derecha) -->
                     <div id="month-selector" class="flex items-center justify-between p-2 bg-gray-50 rounded-lg border border-gray-200 w-full max-w-xs md:max-w-sm">
                         <button id="prev-month-btn" class="p-2 bg-white rounded-lg hover:bg-gray-200 transition font-bold text-lg shadow-sm">
@@ -479,27 +479,16 @@
                         </button>
                     </div>
                 </div>
-
+               
                 <!-- Rejilla de Informes -->
                 <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
 
                     <!-- Columna 1 y 2: Historial de Transacciones -->
                     <div class="lg:col-span-2">
                         <div class="space-y-4">
-                            <div class="flex flex-col sm:flex-row justify-between sm:items-center gap-4">
-                                <h3 class="text-xl font-bold text-gray-700">Historial de Transacciones</h3>
-
-                            </div>
-                             <div class="flex flex-col md:flex-row gap-4">
-                                <div id="participant-filter-container" class="flex flex-wrap items-center gap-2">
-                                    <!-- Buttons will be rendered by JS -->
-                                </div>
-                                <div id="payment-method-filter-container" class="flex flex-wrap items-center gap-2 border-t md:border-t-0 md:border-l pt-2 md:pt-0 md:pl-4">
-                                    <!-- Payment Method Buttons will be rendered by JS -->
-                                </div>
-                           </div>
+                            <h3 class="text-xl font-bold text-gray-700">Historial de Transacciones</h3>
                             <span class="text-xs text-purple-600 font-semibold block -mt-2" id="expense-diagnostic"></span>
-                            <div id="expense-report-container" class="space-y-3">
+                            <div id="expense-report-by-category" class="space-y-3">
                                 <p class="text-gray-500 text-center py-4 italic">No hay gastos en este ciclo.</p>
                             </div>
                         </div>
@@ -521,14 +510,14 @@
             </section>
         </div>
     </div>
-
+   
     <!-- MOBILE MENU (oculto en escritorio) -->
     <div id="mobile-menu" class="lg:hidden bg-white border-t border-gray-200 p-3 shadow-2xl flex justify-around fixed bottom-0 left-0 right-0 z-40">
         <button onclick="document.querySelector('main').scrollIntoView({ behavior: 'smooth' })" class="text-red-500 text-xs text-center"><i class="fas fa-plus-circle text-2xl"></i><br>Gasto</button>
         <button onclick="document.querySelector('#participants-config-section').scrollIntoView({ behavior: 'smooth' })" class="text-purple-500 text-xs text-center"><i class="fas fa-users text-2xl"></i><br>Participantes</button>
         <button onclick="document.querySelector('section:last-of-type').scrollIntoView({ behavior: 'smooth' })" class="text-gray-500 text-xs text-center"><i class="fas fa-list-alt text-2xl"></i><br>Informe</button>
     </div>
-
+   
     <!-- ========================================================================================= -->
     <!-- SIDEBAR DE CONFIGURACIÓN DE PARTICIPANTES -->
     <!-- ========================================================================================= -->
@@ -540,14 +529,14 @@
                     <i class="fas fa-times text-2xl"></i>
                 </button>
             </div>
-
+           
             <h3 class="text-xl font-bold text-purple-700 mb-4">Participantes Activos</h3>
 
             <!-- Botón de Añadir (Dentro del Sidebar) -->
             <button id="open-add-participant-modal-sidebar" class="w-full py-2 mb-4 bg-purple-500 text-white font-bold rounded-lg hover:bg-purple-600 transition">
                 + Añadir Nuevo
             </button>
-
+           
             <div id="participants-list" class="space-y-4">
                 <!-- Lista dinámica de participantes (Compacta) se renderiza aquí -->
             </div>
@@ -564,14 +553,14 @@
                          <button id="create-wallet-btn" class="w-full py-2 bg-indigo-500 text-white font-bold rounded-lg hover:bg-indigo-600 transition">Crear Monedero</button>
                          <p id="migration-notice" class="text-xs text-blue-600 mt-2 hidden"><i class="fas fa-info-circle"></i> Se migrarán tus datos existentes a este nuevo monedero.</p>
                     </div>
-
+               
                     <div class="my-2 text-center text-sm font-semibold text-gray-400">O</div>
-
+               
                     <div class="p-4 border rounded-lg bg-gray-50">
                          <h4 class="font-bold text-gray-700">Unirse a un Monedero Existente</h4>
                          <form id="join-wallet-form" class="flex flex-col items-center space-y-2 mt-2">
-                             <input type="text" id="join-wallet-id-input" placeholder="Pegar ID del Monedero" required class="w-full text-center p-2 border border-gray-300 rounded-lg">
-                             <button type="submit" class="w-full py-2 bg-green-500 text-white font-bold rounded-lg hover:bg-green-600 transition">Unirse</button>
+                              <input type="text" id="join-wallet-id-input" placeholder="Pegar ID del Monedero" required class="w-full text-center p-2 border border-gray-300 rounded-lg">
+                              <button type="submit" class="w-full py-2 bg-green-500 text-white font-bold rounded-lg hover:bg-green-600 transition">Unirse</button>
                          </form>
                     </div>
                 </div>
@@ -627,24 +616,24 @@
             </form>
         </div>
     </div>
-
+   
     <!-- Modal de Mensajes -->
     <div id="message-modal" class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden items-center justify-center p-4 z-[70]">
         <div class="bg-white p-6 rounded-xl shadow-2xl max-w-sm w-full">
             <h3 class="text-xl font-bold mb-4 text-gray-800" id="modal-title">Atención</h3>
             <p id="modal-text" class="mb-4 text-gray-600"></p>
-
+           
             <!-- NUEVA ÁREA DE DETALLE DE ERROR -->
             <div id="modal-error-detail" class="bg-red-50 p-3 rounded-lg border border-red-200 mt-4 hidden">
                 <p class="text-xs font-semibold text-red-700 mb-1">Detalle Técnico:</p>
                 <code id="modal-error-code" class="text-xs text-red-600 break-words block"></code>
             </div>
             <!-- FIN NUEVA ÁREA DE DETALLE DE ERROR -->
-
+           
             <button id="close-modal-btn" class="w-full py-2 bg-blue-500 text-white font-bold rounded-lg hover:bg-blue-600 transition duration-300">Cerrar</button>
         </div>
     </div>
-
+   
     <!-- Modal de Categorías -->
     <div id="categories-modal" class="fixed inset-0 bg-gray-600 bg-opacity-70 hidden items-center justify-center p-4 z-50">
         <div class="bg-white p-6 rounded-xl shadow-2xl max-w-lg w-full">
@@ -659,28 +648,28 @@
                     Guardar Categoría
                 </button>
             </form>
-
+           
             <h4 class="font-bold text-gray-700 mb-3">Categorías Existentes:</h4>
             <div id="categories-display" class="space-y-2 max-h-64 overflow-y-auto">
                 <p class="text-sm text-gray-500 italic" id="no-categories">No hay categorías definidas.</p>
                 <!-- Categorías se cargan aquí -->
             </div>
-
+           
             <button id="close-categories-modal-btn" class="w-full mt-6 py-2 bg-gray-300 text-gray-800 font-bold rounded-lg hover:bg-gray-400 transition duration-300">Cerrar</button>
         </div>
     </div>
-
+   
     <!-- Modal de Métodos de Pago -->
     <div id="payment-methods-modal" class="fixed inset-0 bg-gray-600 bg-opacity-70 hidden items-center justify-center p-4 z-50">
         <div class="bg-white p-6 rounded-xl shadow-2xl max-w-lg w-full">
             <h3 class="text-2xl font-bold mb-4 text-yellow-700">Configuración de Métodos de Pago</h3>
-
+           
             <h4 class="font-bold text-gray-700 mb-3">Métodos Existentes:</h4>
             <div id="payment-methods-display" class="space-y-2 mb-6 max-h-48 overflow-y-auto">
                 <p class="text-sm text-gray-500 italic">No hay métodos definidos.</p>
                 <!-- Métodos se cargan aquí con botón de edición -->
             </div>
-
+           
             <h4 class="font-bold text-gray-700 mb-3" id="payment-form-title">Añadir Nuevo Método:</h4>
             <form id="payment-method-form" class="space-y-3 p-4 border border-yellow-200 rounded-lg bg-yellow-50">
                 <input type="hidden" id="method-id-to-edit">
@@ -689,13 +678,13 @@
                     <option value="cash">Efectivo/Débito</option>
                     <option value="credit">Tarjeta de Crédito</option>
                 </select>
-
+               
                 <div id="cc-config-fields" class="space-y-3 hidden">
                     <h4 class="font-bold text-yellow-800">Configuración de Ciclo (Crédito)</h4>
                     <label for="cc-config-payment-day" class="block text-sm font-medium text-gray-700">Día Límite de Pago (1-31)</label>
                     <input type="number" id="cc-config-payment-day" min="1" max="31" placeholder="Ej: 5 (pagas el 5 de cada mes)" class="w-full p-2 border border-gray-300 rounded-lg">
                 </div>
-
+               
                 <button type="submit" id="save-method-btn" class="w-full py-2 bg-yellow-500 text-white font-bold rounded-xl shadow-lg hover:bg-yellow-600 transition duration-300">
                     Añadir Método
                 </button>
@@ -703,24 +692,24 @@
                     Cancelar Edición
                 </button>
             </form>
-
+           
             <button id="close-payment-methods-modal-btn" class="w-full mt-6 py-2 bg-gray-300 text-gray-800 font-bold rounded-lg hover:bg-gray-400 transition duration-300">Cerrar</button>
         </div>
     </div>
-
+   
     <!-- Modal de Añadir/Editar Participante -->
     <div id="add-participant-modal" class="fixed inset-0 bg-gray-600 bg-opacity-70 hidden items-center justify-center p-4 z-50">
         <div class="bg-white p-6 rounded-xl shadow-2xl max-w-sm w-full">
             <h3 class="text-2xl font-bold mb-4 text-purple-700" id="participant-modal-title">Añadir Participante</h3>
             <form id="participant-form" class="space-y-4">
                 <input type="hidden" id="participant-id-to-edit">
-
+               
                 <label for="p-name" class="block text-sm font-medium text-gray-700">Nombre</label>
                 <input type="text" id="p-name" required class="w-full p-3 border border-gray-300 rounded-lg focus:ring-purple-500">
-
+               
                 <label for="p-budget" class="block text-sm font-medium text-gray-700">Monto Total del Mes (S/)</label>
                 <input type="number" id="p-budget" min="0" required class="w-full p-3 border border-gray-300 rounded-lg focus:ring-purple-500">
-
+               
                 <div class="grid grid-cols-2 gap-4">
                     <div>
                         <label for="p-shared-savings" class="block text-sm font-medium text-purple-700">Ahorro Mutuo (%):</label>
@@ -731,7 +720,7 @@
                         <input type="number" id="p-independent-savings" min="0" max="100" required class="w-full mt-1 p-3 border border-purple-300 rounded-lg">
                     </div>
                 </div>
-
+               
                 <button type="submit" id="save-participant-btn" class="w-full py-3 bg-purple-500 text-white font-bold rounded-xl hover:bg-purple-600 transition duration-300">
                     Guardar Participante
                 </button>
@@ -746,7 +735,7 @@
             <h3 class="text-2xl font-bold mb-4 text-red-700">Editar Gasto</h3>
             <form id="edit-expense-form" class="space-y-4">
                 <input type="hidden" id="edit-expense-id">
-
+               
                 <!-- Fila 1: Descripción y Monto -->
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div class="md:col-span-2">
@@ -802,8 +791,8 @@
                     </div>
                 </div>
                 <div id="guest-payer-input-container" class="hidden">
-                         <label for="guest-payer-name" class="block text-sm font-medium text-gray-700">Nombre del Invitado</label>
-                         <input type="text" id="guest-payer-name" class="w-full mt-1 p-3 border border-gray-300 rounded-lg">
+                              <label for="guest-payer-name" class="block text-sm font-medium text-gray-700">Nombre del Invitado</label>
+                              <input type="text" id="guest-payer-name" class="w-full mt-1 p-3 border border-gray-300 rounded-lg">
                 </div>
 
                 <!-- Fila 3: Categoría y Subcategoría -->
@@ -811,12 +800,12 @@
                     <div>
                         <label for="edit-expense-category-button" class="block text-sm font-medium text-gray-700">Categoría</label>
                          <div class="relative custom-select-container mt-1">
-                             <button type="button" id="edit-expense-category-button" class="custom-select-button w-full text-left p-3 border border-gray-300 rounded-lg bg-white flex justify-between items-center">
-                                 <span class="custom-select-display text-gray-500">Selecciona categoría</span>
-                                 <i class="fas fa-chevron-down text-gray-400"></i>
-                             </button>
-                             <div class="custom-select-options absolute hidden mt-1 w-full bg-white rounded-lg shadow-lg z-20"></div>
-                             <input type="hidden" id="edit-expense-category" required>
+                              <button type="button" id="edit-expense-category-button" class="custom-select-button w-full text-left p-3 border border-gray-300 rounded-lg bg-white flex justify-between items-center">
+                                  <span class="custom-select-display text-gray-500">Selecciona categoría</span>
+                                  <i class="fas fa-chevron-down text-gray-400"></i>
+                              </button>
+                              <div class="custom-select-options absolute hidden mt-1 w-full bg-white rounded-lg shadow-lg z-20"></div>
+                              <input type="hidden" id="edit-expense-category" required>
                          </div>
                     </div>
                     <div>
@@ -831,7 +820,7 @@
                         </div>
                     </div>
                 </div>
-
+               
                  <!-- Checkbox Gasto Fijo -->
                 <div class="flex items-center">
                     <input id="edit-expense-is-fixed" type="checkbox" class="h-4 w-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500">
@@ -845,7 +834,7 @@
             <button id="close-edit-expense-modal-btn" class="w-full mt-4 py-2 bg-gray-300 text-gray-800 font-bold rounded-lg hover:bg-gray-400 transition duration-300">Cerrar</button>
         </div>
     </div>
-
+   
     <!-- Modal de Confirmación de Cierre de Sesión -->
     <div id="logout-confirm-modal" class="fixed inset-0 bg-gray-600 bg-opacity-70 hidden items-center justify-center p-4 z-50">
         <div class="bg-white p-6 rounded-xl shadow-2xl max-w-sm w-full">
@@ -872,13 +861,13 @@
         import { getAuth, signInWithCustomToken, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, doc, setDoc, onSnapshot, getDoc, updateDoc, writeBatch, collection, addDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
         import { setLogLevel } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
-
+       
         setLogLevel('Debug');
 
         // ====================================================================================
         // --- CONFIGURACIÓN Y ESTADO GLOBAL ---
         // ====================================================================================
-
+       
         const myFirebaseConfig = {
             apiKey: "AIzaSyA63OZWFM30Tu17DGxAmbtVsNFWeQU3k4s",
             authDomain: "qipu-d1dcd.firebaseapp.com",
@@ -891,29 +880,29 @@
         const REDIRECT_URL_LOGOUT = 'index.html';
 
         const IS_CANVAS_ENV = typeof __initial_auth_token !== 'undefined';
-
-        let firebaseConfig = IS_CANVAS_ENV
+       
+        let firebaseConfig = IS_CANVAS_ENV 
             ? (typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : myFirebaseConfig)
             : myFirebaseConfig;
 
         const appId = typeof __app_id !== 'undefined' ? __app_id : firebaseConfig.projectId || 'default-app-id';
         const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
-
+       
         let app, db, auth;
         let userId = 'loading';
-        let currentWalletId = null;
-        let isFirebaseActive = Object.keys(firebaseConfig).length > 0 && !Object.keys(firebaseConfig).some(k => firebaseConfig[k].startsWith('TU_'));
+        let currentWalletId = null; // NUEVO: ID del monedero compartido actual
+        let isFirebaseActive = Object.keys(firebaseConfig).length > 0 && !Object.keys(firebaseConfig).some(k => firebaseConfig[k].startsWith('TU_')); 
 
         // --- NUEVAS RUTAS DE FIRESTORE ---
         const getUserProfileRef = (db, uid) => doc(db, 'artifacts', appId, 'users', uid);
         const getOldUserFinanceDocRef = (db, uid) => doc(db, 'artifacts', appId, 'users', uid, 'finance_tracker', 'main_finance_state');
         const getWalletDocRef = (db, walletId) => doc(db, 'artifacts', appId, 'public/data/wallets', walletId);
         const getWalletsCollectionRef = (db) => collection(db, 'artifacts', appId, 'public/data/wallets');
-
+       
         const LOCAL_STORAGE_KEY = 'finance_tracker_local_data';
 
         const MONTH_NAMES = [
-            'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
+            'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 
             'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'
         ];
 
@@ -923,23 +912,21 @@
             paymentMethods: [],
             expenses: []
         };
-
+       
         let currentFilterDate = new Date();
-        currentFilterDate.setDate(1);
-
-        let myParticipantId = null;
-        let participantFilterId = 'all'; // Default filter state for participants
-        let paymentMethodFilterId = 'all'; // Default filter state for payment methods
+        currentFilterDate.setDate(1); 
+       
+        let myParticipantId = null; 
         let unsubscribeListener = null;
         let categoryChart = null;
 
         // --- Utilidades ---
         const generateUUID = () => crypto.randomUUID();
-
+       
         const showModal = (message, errorCode = null, title = "Atención") => {
             document.getElementById('modal-title').textContent = title;
             document.getElementById('modal-text').innerHTML = message; // Use innerHTML to allow textarea
-
+           
             const errorDetailEl = document.getElementById('modal-error-detail');
             const errorCodeEl = document.getElementById('modal-error-code');
 
@@ -949,7 +936,7 @@
             } else {
                 errorDetailEl.classList.add('hidden');
             }
-
+           
             document.getElementById('message-modal').classList.remove('hidden');
             document.getElementById('message-modal').classList.add('flex');
             document.body.classList.add('no-scroll');
@@ -960,67 +947,69 @@
             document.getElementById('message-modal').classList.remove('flex');
             document.body.classList.remove('no-scroll');
         });
-
+       
         const formatCurrency = (value) => new Intl.NumberFormat('es-PE', { style: 'currency', currency: 'PEN', minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(value);
         const formatDate = (isoString) => {
             if (!isoString) return '';
-            const date = new Date(isoString + "T00:00:00");
-            return date.toLocaleDateString('es-ES', { day: '2-digit' });
+            const date = new Date(isoString + "T00:00:00Z"); // Use Z for UTC to avoid timezone issues with date-only strings
+            return date.toLocaleDateString('es-ES', { day: '2-digit', timeZone: 'UTC' }); // Specify UTC timezone
         }
         const getFilterMonthString = (date) => {
             const year = date.getFullYear();
             const month = String(date.getMonth() + 1).padStart(2, '0');
             return `${year}-${month}`;
         }
-
-        function getCycleDates(method) {
+       
+        // CORREGIDO: Lógica de cálculo de ciclo de tarjeta de crédito mejorada
+        function getCycleDates(method, referenceDate) {
             if (method.type !== 'credit' || !method.paymentDay) {
                 return { startDate: null, closingDate: null, paymentDate: null };
             }
 
-            const today = new Date();
-            today.setHours(0, 0, 0, 0); // Normalizar a medianoche para comparaciones precisas
             const paymentDay = method.paymentDay;
-            const gracePeriodDays = 24; // Deducido del ejemplo: Cierre 11/Nov -> Pago 5/Dic
+            const gracePeriodDays = 25; // Días desde el cierre hasta el pago.
 
-            // 1. Empezar con una fecha de pago potencial para este mes.
-            let paymentDate = new Date(today.getFullYear(), today.getMonth(), paymentDay);
+            // 1. Empezar calculando la fecha de cierre para el mes de la fecha de referencia.
+            //    Usamos UTC para evitar problemas de zona horaria al manipular solo días/meses.
+            let closingDate = new Date(Date.UTC(referenceDate.getUTCFullYear(), referenceDate.getUTCMonth(), paymentDay));
+            closingDate.setUTCDate(closingDate.getUTCDate() - gracePeriodDays);
 
-            // 2. Usar un bucle para encontrar la PRIMERA fecha de cierre que sea en el futuro.
-            let closingDate = new Date(paymentDate.getTime());
-            closingDate.setDate(closingDate.getDate() - gracePeriodDays);
-
-            while (today > closingDate) {
-                // Si la fecha de hoy ya pasó la fecha de cierre, significa que estamos en el siguiente ciclo.
-                // Avanzamos un mes y recalculamos.
-                paymentDate.setMonth(paymentDate.getMonth() + 1);
-                closingDate = new Date(paymentDate.getTime());
-                closingDate.setDate(closingDate.getDate() - gracePeriodDays);
+            // 2. Si la fecha de referencia (en UTC) es posterior a esta fecha de cierre (en UTC),
+            //    significa que estamos en el siguiente ciclo de facturación.
+            const referenceDateUTC = new Date(Date.UTC(referenceDate.getUTCFullYear(), referenceDate.getUTCMonth(), referenceDate.getUTCDate()));
+            if (referenceDateUTC > closingDate) {
+                closingDate.setUTCMonth(closingDate.getUTCMonth() + 1);
             }
-
-            // 3. Ahora que tenemos la fecha de cierre correcta, la ajustamos si cae en fin de semana.
-            const dayOfWeek = closingDate.getDay(); // Domingo = 0, Sábado = 6
+            
+            // 3. Ajustar la fecha de cierre por si cae en fin de semana (mover al viernes anterior)
+            const dayOfWeek = closingDate.getUTCDay(); // Domingo = 0, Sábado = 6
             if (dayOfWeek === 0) { // Domingo
-                closingDate.setDate(closingDate.getDate() - 2); // Retroceder a viernes
+                closingDate.setUTCDate(closingDate.getUTCDate() - 2); 
             } else if (dayOfWeek === 6) { // Sábado
-                closingDate.setDate(closingDate.getDate() - 1); // Retroceder a viernes
+                closingDate.setUTCDate(closingDate.getUTCDate() - 1); 
             }
 
-            // 4. Calcular la fecha de inicio basándose en la fecha de cierre ya ajustada.
+            // 4. Ahora que tenemos la fecha de cierre correcta, calculamos las fechas de inicio y de pago.
             let startDate = new Date(closingDate.getTime());
-            startDate.setMonth(startDate.getMonth() - 1);
-            startDate.setDate(startDate.getDate() + 1);
+            startDate.setUTCMonth(startDate.getUTCMonth() - 1);
+            startDate.setUTCDate(startDate.getUTCDate() + 1);
+
+            let paymentDate = new Date(closingDate.getTime());
+            paymentDate.setUTCDate(paymentDate.getUTCDate() + gracePeriodDays);
+
+            // Devolver las fechas en formato ISO YYYY-MM-DD
+            const toISODateString = (date) => date.toISOString().split('T')[0];
 
             return {
-                startDate: startDate.toISOString().split('T')[0],
-                closingDate: closingDate.toISOString().split('T')[0],
-                paymentDate: paymentDate.toISOString().split('T')[0]
+                startDate: toISODateString(startDate),
+                closingDate: toISODateString(closingDate),
+                paymentDate: toISODateString(paymentDate)
             };
         }
 
 
         // --- Funciones de Autenticación (REDUCIDAS) ---
-
+       
         function openLogoutConfirmModal() {
             document.getElementById('logout-confirm-modal').classList.add('flex');
             document.getElementById('logout-confirm-modal').classList.remove('hidden');
@@ -1030,7 +1019,7 @@
             document.getElementById('logout-confirm-modal').classList.add('hidden');
              document.getElementById('logout-confirm-modal').classList.remove('flex');
         }
-
+       
         document.getElementById('confirm-logout-btn').addEventListener('click', async () => {
             closeLogoutConfirmModal();
             try {
@@ -1062,7 +1051,7 @@
                 app = initializeApp(firebaseConfig);
                 db = getFirestore(app);
                 auth = getAuth(app);
-
+               
                 onAuthStateChanged(auth, async (user) => {
                     try { // <-- ADDED TRY BLOCK FOR ROBUSTNESS
                         // Si estamos en Canvas y no hay usuario, intentar logueo con token
@@ -1070,11 +1059,11 @@
                             try {
                                 await signInWithCustomToken(auth, initialAuthToken);
                                 // El listener se volverá a ejecutar con el nuevo estado, así que salimos.
-                                return;
+                                return; 
                             } catch (e) {
                                 console.error("Fallo el inicio de sesión en Canvas:", e);
                                 // Si falla, operar en modo local.
-                                loadLocalState();
+                                loadLocalState(); 
                                 setupUILogic(false);
                                 return;
                             }
@@ -1084,7 +1073,7 @@
                         if (user) {
                             userId = user.uid;
                             document.getElementById('current-user-id').innerHTML = `Mi UID: <strong>${userId}</strong>`;
-
+                           
                             // Revisar si el usuario ya está en un monedero
                             const userProfileRef = getUserProfileRef(db, userId);
                             const userProfileSnap = await getDoc(userProfileRef);
@@ -1100,9 +1089,9 @@
                                 // Es un usuario nuevo o sin monedero, guiarlo a la configuración
                                 document.getElementById('initial-loading-screen').classList.add('hidden');
                                 document.getElementById('main-content-wrapper').classList.remove('hidden');
-                                setupUILogic(true);
-                                updateWalletSidebarView(false);
-
+                                setupUILogic(true); 
+                                updateWalletSidebarView(false); 
+                               
                                 const sidebar = document.getElementById('participant-sidebar');
                                 if (!sidebar.classList.contains('open')) {
                                     const backdrop = document.getElementById('sidebar-backdrop');
@@ -1137,11 +1126,11 @@
             } catch (error) {
                 console.error("Error al inicializar Firebase:", error);
                 showModal("Error crítico al inicializar Firebase.", error.message, "Fallo de Conexión");
-                loadLocalState();
+                loadLocalState(); 
                 setupUILogic(false);
             }
         }
-
+       
         function updateWalletSidebarView(hasWallet) {
             const preControls = document.getElementById('pre-wallet-controls');
             const postControls = document.getElementById('post-wallet-controls');
@@ -1151,7 +1140,7 @@
             } else {
                 preControls.classList.remove('hidden');
                 postControls.classList.add('hidden');
-                 // Chequear si hay datos viejos para migrar
+                // Chequear si hay datos viejos para migrar
                 const migrationNotice = document.getElementById('migration-notice');
                 const oldDataRef = getOldUserFinanceDocRef(db, userId);
                 getDoc(oldDataRef).then(docSnap => {
@@ -1182,7 +1171,7 @@
                 if (oldDataSnap.exists()) {
                     // Migrar datos viejos, asegurando que todas las propiedades existan
                     walletData = { ...defaultWalletState, ...oldDataSnap.data() };
-
+                   
                     // Asegurarse de que al menos un participante esté vinculado al usuario actual
                     const currentUserIsParticipant = walletData.participants.some(p => p.firebaseUid === userId);
                     if (!currentUserIsParticipant && walletData.participants.length > 0) {
@@ -1196,13 +1185,13 @@
                     walletData = { ...defaultWalletState };
                     walletData.participants.push({ id: generateUUID(), name: 'Yo', budget: 1000, sharedSavingsPercent: 10, independentSavingsPercent: 5, firebaseUid: userId });
                 }
-
+               
                 const batch = writeBatch(db);
                 batch.set(getWalletDocRef(db, currentWalletId), walletData); // Establecer datos en el nuevo monedero
                 batch.set(getUserProfileRef(db, userId), { walletId: currentWalletId }); // Vincular usuario al monedero
 
                 await batch.commit();
-
+               
                 // Cerrar sidebar y cargar la UI principal
                 const sidebar = document.getElementById('participant-sidebar');
                 const backdrop = document.getElementById('sidebar-backdrop');
@@ -1229,7 +1218,7 @@
             if (!walletSnap.exists()) {
                 return showModal("El ID del monedero no es válido.", null, "Error al Unirse");
             }
-
+           
             currentWalletId = walletIdToJoin;
             await setDoc(getUserProfileRef(db, userId), { walletId: currentWalletId });
 
@@ -1239,7 +1228,7 @@
             sidebar.classList.remove('open');
             backdrop.classList.remove('open');
             document.body.classList.remove('no-scroll');
-
+           
             setupUILogic(true);
             setupRealTimeDataListener();
         }
@@ -1249,12 +1238,12 @@
             document.getElementById('export-json-btn').addEventListener('click', () => {
                 const jsonString = JSON.stringify(appState);
                 const modalTextEl = document.getElementById('modal-text');
-
+               
                 showModal("Copia este texto. Es el respaldo completo de tus datos.", null, "Exportar Datos");
-
-                modalTextEl.innerHTML = "Copia este texto. Es el respaldo completo de tus datos." +
+               
+                modalTextEl.innerHTML = "Copia este texto. Es el respaldo completo de tus datos." + 
                 `<textarea readonly class="w-full h-32 mt-2 p-2 border rounded bg-gray-100 text-xs font-mono">${jsonString}</textarea>`;
-
+               
                 modalTextEl.querySelector('textarea').select();
             });
 
@@ -1281,7 +1270,7 @@
             importForm.addEventListener('submit', async (e) => {
                 e.preventDefault();
                 const jsonString = jsonInputArea.value.trim();
-
+               
                 if (!jsonString) {
                     showModal("El campo de texto está vacío. Por favor, pega tus datos de respaldo.", null, "Error");
                     return;
@@ -1292,7 +1281,7 @@
                     if (importedState && typeof importedState.participants !== 'undefined' && typeof importedState.expenses !== 'undefined') {
                         if (isFirebaseActive && db && currentWalletId) {
                             await setDoc(getWalletDocRef(db, currentWalletId), importedState);
-
+                           
                             // Close import modal before showing success message
                             importModal.classList.add('hidden');
                             importModal.classList.remove('flex');
@@ -1310,33 +1299,33 @@
                     } else {
                        throw new Error("El formato del JSON no es válido. Faltan propiedades esenciales (participants/expenses).");
                     }
-                } catch (error) {
-                   showModal(`Error al procesar el JSON: ${error.message}`, error.stack, "Error de Importación");
-               }
+                } catch (error) { 
+                   showModal(`Error al procesar el JSON: ${error.message}`, error.stack, "Error de Importación"); 
+                }
             });
         }
 
         function setupRealTimeDataListener() {
              if (!db || !currentWalletId) return;
              if (unsubscribeListener) unsubscribeListener();
-
+             
             const docRef = getWalletDocRef(db, currentWalletId);
-
+             
             unsubscribeListener = onSnapshot(docRef, docSnap => {
                 if (docSnap.exists()) {
                     const loadedData = docSnap.data();
-
+                   
                     const defaultState = { participants: [], categories: [], paymentMethods: [], expenses: [] };
                     appState = { ...defaultState, ...loadedData };
-
+                   
                     const linkedParticipant = appState.participants.find(p => p.firebaseUid === userId);
                     myParticipantId = linkedParticipant ? linkedParticipant.id : null;
-
+                   
                     document.getElementById('share-wallet-id').value = currentWalletId;
                     document.getElementById('auth-status').innerHTML = `<span id="connection-dot" class="sync-indicator sync-green"></span> ✅ Conectado al monedero.`;
-
+                   
                     updateWalletSidebarView(true); // Mostrar info del monedero actual
-                    renderUI();
+                    renderUI(); 
                 } else {
                     // El monedero fue eliminado, forzar al usuario a crear/unirse de nuevo.
                     showModal("Este monedero ya no existe. Por favor, crea uno nuevo o únete a otro.", null, "Monedero no encontrado");
@@ -1370,10 +1359,10 @@
             } else {
                 appState = { ...appState, ...updates };
                 localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(appState));
-                renderUI();
+                renderUI(); 
             }
         }
-
+       
         function linkParticipantToUser(participantId) {
             if (!userId || userId === 'anonymous_canvas' || userId === 'loading') {
                 return showModal("Debes estar autenticado para vincular una cuenta.", null, "Acceso Denegado");
@@ -1394,17 +1383,20 @@
         function setupUILogic(isFirebaseMode) {
             const backdrop = document.getElementById('sidebar-backdrop');
             const participantSidebar = document.getElementById('participant-sidebar');
-
+           
             // Listeners de la UI principal
             setupCustomSelects();
-            setupMonthSelectorListeners();
+            setupMonthSelectorListeners(); 
             setupCategoryModalListeners();
             setupPaymentMethodListeners();
-            setupParticipantModalListeners(backdrop, participantSidebar);
+            setupParticipantModalListeners(backdrop, participantSidebar); 
             setupExpenseFormListeners();
-            setupExpenseModalListeners();
-            setupLiquidateListeners();
-            setupDataManagementListeners(); // <-- AÑADIDO
+            setupExpenseModalListeners(); 
+            setupLiquidateListeners(); 
+            setupDataManagementListeners(); 
+           
+            // CORREGIDO: Añadir listener para el botón de logout principal
+            document.getElementById('logout-btn').addEventListener('click', openLogoutConfirmModal);
 
             // Listeners de la nueva lógica de monederos
             document.getElementById('copy-wallet-id-btn').addEventListener('click', () => {
@@ -1415,14 +1407,12 @@
             });
              document.getElementById('create-wallet-btn').addEventListener('click', handleCreateWallet);
             document.getElementById('join-wallet-form').addEventListener('submit', handleJoinWallet);
-
-            if (!isFirebaseMode) renderUI();
+           
+            if (!isFirebaseMode) renderUI(); 
         }
 
         // --- El resto de las funciones (render, cálculo, etc.) se mantienen mayormente sin cambios ---
-        // Se omiten por brevedad ya que su lógica interna no cambia, solo los datos que reciben.
-        // ... (pegar aquí el resto de las funciones desde la original, desde "setupCustomSelects" hasta el final)
-
+        
         // --- Lógica para los menús desplegables personalizados ---
         function setupCustomSelects() {
             window.addEventListener('click', (e) => {
@@ -1437,7 +1427,7 @@
             document.querySelectorAll('.custom-select-container').forEach(container => {
                 const button = container.querySelector('.custom-select-button');
                 const optionsContainer = container.querySelector('.custom-select-options');
-
+               
                 button.addEventListener('click', (e) => {
                     e.stopPropagation();
                     document.querySelectorAll('.custom-select-options').forEach(otherOptions => {
@@ -1455,7 +1445,7 @@
                     if (option) {
                         const hiddenInput = container.querySelector('input[type="hidden"]');
                         const display = button.querySelector('.custom-select-display');
-
+                       
                         display.textContent = option.textContent.trim();
                         display.classList.remove('text-gray-500');
                         hiddenInput.value = option.dataset.value;
@@ -1470,26 +1460,26 @@
                 });
             });
         }
-
+       
         function setupLiquidateListeners() {
             document.getElementById('liquidate-month-btn').addEventListener('click', liquidateMonth);
         }
 
         async function liquidateMonth() {
             if (!db || userId === 'loading') return showModal("La base de datos no está lista.");
-
+           
             const { participantData, guestDebtTotal } = calculateSummary(appState, appState.expenses.filter(e => e.date.startsWith(getFilterMonthString(currentFilterDate))));
             const balances = participantData.filter(p => Math.abs(p.balance) > 0.01);
             if (balances.length === 0 && guestDebtTotal === 0) return showModal("Las cuentas ya están claras.", null, "Liquidación Completa");
-
+           
             if (window.prompt(`Se crearán transacciones de ajuste. Escribe 'LIQUIDAR' para confirmar.`) !== 'LIQUIDAR') return showModal("Liquidación cancelada.");
 
             const newExpenses = [...appState.expenses];
             const now = new Date().toISOString().split('T')[0];
             let numSettlements = 0;
 
-            const debtors = balances.filter(p => p.balance < 0).sort((a, b) => a.balance - b.balance);
-            const creditors = balances.filter(p => p.balance > 0).sort((a, b) => b.balance - a.balance);
+            const debtors = balances.filter(p => p.balance < 0).sort((a, b) => a.balance - b.balance); 
+            const creditors = balances.filter(p => p.balance > 0).sort((a, b) => b.balance - a.balance); 
 
             let i = 0, j = 0;
             while (i < debtors.length && j < creditors.length) {
@@ -1508,17 +1498,17 @@
             await saveState({ expenses: newExpenses });
             showModal(`¡Liquidación completada! Se crearon ${numSettlements} ajustes.`, null, "Liquidación Exitosa");
         }
-
+       
         function setupParticipantModalListeners(backdrop, sidebar) {
             const modal = document.getElementById('add-participant-modal');
             const form = document.getElementById('participant-form');
-
+           
             const toggleSidebar = (open) => {
                 sidebar.classList.toggle('open', open);
                 backdrop.classList.toggle('open', open);
                 document.body.classList.toggle('no-scroll', open);
             };
-
+           
             document.getElementById('open-participants-sidebar-btn').addEventListener('click', () => toggleSidebar(true));
             document.getElementById('close-sidebar-btn').addEventListener('click', () => toggleSidebar(false));
             backdrop.addEventListener('click', () => {
@@ -1534,7 +1524,7 @@
                 modal.classList.add('flex');
                 modal.classList.remove('hidden');
             });
-
+           
             document.getElementById('close-participant-modal-btn').addEventListener('click', () => {
                 modal.classList.add('hidden');
                 modal.classList.remove('flex');
@@ -1605,7 +1595,7 @@
                 renderUI();
             });
         }
-
+       
         function removeExpense(id) {
             const newExpenses = appState.expenses.filter(e => e.id !== id);
             saveState({ expenses: newExpenses });
@@ -1622,7 +1612,7 @@
                 modal.classList.add('hidden');
                 modal.classList.remove('flex');
             });
-
+       
             document.getElementById('category-form').addEventListener('submit', (e) => {
                 e.preventDefault();
                 const name = document.getElementById('category-name').value.trim();
@@ -1727,7 +1717,7 @@
                 const ccDetails = document.getElementById('credit-card-details');
                 if (method && method.type === 'credit') {
                     ccDetails.classList.remove('hidden');
-                    const { startDate, paymentDate } = getCycleDates(method);
+                    const { startDate, paymentDate } = getCycleDates(method, new Date()); // Usa la fecha actual para el formulario
                     document.getElementById('cc-cycle-start-display').textContent = formatDate(startDate);
                     document.getElementById('cc-payment-date-display').textContent = formatDate(paymentDate);
                 } else {
@@ -1752,7 +1742,7 @@
                     }
 
                     const paymentMethod = appState.paymentMethods.find(m => m.id === paymentMethodId);
-                    const { startDate, paymentDate } = paymentMethod && paymentMethod.type === 'credit' ? getCycleDates(paymentMethod) : {};
+                    const { startDate, paymentDate } = paymentMethod && paymentMethod.type === 'credit' ? getCycleDates(paymentMethod, new Date()) : {}; // Usa la fecha actual para el formulario
                     const fixedRecurrenceMonths = isFixed ? parseInt(document.getElementById('fixed-recurrence-months').value) || 1 : 0;
 
                     const newExpense = {
@@ -1788,7 +1778,7 @@
 
             document.getElementById('add-guest-payer-btn').addEventListener('click', () => {
                 guestContainer.classList.toggle('hidden');
-
+               
                 const payerButton = document.getElementById('edit-expense-payer-button');
                 const payerDisplay = payerButton.querySelector('.custom-select-display');
                 const payerInput = document.getElementById('edit-expense-payer');
@@ -1801,7 +1791,7 @@
                     guestInput.focus();
                 }
             });
-
+           
             document.getElementById('edit-expense-category').addEventListener('change', (e) => {
                 const categoryName = e.target.value;
                 const subCatContainer = document.querySelector('#edit-expense-subcategory-button').closest('.custom-select-container');
@@ -1853,17 +1843,17 @@
 
                 const updatedExpenses = appState.expenses.map(exp => {
                     if (exp.id === id) {
-                        return {
-                            ...exp,
-                            description: newDescription,
-                            amount: newAmount,
-                            category: newCategory,
+                        return { 
+                            ...exp, 
+                            description: newDescription, 
+                            amount: newAmount, 
+                            category: newCategory, 
                             subcategory: newSubcategory,
                             type: newType,
                             isFixed: newIsFixed,
                             paymentMethodId: newPaymentMethodId,
-                            payerId: newPayerId,
-                            payerNameGuest: newPayerName
+                            payerId: newPayerId, 
+                            payerNameGuest: newPayerName 
                         };
                     }
                     return exp;
@@ -1885,7 +1875,7 @@
                 independentSavingsGoal: (p.budget * p.independentSavingsPercent) / 100,
                 availableForSpending: p.budget * (1 - (p.sharedSavingsPercent + p.independentSavingsPercent) / 100)
             }));
-
+           
             const participantMap = new Map(participantData.map(p => [p.id, p]));
             let totalSpent = 0;
             let guestDebtTotal = 0;
@@ -1897,7 +1887,7 @@
                 if (payer) {
                     payer.contributionPaid += amount;
                 }
-
+               
                 const isShared = expense.type === 'shared';
 
                 if (isShared) { // Handle shared logic
@@ -1959,12 +1949,12 @@
             animateNumber('display-remaining-budget', summary.globalTotalRemainingBudget);
             document.getElementById('display-total-spent').textContent = formatCurrency(summary.totalSpent);
             document.getElementById('display-shared-savings-goal').textContent = formatCurrency(summary.globalSharedSavingsGoal);
-
+           
             const totalFixed = appState.expenses
                 .filter(e => e.isFixed)
                 .reduce((sum, exp) => sum + exp.amount, 0);
             document.getElementById('display-fixed-total').textContent = formatCurrency(totalFixed);
-
+           
             const participantCardsEl = document.getElementById('participant-summary-cards');
             participantCardsEl.innerHTML = summary.participantData.map(p => {
                 const remainingColor = p.remainingBudget < 0 ? 'text-red-600' : 'text-green-600';
@@ -1983,21 +1973,21 @@
                     </div>
                     <div class="text-xs mt-3 pt-3 border-t space-y-1">
                          <div class="flex justify-between">
-                            <span>Ahorro Personal:</span>
-                            <strong class="text-teal-600">${formatCurrency(p.independentSavingsGoal)}</strong>
-                        </div>
-                        <div class="flex justify-between">
-                            <span>Aporte Ahorro Mutuo:</span>
-                            <strong class="text-purple-600">${formatCurrency(p.sharedSavingsGoal)}</strong>
-                        </div>
-                        <div class="flex justify-between">
-                            <span>Gastos Fijos Pers.:</span>
-                            <strong class="text-yellow-600">${formatCurrency(personalFixedExpenses)}</strong>
-                        </div>
-                        <div class="flex justify-between font-bold">
-                            <span>Gasto Total:</span>
-                            <strong class="text-red-600">${formatCurrency(p.spent)}</strong>
-                        </div>
+                             <span>Ahorro Personal:</span>
+                             <strong class="text-teal-600">${formatCurrency(p.independentSavingsGoal)}</strong>
+                         </div>
+                         <div class="flex justify-between">
+                             <span>Aporte Ahorro Mutuo:</span>
+                             <strong class="text-purple-600">${formatCurrency(p.sharedSavingsGoal)}</strong>
+                         </div>
+                         <div class="flex justify-between">
+                             <span>Gastos Fijos Pers.:</span>
+                             <strong class="text-yellow-600">${formatCurrency(personalFixedExpenses)}</strong>
+                         </div>
+                         <div class="flex justify-between font-bold">
+                             <span>Gasto Total:</span>
+                             <strong class="text-red-600">${formatCurrency(p.spent)}</strong>
+                         </div>
                     </div>
                 </div>`;
             }).join('');
@@ -2008,7 +1998,7 @@
             listEl.innerHTML = participants.map(p => {
                 const summaryData = summary.participantData.find(pd => pd.id === p.id) || {};
                 const balanceColor = summaryData.remainingBudget < 0 ? 'text-red-600' : 'text-green-600';
-
+               
                 let linkButtonHtml = '';
                 const isLinkedToMe = p.firebaseUid === userId;
                 const isLinkedToSomeoneElse = p.firebaseUid && p.firebaseUid !== userId;
@@ -2094,11 +2084,11 @@
 
                 const optionsContainer = button.nextElementSibling;
                 const option = Array.from(optionsContainer.querySelectorAll('.custom-select-option')).find(opt => opt.dataset.value === value);
-
+               
                 display.textContent = option ? option.textContent.trim() : `Seleccionar`;
                 display.classList.toggle('text-gray-500', !option);
                 input.value = value;
-
+               
                 optionsContainer.querySelectorAll('.custom-select-option').forEach(opt => {
                     opt.classList.toggle('selected', opt.dataset.value === value);
                 });
@@ -2107,7 +2097,7 @@
             setCustomSelect('payer', expense.payerId);
             setCustomSelect('type', expense.type);
             setCustomSelect('payment-method-id', expense.paymentMethodId);
-
+           
             const categoryInput = document.getElementById('edit-expense-category');
             setCustomSelect('category', expense.category);
             categoryInput.dispatchEvent(new Event('change', { bubbles: true }));
@@ -2166,7 +2156,7 @@
             const displayEl = document.getElementById('payment-methods-display');
             const optionsContainer = document.querySelector('#expense-payment-method-id-button').nextElementSibling;
             const editOptionsContainer = document.querySelector('#edit-expense-payment-method-id-button').nextElementSibling;
-
+           
             displayEl.innerHTML = '';
             optionsContainer.innerHTML = '';
             if(editOptionsContainer) editOptionsContainer.innerHTML = '';
@@ -2190,11 +2180,11 @@
             displayEl.querySelectorAll('.edit-method-btn').forEach(btn => btn.addEventListener('click', e => openPaymentMethodEditModal(e.currentTarget.dataset.id)));
         }
 
-        function createExpenseCardHTML(expense, participantsMap) {
+        function createExpenseCardHTML(expense, participantsMap, paymentMethodsMap, showAmount = true) {
             let payerName = participantsMap.get(expense.payerId) || expense.payerNameGuest || 'Desconocido';
             const isShared = expense.type === 'shared';
             const isFixed = expense.isFixed;
-            let colorClass = isShared ? 'text-red-600' : 'text-blue-600'; // Adjusted color
+            let colorClass = isShared ? 'red' : 'blue';
             let borderColorClass = isShared ? 'border-red-400' : 'border-blue-400';
             let typeLabel = isShared ? 'Compartido' : 'Personal';
 
@@ -2202,51 +2192,40 @@
                 borderColorClass = 'border-purple-400';
                 typeLabel += ' Fijo';
             }
-
+           
             const subcategoryLabel = expense.subcategory ? ` (${expense.subcategory})` : '';
             const descriptionHTML = `<p class='font-bold text-gray-800'>${expense.description}${subcategoryLabel}</p>`;
-
-            // Category tag is now inside the details
+           
             let subtitleContent = `${typeLabel} | Día: ${formatDate(expense.date)}`;
             if (!isShared) {
                 subtitleContent += ` | Pagó: ${payerName}`;
             }
-            const subtitleHTML = `<p class='text-xs text-gray-500 mt-1 flex items-center flex-wrap'>${subtitleContent}</p>`;
-
-            const amountHTML = `<p class='text-lg font-extrabold ${colorClass}'>${formatCurrency(expense.amount)}</p>`;
-
-            // --- Details Section Logic ---
+            const subtitleHTML = `<p class='text-xs text-gray-500 mt-1'>${subtitleContent}</p>`;
+           
+            const amountHTML = showAmount ? `<p class='text-lg font-extrabold text-${colorClass}-600'>${formatCurrency(expense.amount)}</p>` : '';
+           
+            const isCollapsible = isShared;
+           
             let detailContent = `
-                <div class='flex flex-wrap gap-2 items-center mb-2'>
-                     <span class='inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800 mr-2'><i class="fas fa-tag mr-1"></i>${expense.category}</span>
-                </div>`;
-
-            if (isShared) {
-                const splitAmount = expense.splitAmount || (expense.amount / (appState.participants.length || 1)); // Avoid division by zero
-                let balanceTags = appState.participants.map(p => {
-                    if (p.id === expense.payerId) {
-                        return `<span class='inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 mr-1'>${p.name}: Pagó ${formatCurrency(expense.amount)}</span>`;
-                    } else {
-                        return `<span class='inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800 mr-1'>${p.name}: Debe ${formatCurrency(splitAmount)}</span>`;
-                    }
-                }).join('');
-                // If payer was a guest
-                 if (expense.payerId.startsWith('guest_')) {
-                     balanceTags = `<span class='inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800 mr-1'>Pagó (Invitado): ${payerName} ${formatCurrency(expense.amount)}</span>` + balanceTags;
-                 }
-
-                detailContent += `<div class='flex flex-wrap gap-1 mb-3'>${balanceTags}</div>`;
-            }
-
-            detailContent += `
                 <div class='flex gap-4 mt-2 justify-end'>
                     <button data-id='${expense.id}' class='edit-expense-btn text-gray-500 hover:text-blue-500 text-xs font-bold flex items-center gap-1'><i class='fas fa-edit'></i> Editar</button>
                     <button data-id='${expense.id}' class='delete-btn text-gray-500 hover:text-red-500 text-xs font-bold flex items-center gap-1'><i class='fas fa-trash'></i> Eliminar</button>
                 </div>`;
+           
+            if (isShared) {
+                const splitAmount = expense.splitAmount || (expense.amount / appState.participants.length);
+                let balanceTags = appState.participants.map(p => {
+                    if (p.id === expense.payerId) {
+                        return `<span class='inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 mr-1'>${p.name}: Pagó (Total): ${formatCurrency(expense.amount)}</span>`;
+                    } else {
+                        return `<span class='inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800 mr-1'>${p.name}: Debe: ${formatCurrency(splitAmount)}</span>`;
+                    }
+                }).join('');
+                detailContent = `<div class='flex flex-wrap gap-1 mb-3'>${balanceTags}</div>` + detailContent;
+            }
 
-            // Always show details initially for non-shared, keep collapsible for shared
             const detailSectionHTML = `
-                <div id='detail-${expense.id}' class='expense-detail ${isShared ? 'hidden' : ''}'>
+                <div id='detail-${expense.id}' class='expense-detail ${isCollapsible ? 'hidden' : ''}'>
                     <div class='mt-3 pt-3 border-t border-dashed border-gray-200'>
                         ${detailContent}
                     </div>
@@ -2254,40 +2233,60 @@
 
             return `
             <div class='p-3 bg-white border-l-4 ${borderColorClass} rounded-lg shadow-sm' data-expense-id='${expense.id}'>
-                <div class='flex justify-between items-start ${isShared ? "expense-header" : ""}' ${isShared ? `data-toggle='${expense.id}'` : ""}>
+                <div class='flex justify-between items-start ${isCollapsible ? "expense-header" : ""}' ${isCollapsible ? `data-toggle='${expense.id}'` : ""}>
                     <div class='flex-1 min-w-0'>
                         ${descriptionHTML}
                         ${subtitleHTML}
                     </div>
                     <div class='flex flex-col items-end ml-4'>
                         ${amountHTML}
-                        ${isShared ? '<i class="fas fa-chevron-down text-gray-400 text-xs mt-1"></i>' : ''}
                     </div>
                 </div>
                 ${detailSectionHTML}
             </div>`;
         }
 
-
-
-        function renderExpenseReport(filteredExpenses) {
-            const reportEl = document.getElementById('expense-report-container');
+        function renderExpenseReportByCategory(filteredExpenses, summary) {
+            const reportEl = document.getElementById('expense-report-by-category');
             reportEl.innerHTML = '';
             if (filteredExpenses.length === 0) {
-                reportEl.innerHTML = `<p class='text-gray-500 text-center py-8 italic'>No hay gastos que coincidan con los filtros seleccionados.</p>`;
+                reportEl.innerHTML = `<p class='text-gray-500 text-center py-8 italic'>No hay gastos en este ciclo.</p>`;
                 return;
             }
-
+           
             const participantsMap = new Map(appState.participants.map(p => [p.id, p.name]));
+            const paymentMethodsMap = new Map(appState.paymentMethods.map(m => [m.id, m]));
+           
+            const groupedExpenses = filteredExpenses.reduce((acc, expense) => {
+                const category = expense.category || 'Sin Categoría';
+                if (!acc[category]) acc[category] = [];
+                acc[category].push(expense);
+                return acc;
+            }, {});
 
-            const sortedExpenses = filteredExpenses.sort((a, b) => new Date(b.date) - new Date(a.date));
-
-            reportEl.innerHTML = sortedExpenses.map(exp => createExpenseCardHTML(exp, participantsMap)).join('');
+            Object.keys(groupedExpenses).sort().forEach(categoryName => {
+                const expenses = groupedExpenses[categoryName];
+                const categoryTotal = expenses.reduce((sum, exp) => sum + exp.amount, 0);
+                const categoryConfig = appState.categories.find(c => c.name === categoryName);
+                const budget = categoryConfig?.budget || 0;
+                const showAmountInCard = expenses.length > 1;
+               
+                const categoryContainer = document.createElement('div');
+                categoryContainer.className = "bg-gray-50 p-4 rounded-xl border";
+                categoryContainer.innerHTML = `
+                    <div class='flex justify-between items-center pb-2 mb-2 border-b'>
+                        <h4 class='text-lg font-bold text-gray-700'>${categoryName}</h4>
+                        <span class='font-semibold'>${formatCurrency(categoryTotal)}</span>
+                    </div>
+                    <div class='space-y-3 mt-3'>
+                        ${expenses.sort((a,b) => new Date(b.date) - new Date(a.date)).map(exp => createExpenseCardHTML(exp, participantsMap, paymentMethodsMap, showAmountInCard)).join('')}
+                    </div>`;
+                reportEl.appendChild(categoryContainer);
+            });
 
             reportEl.removeEventListener('click', handleExpenseReportClick);
             reportEl.addEventListener('click', handleExpenseReportClick);
         }
-
 
         function handleExpenseReportClick(e) {
             const target = e.target.closest('button, .expense-header');
@@ -2297,21 +2296,13 @@
 
             if (expenseId) {
                 const detailEl = document.getElementById(`detail-${expenseId}`);
-                 if (detailEl) {
-                    detailEl.classList.toggle('hidden');
-                    // Toggle chevron direction
-                    const chevron = target.querySelector('.fa-chevron-down');
-                    if (chevron) {
-                        chevron.classList.toggle('rotate-180');
-                    }
-                }
+                detailEl?.classList.toggle('hidden');
             } else if (id && target.classList.contains('edit-expense-btn')) {
                 openExpenseEditModal(id);
             } else if (id && target.classList.contains('delete-btn')) {
                 removeExpense(id);
             }
         }
-
 
         function renderFixedExpensesSummary() {
             const fixedEl = document.getElementById('fixed-expenses-summary');
@@ -2322,7 +2313,7 @@
                  fixedEl.innerHTML = '<p class="text-gray-500 italic">No hay gastos fijos para este ciclo.</p>';
                  return;
             }
-
+           
             const participantsMap = new Map(appState.participants.map(p => [p.id, p.name]));
             const sharedFixed = fixedExpenses.filter(exp => exp.type === 'shared');
             const personalFixed = fixedExpenses.filter(exp => exp.type === 'personal');
@@ -2348,8 +2339,8 @@
                 const pExpenses = personalFixed.filter(exp => exp.payerId === p.id);
                 if (pExpenses.length > 0) {
                     html += `<div class="mb-4">
-                                <h4 class="font-bold text-sm text-blue-800 bg-blue-100 p-2 rounded-t-lg">Fijos de ${p.name}</h4>
-                                <div class="space-y-2 border border-t-0 border-blue-200 p-2 rounded-b-lg">`;
+                                 <h4 class="font-bold text-sm text-blue-800 bg-blue-100 p-2 rounded-t-lg">Fijos de ${p.name}</h4>
+                                 <div class="space-y-2 border border-t-0 border-blue-200 p-2 rounded-b-lg">`;
                     html += pExpenses.map(exp => `
                         <div class="p-2 bg-white rounded-md border border-gray-200">
                             <div class="flex justify-between items-center">
@@ -2363,13 +2354,13 @@
 
             fixedEl.innerHTML = html;
         }
-
+       
         function renderSharedBalanceSummary(summary) {
             const sharedBalanceEl = document.getElementById('shared-balance-summary');
             const balances = summary.participantData.filter(p => Math.abs(p.balance) > 0.01);
-
+           
             let balanceHtml = '';
-
+           
             if (summary.guestDebtTotal > 0) {
                  balanceHtml += `<div class="p-3 bg-yellow-100 border-yellow-400 rounded-lg flex items-center justify-between"><span class="font-bold text-yellow-800"><i class="fas fa-users mr-2"></i> Invitados Deben</span><p class="font-extrabold text-red-600">${formatCurrency(summary.guestDebtTotal)}</p></div>`;
             }
@@ -2378,7 +2369,7 @@
                 sharedBalanceEl.innerHTML = `<div class="text-center p-4 bg-indigo-50 rounded-lg"><i class="fas fa-handshake text-indigo-500 text-3xl mb-2"></i><p class="font-bold">¡Cuentas claras!</p></div>`;
                 return;
             }
-
+           
             balanceHtml += balances.map(p => {
                 const isPositive = p.balance > 0;
                 return `
@@ -2387,7 +2378,7 @@
                         <p class="font-extrabold text-sm ${isPositive ? 'balance-positive' : 'balance-negative'} flex items-center"><i class="fas ${isPositive ? 'fa-arrow-up' : 'fa-arrow-down'} mr-2"></i>${isPositive ? 'Le deben' : 'Debe'}: ${formatCurrency(Math.abs(p.balance))}</p>
                     </div>`;
             }).join('');
-
+           
             sharedBalanceEl.innerHTML = balanceHtml;
         }
 
@@ -2397,7 +2388,7 @@
 
             if (categoryChart) categoryChart.destroy();
             if (filteredExpenses.length === 0) return noDataEl.classList.remove('hidden');
-
+           
             noDataEl.classList.add('hidden');
 
             const groupedData = filteredExpenses.reduce((acc, expense) => {
@@ -2424,7 +2415,7 @@
                 const totalSpent = groupedData[label];
                 const category = appState.categories.find(c => c.name === label);
                 const budget = category?.budget || 0;
-
+               
                 if (budget > 0 && totalSpent > budget) {
                     datasets[0].data.push(budget);
                     datasets[1].data.push(totalSpent - budget);
@@ -2465,7 +2456,7 @@
             });
         }
 
-        function renderCreditCardSummary(allExpenses) {
+        function renderCreditCardSummary() { // CORREGIDO: No necesita argumentos, usa globales
             const creditCards = appState.paymentMethods.filter(m => m.type === 'credit');
             const container = document.getElementById('credit-card-summary-cards');
             const section = document.getElementById('credit-card-summary-section');
@@ -2478,27 +2469,32 @@
             container.innerHTML = '';
 
             creditCards.forEach(card => {
-                const { startDate, closingDate, paymentDate } = getCycleDates(card);
+                // CORREGIDO: Usa `currentFilterDate` como referencia para el ciclo
+                const { startDate, closingDate, paymentDate } = getCycleDates(card, currentFilterDate);
                 if (!startDate) return;
 
-                const startDateObj = new Date(startDate + "T00:00:00");
-                const closingDateObj = new Date(closingDate + "T00:00:00");
+                // Usa UTC para comparar fechas y evitar problemas de zona horaria
+                const startDateUTC = new Date(startDate + "T00:00:00Z").getTime();
+                const closingDateUTC = new Date(closingDate + "T23:59:59Z").getTime(); // Incluir todo el día de cierre
 
-                const cardExpensesInCycle = (allExpenses || []).filter(exp => {
+                const cardExpensesInCycle = (appState.expenses || []).filter(exp => {
                     if (!exp.date) return false;
-                    const expDate = new Date(exp.date + "T00:00:00");
-                    return exp.paymentMethodId === card.id && expDate >= startDateObj && expDate <= closingDateObj;
+                    const expDateUTC = new Date(exp.date + "T00:00:00Z").getTime();
+                    return exp.paymentMethodId === card.id && expDateUTC >= startDateUTC && expDateUTC <= closingDateUTC;
                 });
-
+               
                 const totalSpent = cardExpensesInCycle.reduce((sum, exp) => sum + exp.amount, 0);
 
-                const today = new Date();
+                const todayUTC = new Date().getTime(); // Usar la fecha actual para la barra de progreso
+                const startDateObj = new Date(startDate + "T00:00:00Z");
+                const closingDateObj = new Date(closingDate + "T00:00:00Z");
+
                 const totalDuration = closingDateObj.getTime() - startDateObj.getTime();
-                const elapsedDuration = today.getTime() - startDateObj.getTime();
+                const elapsedDuration = todayUTC - startDateObj.getTime();
                 let progress = totalDuration > 0 ? (elapsedDuration / totalDuration) * 100 : 0;
                 progress = Math.max(0, Math.min(progress, 100));
-
-                const closingDateFormatted = closingDateObj.toLocaleDateString('es-ES', { day: '2-digit' });
+               
+                const closingDateFormatted = closingDateObj.toLocaleDateString('es-ES', { day: '2-digit', timeZone: 'UTC' });
 
                 const cardHTML = `
                     <div class="p-4 rounded-lg border bg-cyan-50">
@@ -2519,119 +2515,48 @@
                 container.insertAdjacentHTML('beforeend', cardHTML);
             });
              if (container.innerHTML === '') {
-                container.innerHTML = '<p class="text-gray-500 italic text-sm col-span-full">No hay consumos con tarjetas de crédito en los ciclos actuales.</p>';
-            }
-        }
-
-        function renderParticipantFilter() {
-            const container = document.getElementById('participant-filter-container');
-            if (!container) return;
-
-            let buttonsHTML = `<button data-id="all" class="participant-filter-btn px-3 py-1 text-sm font-semibold rounded-full transition ${participantFilterId === 'all' ? 'bg-indigo-600 text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'}">Todos</button>`;
-
-            (appState.participants || []).forEach(p => {
-                buttonsHTML += `<button data-id="${p.id}" class="participant-filter-btn px-3 py-1 text-sm font-semibold rounded-full transition ${participantFilterId === p.id ? 'bg-indigo-600 text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'}">${p.name}</button>`;
-            });
-
-            container.innerHTML = buttonsHTML;
-
-            container.querySelectorAll('.participant-filter-btn').forEach(btn => {
-                btn.addEventListener('click', () => {
-                    participantFilterId = btn.dataset.id;
-                    // Reset credit card filter when participant changes
-                    paymentMethodFilterId = 'all'; 
-                    renderUI(); // Re-render everything to apply the filter
-                });
-            });
-        }
-
-        function renderPaymentMethodFilter() {
-            const container = document.getElementById('payment-method-filter-container');
-            if (!container) return;
-
-            const creditCards = (appState.paymentMethods || []).filter(m => m.type === 'credit');
-            const hasCashDebit = (appState.paymentMethods || []).some(m => m.type === 'cash');
-
-            let buttonsHTML = '';
-
-            // Botón Efectivo/Débito (solo si existen)
-             if (hasCashDebit) {
-                 buttonsHTML += `<button data-id="cash-debit" class="payment-method-filter-btn px-3 py-1 text-sm font-semibold rounded-full transition ${paymentMethodFilterId === 'cash-debit' ? 'bg-green-600 text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'}">Efectivo/Débito</button>`;
+                 container.innerHTML = '<p class="text-gray-500 italic text-sm col-span-full">No hay consumos con tarjetas de crédito en el ciclo de este mes.</p>';
              }
-
-            // Botón T. Crédito (Todas) (solo si existen tarjetas)
-            if(creditCards.length > 0) {
-                buttonsHTML += `<button data-id="credit-all" class="payment-method-filter-btn px-3 py-1 text-sm font-semibold rounded-full transition ${paymentMethodFilterId === 'credit-all' ? 'bg-cyan-600 text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'}">T. Crédito (Todas)</button>`;
-                
-                // Botones individuales para cada tarjeta
-                creditCards.forEach(card => {
-                    buttonsHTML += `<button data-id="${card.id}" class="payment-method-filter-btn px-3 py-1 text-sm font-semibold rounded-full transition ${paymentMethodFilterId === card.id ? 'bg-cyan-600 text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'}">${card.name}</button>`;
-                });
-            }
-
-            container.innerHTML = buttonsHTML;
-
-            container.querySelectorAll('.payment-method-filter-btn').forEach(btn => {
-                btn.addEventListener('click', () => {
-                    paymentMethodFilterId = btn.dataset.id;
-                     // Reset participant filter when payment method changes to 'all' or 'cash-debit' or 'credit-all'
-                    if (['all', 'cash-debit', 'credit-all'].includes(paymentMethodFilterId)) {
-                       participantFilterId = 'all';
-                    }
-                    renderUI();
-                });
-            });
         }
-
-
-
+       
         // --- Main Render Function ---
         function renderUI() {
             if (!appState) return;
             const filterMonthString = getFilterMonthString(currentFilterDate);
             let filteredExpenses = (appState.expenses || []).filter(e => e.date && e.date.startsWith(filterMonthString));
 
+            // Si no hay gastos en el mes actual y hay gastos en total Y no es el mes actual, intenta ir al mes del último gasto
             if (filteredExpenses.length === 0 && appState.expenses && appState.expenses.length > 0 && filterMonthString !== getFilterMonthString(new Date())) {
-                 const latestExpenseDate = new Date(Math.max(...appState.expenses.map(e => new Date(e.date))));
-                 if(latestExpenseDate && !isNaN(latestExpenseDate)) {
-                    currentFilterDate = latestExpenseDate;
-                    filteredExpenses = appState.expenses.filter(e => e.date && e.date.startsWith(getFilterMonthString(currentFilterDate)));
-                 }
+                const validExpenseDates = appState.expenses.map(e => e.date ? new Date(e.date + "T00:00:00Z").getTime() : 0).filter(t => t > 0);
+                if (validExpenseDates.length > 0) {
+                    const latestExpenseTime = Math.max(...validExpenseDates);
+                    const latestExpenseDate = new Date(latestExpenseTime);
+                    latestExpenseDate.setUTCDate(1); // Ir al inicio del mes del último gasto
+                    if (getFilterMonthString(latestExpenseDate) !== filterMonthString) {
+                         console.log("No expenses found for current filter, jumping to last expense month:", latestExpenseDate);
+                         currentFilterDate = latestExpenseDate;
+                         filteredExpenses = (appState.expenses || []).filter(e => e.date && e.date.startsWith(getFilterMonthString(currentFilterDate)));
+                    }
+                }
             }
+
 
             const summary = calculateSummary(appState, filteredExpenses);
-
-            let expensesForReport = filteredExpenses;
-            if (participantFilterId !== 'all') {
-                expensesForReport = expensesForReport.filter(exp => exp.payerId === participantFilterId);
-            }
-
-            // Apply Payment Method Filter
-             const paymentMethodsMap = new Map((appState.paymentMethods || []).map(m => [m.id, m.type]));
-            if (paymentMethodFilterId === 'cash-debit') {
-                expensesForReport = expensesForReport.filter(exp => paymentMethodsMap.get(exp.paymentMethodId) === 'cash');
-            } else if (paymentMethodFilterId === 'credit-all') {
-                expensesForReport = expensesForReport.filter(exp => paymentMethodsMap.get(exp.paymentMethodId) === 'credit');
-            } else if (paymentMethodFilterId !== 'all') { // Specific credit card ID
-                 expensesForReport = expensesForReport.filter(exp => exp.paymentMethodId === paymentMethodFilterId);
-            }
-            // If paymentMethodFilterId is 'all', no additional filtering is needed here.
-
+           
             renderMonthSelector();
             renderDashboard(summary);
             renderParticipantsConfig(appState.participants, summary);
             renderCategoriesModal(appState.categories);
             renderPaymentMethodsModal(appState.paymentMethods);
-            renderCreditCardSummary(appState.expenses);
-            renderParticipantFilter();
-            renderPaymentMethodFilter();
-            renderExpenseReport(expensesForReport);
+            renderCreditCardSummary(); // CORREGIDO: Ya no necesita argumentos
+            renderExpenseReportByCategory(filteredExpenses, summary);
             renderCategoryChart(filteredExpenses);
             renderFixedExpensesSummary();
             renderSharedBalanceSummary(summary);
-
-            document.getElementById('expense-diagnostic').textContent = `Mostrando ${expensesForReport.length} de ${filteredExpenses.length} gastos en este ciclo.`;
-
+           
+            document.getElementById('expense-diagnostic').textContent = `Gastos en este ciclo: ${filteredExpenses.length}`;
+           
+            // Trigger change events para asegurar que los selects personalizados se actualicen si es necesario
             document.getElementById('expense-payment-method-id').dispatchEvent(new Event('change'));
             document.getElementById('expense-category').dispatchEvent(new Event('change'));
         }
@@ -2640,7 +2565,7 @@
         window.onerror = function (message, source, lineno, colno, error) {
             console.error("Error global:", message, error);
             showModal("Ocurrió un error inesperado.", error?.message || message, "Error Crítico");
-            return true;
+            return true; 
         };
     </script>
 </body>
