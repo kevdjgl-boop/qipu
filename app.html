@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Monedero V.2.7 (Comentarios Corregidos)</title>
+    <title>Monedero V.2.8 (Errores Corregidos)</title>
     <!-- Incluye Tailwind CSS para estilizado rápido y responsive -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Incluye Font Awesome para íconos de balance -->
@@ -1636,7 +1636,7 @@
              
             // Mostrar/ocultar el label "No hay filtros"
             // Solo ocultar si hay etiquetas de CAT o PART activas
-             noFiltersLabel.classList.toggle('hidden', catActive || partActive);
+             if(noFiltersLabel) noFiltersLabel.classList.toggle('hidden', catActive || partActive);
 
 
             // Actualizar estado 'active' de las etiquetas clickeables en las listas
@@ -1649,7 +1649,7 @@
             
              // Sincronizar el input de descripción con el estado (si fue limpiado por 'reset')
              const descriptionInput = document.getElementById('filter-description');
-             if(descriptionInput.value !== activeFilters.description) {
+             if(descriptionInput && descriptionInput.value !== activeFilters.description) {
                  descriptionInput.value = activeFilters.description;
              }
         }
@@ -1689,14 +1689,15 @@
 
         // --- El resto de las funciones (render, cálculo, etc.) se mantienen mayormente sin cambios ---
         
-        // --- Lógica para los menús desplegables personalizados ---
+        // CORREGIDO: Añadir más chequeos en setupCustomSelects
         function setupCustomSelects() {
             window.addEventListener('click', (e) => {
                 document.querySelectorAll('.custom-select-container').forEach(container => {
                     if (!container.contains(e.target)) {
                         const optionsDiv = container.querySelector('.custom-select-options');
-                        if (optionsDiv) optionsDiv.classList.add('hidden'); // CORREGIDO: Añadir chequeo
-                        container.querySelector('.fa-chevron-down')?.classList.remove('rotate-180');
+                        if (optionsDiv) optionsDiv.classList.add('hidden'); 
+                        const chevronIcon = container.querySelector('.fa-chevron-down');
+                        if (chevronIcon) chevronIcon.classList.remove('rotate-180');
                     }
                 });
              });
@@ -1706,7 +1707,6 @@
                 const button = container.querySelector('.custom-select-button');
                 const optionsContainer = container.querySelector('.custom-select-options');
                
-                // Asegurarse que button y optionsContainer existen
                 if (!button || !optionsContainer) {
                     console.warn('Custom select missing button or options container:', container);
                     return;
@@ -1719,12 +1719,14 @@
                             otherOptions.classList.add('hidden');
                             const parentContainer = otherOptions.closest('.custom-select-container');
                              if (parentContainer) {
-                                parentContainer.querySelector('.fa-chevron-down')?.classList.remove('rotate-180');
+                                const otherChevron = parentContainer.querySelector('.fa-chevron-down');
+                                if (otherChevron) otherChevron.classList.remove('rotate-180');
                             }
                         }
                     });
                     optionsContainer.classList.toggle('hidden');
-                    button.querySelector('.fa-chevron-down')?.classList.toggle('rotate-180');
+                    const chevron = button.querySelector('.fa-chevron-down');
+                    if (chevron) chevron.classList.toggle('rotate-180');
                 });
 
                 optionsContainer.addEventListener('click', (e) => {
@@ -1743,7 +1745,8 @@
                         option.classList.add('selected');
 
                         optionsContainer.classList.add('hidden');
-                        button.querySelector('.fa-chevron-down')?.classList.remove('rotate-180');
+                        const chevron = button.querySelector('.fa-chevron-down');
+                        if(chevron) chevron.classList.remove('rotate-180');
                         hiddenInput.dispatchEvent(new Event('change', { bubbles: true }));
                     }
                 });
@@ -2515,7 +2518,7 @@
             displayEl.querySelectorAll('.edit-method-btn').forEach(btn => btn.addEventListener('click', e => openPaymentMethodEditModal(e.currentTarget.dataset.id)));
         }
 
-        // MODIFICADO: Añadir etiquetas a la tarjeta de gasto
+        // CORREGIDO: Eliminar comentarios restantes
         function createExpenseCardHTML(expense, participantsMap, paymentMethodsMap, showAmount = true) {
             let payerName = participantsMap.get(expense.payerId) || expense.payerNameGuest || 'Desconocido';
             const isShared = expense.type === 'shared';
@@ -2532,21 +2535,16 @@
             const subcategoryLabel = expense.subcategory ? ` (${expense.subcategory})` : '';
             const descriptionHTML = `<p class='font-bold text-gray-800'>${expense.description}${subcategoryLabel}</p>`;
            
-            // NUEVO: Crear etiquetas para categoría y pagador
             const categoryTag = expense.category ? `<span class="expense-card-tag category">${expense.category}</span>` : '';
-            // Mostrar etiqueta de pagador SIEMPRE (incluso en compartidos, indicando quién pagó)
             const participantTag = `<span class="expense-card-tag participant">${payerName}</span>`;
             const tagsHTML = `<div class="mt-1">${categoryTag}${participantTag}</div>`;
 
-
             let subtitleContent = `${typeLabel} | Día: ${formatDate(expense.date)}`;
-            
             const subtitleHTML = `<p class='text-xs text-gray-500 mt-1'>${subtitleContent}</p>`;
            
             const amountHTML = showAmount ? `<p class='text-lg font-extrabold text-${colorClass}-600'>${formatCurrency(expense.amount)}</p>` : '';
            
-            // Cambiado: Ahora solo los gastos compartidos son colapsables por defecto
-            const isCollapsible = isShared; // Solo compartidos son colapsables
+            const isCollapsible = isShared; 
            
             let detailContent = `
                 <div class='flex gap-4 mt-2 justify-end'>
@@ -2554,23 +2552,19 @@
                     <button data-id='${expense.id}' class='delete-btn text-gray-500 hover:text-red-500 text-xs font-bold flex items-center gap-1'><i class='fas fa-trash'></i> Eliminar</button>
                 </div>`;
            
-            // Mostrar división solo para compartidos
             if (isShared) {
                  const splitAmount = expense.splitAmount || (expense.amount / appState.participants.length);
                  let balanceTags = appState.participants.map(p => {
-                    // No mostrar "Pagó" aquí ya que está en la etiqueta principal
                     if (p.id !== expense.payerId) {
                          return `<span class='inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800 mr-1'>${p.name}: Debe: ${formatCurrency(splitAmount)}</span>`;
                     }
-                    return ''; // No mostrar nada para el pagador en esta sección
+                    return ''; 
                  }).join('');
-                 // Añadir solo si hay algo que mostrar (más de 1 participante)
                  if(appState.participants.length > 1) {
                     detailContent = `<div class='flex flex-wrap gap-1 mb-3'>${balanceTags}</div>` + detailContent;
                  }
             }
 
-            // Cambiado: El detalle SIEMPRE se genera, pero su visibilidad depende de 'isCollapsible'
             const detailSectionHTML = `
                 <div id='detail-${expense.id}' class='expense-detail ${isCollapsible ? 'hidden' : ''}'>
                     <div class='mt-3 pt-3 border-t border-dashed border-gray-200'>
@@ -2583,7 +2577,7 @@
                 <div class='flex justify-between items-start ${isCollapsible ? "expense-header" : ""}' ${isCollapsible ? `data-toggle='${expense.id}'` : ""}>
                     <div class='flex-1 min-w-0'>
                         ${descriptionHTML}
-                        ${tagsHTML} {/* Añadido aquí */}
+                        ${tagsHTML}
                         ${subtitleHTML}
                     </div>
                     <div class='flex flex-col items-end ml-4'>
@@ -2976,8 +2970,9 @@
 
            
             // Trigger change events para asegurar que los selects personalizados se actualicen si es necesario
-            document.getElementById('expense-payment-method-id').dispatchEvent(new Event('change'));
-            document.getElementById('expense-category').dispatchEvent(new Event('change'));
+             // Añadir chequeos para evitar errores si los elementos no existen aún
+             document.getElementById('expense-payment-method-id')?.dispatchEvent(new Event('change'));
+             document.getElementById('expense-category')?.dispatchEvent(new Event('change'));
         }
 
         window.onload = initializeFirebase;
