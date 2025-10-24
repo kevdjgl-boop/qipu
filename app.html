@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Monedero V.2.14 (Historial Glass)</title>
+    <title>Monedero V.2.19 (Reestructuración Estética)</title>
     <!-- Incluye Tailwind CSS para estilizado rápido y responsive -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Incluye Font Awesome para íconos de balance -->
@@ -18,6 +18,7 @@
             background-color: #f3f4f6;
             overflow-x: hidden;
             padding-bottom: 4rem; 
+            width: 100vw; /* 4. Haz que el body ocupe el 100vw */
         }
         
         .no-scroll {
@@ -29,12 +30,13 @@
             padding: 1.5rem;
             border-radius: 1rem;
             box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1);
+            border: none; /* 2. Quitamos bordes de colores */
         }
         /* Dashboard principal - Estilo destacado */
         #global-main-card {
             background-color: #111827; /* Gray-900 */
             color: white;
-            border-bottom: 4px solid #4F46E5; /* Indigo */
+            border-bottom: none; /* 2. Quitamos el borde inferior */
         }
         /* Estilo para los métricos dentro del dark card */
         .metric-value {
@@ -49,18 +51,37 @@
              font-weight: 600;
              text-transform: uppercase;
         }
+
+        /* --- ESTILOS DE INPUTS Y SELECTS (3. Sin bordes y fondo #E1E3E7) --- */
+        .custom-input, .custom-select-button {
+            background-color: #E1E3E7; /* Fondo gris claro */
+            border: none !important; /* Quitar bordes */
+            box-shadow: none !important;
+            padding: 0.75rem !important;
+            border-radius: 0.5rem !important;
+            transition: background-color 0.2s, box-shadow 0.2s;
+        }
+        .custom-input:focus, .custom-select-button:focus {
+            background-color: #d8d8d8; 
+            outline: none;
+            box-shadow: 0 0 0 2px rgba(79, 70, 229, 0.5); /* Sutil ring focus */
+        }
+        .custom-select-options {
+            border: 1px solid #d1d5db;
+        }
+
         /* --- ESTILOS CRÍTICOS PARA TARJETAS DE SALDO (Glassmorphism) --- */
         .balance-glass-card {
             position: relative;
-            overflow: hidden; /* Para contener el resplandor */
+            overflow: hidden; 
             background-color: rgba(255, 255, 255, 0.7);
-            border-radius: 1.5rem; /* 24px */
-            padding: 1.5rem; /* 24px */
+            border-radius: 1.5rem; 
+            padding: 1.5rem; 
             border: 1px solid rgba(255, 255, 255, 0.2);
             box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.1);
             backdrop-filter: blur(10px);
             -webkit-backdrop-filter: blur(10px);
-            min-height: 300px; /* Darle altura */
+            min-height: 300px; 
             display: flex;
             flex-direction: column;
             justify-content: space-between;
@@ -83,50 +104,63 @@
         .balance-glass-card.gasto-glow::before {
             background-image: radial-gradient(circle, #fb923c, #f43f5e);
         }
-        .glass-card-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-        .glass-card-title {
-            font-weight: 600;
-            color: #374151; /* gray-700 */
-            font-size: 1rem; /* 16px */
-        }
-        .glass-card-icon {
-            width: 2.5rem; /* 40px */
-            height: 2.5rem; /* 40px */
-            border-radius: 9999px; /* full */
-            background-color: rgba(255, 255, 255, 0.5);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 0.875rem; /* 14px */
-            color: #1f2937; /* gray-800 */
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-        }
         .glass-card-amount {
-            font-weight: 800; /* extrabold */
-            color: #111827; /* gray-900 */
-            font-size: 3rem; /* 48px */
+            font-weight: 800;
+            color: #111827; 
+            font-size: 3rem;
             line-height: 1;
             margin-top: 1rem;
             margin-bottom: 0.5rem;
-        }
-        .glass-card-subtitle {
-            font-weight: 500;
-            color: #4b5563; /* gray-600 */
-            font-size: 0.875rem; /* 14px */
-        }
-        
-        /* Adaptar los colores de texto de monto */
-        .glass-card-amount.saldo-text {
-            color: #047857; /* green-700 */
-        }
-        .glass-card-amount.gasto-text {
-            color: #be123c; /* rose-700 */
+            display: block;
         }
         /* --- FIN ESTILOS GLASSMORPHISM --- */
+
+        /* --- ESTILO TARJETA DE PARTICIPANTE (Dark Glass 2.0) --- */
+        .participant-summary-card {
+            background-color: rgba(17, 24, 39, 0.9);
+            color: white;
+            border-radius: 1.5rem;
+            padding: 1.5rem;
+            overflow: hidden;
+            position: relative;
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.3), 0 0 0 1px rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(5px);
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+        .participant-summary-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 50%;
+            height: 50%;
+            background: radial-gradient(circle at 10% 10%, rgba(79, 70, 229, 0.3), transparent 70%); 
+            filter: blur(50px);
+            z-index: 0;
+            pointer-events: none;
+        }
+        .participant-content {
+            position: relative;
+            z-index: 1; 
+        }
+        .metric-detail-container {
+            background-color: rgba(255, 255, 255, 0.1); 
+            padding: 1rem;
+            border-radius: 1rem;
+        }
+        .main-balance-amount {
+            font-size: 2.25rem; 
+            font-weight: 900;
+            line-height: 1.1;
+            display: block;
+            margin-top: 0.5rem;
+        }
+        .balance-positive-dark { color: #34D399; } /* Green-400 */
+        .balance-negative-dark { color: #F87171; } /* Red-400 */
+        /* --- FIN ESTILO TARJETA PARTICIPANTE --- */
+
 
         /* --- NUEVO: ESTILO PARA TARJETAS DEL HISTORIAL (Glass) --- */
         .history-card {
@@ -175,6 +209,17 @@
             text-align: right;
         }
         /* --- FIN NUEVO ESTILO HISTORIAL --- */
+        
+        /* 1. Estilo para el contenedor del gráfico colapsable */
+        #chart-collapsible-content {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.5s ease-out;
+        }
+        #chart-collapsible-content.open {
+            max-height: 1000px; /* Suficientemente grande para el contenido */
+            transition: max-height 0.7s ease-in;
+        }
 
 
         .balance-positive { color: #10B981; } /* Green */
@@ -187,6 +232,7 @@
         }
         /* Estilo específico para la tarjeta de participante (más grueso) */
         .participant-card {
+            /* Mantenemos el estilo para el sidebar */
             border: 1px solid #d8b4fe; /* Purple-300 */
             background-color: #f3e8ff; /* Purple-50 */
             padding: 1.25rem;
@@ -487,17 +533,17 @@
 
                 
                     <!-- CARDS INDIVIDUALES Y AHORRO MUTUO -->
-                    <div class="section-card border-t-4 border-teal-500 space-y-4">
+                    <div class="section-card space-y-4">
                         <h3 class="text-lg font-bold text-gray-700">Saldos Individuales y Metas</h3>
                         <div id="participant-summary-cards" class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <!-- Tarjetas de resumen individual se renderizan aquí -->
                         </div>
                         <div class="grid grid-cols-2 gap-4 pt-2 border-t border-gray-200">
-                            <div class="section-card border-l-4 border-yellow-500 p-4 text-center bg-yellow-50">
+                            <div class="section-card p-4 text-center bg-yellow-50">
                                 <p class="text-sm font-semibold uppercase text-yellow-700">Gastos Fijos Total</p>
                                 <span id="display-fixed-total" class="text-2xl font-extrabold text-yellow-600 block mt-2">S/ 0.00</span>
                             </div>
-                            <div class="section-card border-l-4 border-purple-500 p-4 text-center bg-purple-50">
+                            <div class="section-card p-4 text-center bg-purple-50">
                                 <p class="text-sm font-semibold uppercase text-purple-700">Meta Ahorro Mutuo</p>
                                 <span id="display-shared-savings-goal" class="text-2xl font-extrabold text-purple-600 block mt-2">S/ 0.00</span>
                             </div>
@@ -505,7 +551,7 @@
                     </div>
 
                     <!-- NUEVO: RESUMEN DE TARJETAS DE CRÉDITO -->
-                    <div id="credit-card-summary-section" class="section-card border-t-4 border-cyan-500 space-y-4">
+                    <div id="credit-card-summary-section" class="section-card space-y-4">
                         <h3 class="text-lg font-bold text-gray-700">Consumo de Tarjetas de Crédito</h3>
                         <div id="credit-card-summary-cards" class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <!-- Las tarjetas de resumen de TC se renderizan aquí -->
@@ -516,7 +562,7 @@
                 
                 <!-- COLUMNA 3: Balance de Cuentas (Siempre visible) -->
                 <div class="lg:col-span-1">
-                    <div class="section-card border-l-4 border-indigo-500 h-full flex flex-col">
+                    <div class="section-card h-full flex flex-col">
                         <div class="flex items-center justify-between">
                             <h2 class="text-lg font-bold text-indigo-700 flex items-center">
                                 <i class="fas fa-balance-scale mr-2"></i> Balance de Cuentas
@@ -538,10 +584,15 @@
             </div>
             <!-- GRÁFICO DE DISTRIBUCIÓN DE GASTOS (Full Width) -->
             <div class="section-card">
-                <h3 class="text-xl font-bold text-gray-700 mb-4">Distribución de Gastos </h3>
-                <div class="relative h-64 md:h-80">
-                    <canvas id="category-chart"></canvas>
-                    <p id="chart-no-data" class="absolute inset-0 flex items-center justify-center text-gray-500 italic hidden">No hay datos para mostrar.</p>
+                <button id="toggle-chart-btn" class="w-full text-left flex justify-between items-center text-xl font-bold text-gray-700 mb-4 focus:outline-none">
+                    Distribución de Gastos
+                    <i id="chart-toggle-icon" class="fas fa-chevron-down transition-transform duration-300"></i>
+                </button>
+                <div id="chart-collapsible-content">
+                    <div class="relative h-64 md:h-80 pt-2 border-t border-gray-200">
+                        <canvas id="category-chart"></canvas>
+                        <p id="chart-no-data" class="absolute inset-0 flex items-center justify-center text-gray-500 italic hidden">No hay datos para mostrar.</p>
+                    </div>
                 </div>
             </div>
         </section>
@@ -551,7 +602,7 @@
         <!-- ========================================================================================= -->
         <div class="max-w-7xl mx-auto px-4 md:px-8 pt-6">
             <main class="space-y-6">
-                <section class="section-card border-t-4 border-red-500">
+                <section class="section-card">
                     <div class="flex justify-between items-center mb-4">
                         <h2 class="text-xl font-bold text-red-700">Registrar Nuevo Gasto</h2>
                         
@@ -571,11 +622,11 @@
                         <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                             <div class="md:col-span-2">
                                 <label for="expense-description" class="block text-sm font-medium text-gray-700">Descripción</label>
-                                <input type="text" id="expense-description" required class="w-full mt-1 p-3 border border-gray-300 rounded-lg focus:ring-red-500 focus:border-red-500">
+                                <input type="text" id="expense-description" required class="w-full mt-1 custom-input">
                             </div>
                             <div>
                                 <label for="expense-amount" class="block text-sm font-medium text-gray-700">Monto (S/)</label>
-                                <input type="number" id="expense-amount" min="0.01" step="0.01" required class="w-full mt-1 p-3 border border-gray-300 rounded-lg focus:ring-red-500 focus:border-red-500">
+                                <input type="number" id="expense-amount" min="0.01" step="0.01" required class="w-full mt-1 custom-input">
                             </div>
                         </div>
                         
@@ -585,7 +636,7 @@
                             <div>
                                 <label for="expense-paid-by-button" class="block text-sm font-medium text-gray-700">Pagado Por</label>
                                 <div class="relative custom-select-container mt-1">
-                                    <button type="button" id="expense-paid-by-button" class="custom-select-button w-full text-left p-3 border border-gray-300 rounded-lg bg-white flex justify-between items-center transition duration-150 ease-in-out focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                                    <button type="button" id="expense-paid-by-button" class="custom-select-button w-full text-left custom-input flex justify-between items-center transition duration-150 ease-in-out focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
                                         <span class="custom-select-display text-gray-500">Selecciona quién pagó</span>
                                         <i class="fas fa-chevron-down text-gray-400 transition-transform duration-200"></i>
                                     </button>
@@ -599,7 +650,7 @@
                             <div>
                                 <label for="expense-type-button" class="block text-sm font-medium text-gray-700">Tipo de Gasto</label>
                                 <div class="relative custom-select-container mt-1">
-                                    <button type="button" id="expense-type-button" class="custom-select-button w-full text-left p-3 border border-gray-300 rounded-lg bg-white flex justify-between items-center transition duration-150 ease-in-out focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                                    <button type="button" id="expense-type-button" class="custom-select-button w-full text-left custom-input flex justify-between items-center transition duration-150 ease-in-out focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
                                         <span class="custom-select-display">Personal</span>
                                         <i class="fas fa-chevron-down text-gray-400 transition-transform duration-200"></i>
                                     </button>
@@ -614,7 +665,7 @@
                             <div>
                                 <label for="expense-payment-method-id-button" class="block text-sm font-medium text-gray-700">Método de Pago</label>
                                 <div class="relative custom-select-container mt-1">
-                                    <button type="button" id="expense-payment-method-id-button" class="custom-select-button w-full text-left p-3 border border-gray-300 rounded-lg bg-white flex justify-between items-center transition duration-150 ease-in-out focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                                    <button type="button" id="expense-payment-method-id-button" class="custom-select-button w-full text-left custom-input flex justify-between items-center transition duration-150 ease-in-out focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
                                         <span class="custom-select-display text-gray-500">Selecciona método</span>
                                         <i class="fas fa-chevron-down text-gray-400 transition-transform duration-200"></i>
                                     </button>
@@ -633,7 +684,7 @@
                             <div>
                                 <label for="expense-category-button" class="block text-sm font-medium text-gray-700">Categoría</label>
                                 <div class="relative custom-select-container mt-1">
-                                    <button type="button" id="expense-category-button" class="custom-select-button w-full text-left p-3 border border-gray-300 rounded-lg bg-white flex justify-between items-center">
+                                    <button type="button" id="expense-category-button" class="custom-select-button w-full text-left custom-input flex justify-between items-center">
                                         <span class="custom-select-display text-gray-500">Selecciona categoría</span>
                                         <i class="fas fa-chevron-down text-gray-400"></i>
                                     </button>
@@ -645,7 +696,7 @@
                             <div>
                                 <label for="expense-subcategory-button" class="block text-sm font-medium text-gray-700">Subcategoría</label>
                                 <div class="relative custom-select-container mt-1">
-                                    <button type="button" id="expense-subcategory-button" disabled class="custom-select-button w-full text-left p-3 border border-gray-300 rounded-lg bg-gray-100 flex justify-between items-center">
+                                    <button type="button" id="expense-subcategory-button" disabled class="custom-select-button w-full text-left custom-input bg-gray-100 flex justify-between items-center">
                                         <span class="custom-select-display text-gray-500">Selecciona subcategoría</span>
                                         <i class="fas fa-chevron-down text-gray-400"></i>
                                     </button>
@@ -665,7 +716,7 @@
                                 </div>
                                 <div id="fixed-recurrence-container" class="hidden">
                                     <label for="fixed-recurrence-months" class="block text-sm font-medium text-red-700">Meses</label>
-                                    <input type="number" id="fixed-recurrence-months" min="1" max="60" value="12" class="w-24 mt-1 p-3 border border-gray-300 rounded-lg">
+                                    <input type="number" id="fixed-recurrence-months" min="1" max="60" value="12" class="w-24 mt-1 custom-input">
                                 </div>
                             </div>
                             
@@ -694,7 +745,7 @@
         <!-- SECCIÓN 3: INFORMES (GASTOS FIJOS, CALENDARIO, HISTORIAL) -->
         <!-- ========================================================================================= -->
         <div class="max-w-7xl mx-auto px-4 md:px-8 mt-6">
-            <section class="section-card border-t-4 border-gray-500 space-y-6">
+            <section class="section-card space-y-6">
                 
                 <!-- Encabezado del Informe y Filtro de Mes -->
                 <div class="flex flex-col md:flex-row justify-between md:items-center pb-2 mb-4 gap-4">
@@ -740,7 +791,7 @@
                         <!-- Filtro por descripción -->
                         <div>
                             <label for="filter-description" class="block text-xs font-medium text-gray-600 mb-1">Buscar por Descripción:</label>
-                            <input type="text" id="filter-description" placeholder="Ej: Supermercado, Luz..." class="w-full p-2 border border-gray-300 rounded-lg text-sm focus:ring-indigo-500 focus:border-indigo-500">
+                            <input type="text" id="filter-description" placeholder="Ej: Supermercado, Luz..." class="w-full mt-1 custom-input text-sm">
                         </div>
                           <!-- Filtro por etiquetas de Categoría -->
                         <div>
@@ -790,7 +841,7 @@
 
                     <!-- Columna 3 (1/3): Próximos Gastos Fijos -->
                     <aside class="lg:col-span-1">
-                        <div class="section-card border-l-4 border-red-500 h-full">
+                        <div class="section-card h-full">
                             <h3 class="text-lg font-bold text-red-700 mb-4 flex items-center">
                                 <i class="fas fa-calendar-alt mr-2"></i> Próximos Gastos Fijos
                             </h3>
@@ -934,10 +985,10 @@
             <h3 class="text-2xl font-bold mb-4 text-green-700">Configuración de Categorías y Presupuestos</h3>
             <form id="category-form" class="space-y-3 mb-6 p-4 border border-green-200 rounded-lg bg-green-50">
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
-                    <input type="text" id="category-name" placeholder="Nueva Categoría (Ej: Hogar)" required class="w-full p-2 border border-gray-300 rounded-lg">
-                    <input type="number" id="category-budget" placeholder="Presupuesto Mensual (S/)" min="0" class="w-full p-2 border border-gray-300 rounded-lg">
+                    <input type="text" id="category-name" placeholder="Nueva Categoría (Ej: Hogar)" required class="w-full custom-input">
+                    <input type="number" id="category-budget" placeholder="Presupuesto Mensual (S/)" min="0" class="w-full custom-input">
                 </div>
-                <input type="text" id="subcategory-list" placeholder="Subcategorías (Separadas por coma: Servicios, Comida, ...)" class="w-full p-2 border border-gray-300 rounded-lg">
+                <input type="text" id="subcategory-list" placeholder="Subcategorías (Separadas por coma: Servicios, Comida, ...)" class="w-full custom-input">
                 <button type="submit" class="w-full py-2 bg-green-500 text-white font-bold rounded-xl hover:bg-green-600 transition duration-300">
                     Guardar Categoría
                 </button>
@@ -967,7 +1018,7 @@
             <h4 class="font-bold text-gray-700 mb-3" id="payment-form-title">Añadir Nuevo Método:</h4>
             <form id="payment-method-form" class="space-y-3 p-4 border border-yellow-200 rounded-lg bg-yellow-50">
                 <input type="hidden" id="method-id-to-edit">
-                <input type="text" id="method-name" placeholder="Nombre del Método (Ej: Visa Banco X)" required class="w-full p-2 border border-gray-300 rounded-lg">
+                <input type="text" id="method-name" placeholder="Nombre del Método (Ej: Visa Banco X)" required class="w-full custom-input">
                 <select type="select" id="method-type" class="w-full p-2 border border-gray-300 rounded-lg bg-white" required>
                     <option value="cash">Efectivo/Débito</option>
                     <option value="credit">Tarjeta de Crédito</option>
@@ -976,7 +1027,7 @@
                 <div id="cc-config-fields" class="space-y-3 hidden">
                     <h4 class="font-bold text-yellow-800">Configuración de Ciclo (Crédito)</h4>
                     <label for="cc-config-payment-day" class="block text-sm font-medium text-gray-700">Día Límite de Pago (1-31)</label>
-                    <input type="number" id="cc-config-payment-day" min="1" max="31" placeholder="Ej: 5 (pagas el 5 de cada mes)" class="w-full p-2 border border-gray-300 rounded-lg">
+                    <input type="number" id="cc-config-payment-day" min="1" max="31" placeholder="Ej: 5 (pagas el 5 de cada mes)" class="w-full custom-input">
                 </div>
                 
                 <button type="submit" id="save-method-btn" class="w-full py-2 bg-yellow-500 text-white font-bold rounded-xl shadow-lg hover:bg-yellow-600 transition duration-300">
@@ -999,19 +1050,19 @@
                 <input type="hidden" id="participant-id-to-edit">
                 
                 <label for="p-name" class="block text-sm font-medium text-gray-700">Nombre</label>
-                <input type="text" id="p-name" required class="w-full p-3 border border-gray-300 rounded-lg focus:ring-purple-500">
+                <input type="text" id="p-name" required class="w-full custom-input">
                 
                 <label for="p-budget" class="block text-sm font-medium text-gray-700">Monto Total del Mes (S/)</label>
-                <input type="number" id="p-budget" min="0" required class="w-full p-3 border border-gray-300 rounded-lg focus:ring-purple-500">
+                <input type="number" id="p-budget" min="0" required class="w-full custom-input">
                 
                 <div class="grid grid-cols-2 gap-4">
                     <div>
                         <label for="p-shared-savings" class="block text-sm font-medium text-purple-700">Ahorro Mutuo (%):</label>
-                        <input type="number" id="p-shared-savings" min="0" max="100" required class="w-full mt-1 p-3 border border-purple-300 rounded-lg">
+                        <input type="number" id="p-shared-savings" min="0" max="100" required class="w-full mt-1 custom-input">
                     </div>
                     <div>
                         <label for="p-independent-savings" class="block text-sm font-medium text-purple-700">Ahorro Indep. (%):</label>
-                        <input type="number" id="p-independent-savings" min="0" max="100" required class="w-full mt-1 p-3 border border-purple-300 rounded-lg">
+                        <input type="number" id="p-independent-savings" min="0" max="100" required class="w-full mt-1 custom-input">
                     </div>
                 </div>
                 
@@ -1034,11 +1085,11 @@
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div class="md:col-span-2">
                         <label for="edit-expense-description" class="block text-sm font-medium text-gray-700">Descripción</label>
-                        <input type="text" id="edit-expense-description" required class="w-full mt-1 p-3 border border-gray-300 rounded-lg">
+                        <input type="text" id="edit-expense-description" required class="w-full mt-1 custom-input">
                     </div>
                     <div>
                         <label for="edit-expense-amount" class="block text-sm font-medium text-gray-700">Monto (S/)</label>
-                        <input type="number" id="edit-expense-amount" min="0.01" step="0.01" required class="w-full mt-1 p-3 border border-gray-300 rounded-lg">
+                        <input type="number" id="edit-expense-amount" min="0.01" step="0.01" required class="w-full mt-1 custom-input">
                     </div>
                 </div>
 
@@ -1047,7 +1098,7 @@
                     <div>
                         <label for="edit-expense-payer-button" class="block text-sm font-medium text-gray-700">Pagado Por</label>
                         <div class="relative custom-select-container mt-1">
-                            <button type="button" id="edit-expense-payer-button" class="custom-select-button w-full text-left p-3 border border-gray-300 rounded-lg bg-white flex justify-between items-center">
+                            <button type="button" id="edit-expense-payer-button" class="custom-select-button w-full text-left custom-input flex justify-between items-center">
                                 <span class="custom-select-display text-gray-500">Selecciona pagador</span>
                                 <i class="fas fa-chevron-down text-gray-400"></i>
                             </button>
@@ -1061,7 +1112,7 @@
                     <div>
                         <label for="edit-expense-type-button" class="block text-sm font-medium text-gray-700">Tipo de Gasto</label>
                         <div class="relative custom-select-container mt-1">
-                            <button type="button" id="edit-expense-type-button" class="custom-select-button w-full text-left p-3 border border-gray-300 rounded-lg bg-white flex justify-between items-center">
+                            <button type="button" id="edit-expense-type-button" class="custom-select-button w-full text-left custom-input flex justify-between items-center">
                                 <span class="custom-select-display"></span>
                                 <i class="fas fa-chevron-down text-gray-400"></i>
                             </button>
@@ -1075,7 +1126,7 @@
                     <div>
                         <label for="edit-expense-payment-method-id-button" class="block text-sm font-medium text-gray-700">Método de Pago</label>
                         <div class="relative custom-select-container mt-1">
-                            <button type="button" id="edit-expense-payment-method-id-button" class="custom-select-button w-full text-left p-3 border border-gray-300 rounded-lg bg-white flex justify-between items-center">
+                            <button type="button" id="edit-expense-payment-method-id-button" class="custom-select-button w-full text-left custom-input flex justify-between items-center">
                                 <span class="custom-select-display text-gray-500">Selecciona método</span>
                                 <i class="fas fa-chevron-down text-gray-400"></i>
                             </button>
@@ -1086,7 +1137,7 @@
                 </div>
                 <div id="guest-payer-input-container" class="hidden">
                              <label for="guest-payer-name" class="block text-sm font-medium text-gray-700">Nombre del Invitado</label>
-                             <input type="text" id="guest-payer-name" class="w-full mt-1 p-3 border border-gray-300 rounded-lg">
+                             <input type="text" id="guest-payer-name" class="w-full mt-1 custom-input">
                 </div>
 
                 <!-- Fila 3: Categoría y Subcategoría -->
@@ -1094,7 +1145,7 @@
                     <div>
                         <label for="edit-expense-category-button" class="block text-sm font-medium text-gray-700">Categoría</label>
                          <div class="relative custom-select-container mt-1">
-                              <button type="button" id="edit-expense-category-button" class="custom-select-button w-full text-left p-3 border border-gray-300 rounded-lg bg-white flex justify-between items-center">
+                              <button type="button" id="edit-expense-category-button" class="custom-select-button w-full text-left custom-input flex justify-between items-center">
                                   <span class="custom-select-display text-gray-500">Selecciona categoría</span>
                                   <i class="fas fa-chevron-down text-gray-400"></i>
                               </button>
@@ -1105,7 +1156,7 @@
                     <div>
                         <label for="edit-expense-subcategory-button" class="block text-sm font-medium text-gray-700">Subcategoría</label>
                         <div class="relative custom-select-container mt-1">
-                            <button type="button" id="edit-expense-subcategory-button" class="custom-select-button w-full text-left p-3 border border-gray-300 rounded-lg bg-white flex justify-between items-center">
+                            <button type="button" id="edit-expense-subcategory-button" class="custom-select-button w-full text-left custom-input flex justify-between items-center">
                                 <span class="custom-select-display text-gray-500">Selecciona subcategoría</span>
                                 <i class="fas fa-chevron-down text-gray-400"></i>
                             </button>
@@ -1280,7 +1331,7 @@
             let closingDate = new Date(Date.UTC(referenceDate.getUTCFullYear(), referenceDate.getUTCMonth(), paymentDay));
             closingDate.setUTCDate(closingDate.getUTCDate() - gracePeriodDays);
 
-            // 2. Si la fecha de referencia (en UTC) es posterior a esta fecha de cierre (en UTC),
+            // 2. Si la fecha de referencia (in UTC) es posterior a esta fecha de cierre (in UTC),
             //    significa que estamos en el siguiente ciclo de facturación.
             const referenceDateUTC = new Date(Date.UTC(referenceDate.getUTCFullYear(), referenceDate.getUTCMonth(), referenceDate.getUTCDate()));
             if (referenceDateUTC > closingDate) {
@@ -1831,7 +1882,7 @@
                      `);
                      hasSelectedTags = true;
                  }
-             }
+            }
             
             // Mostrar/ocultar el label "No hay filtros"
              if(noFiltersLabel) noFiltersLabel.classList.toggle('hidden', catActive || partActive || pmActive); // Modificado
@@ -1860,8 +1911,20 @@
         function setupUILogic(isFirebaseMode) {
             const backdrop = document.getElementById('sidebar-backdrop');
             const participantSidebar = document.getElementById('participant-sidebar');
-            
-            // Listeners de la UI principal
+            const chartContent = document.getElementById('chart-collapsible-content');
+            const chartToggleBtn = document.getElementById('toggle-chart-btn');
+            const chartToggleIcon = document.getElementById('chart-toggle-icon');
+
+            // 1. Lógica de Colapsado de Gráfico (Distribución de Gastos)
+            chartContent.classList.remove('open'); // Cerrado por defecto (CSS lo maneja)
+            chartToggleIcon.classList.remove('rotate-180');
+
+            chartToggleBtn.addEventListener('click', () => {
+                const isOpen = chartContent.classList.toggle('open');
+                chartToggleIcon.classList.toggle('rotate-180', isOpen);
+            });
+
+            // Resto de Listeners de la UI principal
             setupCustomSelects();
             setupMonthSelectorListeners(); 
             setupCategoryModalListeners();
@@ -2465,7 +2528,7 @@
                     .reduce((sum, exp) => sum + exp.amount, 0);
 
                 return `
-                <div class="section-card border-l-4 border-teal-500 p-4 flex flex-col justify-between">
+                <div class="section-card p-4 flex flex-col justify-between">
                     <div>
                         <p class="text-sm font-semibold text-gray-700">${p.name}</p>
                         <div class="mt-1">
@@ -2823,6 +2886,7 @@
             const tagsHTML = `<div class="mt-1">${categoryTag}${paymentMethodTag}</div>`; 
 
             // Detalles expandidos (solo para gastos compartidos)
+            // Se sacan los botones de acción fuera del detalle si no es compartido
             let detailContent = `
                 <div class='flex gap-4 mt-2 justify-end'>
                     <button data-id='${expense.id}' class='edit-expense-btn text-gray-500 hover:text-blue-500 text-xs font-bold flex items-center gap-1'><i class='fas fa-edit'></i> Editar</button>
@@ -2869,7 +2933,7 @@
                     ${tagsHTML}
                     <p class='text-xs text-gray-500 mt-1'>Pagado por: <strong class="font-semibold text-gray-700">${payerName}</strong></p>
                     
-                    <!-- Botones de acción directa (solo si no es compartido o si no está expandido) -->
+                    <!-- Botones de acción directa (solo si NO es compartido) -->
                     ${!isShared ? `
                         <div class='flex gap-4 mt-2 pt-2 border-t border-dashed border-gray-200'>
                             <button data-id='${expense.id}' class='edit-expense-btn text-gray-500 hover:text-blue-500 text-xs font-bold flex items-center gap-1'><i class='fas fa-edit'></i> Editar</button>
@@ -2878,7 +2942,7 @@
                     ` : ''}
 
                     <!-- Contenido detallado para compartidos -->
-                    ${detailSectionHTML}
+                    ${isShared ? detailSectionHTML : ''}
                 </div>
 
                 <!-- Columna de Monto -->
@@ -2947,7 +3011,7 @@
                 const budget = categoryConfig?.budget || 0;
                 const showAmountInCard = expenses.length > 1;
                 
-                // --- NUEVA LÓGICA DE BARRA DE PROGRESO DE PRESUPUESTO ---
+                // --- LÓGICA DE BARRA DE PROGRESO DE PRESUPUESTO ---
                 const remaining = budget - categoryTotal;
                 const percentUsed = budget > 0 ? (categoryTotal / budget) * 100 : 0;
                 const barWidth = Math.min(100, percentUsed);
