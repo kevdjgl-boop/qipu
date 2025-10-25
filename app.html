@@ -17,10 +17,62 @@
             font-family: 'Inter', sans-serif;
             background-color: #f3f4f6;
             overflow-x: hidden;
-            padding-bottom: 4rem; 
+            //padding-bottom: 4rem; 
             width: 100vw; /* 4. Haz que el body ocupe el 100vw */
+            height: 100vh;      /* AÑADIDO: Fija la altura del body a la ventana */
+            overflow: hidden;   /* CAMBIADO: Evita CUALQUIER scroll en el body */
+            margin: 0;          /* AÑADIDO: Quita márgenes por defecto */
         }
+
+        #app-layout {
+            display: flex; /* La magia para ponerlos uno al lado del otro */
+        }           
         
+        #main-content-wrapper {
+            flex-grow: 1; /* Ocupa el espacio restante */
+            height: 100vh;
+            overflow-y: auto;
+            padding-bottom: 2rem;
+        }
+
+        #content-column {
+        display: flex;
+        flex-direction: column; /* Apila la barra y el contenido verticalmente */
+        flex-grow: 1;         /* Ocupa el resto del ancho */
+        //height: 100vh;        /* Ocupa toda la altura */
+        //overflow: hidden;       /* Evita que esta columna tenga scroll */
+        position: relative;
+        }
+        #content-column > div:first-child { /* Apunta al div con px-4 md:px-8 pt-4 */
+            position: sticky; /* Se pega arriba */
+            top: 0;
+            background-color: #f3f4f6; /* Mismo color que el body para que no sea transparente */
+            z-index: 10; /* Encima del contenido que scrollea */
+            width: 100%; /* Asegura que ocupe todo el ancho de la columna */
+            /* Mantenemos el padding que tenía */
+            padding-left: 1rem; /* px-4 */
+            padding-right: 1rem; /* px-4 */
+            padding-top: 1rem; /* pt-4 */
+            /* Añadimos padding inferior para separar del contenido */
+            padding-bottom: 1rem; /* pb-4 */
+        }
+        @media (min-width: 768px) { /* md: */
+        #content-column > div:first-child {
+            padding-left: 2rem; /* md:px-8 */
+            padding-right: 2rem; /* md:px-8 */
+        }
+        }
+
+        /* Ocultar texto de estado cuando el sidebar está colapsado */
+        #app-layout:not(.sidebar-is-open) #auth-status {
+            display: none; /* Oculta el texto "Conectando..." o "Conectado" */
+        }
+        /* Ocultar contenedor del botón logout cuando el sidebar está colapsado */
+        #participant-sidebar:not(.open) #sidebar-expanded-content > div:last-child { 
+        /* Apunta al div que acabamos de añadir al final */
+        display: none;
+        }
+      
         .no-scroll {
             overflow-y: hidden !important;
         }
@@ -37,6 +89,22 @@
             background-color: #111827; /* Gray-900 */
             color: white;
             border-bottom: none; /* 2. Quitamos el borde inferior */
+        }
+        #initial-loading-screen {
+        position: fixed;  /* La clave: lo saca del flujo normal */
+        inset: 0;         /* Abreviatura de: top:0, left:0, right:0, bottom:0 */
+        background-color: #f3f4f6; /* El mismo color de fondo del body */
+        z-index: 100;     /* Lo pone por encima de todo */
+        
+        /* Centra el contenido (ya lo tenías con Tailwind) */
+        //display: flex;
+        //justify-content: center;
+        align-items: center;
+
+        /* Ignora las clases de espaciado/tamaño de Tailwind */
+        padding-top: 0 !important;
+        height: 100vh !important;
+        max-width: 100% !important;
         }
         /* Estilo para los métricos dentro del dark card */
         .metric-value {
@@ -187,6 +255,48 @@
             flex-shrink: 0;
             min-width: 60px;
         }
+        /* Oculta el botón "Configuración" original */
+        #open-participants-sidebar-btn {
+            display: none;
+        }
+        /* Estilo para el botón de toggle en el sidebar */
+        #close-sidebar-btn {
+            position: absolute;
+            top: 1.5rem; /* 24px */
+
+            /* Se alinea a la DERECHA del sidebar ABIERTO (400px) */
+            left: calc(400px - 2rem - 1.5rem); /* (Ancho Abierto) - (Ancho Botón) - (Padding Derecho) */
+
+            z-index: 60; /* Encima del contenido del sidebar */
+            background-color: #f3f4f6; /* bg-gray-100 */
+            color: #4b5563; /* text-gray-600 */
+            width: 2rem; /* w-8 */
+            height: 2rem; /* h-8 */
+            border-radius: 9999px; /* rounded-full */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: transform 0.3s ease-out, left 0.3s ease-out;
+            border: none;
+        }
+        #close-sidebar-btn:hover {
+            background-color: #e5e7eb; /* bg-gray-200 */
+        }
+        #close-sidebar-btn i {
+            transition: transform 0.3s ease-out;
+        }
+
+        /* Cuando el sidebar está COLAPSADO (clase .open NO está) */
+        #participant-sidebar:not(.open) #close-sidebar-btn {
+            /* Se centra en la barra colapsada de 80px */
+            left: calc(80px / 2 - 1rem); /* (Ancho Colapsado / 2) - (Ancho Botón / 2) */
+            top: 1.5rem; /* Lo mantenemos arriba */
+        }
+
+        /* Cambiar el icono (rotarlo) cuando está colapsado */
+        #participant-sidebar:not(.open) #close-sidebar-btn i {
+            transform: rotate(180deg); /* La flecha apunta a la derecha */
+        }
         .history-day-num {
             font-size: 1.8rem;
             font-weight: 800;
@@ -240,40 +350,152 @@
             box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
         }
 
-        /* --- ESTILOS CRÍTICOS DEL SIDEBAR --- */
+            /* --- ESTILOS CRÍTICOS DEL SIDEBAR --- */
         #participant-sidebar {
-            position: fixed;
+            position: sticky;
             top: 0;
-            right: 0;
-            height: 100%;
+            left: 0;
+            height: 100vh;
             background-color: #ffffff;
-            box-shadow: -5px 0 15px rgba(0, 0, 0, 0.2);
-            transform: translateX(100%);
-            transition: transform 0.3s ease-out;
-            z-index: 50; /* Mayor que modales normales */
-            overflow-y: auto;
-            width: 100%;
-            max-width: 400px;
+            box-shadow: 5px 0 15px rgba(0, 0, 0, 0.1);
+            z-index: 50;
+            flex-shrink: 0;
+            width: 80px;
+            transition: width 0.3s ease-out;
+
+            /* --- CAMBIOS AQUÍ --- */
+            position: relative; /* AÑADIDO: Para ser el 'padre' de los contenedores absolutos */
+            overflow: hidden;   /* CAMBIADO: Oculta todo lo que se desborde */
+            border-top-right-radius: 1.5rem;    /* 24px */
+            border-bottom-right-radius: 1.5rem; /* 24px */
+        }
+        #participant-sidebar.open {
+            width: 400px; /* ANCHO EXPANDIDO (tu max-width anterior) */
         }
 
-        #participant-sidebar.open {
-            transform: translateX(0);
+            /* --- AÑADE ESTE BLOQUE COMPLETO --- */
+
+        /* 1. Estilos para el nuevo contenedor de iconos */
+        #sidebar-collapsed-content {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            /* Damos espacio para el botón de toggle que está en absolute */
+            padding-top: 6rem; 
+            gap: 1.5rem; /* Espacio entre iconos */
         }
-        
-        .backdrop {
-            position: fixed;
-            inset: 0;
-            background-color: rgba(0, 0, 0, 0.5);
-            z-index: 40;
+
+        .icon-link {
+            color: #4b5563; /* text-gray-600 */
+            font-size: 1.5rem; /* text-2xl */
+            padding: 0.75rem; /* p-3 */
+            border-radius: 0.5rem; /* rounded-lg */
+            transition: background-color 0.2s, color 0.2s;
+        }
+
+        .icon-link:hover {
+            background-color: #f3f4f6; /* bg-gray-100 */
+            color: #4f46e5; /* text-indigo-600 */
+        }
+
+        /* 2. Lógica para mostrar/ocultar los contenedores */
+
+      /* --- AÑADE ESTE NUEVO BLOQUE DE CSS --- */
+
+        /* 1. Estilos para AMBOS contenedores de contenido (Colapsado y Expandido) */
+        #sidebar-collapsed-content,
+        #sidebar-expanded-content {
+        width: 400px; 
+        box-sizing: border-box;
+        //overflow-y: auto; 
+        position: absolute; 
+        top: 0;
+        left: 0;
+        height: 100%;
+        transition: opacity 0.3s ease-out, filter 0.3s ease-out, visibility 0.3s;
+        padding-top: 5rem; /* Empuja el contenido hacia abajo (ajusta si es necesario) */
+        display: flex;             /* Habilita Flexbox */
+        flex-direction: column;    /* Coloca los elementos en columna */
+        //justify-content: space-between; /* Distribuye el espacio entre los elementos */
+        /* Puedes añadir padding-bottom aquí si es necesario para el scroll */
+        padding-bottom: 2rem; 
+        }
+
+        /* 2. Estilos específicos para el CONTENIDO EXPANDIDO */
+        #sidebar-expanded-content {
+            width: 400px; /* Ancho fijo */
+            box-sizing: border-box;
+            overflow-y: auto; /* El scroll ahora va aquí DENTRO */
+            /* La clase .p-6 que ya tiene le da el padding */
+        }
+
+        /* 3. Estilos específicos para el CONTENIDO COLAPSADO (Iconos) */
+        #sidebar-collapsed-content {
+            width: 80px; /* Ancho fijo */
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding-top: 6rem;
+            gap: 1.5rem;
+        }
+
+        #sidebar-expanded-content > div:last-child { 
+        margin-top: auto; /* <-- ESTO LO EMPUJA AL FINAL */
+        flex-shrink: 0;   /* Evita que se encoja si el contenido es largo */
+
+        /* Re-aplicamos padding/border porque p-6 ya no aplica directamente */
+        padding-top: 1.5rem; /* pt-6 */
+        border-top: 1px solid #e5e7eb; /* border-t border-gray-200 */
+        padding-bottom: 1.5rem; /* Añade espacio abajo */
+        padding-left: 1.5rem;  /* Añade padding lateral */
+        padding-right: 1.5rem; /* Añade padding lateral */
+        }
+
+        /* 4. La LÓGICA DE VISIBILIDAD (¡Aquí ocurre la magia!) */
+
+        /* Por defecto (colapsado): Ocultar expandido, mostrar iconos */
+        #participant-sidebar:not(.open) #sidebar-expanded-content {
             opacity: 0;
-            visibility: hidden;
-            transition: opacity 0.3s ease-out, visibility 0s linear 0.3s;
+            filter: blur(5px); /* Inicia borroso */
+            visibility: hidden; /* Oculto y no-interactuable */
         }
-        
-        .backdrop.open {
+        #participant-sidebar:not(.open) #sidebar-collapsed-content {
             opacity: 1;
+            filter: blur(0px); /* Enfocado */
             visibility: visible;
-            transition: opacity 0.3s ease-out, visibility 0s linear 0s;
+        }
+
+        /* Cuando está .open: Ocultar iconos, mostrar expandido */
+        #participant-sidebar.open #sidebar-expanded-content {
+            opacity: 1;
+            filter: blur(0px); /* Termina enfocado */
+            visibility: visible;
+        }
+        #participant-sidebar.open #sidebar-collapsed-content {
+            opacity: 0;
+            filter: blur(5px); /* Se va borroso */
+            visibility: hidden;
+        }
+
+        #app-layout:not(.sidebar-is-open) #auth-status-container {
+        justify-content: flex-end; 
+        }
+
+        /* 3. Darle un ancho fijo al contenido expandido (reemplaza la regla eliminada) */
+        #sidebar-expanded-content {
+            width: 400px;
+            box-sizing: border-box;
+            /* Ya no usamos white-space: nowrap, dejamos que el texto fluya */
+        }
+
+        /* El backdrop ya no es necesario con este layout */
+        .backdrop {
+            display: none !important;
+        }
+
+        /* Ya no necesitamos bloquear el scroll del body */
+        .no-scroll {
+            overflow-y: auto !important; 
         }
         /* --- FIN ESTILOS SIDEBAR --- */
         
@@ -447,23 +669,7 @@
 
     <!-- Backdrop para el Sidebar -->
     <div id="sidebar-backdrop" class="backdrop"></div>
-
-    <!-- Auth Status - SIMPLIFICADO -->
-    <div class="max-w-7xl mx-auto px-4 md:px-8 pt-4">
-        <div id="auth-status-container" class="flex justify-between items-center bg-white rounded-lg shadow-sm p-2 transition duration-300 relative z-50">
-            <!-- Muestra el estado actual de la conexión SIMPLIFICADO -->
-            <p id="auth-status" class="text-xs text-gray-600">
-                <span id="connection-dot" class="sync-indicator sync-red"></span> Conectando...
-            </p>
-              <!-- Botón de Cierre de Sesión (Se mantiene, pero requiere Auth Gate para manejar la sesión) -->
-            <div class="flex space-x-2 items-center">
-                <button id="logout-btn" class="bg-red-500 text-white text-xs font-bold py-1 px-2 rounded-lg hover:bg-red-600 transition">
-                     Cerrar Sesión
-                </button>
-            </div>
-        </div>
-    </div>
-    
+      
     <!-- PANTALLA DE CARGA INICIAL (Solo para datos) -->
     <div id="initial-loading-screen" class="max-w-7xl mx-auto px-4 md:px-8 pt-20 flex justify-center items-center h-64">
         <div class="text-center">
@@ -474,387 +680,7 @@
 
 
     <!-- Contenido principal de la aplicación (Secciones 1, 2, 3) -->
-    <div id="main-content-wrapper" class="hidden">
-        <!-- ========================================================================================= -->
-        <!-- SECCIÓN 1: DASHBOARD PRINCIPAL Y PARTICIPANTES (100% ANCHO) -->
-        <!-- ========================================================================================= -->
-        <section class="max-w-7xl mx-auto px-4 md:px-8 pt-6 space-y-6">
-            <div class="flex justify-between items-center border-b pb-2 mb-4">
-                <h1 class="text-3xl font-extrabold text-gray-800 flex items-center">
-                    Dashboard Principal 
-                </h1>
-                  <!-- Botones de la Cabecera -->
-                <div class="flex items-center space-x-2">
-                    <button id="open-participants-sidebar-btn" class="header-btn">
-                        <i class="fas fa-users-cog"></i> <span>Configuración</span>
-                    </button>
-                </div>
-            </div>
-
-            <!-- Dashboard Layout (Contenido Principal) -->
-            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                <div class="lg:col-span-2 space-y-6">
-                    
-                    <!-- NUEVO: TARJETAS DE SALDO ESTILO GLASSMORPHISM -->
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <!-- Tarjeta Saldo Global -->
-                        <div class="balance-glass-card saldo-glow">
-                            <div>
-                                <div class="glass-card-header">
-                                    <span class="glass-card-title">Saldo Global</span>
-                                    <div class="glass-card-icon">
-                                        <i class="fas fa-wallet"></i>
-                                    </div>
-                                </div>
-                            </div>
-                            <div>
-                                <span id="display-remaining-budget" class="glass-card-amount saldo-text">S/ 0.00</span>
-                                <span class="glass-card-subtitle">Disponible</span>
-                            </div>
-                        </div>
-                        
-                        <!-- Tarjeta Gasto Total -->
-                        <div class="balance-glass-card gasto-glow">
-                            <div>
-                                <div class="glass-card-header">
-                                    <span class="glass-card-title">Gasto Total</span>
-                                    <div class="glass-card-icon">
-                                        <i class="fas fa-receipt"></i>
-                                    </div>
-                                </div>
-                            </div>
-                            <div>
-                                <span id="display-total-spent" class="glass-card-amount gasto-text">S/ 0.00</span>
-                                <span class="glass-card-subtitle">En este ciclo</span>
-                            </div>
-                        </div>
-                    </div>
-                    <!-- FIN NUEVO: TARJETAS DE SALDO ESTILO GLASSMORPHISM -->
-
-                
-                    <!-- CARDS INDIVIDUALES Y AHORRO MUTUO -->
-                    <div class="section-card space-y-4">
-                        <h3 class="text-lg font-bold text-gray-700">Saldos Individuales y Metas</h3>
-                        <div id="participant-summary-cards" class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                            <!-- Tarjetas de resumen individual se renderizan aquí -->
-                        </div>
-                        <div class="grid grid-cols-2 gap-4 pt-2 border-t border-gray-200">
-                            <div class="section-card p-4 text-center bg-yellow-50">
-                                <p class="text-sm font-semibold uppercase text-yellow-700">Gastos Fijos Total</p>
-                                <span id="display-fixed-total" class="text-2xl font-extrabold text-yellow-600 block mt-2">S/ 0.00</span>
-                            </div>
-                            <div class="section-card p-4 text-center bg-purple-50">
-                                <p class="text-sm font-semibold uppercase text-purple-700">Meta Ahorro Mutuo</p>
-                                <span id="display-shared-savings-goal" class="text-2xl font-extrabold text-purple-600 block mt-2">S/ 0.00</span>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- NUEVO: RESUMEN DE TARJETAS DE CRÉDITO -->
-                    <div id="credit-card-summary-section" class="section-card space-y-4">
-                        <h3 class="text-lg font-bold text-gray-700">Consumo de Tarjetas de Crédito</h3>
-                        <div id="credit-card-summary-cards" class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                            <!-- Las tarjetas de resumen de TC se renderizan aquí -->
-                            <p class="text-gray-500 italic text-sm col-span-full">No hay tarjetas de crédito configuradas.</p>
-                        </div>
-                    </div>
-                </div>
-                
-                <!-- COLUMNA 3: Balance de Cuentas (Siempre visible) -->
-                <div class="lg:col-span-1">
-                    <div class="section-card h-full flex flex-col">
-                        <div class="flex items-center justify-between">
-                            <h2 class="text-lg font-bold text-indigo-700 flex items-center">
-                                <i class="fas fa-balance-scale mr-2"></i> Balance de Cuentas
-                            </h2>
-                        </div>
-                        <div id="balance-content" class="mt-4 flex-grow flex flex-col justify-between">
-                            <div id="shared-balance-summary" class="space-y-3 text-sm">
-                                <!-- Contenido del balance renderizado por JS -->
-                            </div>
-                            <div class="mt-4 pt-4 border-t border-gray-200">
-                                <button id="liquidate-month-btn" class="w-full py-3 bg-red-600 text-white font-bold rounded-xl shadow-lg hover:bg-red-700 transition duration-300">
-                                    <i class="fas fa-handshake mr-2"></i> LIQUIDAR
-                                </button>
-                                <p class="text-xs text-gray-600 mt-2 text-center">Ajusta los saldos a cero.</p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <!-- GRÁFICO DE DISTRIBUCIÓN DE GASTOS (Full Width) -->
-            <div class="section-card">
-                <button id="toggle-chart-btn" class="w-full text-left flex justify-between items-center text-xl font-bold text-gray-700 mb-4 focus:outline-none">
-                    Distribución de Gastos
-                    <i id="chart-toggle-icon" class="fas fa-chevron-down transition-transform duration-300"></i>
-                </button>
-                <div id="chart-collapsible-content">
-                    <div class="relative h-64 md:h-80 pt-2 border-t border-gray-200">
-                        <canvas id="category-chart"></canvas>
-                        <p id="chart-no-data" class="absolute inset-0 flex items-center justify-center text-gray-500 italic hidden">No hay datos para mostrar.</p>
-                    </div>
-                </div>
-            </div>
-        </section>
-
-        <!-- ========================================================================================= -->
-        <!-- SECCIÓN 2: REGISTRO DE GASTO Y BOTONES DE CONFIGURACIÓN (100% ANCHO) -->
-        <!-- ========================================================================================= -->
-        <div class="max-w-7xl mx-auto px-4 md:px-8 pt-6">
-            <main class="space-y-6">
-                <section class="section-card">
-                    <div class="flex justify-between items-center mb-4">
-                        <h2 class="text-xl font-bold text-red-700">Registrar Nuevo Gasto</h2>
-                        
-                        <!-- Botones de Configuración Rápida (Movidos aquí) -->
-                        <div class="flex space-x-2">
-                            <button id="open-categories-modal-btn" class="py-1 px-3 bg-green-500 text-white font-bold rounded-xl hover:bg-green-600 transition duration-300 text-xs">
-                                Categorías
-                            </button>
-                            <button id="open-payment-methods-modal-btn" class="py-1 px-3 bg-yellow-500 text-white font-bold rounded-xl hover:bg-yellow-600 transition duration-300 text-xs">
-                                Métodos Pago
-                            </button>
-                        </div>
-                    </div>
-                    <form id="expense-form" class="space-y-4">
-                        
-                        <!-- Fila 1: Descripción, Monto -->
-                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                            <div class="md:col-span-2">
-                                <label for="expense-description" class="block text-sm font-medium text-gray-700">Descripción</label>
-                                <input type="text" id="expense-description" required class="w-full mt-1 custom-input">
-                            </div>
-                            <div>
-                                <label for="expense-amount" class="block text-sm font-medium text-gray-700">Monto (S/)</label>
-                                <input type="number" id="expense-amount" min="0.01" step="0.01" required class="w-full mt-1 custom-input">
-                            </div>
-                        </div>
-                        
-                        <!-- Fila 2: Pagador, Tipo de Gasto, Método de Pago -->
-                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                            <!-- Pagado Por (Custom Select) -->
-                            <div>
-                                <label for="expense-paid-by-button" class="block text-sm font-medium text-gray-700">Pagado Por</label>
-                                <div class="relative custom-select-container mt-1">
-                                    <button type="button" id="expense-paid-by-button" class="custom-select-button w-full text-left custom-input flex justify-between items-center transition duration-150 ease-in-out focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
-                                        <span class="custom-select-display text-gray-500">Selecciona quién pagó</span>
-                                        <i class="fas fa-chevron-down text-gray-400 transition-transform duration-200"></i>
-                                    </button>
-                                    <div class="custom-select-options absolute hidden mt-1 w-full bg-white rounded-lg shadow-lg z-20 border border-gray-200">
-                                        <!-- Opciones populadas por JS -->
-                                    </div>
-                                    <input type="hidden" id="expense-paid-by" required>
-                                </div>
-                            </div>
-                            <!-- Tipo de Gasto (Custom Select) -->
-                            <div>
-                                <label for="expense-type-button" class="block text-sm font-medium text-gray-700">Tipo de Gasto</label>
-                                <div class="relative custom-select-container mt-1">
-                                    <button type="button" id="expense-type-button" class="custom-select-button w-full text-left custom-input flex justify-between items-center transition duration-150 ease-in-out focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
-                                        <span class="custom-select-display">Personal</span>
-                                        <i class="fas fa-chevron-down text-gray-400 transition-transform duration-200"></i>
-                                    </button>
-                                    <div class="custom-select-options absolute hidden mt-1 w-full bg-white rounded-lg shadow-lg z-20 border border-gray-200">
-                                        <div class="custom-select-option selected" data-value="personal">Personal</div>
-                                        <div class="custom-select-option" data-value="shared">Compartido</div>
-                                    </div>
-                                    <input type="hidden" id="expense-type" value="personal" required>
-                                </div>
-                            </div>
-                            <!-- Método de Pago (Custom Select) -->
-                            <div>
-                                <label for="expense-payment-method-id-button" class="block text-sm font-medium text-gray-700">Método de Pago</label>
-                                <div class="relative custom-select-container mt-1">
-                                    <button type="button" id="expense-payment-method-id-button" class="custom-select-button w-full text-left custom-input flex justify-between items-center transition duration-150 ease-in-out focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
-                                        <span class="custom-select-display text-gray-500">Selecciona método</span>
-                                        <i class="fas fa-chevron-down text-gray-400 transition-transform duration-200"></i>
-                                    </button>
-                                    <div class="custom-select-options absolute hidden mt-1 w-full bg-white rounded-lg shadow-lg z-20 border border-gray-200">
-                                        <!-- Opciones populadas por JS -->
-                                    </div>
-                                    <input type="hidden" id="expense-payment-method-id" required>
-                                </div>
-                            </div>
-                        </div>
-
-
-                        <!-- Fila 3: Categoría y Subcategoría -->
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <!-- Categoría (Custom Select) -->
-                            <div>
-                                <label for="expense-category-button" class="block text-sm font-medium text-gray-700">Categoría</label>
-                                <div class="relative custom-select-container mt-1">
-                                    <button type="button" id="expense-category-button" class="custom-select-button w-full text-left custom-input flex justify-between items-center">
-                                        <span class="custom-select-display text-gray-500">Selecciona categoría</span>
-                                        <i class="fas fa-chevron-down text-gray-400"></i>
-                                    </button>
-                                    <div class="custom-select-options absolute hidden mt-1 w-full bg-white rounded-lg shadow-lg z-20"></div>
-                                    <input type="hidden" id="expense-category" required>
-                                </div>
-                            </div>
-                            <!-- Subcategoría (Custom Select) -->
-                            <div>
-                                <label for="expense-subcategory-button" class="block text-sm font-medium text-gray-700">Subcategoría</label>
-                                <div class="relative custom-select-container mt-1">
-                                    <button type="button" id="expense-subcategory-button" disabled class="custom-select-button w-full text-left custom-input bg-gray-100 flex justify-between items-center">
-                                        <span class="custom-select-display text-gray-500">Selecciona subcategoría</span>
-                                        <i class="fas fa-chevron-down text-gray-400"></i>
-                                    </button>
-                                    <div class="custom-select-options absolute hidden mt-1 w-full bg-white rounded-lg shadow-lg z-20"></div>
-                                    <input type="hidden" id="expense-subcategory">
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Fila 4: Opciones y Botón de Añadir -->
-                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 pt-4 items-end">
-                            <!-- Columna 1 y 2: Gasto Fijo y Recurrencia -->
-                            <div class="flex items-end space-x-4 md:col-span-2">
-                                <div class="flex items-center h-12">
-                                    <input id="expense-is-fixed" type="checkbox" class="h-4 w-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500">
-                                    <label for="expense-is-fixed" class="ml-2 block text-sm font-medium text-gray-900">Gasto Fijo</label>
-                                </div>
-                                <div id="fixed-recurrence-container" class="hidden">
-                                    <label for="fixed-recurrence-months" class="block text-sm font-medium text-red-700">Meses</label>
-                                    <input type="number" id="fixed-recurrence-months" min="1" max="60" value="12" class="w-24 mt-1 custom-input">
-                                </div>
-                            </div>
-                            
-                            <!-- Columna 3: Botón de Añadir Gasto -->
-                            <div class="md:col-span-1">
-                                <button type="submit" class="w-full py-3 bg-red-500 text-white font-bold rounded-xl shadow-lg hover:bg-red-600 transition duration-300">
-                                    Añadir Gasto
-                                </button>
-                            </div>
-                        </div>
-
-                        <!-- Información de Ciclo de Tarjeta de Crédito (Condicional) -->
-                        <div id="credit-card-details" class="space-y-2 p-3 border border-yellow-300 rounded-lg bg-yellow-50 hidden">
-                            <p class="font-bold text-xs text-yellow-800">Detalles de Facturación:</p>
-                            <div class="flex justify-between text-xs">
-                                <span class="text-gray-700">Inicio de Ciclo: <strong id="cc-cycle-start-display" class="font-semibold"></strong></span>
-                                <span class="text-gray-700">Límite de Pago: <strong id="cc-payment-date-display" class="font-semibold"></strong></span>
-                            </div>
-                        </div>
-                    </form>
-                </section>
-            </main>
-        </div>
-
-        <!-- ========================================================================================= -->
-        <!-- SECCIÓN 3: INFORMES (GASTOS FIJOS, CALENDARIO, HISTORIAL) -->
-        <!-- ========================================================================================= -->
-        <div class="max-w-7xl mx-auto px-4 md:px-8 mt-6">
-            <section class="section-card space-y-6">
-                
-                <!-- Encabezado del Informe y Filtro de Mes -->
-                <div class="flex flex-col md:flex-row justify-between md:items-center pb-2 mb-4 gap-4">
-                    <h2 class="text-xl font-bold text-gray-800">Informe de Gastos por Categoría</h2>
-                    
-                    <!-- Ciclo de Visualización -->
-                    <div id="month-selector" class="flex items-center justify-between p-2 bg-gray-50 rounded-lg border border-gray-200 w-full max-w-xs md:max-w-sm">
-                        <button id="prev-month-btn" class="p-2 bg-white rounded-lg hover:bg-gray-200 transition font-bold text-lg shadow-sm">
-                            &lt;
-                        </button>
-                        <div class="text-center">
-                            <h3 id="current-month-name" class="text-xl font-extrabold text-gray-800 leading-none">Cargando</h3>
-                            <p id="current-year" class="text-sm text-gray-500 -mt-1">...</p>
-                        </div>
-                        <button id="next-month-btn" class="p-2 bg-white rounded-lg hover:bg-gray-200 transition font-bold text-lg shadow-sm">
-                            &gt;
-                        </button>
-                    </div>
-                </div>
-
-                <!-- MODIFICADO: Contenedor para el botón de filtros y el popover -->
-                <div class="relative mb-4">
-                      <!-- Botón para abrir/cerrar el popover de filtros -->
-                    <button id="filter-popover-button" class="inline-flex items-center px-4 py-2 bg-white border border-gray-300 rounded-lg shadow-sm text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
-                        <i class="fas fa-filter mr-2"></i>
-                        Filtros
-                        <!-- Indicador visual si hay filtros activos -->
-                        <span class="active-indicator ml-2 h-2 w-2 bg-indigo-500 rounded-full"></span>
-                    </button>
-
-                      <!-- El Popover de Filtros (inicialmente oculto) -->
-                    <div id="filter-popover" class="absolute hidden mt-2 w-full max-w-md bg-white rounded-lg shadow-xl border border-gray-200 z-30 p-4 space-y-4">
-                          <!-- Botón para cerrar el popover -->
-                        <button id="close-filter-popover-btn" class="absolute top-2 right-2 text-gray-400 hover:text-gray-600">
-                            <i class="fas fa-times"></i>
-                        </button>
-                        <h4 class="text-lg font-semibold text-gray-800">Filtrar Transacciones</h4>
-                        <!-- Área para mostrar etiquetas seleccionadas -->
-                        <div id="selected-filter-tags" class="flex flex-wrap gap-1 border-b pb-2 mb-2 min-h-[2rem]">
-                            <!-- Etiquetas seleccionadas se añadirán aquí -->
-                            <span id="no-filters-label" class="text-xs text-gray-500 italic">No hay filtros aplicados.</span>
-                        </div>
-                        <!-- Filtro por descripción -->
-                        <div>
-                            <label for="filter-description" class="block text-xs font-medium text-gray-600 mb-1">Buscar por Descripción:</label>
-                            <input type="text" id="filter-description" placeholder="Ej: Supermercado, Luz..." class="w-full mt-1 custom-input text-sm">
-                        </div>
-                          <!-- Filtro por etiquetas de Categoría -->
-                        <div>
-                            <label class="block text-xs font-medium text-gray-600 mb-1">Filtrar por Categoría:</label>
-                            <div id="filter-tag-categories" class="flex flex-wrap -m-1">
-                                <!-- Etiquetas de categoría se generarán aquí -->
-                                <span class="text-xs text-gray-500 italic m-1">Cargando categorías...</span>
-                            </div>
-                        </div>
-                          <!-- Filtro por etiquetas de Participante -->
-                        <div>
-                            <label class="block text-xs font-medium text-gray-600 mb-1">Filtrar por Pagador:</label>
-                            <div id="filter-tag-participants" class="flex flex-wrap -m-1">
-                                 <!-- Etiquetas de participante se generarán aquí -->
-                                 <span class="text-xs text-gray-500 italic m-1">Cargando participantes...</span>
-                            </div>
-                        </div>
-                          <!-- NUEVO: Filtro por etiquetas de Método de Pago -->
-                          <div>
-                            <label class="block text-xs font-medium text-gray-600 mb-1">Filtrar por Método de Pago:</label>
-                            <div id="filter-tag-payment-methods" class="flex flex-wrap -m-1">
-                                 <!-- Etiquetas de método de pago se generarán aquí -->
-                                 <span class="text-xs text-gray-500 italic m-1">Cargando métodos...</span>
-                            </div>
-                          </div>
-                        <button id="reset-filters-btn" class="w-full py-2 text-sm bg-gray-200 text-gray-700 font-medium rounded-lg hover:bg-gray-300 mt-4">
-                            Limpiar Filtros
-                        </button>
-                    </div>
-                </div>
-                <!-- FIN Contenedor Filtros/Popover -->
-
-                
-                <!-- Rejilla de Informes -->
-                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-
-                    <!-- Columna 1 y 2: Historial de Transacciones -->
-                    <div class="lg:col-span-2">
-                        <div class="space-y-4">
-                            <h3 class="text-xl font-bold text-gray-700">Historial de Transacciones</h3>
-                            <span class="text-xs text-purple-600 font-semibold block -mt-2" id="expense-diagnostic"></span>
-                            <div id="expense-report-by-category" class="space-y-3">
-                                <p class="text-gray-500 text-center py-4 italic">No hay gastos en este ciclo.</p>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Columna 3 (1/3): Próximos Gastos Fijos -->
-                    <aside class="lg:col-span-1">
-                        <div class="section-card h-full">
-                            <h3 class="text-lg font-bold text-red-700 mb-4 flex items-center">
-                                <i class="fas fa-calendar-alt mr-2"></i> Próximos Gastos Fijos
-                            </h3>
-                            <div id="fixed-expenses-summary" class="space-y-2 text-sm">
-                                <p class="text-gray-500 italic">No hay gastos fijos registrados.</p>
-                            </div>
-                        </div>
-                    </aside>
-
-                </div>
-            </section>
-        </div>
-    </div>
+    
     
     <!-- MOBILE MENU (oculto en escritorio) -->
     <div id="mobile-menu" class="lg:hidden bg-white border-t border-gray-200 p-3 shadow-2xl flex justify-around fixed bottom-0 left-0 right-0 z-40">
@@ -866,75 +692,492 @@
     <!-- ========================================================================================= -->
     <!-- SIDEBAR DE CONFIGURACIÓN DE PARTICIPANTES -->
     <!-- ========================================================================================= -->
-    <div id="participant-sidebar">
-        <div class="p-6">
-            <div class="flex justify-between items-center border-b pb-4 mb-4">
-                <h2 class="text-2xl font-bold text-purple-700">Configuración</h2>
+    <div id="app-layout" class="hidden">
+        <div id="participant-sidebar">
                 <button id="close-sidebar-btn" class="text-gray-500 hover:text-gray-900 transition">
-                    <i class="fas fa-times text-2xl"></i>
+                        <i class="fas fa-chevron-left"></i>
+                    </button>
+
+                    <div id="sidebar-collapsed-content">
+                                <a href="#" class="icon-link" title="Participantes">
+                                    <i class="fas fa-users fa-fw"></i>
+                                </a>
+                                <a href="#" class="icon-link" title="Monedero">
+                                    <i class="fas fa-wallet fa-fw"></i>
+                                </a>
+                                <a href="#" class="icon-link" title="Herramientas de Datos">
+                                    <i class="fas fa-file-export fa-fw"></i>
+                                </a>
+                    </div>
+        
+                            <!-- Auth Status - SIMPLIFICADO -->
+               <div id="content-column">             
+                <div class="w-full px-4 md:px-8 pt-4">
+                    <div id="auth-status-container" class="flex justify-between items-center bg-white rounded-lg shadow-sm p-2 transition duration-300 relative z-50">
+                        <!-- Muestra el estado actual de la conexión SIMPLIFICADO -->
+                        <p id="auth-status" class="text-xs text-gray-600">
+                            <span id="connection-dot" class="sync-indicator sync-red"></span> Conectando...
+                        </p>                   
+                    </div>
+                </div>
+                </div>
+
+            <div id="sidebar-expanded-content" class="p-6">
+
+                <div id="sidebar-main-content">
+
+                <div class="flex justify-between items-center border-b pb-4 mb-4">
+                    <h2 class="text-2xl font-bold text-purple-700">Configuración</h2>                    
+                </div>
+                
+                <h3 class="text-xl font-bold text-purple-700 mb-4">Participantes Activos</h3>
+
+                <!-- Botón de Añadir (Dentro del Sidebar) -->
+                <button id="open-add-participant-modal-sidebar" class="w-full py-2 mb-4 bg-purple-500 text-white font-bold rounded-lg hover:bg-purple-600 transition">
+                    + Añadir Nuevo
                 </button>
-            </div>
-            
-            <h3 class="text-xl font-bold text-purple-700 mb-4">Participantes Activos</h3>
-
-            <!-- Botón de Añadir (Dentro del Sidebar) -->
-            <button id="open-add-participant-modal-sidebar" class="w-full py-2 mb-4 bg-purple-500 text-white font-bold rounded-lg hover:bg-purple-600 transition">
-                + Añadir Nuevo
-            </button>
-            
-            <div id="participants-list" class="space-y-4">
-                <!-- Lista dinámica de participantes (Compacta) se renderiza aquí -->
-            </div>
-
-            <!-- SECCIÓN DE MONEDERO COMPARTIDO -->
-            <div id="wallet-section-container">
-                <h3 class="text-xl font-bold text-indigo-700 mt-6 mb-4 border-t pt-4">Gestión del Monedero</h3>
-
-                <!-- Controles PRE-Monedero (Crear/Unirse) -->
-                <div id="pre-wallet-controls" class="space-y-4">
-                    <div class="p-4 border rounded-lg bg-indigo-50">
-                        <h4 class="font-bold text-gray-700">Crear un Nuevo Monedero</h4>
-                        <p class="text-xs text-gray-500 mb-3">Ideal para empezar de cero o si eres el primero del grupo.</p>
-                        <button id="create-wallet-btn" class="w-full py-2 bg-indigo-500 text-white font-bold rounded-lg hover:bg-indigo-600 transition">Crear Monedero</button>
-                        <p id="migration-notice" class="text-xs text-blue-600 mt-2 hidden"><i class="fas fa-info-circle"></i> Se migrarán tus datos existentes a este nuevo monedero.</p>
-                    </div>
                 
-                    <div class="my-2 text-center text-sm font-semibold text-gray-400">O</div>
-                
-                    <div class="p-4 border rounded-lg bg-gray-50">
-                        <h4 class="font-bold text-gray-700">Unirse a un Monedero Existente</h4>
-                        <form id="join-wallet-form" class="flex flex-col items-center space-y-2 mt-2">
-                             <input type="text" id="join-wallet-id-input" placeholder="Pegar ID del Monedero" required class="w-full text-center p-2 border border-gray-300 rounded-lg">
-                             <button type="submit" class="w-full py-2 bg-green-500 text-white font-bold rounded-lg hover:bg-green-600 transition">Unirse</button>
-                        </form>
-                    </div>
+                <div id="participants-list" class="space-y-4">
+                    <!-- Lista dinámica de participantes (Compacta) se renderiza aquí -->
                 </div>
 
-                <!-- Controles POST-Monedero (Info y Compartir) -->
-                <div id="post-wallet-controls" class="hidden space-y-3">
-                    <div class="p-4 border border-indigo-200 rounded-lg bg-indigo-50 space-y-3">
-                        <div>
-                             <label class="text-xs font-semibold text-gray-700">ID de este Monedero (para invitar):</label>
-                             <div class="flex items-center mt-1">
-                                 <input type="text" id="share-wallet-id" readonly class="w-full p-2 border bg-white border-gray-300 rounded-l-lg text-xs">
-                                 <button id="copy-wallet-id-btn" class="px-3 py-2 bg-indigo-500 text-white rounded-r-lg hover:bg-indigo-600"><i class="fas fa-copy"></i></button>
-                             </div>
+                <!-- SECCIÓN DE MONEDERO COMPARTIDO -->
+                <div id="wallet-section-container">
+                    <h3 class="text-xl font-bold text-indigo-700 mt-6 mb-4 border-t pt-4">Gestión del Monedero</h3>
+
+                    <!-- Controles PRE-Monedero (Crear/Unirse) -->
+                    <div id="pre-wallet-controls" class="space-y-4">
+                        <div class="p-4 border rounded-lg bg-indigo-50">
+                            <h4 class="font-bold text-gray-700">Crear un Nuevo Monedero</h4>
+                            <p class="text-xs text-gray-500 mb-3">Ideal para empezar de cero o si eres el primero del grupo.</p>
+                            <button id="create-wallet-btn" class="w-full py-2 bg-indigo-500 text-white font-bold rounded-lg hover:bg-indigo-600 transition">Crear Monedero</button>
+                            <p id="migration-notice" class="text-xs text-blue-600 mt-2 hidden"><i class="fas fa-info-circle"></i> Se migrarán tus datos existentes a este nuevo monedero.</p>
                         </div>
-                        <p id="current-user-id" class="text-xs text-gray-600 break-words">
-                            Mi UID: Cargando...
-                        </p>
+                    
+                        <div class="my-2 text-center text-sm font-semibold text-gray-400">O</div>
+                    
+                        <div class="p-4 border rounded-lg bg-gray-50">
+                            <h4 class="font-bold text-gray-700">Unirse a un Monedero Existente</h4>
+                            <form id="join-wallet-form" class="flex flex-col items-center space-y-2 mt-2">
+                                <input type="text" id="join-wallet-id-input" placeholder="Pegar ID del Monedero" required class="w-full text-center p-2 border border-gray-300 rounded-lg">
+                                <button type="submit" class="w-full py-2 bg-green-500 text-white font-bold rounded-lg hover:bg-green-600 transition">Unirse</button>
+                            </form>
+                        </div>
                     </div>
-                      <!-- HERRAMIENTAS DE DATOS -->
-                    <div id="data-management-section" class="mt-6 pt-4 border-t border-gray-300 space-y-2">
-                        <h4 class="text-sm font-bold text-gray-700">Herramientas de Datos</h4>
-                        <button id="export-json-btn" class="w-full py-2 text-xs bg-blue-600 text-white font-bold rounded-lg hover:bg-blue-700 transition">
-                            <i class="fas fa-file-export"></i> Exportar Datos a Texto
-                        </button>
-                        <button id="restore-json-btn" class="w-full py-2 text-xs bg-gray-600 text-white font-bold rounded-lg hover:bg-gray-700 transition">
-                            <i class="fas fa-file-import"></i> Importar/Restaurar Datos
+
+                    <!-- Controles POST-Monedero (Info y Compartir) -->
+                    <div id="post-wallet-controls" class="hidden space-y-3">
+                        <div class="p-4 border border-indigo-200 rounded-lg bg-indigo-50 space-y-3">
+                            <div>
+                                <label class="text-xs font-semibold text-gray-700">ID de este Monedero (para invitar):</label>
+                                <div class="flex items-center mt-1">
+                                    <input type="text" id="share-wallet-id" readonly class="w-full p-2 border bg-white border-gray-300 rounded-l-lg text-xs">
+                                    <button id="copy-wallet-id-btn" class="px-3 py-2 bg-indigo-500 text-white rounded-r-lg hover:bg-indigo-600"><i class="fas fa-copy"></i></button>
+                                </div>
+                            </div>
+                            <p id="current-user-id" class="text-xs text-gray-600 break-words">
+                                Mi UID: Cargando...
+                            </p>
+                        </div>
+                        <!-- HERRAMIENTAS DE DATOS -->
+                        <div id="data-management-section" class="mt-6 pt-4 border-t border-gray-300 space-y-2">
+                            <h4 class="text-sm font-bold text-gray-700">Herramientas de Datos</h4>
+                            <button id="export-json-btn" class="w-full py-2 text-xs bg-blue-600 text-white font-bold rounded-lg hover:bg-blue-700 transition">
+                                <i class="fas fa-file-export"></i> Exportar Datos a Texto
+                            </button>
+                            <button id="restore-json-btn" class="w-full py-2 text-xs bg-gray-600 text-white font-bold rounded-lg hover:bg-gray-700 transition">
+                                <i class="fas fa-file-import"></i> Importar/Restaurar Datos
+                            </button>
+                        </div>
+                    </div>
+                 </div>
+                 </div>
+                <div class="mt-8 pt-6 border-t border-gray-200">
+                    <button id="logout-btn" class="w-full bg-red-500 text-white text-sm font-bold py-2 px-4 rounded-lg hover:bg-red-600 transition flex items-center justify-center gap-2">
+                        <i class="fas fa-sign-out-alt"></i> Cerrar Sesión
+                    </button>
+                </div>
+            </div>
+        </div>
+            <div id="main-content-wrapper" class="hidden2">
+            <!-- ========================================================================================= -->
+            <!-- SECCIÓN 1: DASHBOARD PRINCIPAL Y PARTICIPANTES (100% ANCHO) -->
+            <!-- ========================================================================================= -->
+            <section class="max-w-7xl mx-auto px-4 md:px-8 pt-6 space-y-6">
+                <div class="flex justify-between items-center border-b pb-2 mb-4">
+                    <h1 class="text-3xl font-extrabold text-gray-800 flex items-center">
+                        Dashboard Principal 
+                    </h1>
+                    <!-- Botones de la Cabecera -->
+                    <div class="flex items-center space-x-2">
+                        <button id="open-participants-sidebar-btn" class="header-btn">
+                            <i class="fas fa-users-cog"></i> <span>Configuración</span>
                         </button>
                     </div>
                 </div>
+
+                <!-- Dashboard Layout (Contenido Principal) -->
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    <div class="lg:col-span-2 space-y-6">
+                        
+                        <!-- NUEVO: TARJETAS DE SALDO ESTILO GLASSMORPHISM -->
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <!-- Tarjeta Saldo Global -->
+                            <div class="balance-glass-card saldo-glow">
+                                <div>
+                                    <div class="glass-card-header">
+                                        <span class="glass-card-title">Saldo Global</span>
+                                        <div class="glass-card-icon">
+                                            <i class="fas fa-wallet"></i>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div>
+                                    <span id="display-remaining-budget" class="glass-card-amount saldo-text">S/ 0.00</span>
+                                    <span class="glass-card-subtitle">Disponible</span>
+                                </div>
+                            </div>
+                            
+                            <!-- Tarjeta Gasto Total -->
+                            <div class="balance-glass-card gasto-glow">
+                                <div>
+                                    <div class="glass-card-header">
+                                        <span class="glass-card-title">Gasto Total</span>
+                                        <div class="glass-card-icon">
+                                            <i class="fas fa-receipt"></i>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div>
+                                    <span id="display-total-spent" class="glass-card-amount gasto-text">S/ 0.00</span>
+                                    <span class="glass-card-subtitle">En este ciclo</span>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- FIN NUEVO: TARJETAS DE SALDO ESTILO GLASSMORPHISM -->
+
+                    
+                        <!-- CARDS INDIVIDUALES Y AHORRO MUTUO -->
+                        <div class="section-card space-y-4">
+                            <h3 class="text-lg font-bold text-gray-700">Saldos Individuales y Metas</h3>
+                            <div id="participant-summary-cards" class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                <!-- Tarjetas de resumen individual se renderizan aquí -->
+                            </div>
+                            <div class="grid grid-cols-2 gap-4 pt-2 border-t border-gray-200">
+                                <div class="section-card p-4 text-center bg-yellow-50">
+                                    <p class="text-sm font-semibold uppercase text-yellow-700">Gastos Fijos Total</p>
+                                    <span id="display-fixed-total" class="text-2xl font-extrabold text-yellow-600 block mt-2">S/ 0.00</span>
+                                </div>
+                                <div class="section-card p-4 text-center bg-purple-50">
+                                    <p class="text-sm font-semibold uppercase text-purple-700">Meta Ahorro Mutuo</p>
+                                    <span id="display-shared-savings-goal" class="text-2xl font-extrabold text-purple-600 block mt-2">S/ 0.00</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- NUEVO: RESUMEN DE TARJETAS DE CRÉDITO -->
+                        <div id="credit-card-summary-section" class="section-card space-y-4">
+                            <h3 class="text-lg font-bold text-gray-700">Consumo de Tarjetas de Crédito</h3>
+                            <div id="credit-card-summary-cards" class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                <!-- Las tarjetas de resumen de TC se renderizan aquí -->
+                                <p class="text-gray-500 italic text-sm col-span-full">No hay tarjetas de crédito configuradas.</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- COLUMNA 3: Balance de Cuentas (Siempre visible) -->
+                    <div class="lg:col-span-1">
+                        <div class="section-card h-full flex flex-col">
+                            <div class="flex items-center justify-between">
+                                <h2 class="text-lg font-bold text-indigo-700 flex items-center">
+                                    <i class="fas fa-balance-scale mr-2"></i> Balance de Cuentas
+                                </h2>
+                            </div>
+                            <div id="balance-content" class="mt-4 flex-grow flex flex-col justify-between">
+                                <div id="shared-balance-summary" class="space-y-3 text-sm">
+                                    <!-- Contenido del balance renderizado por JS -->
+                                </div>
+                                <div class="mt-4 pt-4 border-t border-gray-200">
+                                    <button id="liquidate-month-btn" class="w-full py-3 bg-red-600 text-white font-bold rounded-xl shadow-lg hover:bg-red-700 transition duration-300">
+                                        <i class="fas fa-handshake mr-2"></i> LIQUIDAR
+                                    </button>
+                                    <p class="text-xs text-gray-600 mt-2 text-center">Ajusta los saldos a cero.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <!-- GRÁFICO DE DISTRIBUCIÓN DE GASTOS (Full Width) -->
+                <div class="section-card">
+                    <button id="toggle-chart-btn" class="w-full text-left flex justify-between items-center text-xl font-bold text-gray-700 mb-4 focus:outline-none">
+                        Distribución de Gastos
+                        <i id="chart-toggle-icon" class="fas fa-chevron-down transition-transform duration-300"></i>
+                    </button>
+                    <div id="chart-collapsible-content">
+                        <div class="relative h-64 md:h-80 pt-2 border-t border-gray-200">
+                            <canvas id="category-chart"></canvas>
+                            <p id="chart-no-data" class="absolute inset-0 flex items-center justify-center text-gray-500 italic hidden">No hay datos para mostrar.</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ========================================================================================= -->
+            <!-- SECCIÓN 2: REGISTRO DE GASTO Y BOTONES DE CONFIGURACIÓN (100% ANCHO) -->
+            <!-- ========================================================================================= -->
+            <div class="max-w-7xl mx-auto px-4 md:px-8 pt-6">
+                <main class="space-y-6">
+                    <section class="section-card">
+                        <div class="flex justify-between items-center mb-4">
+                            <h2 class="text-xl font-bold text-red-700">Registrar Nuevo Gasto</h2>
+                            
+                            <!-- Botones de Configuración Rápida (Movidos aquí) -->
+                            <div class="flex space-x-2">
+                                <button id="open-categories-modal-btn" class="py-1 px-3 bg-green-500 text-white font-bold rounded-xl hover:bg-green-600 transition duration-300 text-xs">
+                                    Categorías
+                                </button>
+                                <button id="open-payment-methods-modal-btn" class="py-1 px-3 bg-yellow-500 text-white font-bold rounded-xl hover:bg-yellow-600 transition duration-300 text-xs">
+                                    Métodos Pago
+                                </button>
+                            </div>
+                        </div>
+                        <form id="expense-form" class="space-y-4">
+                            
+                            <!-- Fila 1: Descripción, Monto -->
+                            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                <div class="md:col-span-2">
+                                    <label for="expense-description" class="block text-sm font-medium text-gray-700">Descripción</label>
+                                    <input type="text" id="expense-description" required class="w-full mt-1 custom-input">
+                                </div>
+                                <div>
+                                    <label for="expense-amount" class="block text-sm font-medium text-gray-700">Monto (S/)</label>
+                                    <input type="number" id="expense-amount" min="0.01" step="0.01" required class="w-full mt-1 custom-input">
+                                </div>
+                            </div>
+                            
+                            <!-- Fila 2: Pagador, Tipo de Gasto, Método de Pago -->
+                            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                <!-- Pagado Por (Custom Select) -->
+                                <div>
+                                    <label for="expense-paid-by-button" class="block text-sm font-medium text-gray-700">Pagado Por</label>
+                                    <div class="relative custom-select-container mt-1">
+                                        <button type="button" id="expense-paid-by-button" class="custom-select-button w-full text-left custom-input flex justify-between items-center transition duration-150 ease-in-out focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                                            <span class="custom-select-display text-gray-500">Selecciona quién pagó</span>
+                                            <i class="fas fa-chevron-down text-gray-400 transition-transform duration-200"></i>
+                                        </button>
+                                        <div class="custom-select-options absolute hidden mt-1 w-full bg-white rounded-lg shadow-lg z-20 border border-gray-200">
+                                            <!-- Opciones populadas por JS -->
+                                        </div>
+                                        <input type="hidden" id="expense-paid-by" required>
+                                    </div>
+                                </div>
+                                <!-- Tipo de Gasto (Custom Select) -->
+                                <div>
+                                    <label for="expense-type-button" class="block text-sm font-medium text-gray-700">Tipo de Gasto</label>
+                                    <div class="relative custom-select-container mt-1">
+                                        <button type="button" id="expense-type-button" class="custom-select-button w-full text-left custom-input flex justify-between items-center transition duration-150 ease-in-out focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                                            <span class="custom-select-display">Personal</span>
+                                            <i class="fas fa-chevron-down text-gray-400 transition-transform duration-200"></i>
+                                        </button>
+                                        <div class="custom-select-options absolute hidden mt-1 w-full bg-white rounded-lg shadow-lg z-20 border border-gray-200">
+                                            <div class="custom-select-option selected" data-value="personal">Personal</div>
+                                            <div class="custom-select-option" data-value="shared">Compartido</div>
+                                        </div>
+                                        <input type="hidden" id="expense-type" value="personal" required>
+                                    </div>
+                                </div>
+                                <!-- Método de Pago (Custom Select) -->
+                                <div>
+                                    <label for="expense-payment-method-id-button" class="block text-sm font-medium text-gray-700">Método de Pago</label>
+                                    <div class="relative custom-select-container mt-1">
+                                        <button type="button" id="expense-payment-method-id-button" class="custom-select-button w-full text-left custom-input flex justify-between items-center transition duration-150 ease-in-out focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                                            <span class="custom-select-display text-gray-500">Selecciona método</span>
+                                            <i class="fas fa-chevron-down text-gray-400 transition-transform duration-200"></i>
+                                        </button>
+                                        <div class="custom-select-options absolute hidden mt-1 w-full bg-white rounded-lg shadow-lg z-20 border border-gray-200">
+                                            <!-- Opciones populadas por JS -->
+                                        </div>
+                                        <input type="hidden" id="expense-payment-method-id" required>
+                                    </div>
+                                </div>
+                            </div>
+
+
+                            <!-- Fila 3: Categoría y Subcategoría -->
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <!-- Categoría (Custom Select) -->
+                                <div>
+                                    <label for="expense-category-button" class="block text-sm font-medium text-gray-700">Categoría</label>
+                                    <div class="relative custom-select-container mt-1">
+                                        <button type="button" id="expense-category-button" class="custom-select-button w-full text-left custom-input flex justify-between items-center">
+                                            <span class="custom-select-display text-gray-500">Selecciona categoría</span>
+                                            <i class="fas fa-chevron-down text-gray-400"></i>
+                                        </button>
+                                        <div class="custom-select-options absolute hidden mt-1 w-full bg-white rounded-lg shadow-lg z-20"></div>
+                                        <input type="hidden" id="expense-category" required>
+                                    </div>
+                                </div>
+                                <!-- Subcategoría (Custom Select) -->
+                                <div>
+                                    <label for="expense-subcategory-button" class="block text-sm font-medium text-gray-700">Subcategoría</label>
+                                    <div class="relative custom-select-container mt-1">
+                                        <button type="button" id="expense-subcategory-button" disabled class="custom-select-button w-full text-left custom-input bg-gray-100 flex justify-between items-center">
+                                            <span class="custom-select-display text-gray-500">Selecciona subcategoría</span>
+                                            <i class="fas fa-chevron-down text-gray-400"></i>
+                                        </button>
+                                        <div class="custom-select-options absolute hidden mt-1 w-full bg-white rounded-lg shadow-lg z-20"></div>
+                                        <input type="hidden" id="expense-subcategory">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Fila 4: Opciones y Botón de Añadir -->
+                            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 pt-4 items-end">
+                                <!-- Columna 1 y 2: Gasto Fijo y Recurrencia -->
+                                <div class="flex items-end space-x-4 md:col-span-2">
+                                    <div class="flex items-center h-12">
+                                        <input id="expense-is-fixed" type="checkbox" class="h-4 w-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500">
+                                        <label for="expense-is-fixed" class="ml-2 block text-sm font-medium text-gray-900">Gasto Fijo</label>
+                                    </div>
+                                    <div id="fixed-recurrence-container" class="hidden">
+                                        <label for="fixed-recurrence-months" class="block text-sm font-medium text-red-700">Meses</label>
+                                        <input type="number" id="fixed-recurrence-months" min="1" max="60" value="12" class="w-24 mt-1 custom-input">
+                                    </div>
+                                </div>
+                                
+                                <!-- Columna 3: Botón de Añadir Gasto -->
+                                <div class="md:col-span-1">
+                                    <button type="submit" class="w-full py-3 bg-red-500 text-white font-bold rounded-xl shadow-lg hover:bg-red-600 transition duration-300">
+                                        Añadir Gasto
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- Información de Ciclo de Tarjeta de Crédito (Condicional) -->
+                            <div id="credit-card-details" class="space-y-2 p-3 border border-yellow-300 rounded-lg bg-yellow-50 hidden">
+                                <p class="font-bold text-xs text-yellow-800">Detalles de Facturación:</p>
+                                <div class="flex justify-between text-xs">
+                                    <span class="text-gray-700">Inicio de Ciclo: <strong id="cc-cycle-start-display" class="font-semibold"></strong></span>
+                                    <span class="text-gray-700">Límite de Pago: <strong id="cc-payment-date-display" class="font-semibold"></strong></span>
+                                </div>
+                            </div>
+                        </form>
+                    </section>
+                </main>
+            </div>
+
+            <!-- ========================================================================================= -->
+            <!-- SECCIÓN 3: INFORMES (GASTOS FIJOS, CALENDARIO, HISTORIAL) -->
+            <!-- ========================================================================================= -->
+            <div class="max-w-7xl mx-auto px-4 md:px-8 mt-6">
+                <section class="section-card space-y-6">
+                    
+                    <!-- Encabezado del Informe y Filtro de Mes -->
+                    <div class="flex flex-col md:flex-row justify-between md:items-center pb-2 mb-4 gap-4">
+                        <h2 class="text-xl font-bold text-gray-800">Informe de Gastos por Categoría</h2>
+                        
+                        <!-- Ciclo de Visualización -->
+                        <div id="month-selector" class="flex items-center justify-between p-2 bg-gray-50 rounded-lg border border-gray-200 w-full max-w-xs md:max-w-sm">
+                            <button id="prev-month-btn" class="p-2 bg-white rounded-lg hover:bg-gray-200 transition font-bold text-lg shadow-sm">
+                                &lt;
+                            </button>
+                            <div class="text-center">
+                                <h3 id="current-month-name" class="text-xl font-extrabold text-gray-800 leading-none">Cargando</h3>
+                                <p id="current-year" class="text-sm text-gray-500 -mt-1">...</p>
+                            </div>
+                            <button id="next-month-btn" class="p-2 bg-white rounded-lg hover:bg-gray-200 transition font-bold text-lg shadow-sm">
+                                &gt;
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- MODIFICADO: Contenedor para el botón de filtros y el popover -->
+                    <div class="relative mb-4">
+                        <!-- Botón para abrir/cerrar el popover de filtros -->
+                        <button id="filter-popover-button" class="inline-flex items-center px-4 py-2 bg-white border border-gray-300 rounded-lg shadow-sm text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                            <i class="fas fa-filter mr-2"></i>
+                            Filtros
+                            <!-- Indicador visual si hay filtros activos -->
+                            <span class="active-indicator ml-2 h-2 w-2 bg-indigo-500 rounded-full"></span>
+                        </button>
+
+                        <!-- El Popover de Filtros (inicialmente oculto) -->
+                        <div id="filter-popover" class="absolute hidden mt-2 w-full max-w-md bg-white rounded-lg shadow-xl border border-gray-200 z-30 p-4 space-y-4">
+                            <!-- Botón para cerrar el popover -->
+                            <button id="close-filter-popover-btn" class="absolute top-2 right-2 text-gray-400 hover:text-gray-600">
+                                <i class="fas fa-times"></i>
+                            </button>
+                            <h4 class="text-lg font-semibold text-gray-800">Filtrar Transacciones</h4>
+                            <!-- Área para mostrar etiquetas seleccionadas -->
+                            <div id="selected-filter-tags" class="flex flex-wrap gap-1 border-b pb-2 mb-2 min-h-[2rem]">
+                                <!-- Etiquetas seleccionadas se añadirán aquí -->
+                                <span id="no-filters-label" class="text-xs text-gray-500 italic">No hay filtros aplicados.</span>
+                            </div>
+                            <!-- Filtro por descripción -->
+                            <div>
+                                <label for="filter-description" class="block text-xs font-medium text-gray-600 mb-1">Buscar por Descripción:</label>
+                                <input type="text" id="filter-description" placeholder="Ej: Supermercado, Luz..." class="w-full mt-1 custom-input text-sm">
+                            </div>
+                            <!-- Filtro por etiquetas de Categoría -->
+                            <div>
+                                <label class="block text-xs font-medium text-gray-600 mb-1">Filtrar por Categoría:</label>
+                                <div id="filter-tag-categories" class="flex flex-wrap -m-1">
+                                    <!-- Etiquetas de categoría se generarán aquí -->
+                                    <span class="text-xs text-gray-500 italic m-1">Cargando categorías...</span>
+                                </div>
+                            </div>
+                            <!-- Filtro por etiquetas de Participante -->
+                            <div>
+                                <label class="block text-xs font-medium text-gray-600 mb-1">Filtrar por Pagador:</label>
+                                <div id="filter-tag-participants" class="flex flex-wrap -m-1">
+                                    <!-- Etiquetas de participante se generarán aquí -->
+                                    <span class="text-xs text-gray-500 italic m-1">Cargando participantes...</span>
+                                </div>
+                            </div>
+                            <!-- NUEVO: Filtro por etiquetas de Método de Pago -->
+                            <div>
+                                <label class="block text-xs font-medium text-gray-600 mb-1">Filtrar por Método de Pago:</label>
+                                <div id="filter-tag-payment-methods" class="flex flex-wrap -m-1">
+                                    <!-- Etiquetas de método de pago se generarán aquí -->
+                                    <span class="text-xs text-gray-500 italic m-1">Cargando métodos...</span>
+                                </div>
+                            </div>
+                            <button id="reset-filters-btn" class="w-full py-2 text-sm bg-gray-200 text-gray-700 font-medium rounded-lg hover:bg-gray-300 mt-4">
+                                Limpiar Filtros
+                            </button>
+                        </div>
+                    </div>
+                    <!-- FIN Contenedor Filtros/Popover -->
+
+                    
+                    <!-- Rejilla de Informes -->
+                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+                        <!-- Columna 1 y 2: Historial de Transacciones -->
+                        <div class="lg:col-span-2">
+                            <div class="space-y-4">
+                                <h3 class="text-xl font-bold text-gray-700">Historial de Transacciones</h3>
+                                <span class="text-xs text-purple-600 font-semibold block -mt-2" id="expense-diagnostic"></span>
+                                <div id="expense-report-by-category" class="space-y-3">
+                                    <p class="text-gray-500 text-center py-4 italic">No hay gastos en este ciclo.</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Columna 3 (1/3): Próximos Gastos Fijos -->
+                        <aside class="lg:col-span-1">
+                            <div class="section-card h-full">
+                                <h3 class="text-lg font-bold text-red-700 mb-4 flex items-center">
+                                    <i class="fas fa-calendar-alt mr-2"></i> Próximos Gastos Fijos
+                                </h3>
+                                <div id="fixed-expenses-summary" class="space-y-2 text-sm">
+                                    <p class="text-gray-500 italic">No hay gastos fijos registrados.</p>
+                                </div>
+                            </div>
+                        </aside>
+
+                    </div>
+                </section>
             </div>
         </div>
     </div>
@@ -1033,7 +1276,7 @@
                 <button type="submit" id="save-method-btn" class="w-full py-2 bg-yellow-500 text-white font-bold rounded-xl shadow-lg hover:bg-yellow-600 transition duration-300">
                     Añadir Método
                 </button>
-                <button type="button" id="cancel-edit-method-btn" class="w-full py-2 bg-gray-300 text-gray-800 font-bold rounded-xl hover:bg-gray-400 transition duration-300 hidden">
+                <button type="button" id="cancel-edit-method-btn" class="w-full py-2 bg-gray-300 text-gray-800 font-bold rounded-lg hover:bg-gray-400 transition duration-300 hidden">
                     Cancelar Edición
                 </button>
             </form>
@@ -1045,7 +1288,7 @@
     <!-- Modal de Añadir/Editar Participante -->
     <div id="add-participant-modal" class="fixed inset-0 bg-gray-600 bg-opacity-70 hidden items-center justify-center p-4 z-50">
         <div class="bg-white p-6 rounded-xl shadow-2xl max-w-sm w-full">
-            <h3 class="text-2xl font-bold mb-4 text-purple-700" id="participant-modal-title">Añadir Participante </h3>
+            <h3 class="text-2xl font-bold mb-4 text-purple-700" id="participant-modal-title">Añadir Participante</h3>
             <form id="participant-form" class="space-y-4">
                 <input type="hidden" id="participant-id-to-edit">
                 
@@ -1077,7 +1320,7 @@
     <!-- Modal de Edición de Gasto -->
     <div id="edit-expense-modal" class="fixed inset-0 bg-gray-600 bg-opacity-70 hidden items-center justify-center p-4 z-50">
         <div class="bg-white p-6 rounded-xl shadow-2xl max-w-lg w-full">
-            <h3 class="text-2xl font-bold mb-4 text-red-700">Editar Gasto </h3>
+            <h3 class="text-2xl font-bold mb-4 text-red-700">Editar Gasto</h3>
             <form id="edit-expense-form" class="space-y-4">
                 <input type="hidden" id="edit-expense-id">
                 
@@ -1933,7 +2176,6 @@
             setupExpenseFormListeners();
             setupExpenseModalListeners(); 
             setupLiquidateListeners(); 
-            setupDataManagementListeners(); 
             setupDynamicFilterListeners(); // Configura listeners del popover y filtros internos
             
             // CORREGIDO: Añadir listener para el botón de logout principal
@@ -2063,13 +2305,23 @@
             const form = document.getElementById('participant-form');
             
             const toggleSidebar = (open) => {
+                const sidebar = document.getElementById('participant-sidebar'); // Asegúrate de tener la referencia
+                const appLayout = document.getElementById('app-layout');      // Referencia al layout principal
                 sidebar.classList.toggle('open', open);
-                backdrop.classList.toggle('open', open);
-                document.body.classList.toggle('no-scroll', open);
+                appLayout.classList.toggle('sidebar-is-open', open);
+                //backdrop.classList.toggle('open', open);
+                //document.body.classList.toggle('no-scroll', open);
             };
             
-            document.getElementById('open-participants-sidebar-btn').addEventListener('click', () => toggleSidebar(true));
-            document.getElementById('close-sidebar-btn').addEventListener('click', () => toggleSidebar(false));
+            //document.getElementById('open-participants-sidebar-btn').addEventListener('click', () => toggleSidebar(true));
+            document.getElementById('close-sidebar-btn').addEventListener('click', () => {
+            // Obtiene el estado actual del sidebar
+            const sidebar = document.getElementById('participant-sidebar');
+            const isOpen = sidebar.classList.contains('open');
+
+            // Llama a la función con el estado INVERSO para bascular
+            toggleSidebar(!isOpen); 
+            });
             backdrop.addEventListener('click', () => {
                 if (sidebar.classList.contains('open')) {
                     toggleSidebar(false);
