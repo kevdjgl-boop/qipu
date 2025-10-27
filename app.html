@@ -3347,10 +3347,9 @@
 
                 // Crear el HTML del contenido (lo que se va a ocultar/mostrar)
                 const contentHTML = `
-                    <div id="${contentId}" class="category-collapsible-content"> {/* Empieza oculto */}
+                    <div id="${contentId}" class="category-collapsible-content">
                         ${budgetTrackerHTML}
-                        <div class='space-y-3 mt-3'>
-                            {/* Ordena los gastos dentro de la categoría y crea sus tarjetas */}
+                        <div class='space-y-3 mt-3'>                        
                             ${expenses.sort((a,b) => new Date(b.dateCreated || b.date + "T00:00:00Z") - new Date(a.dateCreated || a.date + "T00:00:00Z")).map(exp => createExpenseCardHTML(exp, participantsMap, paymentMethodsMap, true)).join('')}
                         </div>
                     </div>
