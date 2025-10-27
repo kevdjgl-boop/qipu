@@ -1594,63 +1594,54 @@
         }
         
         // CORREGIDO: Lógica de cálculo de ciclo de tarjeta de crédito mejorada
- function getCycleDates(method, referenceDate) {
-    console.log(`[getCycleDates] Iniciando para ${method.name}, refDate: ${referenceDate.toISOString().split('T')[0]}`);
+function getCycleDates(method, referenceDate) {
     if (method.type !== 'credit' || !method.paymentDay) {
-        console.log(`[getCycleDates] Método no es crédito o no tiene día de pago.`);
         return { startDate: null, closingDate: null, paymentDate: null };
     }
 
     const paymentDay = method.paymentDay;
-    const gracePeriodDays = 25;
+    const gracePeriodDays = 25; // Días entre cierre y pago
 
     const refYear = referenceDate.getUTCFullYear();
-    const refMonth = referenceDate.getUTCMonth();
+    const refMonth = referenceDate.getUTCMonth(); // 0 = Enero
     const refDay = referenceDate.getUTCDate();
-    const referenceDateUTC = new Date(Date.UTC(refYear, refMonth, refDay));
-    console.log(`[getCycleDates] referenceDateUTC: ${referenceDateUTC.toISOString().split('T')[0]}`);
 
-    // Pago ESTE mes y cierre asociado
-    let paymentDateThisMonth = new Date(Date.UTC(refYear, refMonth, paymentDay));
-    let closingDateForThisMonthPay = new Date(paymentDateThisMonth.getTime());
-    closingDateForThisMonthPay.setUTCDate(closingDateForThisMonthPay.getUTCDate() - gracePeriodDays);
-    console.log(`[getCycleDates] Cierre para pago ${paymentDateThisMonth.toISOString().split('T')[0]} sería: ${closingDateForThisMonthPay.toISOString().split('T')[0]}`);
-
-    // Pago SIGUIENTE mes y cierre asociado
-    let paymentDateNextMonth = new Date(Date.UTC(refYear, refMonth + 1, paymentDay));
-    let closingDateForNextMonthPay = new Date(paymentDateNextMonth.getTime());
-    closingDateForNextMonthPay.setUTCDate(closingDateForNextMonthPay.getUTCDate() - gracePeriodDays);
-    console.log(`[getCycleDates] Cierre para pago ${paymentDateNextMonth.toISOString().split('T')[0]} sería: ${closingDateForNextMonthPay.toISOString().split('T')[0]}`);
+    // 1. Calcula la fecha de cierre que ocurriría ANTES del pago del MES SIGUIENTE al de referencia.
+    //    Ej: Si refDate es Octubre, calcula el cierre asociado al pago de Noviembre (~10 u 11 de Octubre).
+    let potentialClosingDate = new Date(Date.UTC(refYear, refMonth + 1, paymentDay));
+    potentialClosingDate.setUTCDate(potentialClosingDate.getUTCDate() - gracePeriodDays);
 
     let activeClosingDate;
     let cyclePaymentDate;
 
-    // Determinar ciclo activo
-    if (referenceDateUTC.getTime() > closingDateForThisMonthPay.getTime()) {
-        console.log(`[getCycleDates] RefDate (${referenceDateUTC.toISOString().split('T')[0]}) > CierreEsteMes (${closingDateForThisMonthPay.toISOString().split('T')[0]}). Ciclo activo cierra el mes siguiente.`);
-        activeClosingDate = closingDateForNextMonthPay;
-        cyclePaymentDate = paymentDateNextMonth;
+    // 2. Compara la fecha de referencia con esta fecha de cierre potencial.
+    if (Date.UTC(refYear, refMonth, refDay) > potentialClosingDate.getTime()) {
+        // Si la fecha de referencia (hoy) es POSTERIOR a esa fecha de cierre,
+        // significa que el ciclo activo es el que cierra EL MES SIGUIENTE a 'potentialClosingDate'.
+        // Avanzamos un mes la fecha de cierre y la de pago.
+        activeClosingDate = new Date(potentialClosingDate.getTime());
+        activeClosingDate.setUTCMonth(activeClosingDate.getUTCMonth() + 1);
+        cyclePaymentDate = new Date(Date.UTC(activeClosingDate.getUTCFullYear(), activeClosingDate.getUTCMonth() + 1, paymentDay)); // Pago es un mes después del cierre activo
     } else {
-        console.log(`[getCycleDates] RefDate (${referenceDateUTC.toISOString().split('T')[0]}) <= CierreEsteMes (${closingDateForThisMonthPay.toISOString().split('T')[0]}). Ciclo activo cierra este mes.`);
-        activeClosingDate = closingDateForThisMonthPay;
-        cyclePaymentDate = paymentDateThisMonth;
+        // Si la fecha de referencia (hoy) es ANTERIOR O IGUAL a esa fecha de cierre,
+        // significa que el ciclo activo es precisamente el que termina en 'potentialClosingDate'.
+        activeClosingDate = potentialClosingDate;
+        cyclePaymentDate = new Date(Date.UTC(refYear, refMonth + 1, paymentDay)); // El pago es el mes siguiente a refMonth
     }
-    console.log(`[getCycleDates] activeClosingDate 결정됨: ${activeClosingDate.toISOString().split('T')[0]}`);
 
-    // Calcular fecha de inicio
+    // 3. Calcula la fecha de inicio del ciclo activo (un mes antes del cierre + 1 día).
     let activeStartDate = new Date(activeClosingDate.getTime());
     activeStartDate.setUTCMonth(activeStartDate.getUTCMonth() - 1);
     activeStartDate.setUTCDate(activeStartDate.getUTCDate() + 1);
 
     const toISODateString = (date) => date.toISOString().split('T')[0];
 
-    const result = {
+    // 4. Devuelve las fechas calculadas para el ciclo activo.
+    return {
         startDate: toISODateString(activeStartDate),
         closingDate: toISODateString(activeClosingDate),
         paymentDate: toISODateString(cyclePaymentDate)
     };
-    console.log(`[getCycleDates] Resultado Final:`, result);
-    return result;
 }
 
         // --- Funciones de Autenticación (REDUCIDAS) ---
@@ -3626,7 +3617,7 @@ function renderCreditCardSummary(expensesForMonth) {
     container.innerHTML = '';
     let totalSpendingDisplayed = 0;
 
-    console.log("--- Iniciando renderCreditCardSummary ---");
+    //console.log("--- Iniciando renderCreditCardSummary ---");
 
     paymentMethods.forEach(method => {
         let totalSpentOnMethod = 0;
@@ -3634,7 +3625,7 @@ function renderCreditCardSummary(expensesForMonth) {
         let cardSubtitle = `Gasto total en ${MONTH_NAMES[currentFilterDate.getMonth()]}`;
         let paymentDateHTML = '';
 
-        console.log(`\nProcesando método: ${method.name} (Tipo: ${method.type}, ID: ${method.id})`); // Log por método con ID
+        //console.log(`\nProcesando método: ${method.name} (Tipo: ${method.type}, ID: ${method.id})`); // Log por método con ID
 
         // --- Lógica Diferenciada por Tipo ---
         if (method.type === 'credit') {
@@ -3646,7 +3637,7 @@ function renderCreditCardSummary(expensesForMonth) {
                 const cycleStart = new Date(startDate + 'T00:00:00Z').getTime();
                 const cycleEnd = new Date(closingDate + 'T00:00:00Z').getTime();
 
-                console.log(` >> Filtrando gastos con ID ${method.id} entre ${startDate} (${cycleStart}) y ${closingDate} (${cycleEnd})`);
+                //console.log(` >> Filtrando gastos con ID ${method.id} entre ${startDate} (${cycleStart}) y ${closingDate} (${cycleEnd})`);
 
                 expensesToConsider = allExpenses.filter(exp => {
                     const expenseDateStr = exp.date; // Fecha como YYYY-MM-DD
@@ -3664,7 +3655,7 @@ function renderCreditCardSummary(expensesForMonth) {
                     return isCorrectMethod && isDateValid && isAfterStart && isBeforeEnd;
                 });
 
-                console.log(` >> Gastos ENCONTRADOS en ciclo actual para ${method.name}:`, expensesToConsider.length > 0 ? expensesToConsider : 'NINGUNO');
+                //console.log(` >> Gastos ENCONTRADOS en ciclo actual para ${method.name}:`, expensesToConsider.length > 0 ? expensesToConsider : 'NINGUNO');
 
                 totalSpentOnMethod = expensesToConsider.reduce((sum, exp) => sum + exp.amount, 0);
                 cardSubtitle = `Gasto del ciclo actual (${formatDate(startDate)} al ${formatDate(closingDate)})`;
@@ -3686,7 +3677,7 @@ function renderCreditCardSummary(expensesForMonth) {
 
 
         // --- Renderizado (Solo si hubo gasto) ---
-        console.log(` >> Total calculado para ${method.name}: ${formatCurrency(totalSpentOnMethod)}`);
+        //console.log(` >> Total calculado para ${method.name}: ${formatCurrency(totalSpentOnMethod)}`);
         if (totalSpentOnMethod > 0) {
             console.log(` >> RENDERIZANDO tarjeta para ${method.name}`);
             // ... (HTML de la tarjeta, sin cambios) ...
@@ -3703,7 +3694,7 @@ function renderCreditCardSummary(expensesForMonth) {
     }); // Fin del forEach
 
     // --- Mostrar/Ocultar Sección ---
-    console.log(`--- Fin renderCreditCardSummary | Total Gasto Mostrado: ${formatCurrency(totalSpendingDisplayed)} ---`);
+    //console.log(`--- Fin renderCreditCardSummary | Total Gasto Mostrado: ${formatCurrency(totalSpendingDisplayed)} ---`);
     if (totalSpendingDisplayed === 0) { /* ... ocultar ... */ }
     else { /* ... mostrar ... */ }
 }
