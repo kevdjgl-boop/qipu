@@ -3605,57 +3605,104 @@ function getCycleDates(method, referenceDate) {
         }
 
         // MODIFICADO: renderCreditCardSummary ahora usa los gastos filtrados por mes
-function getCycleDates(method, referenceDate) {
-    if (method.type !== 'credit' || !method.paymentDay) {
-        return { startDate: null, closingDate: null, paymentDate: null };
-    }
+function renderCreditCardSummary(expensesForMonth) {
+    const allExpenses = appState.expenses || [];
+    const paymentMethods = appState.paymentMethods || [];
+    const container = document.getElementById('credit-card-summary-cards');
+    const section = document.getElementById('credit-card-summary-section');
+    const today = new Date(); // Fecha actual
 
-    const paymentDay = method.paymentDay;
-    const gracePeriodDays = 25; // Días entre cierre y pago
+    if (!container || !section) return;
 
-    const refYear = referenceDate.getUTCFullYear();
-    const refMonth = referenceDate.getUTCMonth(); // 0 = Enero
-    const refDay = referenceDate.getUTCDate();
-    const referenceDateUTC = new Date(Date.UTC(refYear, refMonth, refDay));
+    container.innerHTML = '';
+    let totalSpendingDisplayed = 0;
 
-    // Fecha de pago ESTE mes y fecha de cierre asociada
-    let paymentDateThisMonth = new Date(Date.UTC(refYear, refMonth, paymentDay));
-    let closingDateForThisMonthPay = new Date(paymentDateThisMonth.getTime());
-    closingDateForThisMonthPay.setUTCDate(closingDateForThisMonthPay.getUTCDate() - gracePeriodDays);
+    paymentMethods.forEach(method => {
+        let totalSpentOnMethod = 0;
+        let expensesToConsider = [];
+        let cardSubtitle = `Gasto total en ${MONTH_NAMES[currentFilterDate.getMonth()]}`;
+        let paymentDateHTML = '';
 
-    // Fecha de pago SIGUIENTE mes y fecha de cierre asociada
-    let paymentDateNextMonth = new Date(Date.UTC(refYear, refMonth + 1, paymentDay));
-    let closingDateForNextMonthPay = new Date(paymentDateNextMonth.getTime());
-    closingDateForNextMonthPay.setUTCDate(closingDateForNextMonthPay.getUTCDate() - gracePeriodDays);
+        // --- Lógica Diferenciada por Tipo ---
+        if (method.type === 'credit') {
+            // Calcular ciclo basado en HOY
+            const { startDate, closingDate, paymentDate } = getCycleDates(method, today);
 
-    let activeClosingDate;
-    let cyclePaymentDate;
+            if (startDate && closingDate) {
+                // Convertir fechas de inicio/cierre del ciclo a números (timestamps UTC midnight)
+                const cycleStart = new Date(startDate + 'T00:00:00Z').getTime();
+                const cycleEnd = new Date(closingDate + 'T00:00:00Z').getTime();
 
-    // Determinar ciclo activo
-    if (referenceDateUTC.getTime() > closingDateForThisMonthPay.getTime()) {
-        // Si hoy es DESPUÉS del cierre asociado al pago de ESTE mes,
-        // el ciclo activo es el que cierra ANTES del pago del SIGUIENTE mes.
-        activeClosingDate = closingDateForNextMonthPay;
-        cyclePaymentDate = paymentDateNextMonth;
+                // Filtrar gastos DENTRO del ciclo actual usando COMPARACIÓN NUMÉRICA
+                expensesToConsider = allExpenses.filter(exp => {
+                    // Convertir fecha del gasto a número (timestamp UTC midnight)
+                    const expenseDate = new Date(exp.date + 'T00:00:00Z').getTime();
+                    // Compara números con números, y verifica que la fecha del gasto sea válida
+                    return exp.paymentMethodId === method.id &&
+                           !isNaN(expenseDate) &&
+                           expenseDate >= cycleStart &&
+                           expenseDate <= cycleEnd;
+                });
+
+                totalSpentOnMethod = expensesToConsider.reduce((sum, exp) => sum + exp.amount, 0);
+                cardSubtitle = `Gasto del ciclo actual (${formatDate(startDate)} al ${formatDate(closingDate)})`;
+                if(paymentDate) {
+                    paymentDateHTML = `<p class="text-xs text-gray-600 mt-1 text-right">Próximo pago (aprox): <strong class="text-red-600">${formatDate(paymentDate)}</strong></p>`;
+                }
+            } else {
+                totalSpentOnMethod = 0;
+                cardSubtitle = "Error al calcular ciclo actual";
+            }
+        } else {
+            // Lógica para efectivo y otros (usa mes calendario)
+            expensesToConsider = expensesForMonth.filter(exp => exp.paymentMethodId === method.id);
+            totalSpentOnMethod = expensesToConsider.reduce((sum, exp) => sum + exp.amount, 0);
+        }
+        // --- Fin Lógica Diferenciada ---
+
+
+        // --- Renderizado (Solo si hubo gasto) ---
+        if (totalSpentOnMethod > 0) {
+            let cardColorClasses = 'bg-gray-50 border-gray-200';
+            let titleColorClass = 'text-gray-800';
+            let amountColorClass = 'text-gray-900';
+
+            if (method.type === 'cash') {
+                cardColorClasses = 'bg-green-50 border-green-200';
+                titleColorClass = 'text-green-800';
+                amountColorClass = 'text-green-900';
+            } else if (method.type === 'credit') {
+                cardColorClasses = 'bg-cyan-50 border-cyan-200';
+                titleColorClass = 'text-cyan-800';
+                amountColorClass = 'text-cyan-900';
+            }
+
+            const cardHTML = `
+                <div class="p-4 rounded-lg border ${cardColorClasses}">
+                    <p class="font-bold ${titleColorClass}">${method.name}</p>
+                    <p class="text-2xl font-extrabold ${amountColorClass} mt-1">${formatCurrency(totalSpentOnMethod)}</p>
+                    <div class="mt-3">
+                         <p class="text-xs text-gray-600">${cardSubtitle}</p>
+                         ${paymentDateHTML}
+                    </div>
+                </div>
+            `;
+            container.insertAdjacentHTML('beforeend', cardHTML);
+            totalSpendingDisplayed += totalSpentOnMethod;
+        }
+    });
+
+    // --- Mostrar/Ocultar Sección ---
+    if (totalSpendingDisplayed === 0) {
+         section.classList.add('hidden');
+         container.innerHTML = `<p class="text-gray-500 italic text-sm col-span-full">No hay gastos registrados para mostrar en este resumen.</p>`;
     } else {
-        // Si hoy es ANTES O IGUAL al cierre asociado al pago de ESTE mes,
-        // el ciclo activo es el que cierra ANTES del pago de ESTE mes.
-        activeClosingDate = closingDateForThisMonthPay;
-        cyclePaymentDate = paymentDateThisMonth;
+         section.classList.remove('hidden');
+         const existingMessage = container.querySelector('p.italic.col-span-full');
+         if (existingMessage) {
+             existingMessage.remove();
+         }
     }
-
-    // Calcular fecha de inicio del ciclo activo
-    let activeStartDate = new Date(activeClosingDate.getTime());
-    activeStartDate.setUTCMonth(activeStartDate.getUTCMonth() - 1);
-    activeStartDate.setUTCDate(activeStartDate.getUTCDate() + 1);
-
-    const toISODateString = (date) => date.toISOString().split('T')[0];
-
-    return {
-        startDate: toISODateString(activeStartDate),
-        closingDate: toISODateString(activeClosingDate),
-        paymentDate: toISODateString(cyclePaymentDate)
-    };
 }
         // --- Main Render Function ---
         function renderUI() {
