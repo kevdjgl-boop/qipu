@@ -1150,6 +1150,10 @@
                     </div>
                     <!-- FIN Contenedor Filtros/Popover -->
 
+                        <div id="budget-summary-section" class="mb-6 space-y-3">
+                            <h3 class="text-lg font-semibold text-gray-700 border-b pb-1">Resumen de Presupuestos</h3>
+                            <p class="text-sm text-gray-500 italic">Cargando resumen...</p>
+                        </div>
                     
                     <!-- Rejilla de Informes -->
                     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -3428,6 +3432,69 @@
             sharedBalanceEl.innerHTML = balanceHtml;
         }
 
+        // ===== INICIO: NUEVA FUNCIÓN PARA RENDERIZAR RESUMEN DE PRESUPUESTOS =====
+            function renderBudgetSummary(expensesForMonth, categoriesWithBudget) {
+                const summaryEl = document.getElementById('budget-summary-section');
+                if (!summaryEl) return;
+
+                // 1. Filtrar solo categorías con presupuesto > 0
+                const relevantCategories = categoriesWithBudget.filter(cat => cat.budget > 0);
+
+                if (relevantCategories.length === 0) {
+                    summaryEl.innerHTML = `
+                        <h3 class="text-lg font-semibold text-gray-700 border-b pb-1">Resumen de Presupuestos</h3>
+                        <p class="text-sm text-gray-500 italic">No hay categorías con presupuesto asignado para este ciclo.</p>
+                    `;
+                    return;
+                }
+
+                // 2. Calcular el gasto total para cada categoría relevante en el mes actual
+                const categorySpending = relevantCategories.map(cat => {
+                    const spent = expensesForMonth
+                        .filter(exp => exp.category === cat.name)
+                        .reduce((sum, exp) => sum + exp.amount, 0);
+                    return { ...cat, spent };
+                });
+
+                // 3. Generar el HTML
+                let summaryHTML = `<h3 class="text-lg font-semibold text-gray-700 border-b pb-1">Resumen de Presupuestos</h3>`;
+
+                categorySpending.forEach(cat => {
+                    const remaining = cat.budget - cat.spent;
+                    const percentUsed = cat.budget > 0 ? (cat.spent / cat.budget) * 100 : 0;
+                    const barWidth = Math.min(100, percentUsed);
+                    let barColor = 'bg-indigo-500';
+                    let statusTextColor = 'text-gray-600';
+
+                    if (percentUsed > 100) {
+                        barColor = 'bg-red-500';
+                        statusTextColor = 'text-red-600 font-semibold';
+                    } else if (percentUsed > 80) {
+                        barColor = 'bg-yellow-500';
+                        statusTextColor = 'text-yellow-600';
+                    } else {
+                        barColor = 'bg-green-500';
+                        statusTextColor = 'text-green-600';
+                    }
+
+                    summaryHTML += `
+                        <div class="p-3 bg-white rounded-lg border border-gray-200 shadow-sm">
+                            <div class="flex justify-between items-center mb-1">
+                                <span class="font-bold text-gray-800">${cat.name}</span>
+                                <span class="text-sm font-semibold ${statusTextColor}">
+                                    ${formatCurrency(cat.spent)} / ${formatCurrency(cat.budget)}
+                                </span>
+                            </div>
+                            <div class="progress-bar-container">
+                                <div class="progress-bar-fill ${barColor}" style="width: ${barWidth}%;"></div>
+                            </div>
+                        </div>
+                    `;
+                });
+
+                summaryEl.innerHTML = summaryHTML;
+            }
+
         function renderCategoryChart(filteredExpenses) {
             const ctx = document.getElementById('category-chart').getContext('2d');
             const noDataEl = document.getElementById('chart-no-data');
@@ -3605,7 +3672,7 @@
                 }
             }
 
-
+            renderBudgetSummary(expensesForMonth, appState.categories);
             const summary = calculateSummary(appState, expensesForMonth); // Calcular summary con gastos SIN filtrar dinámicamente
             
             renderMonthSelector();
