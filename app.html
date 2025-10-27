@@ -3634,11 +3634,19 @@ function renderCreditCardSummary(expensesForMonth) {
 
             if (startDate && closingDate) {
                 // Filtrar gastos DENTRO del ciclo actual
-                expensesToConsider = allExpenses.filter(exp =>
-                    exp.paymentMethodId === method.id &&
-                    exp.date >= startDate &&
-                    exp.date <= closingDate
-                );
+              const cycleStart = new Date(startDate + 'T00:00:00Z').getTime();
+                const cycleEnd = new Date(closingDate + 'T00:00:00Z').getTime();
+
+                expensesToConsider = allExpenses.filter(exp => {
+                    // Convertir fecha del gasto a objeto Date (UTC midnight)
+                    const expenseDate = new Date(exp.date + 'T00:00:00Z').getTime();
+
+                    // Verificar si la fecha del gasto es válida y está dentro del ciclo
+                    return exp.paymentMethodId === method.id &&
+                           !isNaN(expenseDate) && // Asegura que la fecha del gasto sea válida
+                           expenseDate >= cycleStart &&
+                           expenseDate <= cycleEnd;
+                });
                 totalSpentOnMethod = expensesToConsider.reduce((sum, exp) => sum + exp.amount, 0);
                 cardSubtitle = `Gasto del ciclo actual (${formatDate(startDate)} al ${formatDate(closingDate)})`;
                 if(paymentDate) {
