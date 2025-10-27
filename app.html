@@ -3623,12 +3623,27 @@
                 if (method.type === 'credit') {
                     const { startDate, closingDate, paymentDate } = getCycleDates(method, currentFilterDate);
 
+                    // ===== INICIO: CÓDIGO DE DEPURACIÓN =====
+    console.log(`--------------------------------`);
+    console.log(`Tarjeta: ${method.name} (Día Pago: ${method.paymentDay})`);
+    console.log(`Mes Filtro UI: ${currentFilterDate.toISOString().split('T')[0]}`);
+    console.log(`Ciclo Calculado: INICIO=${startDate}, CIERRE=${closingDate}, PAGO=${paymentDate}`);
+    // ===== FIN: CÓDIGO DE DEPURACIÓN =====
+
                     if (startDate && closingDate) {
                         expensesToConsider = allExpenses.filter(exp =>
                             exp.paymentMethodId === method.id &&
                             exp.date >= startDate &&
                             exp.date <= closingDate
                         );
+
+// ===== INICIO: CÓDIGO DE DEPURACIÓN =====
+        // Muestra los gastos encontrados DENTRO del ciclo
+        console.log(`Gastos ENCONTRADOS en ciclo para ${method.name}:`, expensesToConsider);
+         // Muestra TODOS los gastos de esta tarjeta para comparar fechas
+        console.log(`TODOS los gastos (para comparar fechas) de ${method.name}:`, allExpenses.filter(exp => exp.paymentMethodId === method.id));
+        // ===== FIN: CÓDIGO DE DEPURACIÓN =====
+
                         totalSpentOnMethod = expensesToConsider.reduce((sum, exp) => sum + exp.amount, 0);
                         cardSubtitle = `Gasto del ciclo (${formatDate(startDate)} al ${formatDate(closingDate)})`;
                         if(paymentDate) {
