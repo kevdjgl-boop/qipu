@@ -1600,43 +1600,50 @@
     }
 
     const paymentDay = method.paymentDay;
-    // ASUNCIÓN CLAVE: El cierre es ~25 días ANTES del día de pago del MES SIGUIENTE.
-    // Ejemplo: Pago el 5 Nov -> Cierre ~11 Oct. Ciclo: 12 Sep - 11 Oct.
-    // Ejemplo: Pago el 5 Dic -> Cierre ~10 Nov. Ciclo: 12 Oct - 10 Nov.
-    const gracePeriodDays = 25; // Ajusta si tu banco usa otro periodo
+    const gracePeriodDays = 25; // Días entre cierre y pago
 
     const refYear = referenceDate.getUTCFullYear();
     const refMonth = referenceDate.getUTCMonth(); // 0 = Enero
     const refDay = referenceDate.getUTCDate();
+    const referenceDateUTC = new Date(Date.UTC(refYear, refMonth, refDay));
 
-    // Calcular la fecha de pago del MES SIGUIENTE a la fecha de referencia
-    let paymentDateForCycle = new Date(Date.UTC(refYear, refMonth + 1, paymentDay));
+    // Fecha de pago ESTE mes y fecha de cierre asociada
+    let paymentDateThisMonth = new Date(Date.UTC(refYear, refMonth, paymentDay));
+    let closingDateForThisMonthPay = new Date(paymentDateThisMonth.getTime());
+    closingDateForThisMonthPay.setUTCDate(closingDateForThisMonthPay.getUTCDate() - gracePeriodDays);
 
-    // Calcular la fecha de cierre RESTANDO el periodo de gracia a esa fecha de pago
-    let closingDate = new Date(paymentDateForCycle.getTime());
-    closingDate.setUTCDate(closingDate.getUTCDate() - gracePeriodDays);
+    // Fecha de pago SIGUIENTE mes y fecha de cierre asociada
+    let paymentDateNextMonth = new Date(Date.UTC(refYear, refMonth + 1, paymentDay));
+    let closingDateForNextMonthPay = new Date(paymentDateNextMonth.getTime());
+    closingDateForNextMonthPay.setUTCDate(closingDateForNextMonthPay.getUTCDate() - gracePeriodDays);
 
-    // Si la fecha de referencia es ANTERIOR O IGUAL a la fecha de cierre calculada,
-    // significa que el ciclo activo es el ANTERIOR. Retrocedemos un mes.
-    if (Date.UTC(refYear, refMonth, refDay) <= closingDate.getTime()) {
-        paymentDateForCycle.setUTCMonth(paymentDateForCycle.getUTCMonth() - 1);
-        closingDate.setUTCMonth(closingDate.getUTCMonth() - 1);
+    let activeClosingDate;
+    let cyclePaymentDate;
+
+    // Determinar ciclo activo
+    if (referenceDateUTC > closingDateForThisMonthPay) {
+        // Si hoy es DESPUÉS del cierre asociado al pago de ESTE mes,
+        // el ciclo activo es el que cierra ANTES del pago del SIGUIENTE mes.
+        activeClosingDate = closingDateForNextMonthPay;
+        cyclePaymentDate = paymentDateNextMonth;
+    } else {
+        // Si hoy es ANTES O IGUAL al cierre asociado al pago de ESTE mes,
+        // el ciclo activo es el que cierra ANTES del pago de ESTE mes.
+        activeClosingDate = closingDateForThisMonthPay;
+        cyclePaymentDate = paymentDateThisMonth;
     }
-    // Ahora, 'closingDate' es la fecha de cierre del ciclo ACTIVO que contiene a 'referenceDate'.
-    // Y 'paymentDateForCycle' es la fecha de pago para ESE ciclo.
 
-    // Calcular la fecha de inicio sumando 1 día al cierre del ciclo ANTERIOR
-    // (que es lo mismo que restar 1 mes a la fecha de cierre actual y sumar 1 día)
-    let startDate = new Date(closingDate.getTime());
-    startDate.setUTCMonth(startDate.getUTCMonth() - 1);
-    startDate.setUTCDate(startDate.getUTCDate() + 1);
+    // Calcular fecha de inicio del ciclo activo
+    let activeStartDate = new Date(activeClosingDate.getTime());
+    activeStartDate.setUTCMonth(activeStartDate.getUTCMonth() - 1);
+    activeStartDate.setUTCDate(activeStartDate.getUTCDate() + 1);
 
     const toISODateString = (date) => date.toISOString().split('T')[0];
 
     return {
-        startDate: toISODateString(startDate),
-        closingDate: toISODateString(closingDate),
-        paymentDate: toISODateString(paymentDateForCycle) // Usamos la fecha de pago calculada
+        startDate: toISODateString(activeStartDate),
+        closingDate: toISODateString(activeClosingDate),
+        paymentDate: toISODateString(cyclePaymentDate)
     };
 }
 
