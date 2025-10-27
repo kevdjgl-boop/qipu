@@ -3629,11 +3629,11 @@ function renderCreditCardSummary(expensesForMonth) {
 
         // --- Lógica Diferenciada por Tipo ---
         if (method.type === 'credit') {
-            console.log(` >> Es Tarjeta de Crédito. Calculando ciclo basado en HOY (${today.toISOString().split('T')[0]})`);
+            //console.log(` >> Es Tarjeta de Crédito. Calculando ciclo basado en HOY (${today.toISOString().split('T')[0]})`);
             const { startDate, closingDate, paymentDate } = getCycleDates(method, today); // Usa 'today'
 
             if (startDate && closingDate) {
-                console.log(` >> Ciclo Recibido: INICIO=${startDate}, CIERRE=${closingDate}`);
+                //console.log(` >> Ciclo Recibido: INICIO=${startDate}, CIERRE=${closingDate}`);
                 const cycleStart = new Date(startDate + 'T00:00:00Z').getTime();
                 const cycleEnd = new Date(closingDate + 'T00:00:00Z').getTime();
 
@@ -3650,7 +3650,7 @@ function renderCreditCardSummary(expensesForMonth) {
 
                     // Log DETALLADO por cada gasto de esta tarjeta
                     if (isCorrectMethod) {
-                         console.log(`    - Gasto ID ${exp.id} (${exp.description}) Fecha: ${expenseDateStr} (${expenseTimestamp}) | Método Coincide: ${isCorrectMethod} | Fecha Válida: ${isDateValid} | >= Inicio(${cycleStart})? ${isAfterStart} | <= Cierre(${cycleEnd})? ${isBeforeEnd} | Incluido: ${isCorrectMethod && isDateValid && isAfterStart && isBeforeEnd}`);
+                         //console.log(`    - Gasto ID ${exp.id} (${exp.description}) Fecha: ${expenseDateStr} (${expenseTimestamp}) | Método Coincide: ${isCorrectMethod} | Fecha Válida: ${isDateValid} | >= Inicio(${cycleStart})? ${isAfterStart} | <= Cierre(${cycleEnd})? ${isBeforeEnd} | Incluido: ${isCorrectMethod && isDateValid && isAfterStart && isBeforeEnd}`);
                     }
                     return isCorrectMethod && isDateValid && isAfterStart && isBeforeEnd;
                 });
@@ -3671,7 +3671,7 @@ function renderCreditCardSummary(expensesForMonth) {
             // Lógica para efectivo y otros (sin cambios, solo log)
             expensesToConsider = expensesForMonth.filter(exp => exp.paymentMethodId === method.id);
             totalSpentOnMethod = expensesToConsider.reduce((sum, exp) => sum + exp.amount, 0);
-             console.log(` >> Método NO crédito. Gasto en mes ${MONTH_NAMES[currentFilterDate.getMonth()]}: ${formatCurrency(totalSpentOnMethod)}`);
+             //console.log(` >> Método NO crédito. Gasto en mes ${MONTH_NAMES[currentFilterDate.getMonth()]}: ${formatCurrency(totalSpentOnMethod)}`);
         }
         // --- Fin Lógica Diferenciada ---
 
