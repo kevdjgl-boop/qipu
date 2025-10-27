@@ -3629,24 +3629,27 @@ function renderCreditCardSummary(expensesForMonth) {
 
         // --- Lógica Diferenciada por Tipo ---
         if (method.type === 'credit') {
-            // Calcular ciclo basado en HOY
-            const { startDate, closingDate, paymentDate } = getCycleDates(method, today);
+            const { startDate, closingDate, paymentDate } = getCycleDates(method, today); // Calcula ciclo basado en HOY
 
             if (startDate && closingDate) {
-                // Filtrar gastos DENTRO del ciclo actual
-              const cycleStart = new Date(startDate + 'T00:00:00Z').getTime();
+                // Convertir fechas de inicio/cierre del ciclo a números (timestamps UTC midnight)
+                const cycleStart = new Date(startDate + 'T00:00:00Z').getTime();
                 const cycleEnd = new Date(closingDate + 'T00:00:00Z').getTime();
 
+                // Filtrar gastos DENTRO del ciclo actual usando COMPARACIÓN NUMÉRICA
                 expensesToConsider = allExpenses.filter(exp => {
-                    // Convertir fecha del gasto a objeto Date (UTC midnight)
+                    // Convertir fecha del gasto a número (timestamp UTC midnight)
                     const expenseDate = new Date(exp.date + 'T00:00:00Z').getTime();
 
-                    // Verificar si la fecha del gasto es válida y está dentro del ciclo
+                    // *** LA CORRECCIÓN ESTÁ AQUÍ ***
+                    // Compara números con números, y verifica que la fecha del gasto sea válida
                     return exp.paymentMethodId === method.id &&
-                           !isNaN(expenseDate) && // Asegura que la fecha del gasto sea válida
-                           expenseDate >= cycleStart &&
-                           expenseDate <= cycleEnd;
+                           !isNaN(expenseDate) &&
+                           expenseDate >= cycleStart && // Comparación numérica
+                           expenseDate <= cycleEnd;    // Comparación numérica
                 });
+                // *** FIN DE LA CORRECCIÓN ***
+
                 totalSpentOnMethod = expensesToConsider.reduce((sum, exp) => sum + exp.amount, 0);
                 cardSubtitle = `Gasto del ciclo actual (${formatDate(startDate)} al ${formatDate(closingDate)})`;
                 if(paymentDate) {
