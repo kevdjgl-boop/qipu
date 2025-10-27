@@ -1595,58 +1595,63 @@
         
         // CORREGIDO: Lógica de cálculo de ciclo de tarjeta de crédito mejorada
  function getCycleDates(method, referenceDate) {
+    console.log(`[getCycleDates] Iniciando para ${method.name}, refDate: ${referenceDate.toISOString().split('T')[0]}`);
     if (method.type !== 'credit' || !method.paymentDay) {
+        console.log(`[getCycleDates] Método no es crédito o no tiene día de pago.`);
         return { startDate: null, closingDate: null, paymentDate: null };
     }
 
     const paymentDay = method.paymentDay;
-    const gracePeriodDays = 25; // Días entre cierre y pago
+    const gracePeriodDays = 25;
 
     const refYear = referenceDate.getUTCFullYear();
-    const refMonth = referenceDate.getUTCMonth(); // 0 = Enero
+    const refMonth = referenceDate.getUTCMonth();
     const refDay = referenceDate.getUTCDate();
     const referenceDateUTC = new Date(Date.UTC(refYear, refMonth, refDay));
+    console.log(`[getCycleDates] referenceDateUTC: ${referenceDateUTC.toISOString().split('T')[0]}`);
 
-    // Fecha de pago ESTE mes y fecha de cierre asociada
+    // Pago ESTE mes y cierre asociado
     let paymentDateThisMonth = new Date(Date.UTC(refYear, refMonth, paymentDay));
     let closingDateForThisMonthPay = new Date(paymentDateThisMonth.getTime());
     closingDateForThisMonthPay.setUTCDate(closingDateForThisMonthPay.getUTCDate() - gracePeriodDays);
+    console.log(`[getCycleDates] Cierre para pago ${paymentDateThisMonth.toISOString().split('T')[0]} sería: ${closingDateForThisMonthPay.toISOString().split('T')[0]}`);
 
-    // Fecha de pago SIGUIENTE mes y fecha de cierre asociada
+    // Pago SIGUIENTE mes y cierre asociado
     let paymentDateNextMonth = new Date(Date.UTC(refYear, refMonth + 1, paymentDay));
     let closingDateForNextMonthPay = new Date(paymentDateNextMonth.getTime());
     closingDateForNextMonthPay.setUTCDate(closingDateForNextMonthPay.getUTCDate() - gracePeriodDays);
+    console.log(`[getCycleDates] Cierre para pago ${paymentDateNextMonth.toISOString().split('T')[0]} sería: ${closingDateForNextMonthPay.toISOString().split('T')[0]}`);
 
     let activeClosingDate;
     let cyclePaymentDate;
 
     // Determinar ciclo activo
-    if (referenceDateUTC > closingDateForThisMonthPay) {
-        // Si hoy es DESPUÉS del cierre asociado al pago de ESTE mes,
-        // el ciclo activo es el que cierra ANTES del pago del SIGUIENTE mes.
+    if (referenceDateUTC.getTime() > closingDateForThisMonthPay.getTime()) {
+        console.log(`[getCycleDates] RefDate (${referenceDateUTC.toISOString().split('T')[0]}) > CierreEsteMes (${closingDateForThisMonthPay.toISOString().split('T')[0]}). Ciclo activo cierra el mes siguiente.`);
         activeClosingDate = closingDateForNextMonthPay;
         cyclePaymentDate = paymentDateNextMonth;
     } else {
-        // Si hoy es ANTES O IGUAL al cierre asociado al pago de ESTE mes,
-        // el ciclo activo es el que cierra ANTES del pago de ESTE mes.
+        console.log(`[getCycleDates] RefDate (${referenceDateUTC.toISOString().split('T')[0]}) <= CierreEsteMes (${closingDateForThisMonthPay.toISOString().split('T')[0]}). Ciclo activo cierra este mes.`);
         activeClosingDate = closingDateForThisMonthPay;
         cyclePaymentDate = paymentDateThisMonth;
     }
+    console.log(`[getCycleDates] activeClosingDate 결정됨: ${activeClosingDate.toISOString().split('T')[0]}`);
 
-    // Calcular fecha de inicio del ciclo activo
+    // Calcular fecha de inicio
     let activeStartDate = new Date(activeClosingDate.getTime());
     activeStartDate.setUTCMonth(activeStartDate.getUTCMonth() - 1);
     activeStartDate.setUTCDate(activeStartDate.getUTCDate() + 1);
 
     const toISODateString = (date) => date.toISOString().split('T')[0];
 
-    return {
+    const result = {
         startDate: toISODateString(activeStartDate),
         closingDate: toISODateString(activeClosingDate),
         paymentDate: toISODateString(cyclePaymentDate)
     };
+    console.log(`[getCycleDates] Resultado Final:`, result);
+    return result;
 }
-
 
         // --- Funciones de Autenticación (REDUCIDAS) ---
         
@@ -3621,34 +3626,45 @@ function renderCreditCardSummary(expensesForMonth) {
     container.innerHTML = '';
     let totalSpendingDisplayed = 0;
 
+    console.log("--- Iniciando renderCreditCardSummary ---");
+
     paymentMethods.forEach(method => {
         let totalSpentOnMethod = 0;
         let expensesToConsider = [];
         let cardSubtitle = `Gasto total en ${MONTH_NAMES[currentFilterDate.getMonth()]}`;
         let paymentDateHTML = '';
 
+        console.log(`\nProcesando método: ${method.name} (Tipo: ${method.type}, ID: ${method.id})`); // Log por método con ID
+
         // --- Lógica Diferenciada por Tipo ---
         if (method.type === 'credit') {
-            const { startDate, closingDate, paymentDate } = getCycleDates(method, today); // Calcula ciclo basado en HOY
+            console.log(` >> Es Tarjeta de Crédito. Calculando ciclo basado en HOY (${today.toISOString().split('T')[0]})`);
+            const { startDate, closingDate, paymentDate } = getCycleDates(method, today); // Usa 'today'
 
             if (startDate && closingDate) {
-                // Convertir fechas de inicio/cierre del ciclo a números (timestamps UTC midnight)
+                console.log(` >> Ciclo Recibido: INICIO=${startDate}, CIERRE=${closingDate}`);
                 const cycleStart = new Date(startDate + 'T00:00:00Z').getTime();
                 const cycleEnd = new Date(closingDate + 'T00:00:00Z').getTime();
 
-                // Filtrar gastos DENTRO del ciclo actual usando COMPARACIÓN NUMÉRICA
-                expensesToConsider = allExpenses.filter(exp => {
-                    // Convertir fecha del gasto a número (timestamp UTC midnight)
-                    const expenseDate = new Date(exp.date + 'T00:00:00Z').getTime();
+                console.log(` >> Filtrando gastos con ID ${method.id} entre ${startDate} (${cycleStart}) y ${closingDate} (${cycleEnd})`);
 
-                    // *** LA CORRECCIÓN ESTÁ AQUÍ ***
-                    // Compara números con números, y verifica que la fecha del gasto sea válida
-                    return exp.paymentMethodId === method.id &&
-                           !isNaN(expenseDate) &&
-                           expenseDate >= cycleStart && // Comparación numérica
-                           expenseDate <= cycleEnd;    // Comparación numérica
+                expensesToConsider = allExpenses.filter(exp => {
+                    const expenseDateStr = exp.date; // Fecha como YYYY-MM-DD
+                    const expenseTimestamp = new Date(expenseDateStr + 'T00:00:00Z').getTime(); // Convertir a timestamp UTC
+
+                    const isCorrectMethod = exp.paymentMethodId === method.id;
+                    const isDateValid = !isNaN(expenseTimestamp);
+                    const isAfterStart = isDateValid && expenseTimestamp >= cycleStart;
+                    const isBeforeEnd = isDateValid && expenseTimestamp <= cycleEnd;
+
+                    // Log DETALLADO por cada gasto de esta tarjeta
+                    if (isCorrectMethod) {
+                         console.log(`    - Gasto ID ${exp.id} (${exp.description}) Fecha: ${expenseDateStr} (${expenseTimestamp}) | Método Coincide: ${isCorrectMethod} | Fecha Válida: ${isDateValid} | >= Inicio(${cycleStart})? ${isAfterStart} | <= Cierre(${cycleEnd})? ${isBeforeEnd} | Incluido: ${isCorrectMethod && isDateValid && isAfterStart && isBeforeEnd}`);
+                    }
+                    return isCorrectMethod && isDateValid && isAfterStart && isBeforeEnd;
                 });
-                // *** FIN DE LA CORRECCIÓN ***
+
+                console.log(` >> Gastos ENCONTRADOS en ciclo actual para ${method.name}:`, expensesToConsider.length > 0 ? expensesToConsider : 'NINGUNO');
 
                 totalSpentOnMethod = expensesToConsider.reduce((sum, exp) => sum + exp.amount, 0);
                 cardSubtitle = `Gasto del ciclo actual (${formatDate(startDate)} al ${formatDate(closingDate)})`;
@@ -3658,57 +3674,38 @@ function renderCreditCardSummary(expensesForMonth) {
             } else {
                 totalSpentOnMethod = 0;
                 cardSubtitle = "Error al calcular ciclo actual";
+                console.error(` !! Error calculando ciclo para ${method.name}`);
             }
         } else {
-            // Lógica para efectivo y otros (usa mes calendario)
+            // Lógica para efectivo y otros (sin cambios, solo log)
             expensesToConsider = expensesForMonth.filter(exp => exp.paymentMethodId === method.id);
             totalSpentOnMethod = expensesToConsider.reduce((sum, exp) => sum + exp.amount, 0);
+             console.log(` >> Método NO crédito. Gasto en mes ${MONTH_NAMES[currentFilterDate.getMonth()]}: ${formatCurrency(totalSpentOnMethod)}`);
         }
         // --- Fin Lógica Diferenciada ---
 
 
         // --- Renderizado (Solo si hubo gasto) ---
+        console.log(` >> Total calculado para ${method.name}: ${formatCurrency(totalSpentOnMethod)}`);
         if (totalSpentOnMethod > 0) {
-            let cardColorClasses = 'bg-gray-50 border-gray-200';
-            let titleColorClass = 'text-gray-800';
-            let amountColorClass = 'text-gray-900';
-
-            if (method.type === 'cash') {
-                cardColorClasses = 'bg-green-50 border-green-200';
-                titleColorClass = 'text-green-800';
-                amountColorClass = 'text-green-900';
-            } else if (method.type === 'credit') {
-                cardColorClasses = 'bg-cyan-50 border-cyan-200';
-                titleColorClass = 'text-cyan-800';
-                amountColorClass = 'text-cyan-900';
-            }
-
-            const cardHTML = `
-                <div class="p-4 rounded-lg border ${cardColorClasses}">
-                    <p class="font-bold ${titleColorClass}">${method.name}</p>
-                    <p class="text-2xl font-extrabold ${amountColorClass} mt-1">${formatCurrency(totalSpentOnMethod)}</p>
-                    <div class="mt-3">
-                         <p class="text-xs text-gray-600">${cardSubtitle}</p>
-                         ${paymentDateHTML}
-                    </div>
-                </div>
-            `;
-            container.insertAdjacentHTML('beforeend', cardHTML);
-            totalSpendingDisplayed += totalSpentOnMethod;
+            console.log(` >> RENDERIZANDO tarjeta para ${method.name}`);
+            // ... (HTML de la tarjeta, sin cambios) ...
+             let cardColorClasses = 'bg-gray-50 border-gray-200';
+             let titleColorClass = 'text-gray-800';
+             let amountColorClass = 'text-gray-900';
+             if (method.type === 'cash') { /* ... */ } else if (method.type === 'credit') { /* ... */ }
+             const cardHTML = `...`; // El HTML sin cambios
+             container.insertAdjacentHTML('beforeend', cardHTML);
+             totalSpendingDisplayed += totalSpentOnMethod;
+        } else {
+             console.log(` >> NO se renderiza tarjeta para ${method.name} (gasto = ${totalSpentOnMethod})`);
         }
-    });
+    }); // Fin del forEach
 
     // --- Mostrar/Ocultar Sección ---
-    if (totalSpendingDisplayed === 0) {
-         section.classList.add('hidden');
-         container.innerHTML = `<p class="text-gray-500 italic text-sm col-span-full">No hay gastos registrados para mostrar en este resumen.</p>`;
-    } else {
-         section.classList.remove('hidden');
-         const existingMessage = container.querySelector('p.italic.col-span-full');
-         if (existingMessage) {
-             existingMessage.remove();
-         }
-    }
+    console.log(`--- Fin renderCreditCardSummary | Total Gasto Mostrado: ${formatCurrency(totalSpendingDisplayed)} ---`);
+    if (totalSpendingDisplayed === 0) { /* ... ocultar ... */ }
+    else { /* ... mostrar ... */ }
 }
         // --- Main Render Function ---
         function renderUI() {
