@@ -660,39 +660,7 @@
               background-color: #e0f2fe; /* cyan-100 */
               color: #0e7490; /* cyan-800 */
           }
-        .category-toggle-btn {
-            background: none;
-            border: none;
-            padding-bottom: 0.5rem; /* Ajusta el padding que ya tenía el borde */
-            width: 100%;
-            cursor: pointer;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-        .category-toggle-btn:focus {
-             outline: none; /* Quita el borde azul feo al hacer clic */
-        }
 
-
-        /* Contenedor del contenido colapsable */
-        .category-collapsible-content {
-            max-height: 0;
-            overflow: hidden;
-            transition: max-height 0.5s ease-out; /* Animación al cerrar */
-        }
-
-        /* Estado abierto del contenido */
-        .category-collapsible-content.open {
-            max-height: 5000px; /* Suficientemente grande */
-            transition: max-height 0.7s ease-in; /* Animación al abrir */
-            margin-top: 0.75rem; /* Añade un pequeño espacio arriba al abrir */
-        }
-
-        /* Rotación del icono chevron cuando está abierto */
-        .category-toggle-btn.open .category-chevron {
-            transform: rotate(180deg);
-        }
 
     </style>
     <!-- Incluye GSAP para animaciones -->
@@ -3288,77 +3256,54 @@
             }, {});
 
             Object.keys(groupedExpenses).sort().forEach(categoryName => {
-                    const expenses = groupedExpenses[categoryName];
+                const expenses = groupedExpenses[categoryName];
                 const categoryTotal = expenses.reduce((sum, exp) => sum + exp.amount, 0);
                 const categoryConfig = appState.categories.find(c => c.name === categoryName);
                 const budget = categoryConfig?.budget || 0;
-
-                // Generar un ID único para el contenido colapsable
-                const contentId = `category-content-${categoryName.replace(/[^a-zA-Z0-9]/g, '-')}-${Date.now()}`;
-
-                // --- Lógica de Barra de Presupuesto ---
+                const showAmountInCard = expenses.length > 1;
+                
+                // --- LÓGICA DE BARRA DE PROGRESO DE PRESUPUESTO ---
                 const remaining = budget - categoryTotal;
-                const percentUsed = budget > 0 ? (cat.spent / cat.budget) * 100 : 0; // Corrección: Usar cat.spent si se calcula antes, o categoryTotal
+                const percentUsed = budget > 0 ? (categoryTotal / budget) * 100 : 0;
                 const barWidth = Math.min(100, percentUsed);
                 let barColor = 'bg-indigo-500';
-                let statusText = budget > 0 ? `Presupuesto: ${formatCurrency(budget)}` : 'Gasto total en esta categoría.';
-                let statusTextColor = 'text-gray-600';
+                let statusText = budget > 0 ? `Presupuesto: ${formatCurrency(budget)}` : 'Sin presupuesto';
 
                 if (budget > 0) {
                     if (percentUsed > 100) {
                         barColor = 'bg-red-500';
-                        statusText = `<i class="fas fa-exclamation-triangle mr-1"></i> ¡Excedido por ${formatCurrency(Math.abs(remaining))}!`;
-                        statusTextColor = 'text-red-600 font-semibold';
+                        statusText = `<i class="fas fa-exclamation-triangle mr-1"></i> ¡Presupuesto Excedido por ${formatCurrency(Math.abs(remaining))}!`;
                     } else if (percentUsed > 80) {
                         barColor = 'bg-yellow-500';
-                        statusText = `Quedan ${formatCurrency(remaining)} / ${formatCurrency(budget)}.`;
-                        statusTextColor = 'text-yellow-600';
+                        statusText = `Quedan ${formatCurrency(remaining)} del presupuesto de ${formatCurrency(budget)}.`;
                     } else {
                         barColor = 'bg-green-500';
-                        statusText = `Quedan ${formatCurrency(remaining)} / ${formatCurrency(budget)}.`;
-                        statusTextColor = 'text-green-600';
+                        statusText = `Quedan ${formatCurrency(remaining)} del presupuesto de ${formatCurrency(budget)}.`;
                     }
                 }
 
                 const budgetTrackerHTML = budget > 0 ? `
-                    <div class="mt-2 mb-3 space-y-1">
-                        <p class="text-xs ${statusTextColor}">${statusText}</p>
+                    <div class="mt-2 space-y-1">
+                        <p class="text-xs font-semibold ${percentUsed > 100 ? 'text-red-600' : 'text-gray-600'}">${statusText}</p>
                         <div class="progress-bar-container">
                             <div class="progress-bar-fill ${barColor}" style="width: ${barWidth}%;"></div>
                         </div>
                     </div>
-                ` : `<p class="text-xs text-gray-500 mt-1 mb-3">Gasto total en esta categoría.</p>`;
-                // --- Fin Lógica Barra Presupuesto ---
+                ` : `<p class="text-xs text-gray-500 mt-1">Gasto total en esta categoría.</p>`;
+                // --- FIN LÓGICA DE BARRA DE PROGRESO ---
 
-                // Crear el contenedor principal para la categoría
+                
                 const categoryContainer = document.createElement('div');
-                categoryContainer.className = "bg-gray-50 p-4 rounded-xl border mb-3"; // Separador entre categorías
-
-                // Crear el HTML del encabezado (será un botón)
-                const headerHTML = `
-                    <button class='category-toggle-btn w-full text-left flex justify-between items-center pb-2 border-b' data-target-id="${contentId}">
+                categoryContainer.className = "bg-gray-50 p-4 rounded-xl border";
+                categoryContainer.innerHTML = `
+                    <div class='flex justify-between items-center pb-2 border-b'>
                         <h4 class='text-lg font-bold text-gray-700'>${categoryName}</h4>
-                        <div class="flex items-center">
-                            <span class='font-semibold mr-3'>${formatCurrency(categoryTotal)}</span>
-                            <i class="category-chevron fas fa-chevron-down text-gray-400 text-sm transition-transform duration-300"></i>
-                        </div>
-                    </button>
-                `;
-
-                // Crear el HTML del contenido (lo que se va a ocultar/mostrar)
-                const contentHTML = `
-                    <div id="${contentId}" class="category-collapsible-content"> {/* Empieza oculto */}
-                        ${budgetTrackerHTML}
-                        <div class='space-y-3 mt-3'>
-                            {/* Ordena los gastos dentro de la categoría y crea sus tarjetas */}
-                            ${expenses.sort((a,b) => new Date(b.dateCreated || b.date + "T00:00:00Z") - new Date(a.dateCreated || a.date + "T00:00:00Z")).map(exp => createExpenseCardHTML(exp, participantsMap, paymentMethodsMap, true)).join('')}
-                        </div>
+                        <span class='font-semibold'>${formatCurrency(categoryTotal)}</span>
                     </div>
-                `;
-
-                // Junta el encabezado y el contenido en el contenedor de la categoría
-                categoryContainer.innerHTML = headerHTML + contentHTML;
-                // Añade el contenedor completo de la categoría al elemento principal del reporte
+                    ${budgetTrackerHTML}
+                    <div class='space-y-3 mt-3'>
+                        ${expenses.sort((a,b) => new Date(b.dateCreated || b.date) - new Date(a.dateCreated || a.date)).map(exp => createExpenseCardHTML(exp, participantsMap, paymentMethodsMap, showAmountInCard)).join('')}
+                    </div>`; // Ordenar por fecha de creación o fecha de gasto
                 reportEl.appendChild(categoryContainer);
             });
 
@@ -3368,52 +3313,27 @@
 
         // MODIFICADO: Añadir rotación de icono chevron al expandir/colapsar
         function handleExpenseReportClick(e) {
-                // Primero, revisa si se hizo clic en un encabezado de CATEGORÍA
-                const categoryToggleBtn = e.target.closest('.category-toggle-btn');
-                if (categoryToggleBtn) {
-                    e.preventDefault(); // Evita que el navegador haga algo raro con el botón
-                    const targetId = categoryToggleBtn.dataset.targetId; // El ID del div a mostrar/ocultar
-                    const contentElement = document.getElementById(targetId); // El div con el contenido
-                    //const chevronIcon = categoryToggleBtn.querySelector('.category-chevron'); // El icono de flecha (no necesitamos rotarlo aquí si usamos la clase 'open' en el botón)
+            const target = e.target.closest('button, .expense-header');
+            if (!target) return;
+            const id = target.dataset.id;
+            const expenseId = target.dataset.toggle; // ID para expandir/colapsar
 
-                    if (contentElement) {
-                        // Alterna la clase 'open' en el div de contenido (el CSS hace la animación)
-                        const isOpen = contentElement.classList.toggle('open');
-                        // Alterna la clase 'open' en el botón mismo (para que el CSS rote el icono)
-                        categoryToggleBtn.classList.toggle('open', isOpen);
-                    }
-                    return; // Importante: Si fue clic en categoría, no hagas nada más
+            if (expenseId) { // Si se hizo clic en la cabecera colapsable
+                const detailEl = document.getElementById(`detail-${expenseId}`);
+                const headerEl = target.closest('.expense-header'); // Obtener la cabecera
+                const chevronIcon = headerEl?.querySelector('.fa-chevron-down'); // Buscar el icono dentro de la cabecera
+
+                if (detailEl) {
+                    detailEl.classList.toggle('hidden');
+                    // Rotar el icono si existe
+                    if(chevronIcon) chevronIcon.classList.toggle('rotate-180');
                 }
-
-                // Si NO fue clic en categoría, revisa si fue clic DENTRO de una tarjeta de GASTO
-                const target = e.target.closest('button, .expense-header'); // Busca un botón (Editar/Eliminar) o la cabecera de un gasto compartido
-                if (!target) return; // Si no fue en ninguno de esos, no hagas nada
-
-                const id = target.dataset.id; // ID del gasto para Editar/Eliminar
-                const expenseIdToggle = target.dataset.toggle; // ID del gasto para desplegar (si es compartido)
-
-                // Si se hizo clic en la cabecera de un GASTO COMPARTIDO (tiene data-toggle)
-                if (expenseIdToggle && target.classList.contains('expense-header')) {
-                    const detailEl = document.getElementById(`detail-${expenseIdToggle}`); // El div con los detalles de repartición
-                    const headerEl = target.closest('.expense-header'); // La cabecera misma
-                    const chevronIcon = headerEl?.querySelector('.fa-chevron-down'); // El icono de flecha DENTRO de la tarjeta de gasto
-
-                    if (detailEl) {
-                        // Alterna la clase 'hidden' (no usamos 'open' aquí, es un despliegue diferente)
-                        detailEl.classList.toggle('hidden');
-                        // Rota el icono DENTRO de la tarjeta de gasto
-                        if(chevronIcon) chevronIcon.classList.toggle('rotate-180');
-                    }
-                }
-                // Si se hizo clic en el botón EDITAR de un gasto
-                else if (id && target.classList.contains('edit-expense-btn')) {
-                    openExpenseEditModal(id);
-                }
-                // Si se hizo clic en el botón ELIMINAR de un gasto
-                else if (id && target.classList.contains('delete-btn')) {
-                    removeExpense(id);
-                }
+            } else if (id && target.classList.contains('edit-expense-btn')) {
+                openExpenseEditModal(id);
+            } else if (id && target.classList.contains('delete-btn')) {
+                removeExpense(id);
             }
+        }
 
 
         function renderFixedExpensesSummary() {
