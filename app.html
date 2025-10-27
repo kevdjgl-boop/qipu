@@ -3602,104 +3602,92 @@
         }
 
         // MODIFICADO: renderCreditCardSummary ahora usa los gastos filtrados por mes
-            function renderCreditCardSummary(expensesForMonth) { // expensesForMonth se usará solo para NO crédito
-                const allExpenses = appState.expenses || []; // Necesitamos TODOS los gastos para filtrar por ciclo de TC
-                const paymentMethods = appState.paymentMethods || [];
-                const container = document.getElementById('credit-card-summary-cards');
-                const section = document.getElementById('credit-card-summary-section');
+        function renderCreditCardSummary(expensesForMonth) {
+            const allExpenses = appState.expenses || [];
+            const paymentMethods = appState.paymentMethods || [];
+            const container = document.getElementById('credit-card-summary-cards');
+            const section = document.getElementById('credit-card-summary-section');
 
-                if (!container || !section) return;
+            if (!container || !section) return;
 
-                container.innerHTML = '';
-                let totalSpendingDisplayed = 0;
+            container.innerHTML = '';
+            let totalSpendingDisplayed = 0;
 
-                paymentMethods.forEach(method => {
-                    let totalSpentOnMethod = 0;
-                    let expensesToConsider = []; // Gastos relevantes para este método
-                    let cardSubtitle = `Gasto total en ${MONTH_NAMES[currentFilterDate.getMonth()]}`; // Subtítulo por defecto
-                    let paymentDateHTML = ''; // Info extra para TC
+            paymentMethods.forEach(method => {
+                let totalSpentOnMethod = 0;
+                let expensesToConsider = [];
+                let cardSubtitle = `Gasto total en ${MONTH_NAMES[currentFilterDate.getMonth()]}`;
+                let paymentDateHTML = '';
 
-                    // --- Lógica Diferenciada por Tipo ---
-                    if (method.type === 'credit') {
-                        // *** INICIO: LÓGICA DE CICLO PARA TARJETAS DE CRÉDITO ***
-                        const { startDate, closingDate, paymentDate } = getCycleDates(method, currentFilterDate); // Obtener ciclo basado en la FECHA SELECCIONADA en UI
+                // --- Lógica Diferenciada por Tipo ---
+                if (method.type === 'credit') {
+                    const { startDate, closingDate, paymentDate } = getCycleDates(method, currentFilterDate);
 
-                        if (startDate && closingDate) {
-                            // Filtrar TODOS los gastos que caen DENTRO del ciclo calculado
-                            expensesToConsider = allExpenses.filter(exp =>
-                                exp.paymentMethodId === method.id &&
-                                exp.date >= startDate &&
-                                exp.date <= closingDate
-                            );
-                            totalSpentOnMethod = expensesToConsider.reduce((sum, exp) => sum + exp.amount, 0);
-
-                            // Actualizar subtítulo para reflejar el ciclo
-                            cardSubtitle = `Gasto del ciclo (${formatDate(startDate)} al ${formatDate(closingDate)})`;
-                            // Añadir fecha de pago
-                            if(paymentDate) {
-                                paymentDateHTML = `<p class="text-xs text-gray-600 mt-1 text-right">Pago ciclo (aprox): <strong class="text-red-600">${formatDate(paymentDate)}</strong></p>`;
-                            }
-                        } else {
-                            // Si no se pueden calcular las fechas del ciclo (método mal configurado?), mostrar 0 o mensaje
-                            totalSpentOnMethod = 0;
-                            cardSubtitle = "Error al calcular ciclo";
-                        }
-                        // *** FIN: LÓGICA DE CICLO PARA TARJETAS DE CRÉDITO ***
-
-                    } else {
-                        // *** LÓGICA PARA EFECTIVO Y OTROS (usa gastos del mes calendario) ***
-                        expensesToConsider = expensesForMonth.filter(exp => exp.paymentMethodId === method.id);
+                    if (startDate && closingDate) {
+                        expensesToConsider = allExpenses.filter(exp =>
+                            exp.paymentMethodId === method.id &&
+                            exp.date >= startDate &&
+                            exp.date <= closingDate
+                        );
                         totalSpentOnMethod = expensesToConsider.reduce((sum, exp) => sum + exp.amount, 0);
-                        // El subtítulo por defecto ya indica el mes calendario
-                    }
-                    // --- Fin Lógica Diferenciada ---
-
-
-                    // --- Renderizado de la Tarjeta (Solo si hubo gasto) ---
-                    if (totalSpentOnMethod > 0) {
-                        let cardColorClasses = 'bg-gray-50 border-gray-200';
-                        let titleColorClass = 'text-gray-800';
-                        let amountColorClass = 'text-gray-900';
-
-                        // Aplicar colores específicos (opcional)
-                        if (method.type === 'cash') {
-                            cardColorClasses = 'bg-green-50 border-green-200';
-                            titleColorClass = 'text-green-800';
-                            amountColorClass = 'text-green-900';
-                        } else if (method.type === 'credit') {
-                            cardColorClasses = 'bg-cyan-50 border-cyan-200';
-                            titleColorClass = 'text-cyan-800';
-                            amountColorClass = 'text-cyan-900';
+                        cardSubtitle = `Gasto del ciclo (${formatDate(startDate)} al ${formatDate(closingDate)})`;
+                        if(paymentDate) {
+                            paymentDateHTML = `<p class="text-xs text-gray-600 mt-1 text-right">Pago ciclo (aprox): <strong class="text-red-600">${formatDate(paymentDate)}</strong></p>`;
                         }
-
-                        const cardHTML = `
-                            <div class="p-4 rounded-lg border ${cardColorClasses}">
-                                <p class="font-bold ${titleColorClass}">${method.name}</p>
-                                <p class="text-2xl font-extrabold ${amountColorClass} mt-1">${formatCurrency(totalSpentOnMethod)}</p>
-                                <div class="mt-3">
-                                    <p class="text-xs text-gray-600">${cardSubtitle}</p> {/* Subtítulo actualizado */}
-                                    ${paymentDateHTML} {/* Fecha de pago (solo TC) */}
-                                </div>
-                            </div>
-                        `;
-                        container.insertAdjacentHTML('beforeend', cardHTML);
-                        totalSpendingDisplayed += totalSpentOnMethod;
+                    } else {
+                        totalSpentOnMethod = 0;
+                        cardSubtitle = "Error al calcular ciclo";
                     }
-                });
-
-                // --- Mostrar/Ocultar la sección completa ---
-                if (totalSpendingDisplayed === 0) {
-                    section.classList.add('hidden');
-                    container.innerHTML = `<p class="text-gray-500 italic text-sm col-span-full">No hay gastos registrados con ningún método de pago en ${MONTH_NAMES[currentFilterDate.getMonth()]} (o en los ciclos de TC correspondientes).</p>`;
                 } else {
-                    section.classList.remove('hidden');
-                    // Limpiar mensaje si hay gastos
-                    const existingMessage = container.querySelector('p.italic.col-span-full');
-                    if (existingMessage) {
-                        existingMessage.remove();
-                    }
+                    expensesToConsider = expensesForMonth.filter(exp => exp.paymentMethodId === method.id);
+                    totalSpentOnMethod = expensesToConsider.reduce((sum, exp) => sum + exp.amount, 0);
                 }
-            }              
+                // --- Fin Lógica Diferenciada ---
+
+                // --- Renderizado (Solo si hubo gasto) ---
+                if (totalSpentOnMethod > 0) {
+                    let cardColorClasses = 'bg-gray-50 border-gray-200';
+                    let titleColorClass = 'text-gray-800';
+                    let amountColorClass = 'text-gray-900';
+
+                    if (method.type === 'cash') {
+                        cardColorClasses = 'bg-green-50 border-green-200';
+                        titleColorClass = 'text-green-800';
+                        amountColorClass = 'text-green-900';
+                    } else if (method.type === 'credit') {
+                        cardColorClasses = 'bg-cyan-50 border-cyan-200';
+                        titleColorClass = 'text-cyan-800';
+                        amountColorClass = 'text-cyan-900';
+                    }
+
+                    // HTML SIN comentarios internos
+                    const cardHTML = `
+                        <div class="p-4 rounded-lg border ${cardColorClasses}">
+                            <p class="font-bold ${titleColorClass}">${method.name}</p>
+                            <p class="text-2xl font-extrabold ${amountColorClass} mt-1">${formatCurrency(totalSpentOnMethod)}</p>
+                            <div class="mt-3">
+                                <p class="text-xs text-gray-600">${cardSubtitle}</p>
+                                ${paymentDateHTML}
+                            </div>
+                        </div>
+                    `;
+                    container.insertAdjacentHTML('beforeend', cardHTML);
+                    totalSpendingDisplayed += totalSpentOnMethod;
+                }
+            });
+
+            // --- Mostrar/Ocultar Sección ---
+            if (totalSpendingDisplayed === 0) {
+                section.classList.add('hidden');
+                container.innerHTML = `<p class="text-gray-500 italic text-sm col-span-full">No hay gastos registrados con ningún método de pago en ${MONTH_NAMES[currentFilterDate.getMonth()]} (o en los ciclos de TC correspondientes).</p>`;
+            } else {
+                section.classList.remove('hidden');
+                const existingMessage = container.querySelector('p.italic.col-span-full');
+                if (existingMessage) {
+                    existingMessage.remove();
+                }
+            }
+        }            
         // --- Main Render Function ---
         function renderUI() {
             if (!appState) return;
