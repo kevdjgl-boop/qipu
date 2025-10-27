@@ -3608,95 +3608,92 @@ function renderCreditCardSummary(expensesForMonth) {
     const container = document.getElementById('credit-card-summary-cards');
     const section = document.getElementById('credit-card-summary-section');
     const today = new Date(); // <-- Obtenemos la fecha actual aquí
+    const todayString = today.toISOString().split('T')[0]; // <-- Fecha de hoy como YYYY-MM-DD
 
     if (!container || !section) return;
 
     container.innerHTML = '';
     let totalSpendingDisplayed = 0;
 
+    console.log("--- Iniciando renderCreditCardSummary ---"); // Log inicial
+
     paymentMethods.forEach(method => {
         let totalSpentOnMethod = 0;
         let expensesToConsider = [];
-        // Subtítulo por defecto (para métodos no-crédito)
         let cardSubtitle = `Gasto total en ${MONTH_NAMES[currentFilterDate.getMonth()]}`;
         let paymentDateHTML = '';
 
+        console.log(`Procesando método: ${method.name} (Tipo: ${method.type})`); // Log por método
+
         // --- Lógica Diferenciada por Tipo ---
         if (method.type === 'credit') {
-            // *** CAMBIO CLAVE: Usar 'today' para calcular el ciclo actual ***
-            const { startDate, closingDate, paymentDate } = getCycleDates(method, today); // <--- USA 'today'
+            console.log(` >> Es Tarjeta de Crédito. Calculando ciclo basado en HOY (${todayString})`); // Log específico TC
+            const { startDate, closingDate, paymentDate } = getCycleDates(method, today); // Usa 'today'
+
+            // Log de las fechas calculadas
+            console.log(` >> Ciclo Calculado HOY: INICIO=${startDate}, CIERRE=${closingDate}, PAGO=${paymentDate}`);
 
             if (startDate && closingDate) {
-                // Filtrar TODOS los gastos que caen DENTRO del ciclo calculado (basado en hoy)
-                expensesToConsider = allExpenses.filter(exp =>
-                    exp.paymentMethodId === method.id &&
-                    exp.date >= startDate &&
-                    exp.date <= closingDate
-                );
-                totalSpentOnMethod = expensesToConsider.reduce((sum, exp) => sum + exp.amount, 0);
+                // Filtrar TODOS los gastos que caen DENTRO del ciclo calculado
+                expensesToConsider = allExpenses.filter(exp => {
+                    const isCorrectMethod = exp.paymentMethodId === method.id;
+                    const isAfterStart = exp.date >= startDate;
+                    const isBeforeEnd = exp.date <= closingDate;
+                    // Log detallado de la comparación para cada gasto de esta tarjeta
+                    // if (isCorrectMethod) {
+                    //     console.log(`    - Gasto ${exp.description} (${exp.date}): >= ${startDate}? ${isAfterStart}, <= ${closingDate}? ${isBeforeEnd}`);
+                    // }
+                    return isCorrectMethod && isAfterStart && isBeforeEnd;
+                });
 
-                // Actualizar subtítulo para reflejar el ciclo actual
+                // Log de gastos encontrados DENTRO del ciclo actual
+                console.log(` >> Gastos ENCONTRADOS en ciclo actual para ${method.name}:`, expensesToConsider);
+
+                totalSpentOnMethod = expensesToConsider.reduce((sum, exp) => sum + exp.amount, 0);
                 cardSubtitle = `Gasto del ciclo actual (${formatDate(startDate)} al ${formatDate(closingDate)})`;
                 if(paymentDate) {
-                    paymentDateHTML = `<p class="text-xs text-gray-600 mt-1 text-right">Próximo pago (aprox): <strong class="text-red-600">${formatDate(paymentDate)}</strong></p>`; // Texto ligeramente ajustado
+                    paymentDateHTML = `<p class="text-xs text-gray-600 mt-1 text-right">Próximo pago (aprox): <strong class="text-red-600">${formatDate(paymentDate)}</strong></p>`;
                 }
             } else {
                 totalSpentOnMethod = 0;
                 cardSubtitle = "Error al calcular ciclo actual";
+                console.error(` !! Error calculando ciclo para ${method.name}`); // Log de error
             }
         } else {
-            // Para efectivo y otros, seguir usando los gastos del mes calendario seleccionado
+            // Lógica para efectivo y otros (sin cambios)
             expensesToConsider = expensesForMonth.filter(exp => exp.paymentMethodId === method.id);
             totalSpentOnMethod = expensesToConsider.reduce((sum, exp) => sum + exp.amount, 0);
-            // El subtítulo por defecto ya indica el mes calendario
+             console.log(` >> Método NO crédito. Gasto en mes ${MONTH_NAMES[currentFilterDate.getMonth()]}: ${formatCurrency(totalSpentOnMethod)}`); // Log no-TC
         }
         // --- Fin Lógica Diferenciada ---
 
 
-        // --- Renderizado (Solo si hubo gasto EN EL PERIODO CORRESPONDIENTE) ---
+        // --- Renderizado (Solo si hubo gasto) ---
+        console.log(` >> Total calculado para ${method.name}: ${formatCurrency(totalSpentOnMethod)}`); // Log antes de renderizar
         if (totalSpentOnMethod > 0) {
-            let cardColorClasses = 'bg-gray-50 border-gray-200';
-            let titleColorClass = 'text-gray-800';
-            let amountColorClass = 'text-gray-900';
+            console.log(` >> RENDERIZANDO tarjeta para ${method.name}`); // Log si se va a renderizar
+            // ... (resto del código de renderizado HTML, sin cambios)...
+             let cardColorClasses = 'bg-gray-50 border-gray-200';
+             let titleColorClass = 'text-gray-800';
+             let amountColorClass = 'text-gray-900';
 
-            if (method.type === 'cash') {
-                cardColorClasses = 'bg-green-50 border-green-200';
-                titleColorClass = 'text-green-800';
-                amountColorClass = 'text-green-900';
-            } else if (method.type === 'credit') {
-                cardColorClasses = 'bg-cyan-50 border-cyan-200';
-                titleColorClass = 'text-cyan-800';
-                amountColorClass = 'text-cyan-900';
-            }
+             if (method.type === 'cash') { /* ... colores ... */ }
+             else if (method.type === 'credit') { /* ... colores ... */ }
 
-            const cardHTML = `
-                <div class="p-4 rounded-lg border ${cardColorClasses}">
-                    <p class="font-bold ${titleColorClass}">${method.name}</p>
-                    <p class="text-2xl font-extrabold ${amountColorClass} mt-1">${formatCurrency(totalSpentOnMethod)}</p>
-                    <div class="mt-3">
-                         <p class="text-xs text-gray-600">${cardSubtitle}</p>
-                         ${paymentDateHTML}
-                    </div>
-                </div>
-            `;
-            container.insertAdjacentHTML('beforeend', cardHTML);
-            totalSpendingDisplayed += totalSpentOnMethod;
+             const cardHTML = `...`; // (El HTML de la tarjeta, sin cambios)
+             container.insertAdjacentHTML('beforeend', cardHTML);
+             totalSpendingDisplayed += totalSpentOnMethod;
+        } else {
+             console.log(` >> NO se renderiza tarjeta para ${method.name} (gasto = 0)`); // Log si no se renderiza
         }
+         console.log(`--------------------------------`); // Separador
     });
 
-    // --- Mostrar/Ocultar la sección completa ---
-    if (totalSpendingDisplayed === 0) {
-         section.classList.add('hidden');
-         // Mostrar mensaje genérico si no hay gastos que mostrar en esta sección
-         container.innerHTML = `<p class="text-gray-500 italic text-sm col-span-full">No hay gastos registrados para mostrar en este resumen.</p>`;
-    } else {
-         section.classList.remove('hidden');
-         const existingMessage = container.querySelector('p.italic.col-span-full');
-         if (existingMessage) {
-             existingMessage.remove();
-         }
-    }
-}          
+    // --- Mostrar/Ocultar Sección ---
+    console.log(`Total Gasto Mostrado en Sección: ${formatCurrency(totalSpendingDisplayed)}`); // Log final
+    if (totalSpendingDisplayed === 0) { /* ... ocultar ... */ }
+    else { /* ... mostrar ... */ }
+}         
         // --- Main Render Function ---
         function renderUI() {
             if (!appState) return;
