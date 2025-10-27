@@ -2217,6 +2217,7 @@ function getCycleDates(method, referenceDate) {
             setupExpenseModalListeners(); 
             setupLiquidateListeners(); 
             setupDynamicFilterListeners(); // Configura listeners del popover y filtros internos
+            setupDataManagementListeners();
             
             // CORREGIDO: Añadir listener para el botón de logout principal
             document.getElementById('logout-btn').addEventListener('click', openLogoutConfirmModal);
