@@ -1594,51 +1594,47 @@
         }
         
         // CORREGIDO: Lógica de cálculo de ciclo de tarjeta de crédito mejorada
-        function getCycleDates(method, referenceDate) {
-            if (method.type !== 'credit' || !method.paymentDay) {
-                return { startDate: null, closingDate: null, paymentDate: null };
-            }
+ function getCycleDates(method, referenceDate) {
+    if (method.type !== 'credit' || !method.paymentDay) {
+        return { startDate: null, closingDate: null, paymentDate: null };
+    }
 
-            const paymentDay = method.paymentDay;
-            const gracePeriodDays = 25; // Días desde el cierre hasta el pago.
+    const paymentDay = method.paymentDay;
+    const gracePeriodDays = 25;
+    const refYear = referenceDate.getUTCFullYear();
+    const refMonth = referenceDate.getUTCMonth();
+    const refDay = referenceDate.getUTCDate();
+    const referenceDateUTC = new Date(Date.UTC(refYear, refMonth, refDay));
 
-            // 1. Empezar calculando la fecha de cierre para el mes de la fecha de referencia.
-            //    Usamos UTC para evitar problemas de zona horaria al manipular solo días/meses.
-            let closingDate = new Date(Date.UTC(referenceDate.getUTCFullYear(), referenceDate.getUTCMonth(), paymentDay));
-            closingDate.setUTCDate(closingDate.getUTCDate() - gracePeriodDays);
+    let potentialClosingNextMonth = new Date(Date.UTC(refYear, refMonth + 1, paymentDay));
+    potentialClosingNextMonth.setUTCDate(potentialClosingNextMonth.getUTCDate() - gracePeriodDays);
 
-            // 2. Si la fecha de referencia (in UTC) es posterior a esta fecha de cierre (in UTC),
-            //    significa que estamos en el siguiente ciclo de facturación.
-            const referenceDateUTC = new Date(Date.UTC(referenceDate.getUTCFullYear(), referenceDate.getUTCMonth(), referenceDate.getUTCDate()));
-            if (referenceDateUTC > closingDate) {
-                closingDate.setUTCMonth(closingDate.getUTCMonth() + 1);
-            }
-            
-            // 3. Ajustar la fecha de cierre por si cae en fin de semana (mover al viernes anterior)
-            const dayOfWeek = closingDate.getUTCDay(); // Domingo = 0, Sábado = 6
-            if (dayOfWeek === 0) { // Domingo
-                closingDate.setUTCDate(closingDate.getUTCDate() - 2); 
-            } else if (dayOfWeek === 6) { // Sábado
-                closingDate.setUTCDate(closingDate.getUTCDate() - 1); 
-            }
+    let potentialClosingThisMonth = new Date(Date.UTC(refYear, refMonth, paymentDay));
+    potentialClosingThisMonth.setUTCDate(potentialClosingThisMonth.getUTCDate() - gracePeriodDays);
 
-            // 4. Ahora que tenemos la fecha de cierre correcta, calculamos las fechas de inicio y de pago.
-            let startDate = new Date(closingDate.getTime());
-            startDate.setUTCMonth(startDate.getUTCMonth() - 1);
-            startDate.setUTCDate(startDate.getUTCDate() + 1);
+    let activeClosingDate;
+    let activePaymentDate;
 
-            let paymentDate = new Date(closingDate.getTime());
-            paymentDate.setUTCDate(paymentDate.getUTCDate() + gracePeriodDays);
+    if (referenceDateUTC > potentialClosingThisMonth) {
+        activeClosingDate = potentialClosingNextMonth;
+        activePaymentDate = new Date(Date.UTC(activeClosingDate.getUTCFullYear(), activeClosingDate.getUTCMonth() + 1, paymentDay));
+    } else {
+        activeClosingDate = potentialClosingThisMonth;
+        activePaymentDate = new Date(Date.UTC(activeClosingDate.getUTCFullYear(), activeClosingDate.getUTCMonth() + 1, paymentDay));
+    }
 
-            // Devolver las fechas en formato ISO YYYY-MM-DD
-            const toISODateString = (date) => date.toISOString().split('T')[0];
+    let activeStartDate = new Date(activeClosingDate.getTime());
+    activeStartDate.setUTCMonth(activeStartDate.getUTCMonth() - 1);
+    activeStartDate.setUTCDate(activeStartDate.getUTCDate() + 1);
 
-            return {
-                startDate: toISODateString(startDate),
-                closingDate: toISODateString(closingDate),
-                paymentDate: toISODateString(paymentDate)
-            };
-        }
+    const toISODateString = (date) => date.toISOString().split('T')[0];
+
+    return {
+        startDate: toISODateString(activeStartDate),
+        closingDate: toISODateString(activeClosingDate),
+        paymentDate: toISODateString(activePaymentDate)
+    };
+}
 
 
         // --- Funciones de Autenticación (REDUCIDAS) ---
@@ -3752,3 +3748,4 @@ function renderCreditCardSummary(expensesForMonth) {
     </script>
 </body>
 </html>
+
