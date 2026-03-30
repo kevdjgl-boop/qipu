@@ -1,0 +1,7518 @@
+﻿// ================================================================
+// GESTOR DE MODALES UNIFICADO (UI MANAGER)
+// ================================================================
+// ================================================================
+// GESTOR DE MODALES (VERSIÃ“N BLINDADA / SAFE MODE)
+// ================================================================
+const ui = {
+  // Configuración de Estilos
+  styles: {
+    success: { bg: 'bg-emerald-500', icon: 'fa-check', color: 'bg-emerald-500' },
+    error: { bg: 'bg-rose-500', icon: 'fa-times', color: 'bg-rose-500' },
+    warning: { bg: 'bg-amber-400', icon: 'fa-exclamation', color: 'bg-amber-500' },
+    info: { bg: 'bg-indigo-500', icon: 'fa-info', color: 'bg-indigo-500' }
+  },
+
+  // Helper seguro para obtener elementos
+  getElement(id) {
+    return document.getElementById(id);
+  },
+
+  close() {
+    const modal = this.getElement('global-modal');
+    if (modal) {
+      modal.classList.add('hidden');
+      modal.classList.remove('flex');
+      document.body.classList.remove('no-scroll');
+    }
+  },
+
+  open() {
+    const modal = this.getElement('global-modal');
+    if (modal) {
+      modal.classList.remove('hidden');
+      modal.classList.add('flex');
+      document.body.classList.add('no-scroll');
+    } else {
+      console.error("ERROR CRÍTICO: No se encuentra el HTML del modal id='global-modal'.");
+      alert("Error: Falta el código HTML del modal."); // Fallback nativo
+    }
+  },
+
+  // 1. ALERTA SIMPLE
+  alert(title, message, type = 'info') {
+    // Verificar existencia antes de intentar escribir
+    const tEl = this.getElement('gm-title');
+    const bEl = this.getElement('gm-body');
+
+    if (!tEl || !bEl) {
+      console.warn("UI Modal elements not found. Using native alert.");
+      return alert(`${title}\n\n${message.replace(/<[^>]*>?/gm, '')}`);
+    }
+
+    const style = this.styles[type] || this.styles.info;
+
+    // Configurar Colores e Iconos
+    this.getElement('gm-header').className = `h-24 flex items-center justify-center rounded-t-2xl ${style.bg}`;
+    this.getElement('gm-icon-container').className = `w-16 h-16 rounded-full flex items-center justify-center shadow-lg border-4 border-white text-white ${style.bg}`;
+    this.getElement('gm-icon').className = `fas ${style.icon} text-3xl`;
+
+    // Botón
+    const btnOk = this.getElement('gm-btn-ok');
+    btnOk.className = `w-full py-3 rounded-xl text-sm font-bold text-white shadow-lg transition-transform active:scale-95 ${style.color} hover:opacity-90`;
+
+    // Textos
+    tEl.textContent = title;
+    bEl.innerHTML = message;
+
+    // Mostrar botones correctos
+    this.getElement('gm-actions-confirm').classList.add('hidden');
+    this.getElement('gm-actions-alert').classList.remove('hidden');
+
+    // Listener (Clonado para limpiar)
+    const newBtn = btnOk.cloneNode(true);
+    btnOk.parentNode.replaceChild(newBtn, btnOk);
+    newBtn.onclick = () => this.close();
+
+    this.open();
+  },
+
+  // 2. CONFIRMACIÃ“N
+  confirm(title, message, onConfirm, type = 'warning', confirmText = 'Sí, continuar') {
+    const tEl = this.getElement('gm-title');
+
+    if (!tEl) {
+      if (confirm(`${title}\n\n${message.replace(/<[^>]*>?/gm, '')}`)) onConfirm();
+      return;
+    }
+
+    const style = this.styles[type] || this.styles.warning;
+
+    // Estilos
+    this.getElement('gm-header').className = `h-24 flex items-center justify-center rounded-t-2xl ${style.bg}`;
+    this.getElement('gm-icon-container').className = `w-16 h-16 rounded-full flex items-center justify-center shadow-lg border-4 border-white text-white ${style.bg}`;
+    this.getElement('gm-icon').className = `fas ${style.icon} text-3xl`;
+
+    // Botón Confirmar
+    const btnConfirm = this.getElement('gm-btn-confirm');
+    const btnCancel = this.getElement('gm-btn-cancel');
+
+    btnConfirm.className = `py-3 rounded-xl text-sm font-bold text-white shadow-lg transition-transform active:scale-95 ${style.color} hover:opacity-90`;
+    btnConfirm.textContent = confirmText;
+
+    // Textos
+    tEl.textContent = title;
+    this.getElement('gm-body').innerHTML = message;
+
+    // Mostrar botones de confirmación
+    this.getElement('gm-actions-alert').classList.add('hidden');
+    this.getElement('gm-actions-confirm').classList.remove('hidden');
+
+    // Listeners
+    const newBtnConfirm = btnConfirm.cloneNode(true);
+    const newBtnCancel = btnCancel.cloneNode(true);
+
+    btnConfirm.parentNode.replaceChild(newBtnConfirm, btnConfirm);
+    btnCancel.parentNode.replaceChild(newBtnCancel, btnCancel);
+
+    newBtnCancel.onclick = () => this.close();
+    newBtnConfirm.onclick = () => {
+      this.close();
+      if (onConfirm) onConfirm();
+    };
+
+    this.open();
+  }
+};
+
+// Exponer ui al scope global para que module no afecte el scope global
+Object.defineProperty(window, 'ui', {
+  get: () => ui,
+  configurable: true,
+});
+
+// --- MANTENER COMPATIBILIDAD ---
+window.showModal = function (message, detail = null, title = "Atención") {
+  let type = 'info';
+  if (title.toLowerCase().includes('error') || title.toLowerCase().includes('fallo')) type = 'error';
+  if (title.toLowerCase().includes('éxito') || title.toLowerCase().includes('correctamente')) type = 'success';
+
+  let finalMsg = message;
+  if (detail) finalMsg += `<br><br><code class="block bg-gray-100 p-2 rounded text-xs text-red-500 break-all text-left">${detail}</code>`;
+
+  ui.alert(title, finalMsg, type);
+};
+
+// --- MANTENER COMPATIBILIDAD CON TU CÃ“DIGO ACTUAL ---
+// Redefinimos la función global showModal para que use el nuevo sistema
+window.showModal = function (message, detail = null, title = "Atención") {
+  // Detectamos si es error o éxito basado en el título o contenido (simple heurística)
+  let type = 'info';
+  if (title.toLowerCase().includes('error') || title.toLowerCase().includes('fallo')) type = 'error';
+  if (title.toLowerCase().includes('éxito') || title.toLowerCase().includes('correctamente')) type = 'success';
+
+  // Si hay detalle técnico, lo agregamos pequeño
+  let finalMsg = message;
+  if (detail) finalMsg += `<br><br><code class="block bg-gray-100 p-2 rounded text-xs text-red-500 break-all text-left">${detail}</code>`;
+
+  ui.alert(title, finalMsg, type);
+};
+// Importaciones de Firebase
+import { updateEmail, updatePassword } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+import { getAuth, signInWithCustomToken, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+import { getFirestore, doc, setDoc, onSnapshot, getDoc, updateDoc, writeBatch, collection, addDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+import { setLogLevel } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+setLogLevel("Debug");
+
+// ====================================================================================
+// --- CONFIGURACIÃ“N Y ESTADO GLOBAL ---
+// ====================================================================================
+
+const myFirebaseConfig = {
+  apiKey: "AIzaSyA63OZWFM30Tu17DGxAmbtVsNFWeQU3k4s",
+  authDomain: "qipu-d1dcd.firebaseapp.com",
+  projectId: "qipu-d1dcd",
+  storageBucket: "qipu-d1dcd.firebasestorage.app",
+  messagingSenderId: "398775085739",
+  appId: "1:398775085739:web:be8643b5d9fea9ef8da5ee",
+};
+let currentHistoryTab = "expenses"; // 'expenses' o 'incomes'
+const REDIRECT_URL_LOGOUT = "index.html";
+
+const IS_CANVAS_ENV = typeof __initial_auth_token !== "undefined";
+
+let firebaseConfig = IS_CANVAS_ENV ? (typeof __firebase_config !== "undefined" ? JSON.parse(__firebase_config) : myFirebaseConfig) : myFirebaseConfig;
+
+const appId = typeof __app_id !== "undefined" ? __app_id : firebaseConfig.projectId || "default-app-id";
+const initialAuthToken = typeof __initial_auth_token !== "undefined" ? __initial_auth_token : null;
+
+let app, db, auth;
+let userId = "loading";
+let currentWalletId = null;
+let isFirebaseActive = Object.keys(firebaseConfig).length > 0 && !Object.keys(firebaseConfig).some((k) => firebaseConfig[k].startsWith("TU_"));
+
+// --- NUEVAS RUTAS DE FIRESTORE ---
+const getUserProfileRef = (db, uid) => doc(db, "artifacts", appId, "users", uid);
+const getOldUserFinanceDocRef = (db, uid) => doc(db, "artifacts", appId, "users", uid, "finance_tracker", "main_finance_state");
+const getWalletDocRef = (db, walletId) => doc(db, "artifacts", appId, "public/data/wallets", walletId);
+const getWalletsCollectionRef = (db) => collection(db, "artifacts", appId, "public/data/wallets");
+
+const LOCAL_STORAGE_KEY = "finance_tracker_local_data";
+
+const MONTH_NAMES = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
+const DAY_NAMES = ["Dom", "Lun", "Mar", "Mié", "Jue", "Vie", "Sáb"];
+
+let tempGuestList = [];
+let tempIncomes = [];
+let appState = {
+  participants: [],
+  categories: [],
+  paymentMethods: [],
+  expenses: [],
+};
+
+// Exponer appState al scope global (necesario porque app.js es un ES Module aislado)
+// export.js y otros scripts no-módulo acceden a él vía window.appState
+Object.defineProperty(window, 'appState', {
+  get: () => appState,
+  set: (v) => { appState = v; },
+  configurable: true,
+});
+
+let currentFilterDate = new Date();
+currentFilterDate.setDate(1);
+let isMonthPickerVisible = false;
+let selectedDayFilter = null; // Almacenará 'YYYY-MM-DD' cuando selecciones un día
+let monthPickerYear = new Date().getFullYear();
+let myParticipantId = null;
+let unsubscribeListener = null;
+let currentSidebarPanel = "participants";
+// Función para gestionar los paneles
+function showSidebarPanel(panelId) {
+  // 1. Ocultar todos los paneles
+  document.querySelectorAll(".sidebar-panel").forEach((panel) => {
+    panel.classList.add("hidden");
+  });
+
+  // 2. Mostrar el panel objetivo
+  const targetPanel = document.getElementById(`panel-content-${panelId}`);
+  if (targetPanel) {
+    targetPanel.classList.remove("hidden");
+  }
+
+  // 3. Guardar el estado
+  currentSidebarPanel = panelId;
+}
+
+// RENDERIZAR INPUTS DE METAS (DISEÃ‘O LIMPIO)
+
+// En tu setupParticipantModalListeners existente:
+document.getElementById("btn-add-goal-input").addEventListener("click", () => {
+  tempParticipantGoals.push({ id: generateUUID(), name: "", target: 0, current: 0 });
+  renderGoalInputs();
+});
+
+// Guardar la asignación
+document.getElementById("save-allocation-btn").addEventListener("click", async () => {
+  const inputs = document.querySelectorAll(".allocation-input");
+  let updatesMade = false;
+
+  // Copia profunda para modificar
+  const newParticipants = JSON.parse(JSON.stringify(appState.participants));
+
+  inputs.forEach((input) => {
+    const amount = parseFloat(input.value);
+    if (amount > 0) {
+      const pId = input.dataset.participantId;
+      const gId = input.dataset.goalId;
+
+      const pIndex = newParticipants.findIndex((x) => x.id === pId);
+      if (pIndex !== -1) {
+        const gIndex = newParticipants[pIndex].goals.findIndex((x) => x.id === gId);
+        if (gIndex !== -1) {
+          newParticipants[pIndex].goals[gIndex].current += amount;
+          updatesMade = true;
+
+          // OPCIONAL: Crear un gasto automático tipo "Transferencia" para descontar del saldo visible
+          // createSavingsTransaction(amount, pId, gId);
+        }
+      }
+    }
+  });
+
+  if (updatesMade) {
+    await saveState({ participants: newParticipants });
+    document.getElementById("savings-allocation-modal").classList.add("hidden");
+    document.getElementById("savings-allocation-modal").classList.remove("flex");
+    showModal("Â¡Fondos asignados a las metas correctamente!");
+    renderUI(); // Refrescar Dashboard
+  }
+});
+
+// Listener para abrir
+document.getElementById("btn-distribute-savings").addEventListener("click", openAllocationModal);
+document.getElementById("close-allocation-modal").addEventListener("click", () => {
+  document.getElementById("savings-allocation-modal").classList.add("hidden");
+  document.getElementById("savings-allocation-modal").classList.remove("flex");
+});
+
+// ================================================================
+// RESTAURACIÃ“N: Lógica del Modal de Métodos de Pago
+// ================================================================
+
+const toggleSidebar = (open) => {
+  const sidebar = document.getElementById("participant-sidebar");
+  const appLayout = document.getElementById("app-layout");
+
+  if (open) {
+    // Si se pide abrir, muestra el panel que estaba activo
+    showSidebarPanel(currentSidebarPanel);
+  }
+
+  sidebar.classList.toggle("open", open);
+  appLayout.classList.toggle("sidebar-is-open", open);
+};
+let categoryChart = null;
+let addExpenseDatepicker = null; // <-- AÃ‘ADE ESTA
+let editExpenseDatepicker = null;
+let activePopovers = []; // <-- AÃ‘ADE ESTA
+let paymentMethodPopovers = [];
+
+// NUEVO: Estado para los filtros activos
+let activeFilters = {
+  description: "",
+  category: null, // Almacenará el nombre de la categoría
+  participant: null, // Almacenará el ID del participante
+  paymentMethod: null,
+  guestOnly: false, // NUEVO: Almacenará el ID del método de pago
+};
+let tempItemsList = [];
+let tempParticipantGoals = [];
+
+// --- NUEVAS FUNCIONES PARA EL MODAL DE GASTOS ---
+
+// Abre el modal de gastos
+
+// --- NUEVA FUNCIÃ“N PARA MANEJAR CLICS EN TABS DE CICLO ---
+function setupCycleTabs() {
+  const container = document.getElementById("credit-card-summary-cards");
+  container.addEventListener("click", (e) => {
+    const tabButton = e.target.closest(".cycle-tab-btn");
+    if (!tabButton) return;
+
+    e.preventDefault();
+    const tabGroup = tabButton.closest(".cycle-tab-nav");
+    const tabCard = tabButton.closest(".cycle-tab-card");
+    const targetPaneId = tabButton.dataset.target; // e.g., "pane-current-m123"
+
+    // 1. Actualizar botones
+    tabGroup.querySelectorAll(".cycle-tab-btn").forEach((btn) => btn.classList.remove("active"));
+    tabButton.classList.add("active");
+
+    // 2. Actualizar paneles de contenido
+    tabCard.querySelectorAll(".cycle-tab-content").forEach((pane) => {
+      pane.classList.toggle("active", pane.id === targetPaneId);
+    });
+  });
+}
+
+// Cierra el modal de gastos
+function closeExpenseModal() {
+  document.getElementById("add-expense-modal").classList.add("hidden");
+  document.getElementById("add-expense-modal").classList.remove("flex");
+  document.body.classList.remove("no-scroll");
+  if (addExpenseDatepicker) {
+    addExpenseDatepicker.destroy();
+    addExpenseDatepicker = null;
+  }
+}
+// --- NUEVA FUNCIÃ“N PARA RENDERIZAR FILAS SIMPLES DE GASTOS ---
+// ================================================================
+// ===== REEMPLAZA ESTA FUNCIÃ“N COMPLETA =====
+// ================================================================
+
+// --- NUEVA VERSIÃ“N QUE MUESTRA EL DESGLOSE DE "A QUIÃ‰N LE TOCA PAGAR" ---
+function createSimpleExpenseRowHTML(expense, participantsMap) {
+  const dateObj = new Date(expense.date + "T00:00:00Z");
+
+  // Formato de fecha "05 Nov"
+  const formattedDate = dateObj
+    .toLocaleDateString("es-ES", {
+      day: "2-digit",
+      month: "short",
+      timeZone: "UTC",
+    })
+    .replace(".", "");
+
+  const payerName = participantsMap.get(expense.payerId) || expense.payerNameGuest || "Desconocido";
+  const subcategoryLabel = expense.subcategory ? ` (${expense.subcategory})` : "";
+  const isProjected = expense.isProjected;
+
+  let breakdownHtml = ""; // Aquí irá el desglose
+
+  if (expense.type === "shared") {
+    // Si el gasto es compartido, calculamos la parte de cada uno
+    const allParticipants = Array.from(participantsMap.values()); // ["U1", "U2"]
+    const numPayees = expense.payerId.startsWith("guest_") ? allParticipants.length + 1 : allParticipants.length;
+    const splitAmount = expense.amount / numPayees;
+
+    // Creamos una etiqueta (tag) para cada participante
+    breakdownHtml = allParticipants
+      .map((name) => {
+        return `<span class="expense-card-tag participant">${name}: ${formatCurrency(splitAmount)}</span>`;
+      })
+      .join("");
+
+    // Añadimos la parte del invitado si aplica
+    if (expense.payerId.startsWith("guest_")) {
+      breakdownHtml += `<span class="expense-card-tag participant">Invitado: ${formatCurrency(splitAmount)}</span>`;
+    }
+
+    // Ponemos todo dentro de un contenedor
+    breakdownHtml = `
+      <div class="mt-2 pt-2 border-t border-gray-200">
+        <p class="text-xs font-semibold text-gray-600 mb-1">Desglose (Compartido):</p>
+        <div class="flex flex-wrap gap-1">
+          ${breakdownHtml}
+        </div>
+      </div>
+    `;
+  } else {
+    // Si es personal, el desglose es simple
+    breakdownHtml = `
+      <div class="mt-2 pt-2 border-t border-gray-200">
+        <p class="text-xs font-semibold text-gray-600 mb-1">Desglose (Personal):</p>
+        <div class="flex flex-wrap gap-1">
+          <span class="expense-card-tag category">100% de ${payerName}</span>
+        </div>
+      </div>
+    `;
+  }
+
+  // Este es el HTML final de la fila
+  return `
+    <div class="flex items-center justify-between p-3 bg-white hover:bg-gray-50 rounded-lg border border-gray-200 ${isProjected ? "opacity-70 border-dashed" : ""}">
+      
+      <div class="text-center w-12 flex-shrink-0 mr-3">
+        <span class="block font-bold text-sm text-gray-800">${formattedDate.split(" ")[0]}</span>
+        <span class="block text-xs text-gray-500 uppercase">${formattedDate.split(" ")[1]}</span>
+      </div>
+
+      <div class="flex-grow">
+        <div>
+          <p class="font-semibold text-gray-900">${expense.description}${subcategoryLabel}</p>
+          <p class="text-xs text-gray-600">Pagado por: ${payerName}</p>
+        </div>
+        ${breakdownHtml}
+      </div>
+      
+      <div class="text-right ml-2 flex-shrink-0">
+        <span class="font-bold text-lg text-red-600">${formatCurrency(expense.amount)}</span>
+      </div>
+    </div>
+  `;
+}
+
+
+
+// Función global para eliminar invitado (llamada desde el HTML onclick)
+window.removeGuestFromList = function (index) {
+  tempGuestList.splice(index, 1);
+  renderGuestListInModal();
+};
+
+// ================================================================
+// LÃ“GICA DE PESTAÃ‘AS PARA MODAL DE TARJETA (NUEVO)
+// ================================================================
+
+// ================================================================
+// ABRIR MODAL DETALLE (VISIBILIDAD DEL BOTÃ“N)
+// ================================================================
+// ================================================================
+// MODAL DETALLE (LÃ“GICA DE CICLOS CORREGIDA: PASADO vs FUTURO)
+// ================================================================
+// ABRIR MODAL DETALLE (CORREGIDO: safePrevRef -> safePrevDate)
+// MODAL DETALLE (SIMPLIFICADO Y CORREGIDO)
+function openPaymentMethodDetailModal(methodId) {
+  const method = appState.paymentMethods.find((m) => m.id === methodId);
+  if (!method) return;
+
+  const modal = document.getElementById("payment-method-detail-modal");
+  const titleEl = modal.querySelector(".modal-title");
+  titleEl.textContent = method.name;
+
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  let rangeCurr, rangePrev;
+  let showCloseButton = false;
+  let isAlreadyClosed = false;
+
+  if (method.type === "credit") {
+    // 1. Obtener ciclo ACTUAL (La función getCycleDates ya sabe si cerró o no)
+    rangeCurr = getCycleDates(method, today);
+
+    // 2. Calcular ciclo ANTERIOR basándonos en el inicio del actual
+    // Retrocedemos 5 días desde el inicio del actual para caer seguramente en el ciclo previo
+    if (rangeCurr.startDate) {
+      const currentStartObj = new Date(rangeCurr.startDate + "T00:00:00Z");
+      const prevDateReference = new Date(currentStartObj.getTime() - 5 * 24 * 60 * 60 * 1000);
+      rangePrev = getCycleDates(method, prevDateReference);
+
+      showCloseButton = true;
+      isAlreadyClosed = rangeCurr.isManual;
+    } else {
+      rangePrev = { startDate: null, closingDate: null };
+    }
+  } else {
+    // Lógica Efectivo (Mes calendario)
+    const prevDateRef = new Date(today);
+    prevDateRef.setMonth(today.getMonth() - 1);
+    rangeCurr = getMonthDates(today);
+    rangePrev = getMonthDates(prevDateRef);
+  }
+
+  // Renderizado de Textos
+  document.getElementById("pm-date-curr").textContent = rangeCurr.startDate ? `${formatShortDate(rangeCurr.startDate)} - ${formatShortDate(rangeCurr.closingDate)}` : "--";
+  document.getElementById("pm-date-prev").textContent = rangePrev.startDate ? `${formatShortDate(rangePrev.startDate)} - ${formatShortDate(rangePrev.closingDate)}` : "--";
+
+  const allExpenses = appState.expenses || [];
+  const participantsMap = new Map(appState.participants.map((p) => [p.id, p.name]));
+
+  // Calcular listas
+  const resultCurr = renderExpenseListForRange(allExpenses, methodId, rangeCurr, "pm-content-curr", participantsMap);
+  const resultPrev = renderExpenseListForRange(allExpenses, methodId, rangePrev, "pm-content-prev", participantsMap);
+
+  // Botón Cerrar Ciclo
+  const currContainer = document.getElementById("pm-content-curr");
+  const oldBtn = document.getElementById("manual-close-cycle-wrapper");
+  if (oldBtn) oldBtn.remove();
+
+  if (showCloseButton) {
+    const todayStr = new Date().toISOString().split("T")[0];
+    // Solo mostramos botón de cerrar si NO se ha cerrado manualmente ya
+    const btnHtml = isAlreadyClosed
+      ? `<div id="manual-close-cycle-wrapper" class="mb-4 p-3 bg-green-50 border border-green-200 rounded-xl flex items-center justify-center gap-2 text-green-700 text-xs font-bold">
+                 <i class="fas fa-check-circle"></i> Ciclo cerrado manualmente
+               </div>`
+      : `<div id="manual-close-cycle-wrapper" class="mb-4">
+                 <button onclick="handleManualCloseCycle('${methodId}')" class="w-full py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-sm font-bold shadow-md transition-all flex items-center justify-center gap-2">
+                    <i class="fas fa-calendar-check"></i> Cerrar Ciclo Hoy (${formatShortDate(todayStr)})
+                 </button>
+                 <p class="text-[10px] text-gray-400 text-center mt-1">Finalizar ciclo actual (${formatShortDate(rangeCurr.startDate)} - Hoy).</p>
+               </div>`;
+
+    currContainer.insertAdjacentHTML("afterbegin", btnHtml);
+  }
+
+  setupTabSwitching(resultCurr.total || 0, resultPrev.total || 0);
+
+  modal.classList.remove("hidden");
+  modal.classList.add("flex");
+  document.body.classList.add("no-scroll");
+}
+
+// ================================================================
+// LÃ“GICA COMPLETA DEL MODAL DE PARTICIPANTES (Variables + Funciones)
+// ================================================================
+
+// 2. Renderizado de Ingresos (Sueldos, Extras...)
+// Por si acaso, aquí está la función de renderizado necesaria
+// --- RENDERIZADO DE INGRESOS CON FECHA ---
+// --- RENDERIZADO DE INGRESOS CON CALENDARIO FLOWBITE ---
+function renderIncomeInputs() {
+  const container = document.getElementById("income-list-container");
+  const totalDisplay = document.getElementById("total-income-display");
+
+  if (!container) return;
+
+  // 1. Guardar el foco actual (opcional, para mejorar UX si escribes rápido)
+  // const activeElement = document.activeElement;
+
+  container.innerHTML = "";
+
+  let total = 0;
+
+  tempIncomes.forEach((inc, index) => {
+    const val = parseFloat(inc.amount) || 0;
+    total += val;
+
+    // Estilos e Iconos
+    let icon = "fa-money-bill-wave";
+    let colorClass = "text-emerald-600 bg-emerald-50";
+    const n = inc.name ? inc.name.toLowerCase() : "";
+
+    if (n.includes("freelance") || n.includes("extra")) {
+      icon = "fa-laptop-code";
+      colorClass = "text-blue-600 bg-blue-50";
+    } else if (n.includes("cobro") || n.includes("deuda")) {
+      icon = "fa-hand-holding-usd";
+      colorClass = "text-amber-600 bg-amber-50";
+    }
+
+    // Fecha por defecto
+    const dateVal = inc.date || new Date().toISOString().split("T")[0];
+
+    container.insertAdjacentHTML(
+      "beforeend",
+      `
+            <div class="flex items-center gap-2 bg-white p-2 rounded-xl border border-gray-200 shadow-sm group hover:border-emerald-200 transition-all mb-2">
+                <div class="w-8 h-8 rounded-lg ${colorClass} flex items-center justify-center text-xs shrink-0">
+                    <i class="fas ${icon}"></i>
+                </div>
+                
+                <div class="flex-1 min-w-0">
+                    <input type="text" placeholder="Ej: Sueldo" value="${inc.name || ""}" 
+                        onchange="updateTempIncome(${index}, 'name', this.value)"
+                        class="w-full bg-transparent border-none p-0 text-xs font-bold text-gray-700 placeholder-gray-400 focus:ring-0">
+                </div>
+
+                <div class="w-28 shrink-0 relative">
+                    <div class="absolute inset-y-0 start-0 flex items-center ps-2 pointer-events-none">
+                        <i class="fas fa-calendar-alt text-gray-400 text-[10px]"></i>
+                    </div>
+                    <input type="text" 
+                        class="income-datepicker w-full bg-gray-50 border-none text-gray-900 text-[10px] font-bold rounded-lg focus:ring-emerald-500 focus:border-emerald-500 block ps-6 p-1.5" 
+                        placeholder="Fecha" 
+                        value="${dateVal}"
+                        data-index="${index}"
+                        autocomplete="off">
+                </div>
+                
+                <div class="w-20 bg-gray-50 rounded-lg px-2 py-1 flex items-center border border-transparent focus-within:border-emerald-200 focus-within:bg-white shrink-0">
+                    <span class="text-[10px] text-gray-400 font-bold mr-1">S/</span>
+                    <input type="number" placeholder="0" value="${inc.amount}" 
+                        onchange="updateTempIncome(${index}, 'amount', this.value)"
+                        class="w-full bg-transparent border-none p-0 text-xs font-black text-gray-800 text-right focus:ring-0">
+                </div>
+
+                <button type="button" onclick="removeTempIncome(${index})" class="w-6 h-6 flex items-center justify-center text-gray-300 hover:text-red-500 hover:bg-red-50 rounded-md transition-colors shrink-0">
+                    <i class="fas fa-times text-xs"></i>
+                </button>
+            </div>
+        `
+    );
+  });
+
+  if (totalDisplay) totalDisplay.textContent = formatCurrency(total);
+
+  // --- INICIALIZACIÃ“N MANUAL DE DATEPICKERS ---
+  // Esto es necesario porque los inputs fueron creados dinámicamente
+  const dateInputs = container.querySelectorAll(".income-datepicker");
+
+  dateInputs.forEach((input) => {
+    // Verificar si Flowbite Datepicker está disponible
+    if (typeof Datepicker !== "undefined") {
+      const idx = input.getAttribute("data-index");
+
+      // Crear instancia
+      new Datepicker(input, {
+        format: "yyyy-mm-dd",
+        autohide: true,
+        orientation: "bottom right",
+        todayBtn: true,
+        clearBtn: false,
+      });
+
+      // Escuchar el evento de cambio de fecha propio de Flowbite
+      input.addEventListener("changeDate", (e) => {
+        // Actualizar el array global SIN re-renderizar todo inmediatamente
+        // para no cerrar el calendario bruscamente
+        if (tempIncomes[idx]) {
+          // El valor del input ya viene formateado gracias a Flowbite
+          tempIncomes[idx].date = input.value;
+        }
+      });
+
+      // Respaldo standard change
+      input.addEventListener("change", (e) => {
+        if (tempIncomes[idx]) tempIncomes[idx].date = input.value;
+      });
+    }
+  });
+}
+
+// removeTempIncome sigue igual...
+window.removeTempIncome = (index) => {
+  tempIncomes.splice(index, 1);
+  renderIncomeInputs();
+};
+
+// 3. Renderizado de Metas (Estilo Limpio)
+function renderGoalInputs() {
+  const container = document.getElementById("participant-goals-container");
+  if (!container) return;
+  container.innerHTML = "";
+
+  if (tempParticipantGoals.length === 0) {
+    container.innerHTML = `<div class="text-center py-4 border border-dashed border-gray-200 rounded-xl bg-gray-50/50"><p class="text-xs text-gray-400 italic">No hay metas definidas</p></div>`;
+    return;
+  }
+
+  tempParticipantGoals.forEach((goal, index) => {
+    container.insertAdjacentHTML(
+      "beforeend",
+      `
+            <div class="group flex items-center gap-3 bg-white p-2 rounded-xl border border-gray-200 shadow-sm hover:border-indigo-200 transition-all">
+                <div class="w-8 h-8 rounded-lg bg-gray-50 text-gray-400 flex items-center justify-center text-xs font-bold shrink-0 group-hover:bg-indigo-50 group-hover:text-indigo-600 transition-colors">${index + 1}</div>
+                <div class="flex-1 min-w-0">
+                    <input type="text" placeholder="Ej: Viaje" value="${goal.name}" 
+                        onchange="updateTempGoal(${index}, 'name', this.value)"
+                        class="w-full bg-transparent border-none p-0 text-sm font-bold text-gray-700 placeholder-gray-300 focus:ring-0">
+                </div>
+                <div class="w-24 text-right pr-1 flex items-center justify-end">
+                    <span class="text-[10px] text-gray-400 mr-1">S/</span>
+                    <input type="number" placeholder="0" value="${goal.target}" 
+                        onchange="updateTempGoal(${index}, 'target', this.value)"
+                        class="w-full bg-transparent border-none p-0 text-sm font-black text-gray-900 text-right focus:ring-0 placeholder-gray-200">
+                </div>
+                <button type="button" onclick="removeTempGoal(${index})" class="w-6 h-6 flex items-center justify-center text-gray-300 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors ml-1">
+                    <i class="fas fa-trash-alt text-xs"></i>
+                </button>
+            </div>
+        `
+    );
+  });
+}
+
+// 4. FUNCIÃ“N MAESTRA: Listeners del Modal
+// ================================================================
+// LÃ“GICA DEL MODAL PARTICIPANTES (CORREGIDA - LECTURA DIRECTA)
+// ================================================================
+function setupParticipantModalListeners() {
+  console.log("Configurando modal de participantes (Versión Blindada)...");
+
+  const modal = document.getElementById("add-participant-modal");
+  const form = document.getElementById("participant-form");
+  const openBtn = document.getElementById("open-add-participant-modal-sidebar");
+  const closeBtn = document.getElementById("close-participant-modal-btn");
+  const btnAddIncome = document.getElementById("btn-add-income");
+  const btnAddGoal = document.getElementById("btn-add-goal-input");
+  const nameInput = document.getElementById("p-name");
+  const avatarPreview = document.getElementById("participant-avatar-preview");
+
+  // 1. ABRIR MODAL
+  if (openBtn) {
+    openBtn.onclick = () => {
+      document.getElementById("participant-id-to-edit").value = "";
+      if (form) form.reset();
+      if (avatarPreview) avatarPreview.textContent = "--";
+
+      // Inicializar limpio
+      tempIncomes = [
+        {
+          name: "Ingreso Principal",
+          amount: 0,
+          date: new Date().toISOString().split("T")[0],
+        },
+      ];
+      tempParticipantGoals = [];
+
+      renderIncomeInputs();
+      renderGoalInputs();
+
+      modal.classList.remove("hidden");
+      modal.classList.add("flex");
+    };
+  }
+
+  // 2. CERRAR MODAL
+  if (closeBtn) {
+    closeBtn.onclick = () => {
+      modal.classList.add("hidden");
+      modal.classList.remove("flex");
+    };
+  }
+
+  // 3. AÃ‘ADIR FILA DE INGRESO
+  if (btnAddIncome) {
+    btnAddIncome.onclick = (e) => {
+      e.preventDefault();
+      const today = new Date().toISOString().split("T")[0];
+      // Actualizamos tempIncomes solo para añadir la fila visual
+      tempIncomes.push({ name: "Extra", amount: 0, date: today });
+      renderIncomeInputs();
+    };
+  }
+
+  // 4. AÃ‘ADIR META
+  if (btnAddGoal) {
+    btnAddGoal.onclick = (e) => {
+      e.preventDefault();
+      tempParticipantGoals.push({ id: generateUUID(), name: "", target: 0, current: 0 });
+      renderGoalInputs();
+    };
+  }
+
+  // 5. AVATAR
+  if (nameInput && avatarPreview) {
+    nameInput.oninput = (e) => {
+      const val = e.target.value.trim();
+      let initials = "--";
+      if (val.length > 0) {
+        const parts = val.split(" ");
+        if (parts.length >= 2) initials = (parts[0][0] + parts[1][0]).toUpperCase();
+        else initials = val.substring(0, 2).toUpperCase();
+      }
+      avatarPreview.textContent = initials;
+    };
+  }
+
+  // 6. GUARDAR (LA PARTE CRÍTICA CORREGIDA)
+  if (form) {
+    form.onsubmit = (e) => {
+      e.preventDefault();
+
+      // --- RECOLECCIÃ“N DE DATOS ROBUSTA ---
+      // En lugar de confiar en 'tempIncomes', leemos los inputs visuales uno por uno.
+
+      const incomeRows = document.getElementById("income-list-container").children;
+      const finalIncomes = [];
+      let calculatedTotalBudget = 0;
+
+      // Iteramos sobre cada fila visual de ingresos
+      for (let row of incomeRows) {
+        // Buscamos los inputs dentro de la fila (asegúrate que tu renderIncomeInputs genere esta estructura)
+        const nameVal = row.querySelector('input[type="text"]').value;
+        const amountVal = parseFloat(row.querySelector('input[type="number"]').value) || 0;
+        const dateInput = row.querySelector(".income-datepicker");
+        const dateVal = dateInput ? dateInput.value : new Date().toISOString().split("T")[0];
+
+        calculatedTotalBudget += amountVal;
+
+        finalIncomes.push({
+          name: nameVal,
+          amount: amountVal,
+          date: dateVal,
+        });
+      }
+
+      // Validaciones
+      if (calculatedTotalBudget <= 0) return showModal("El total de ingresos debe ser mayor a 0.");
+
+      // Recoger otros datos
+      const idToEdit = document.getElementById("participant-id-to-edit").value;
+      const name = formatTitleCase(document.getElementById("p-name").value);
+      const sharedPercent = parseFloat(document.getElementById("p-shared-savings").value) || 0;
+      const independentPercent = parseFloat(document.getElementById("p-independent-savings").value) || 0;
+
+      if (sharedPercent + independentPercent > 100) return showModal("El ahorro no puede superar el 100%.");
+
+      // Recoger Metas (mismo principio de lectura directa si quisieras, pero tempGoals suele fallar menos)
+      // Aquí usamos tempParticipantGoals, pero aseguramos números
+      const goalsToSave = tempParticipantGoals.map((g) => ({
+        id: g.id || generateUUID(),
+        name: g.name || "Meta",
+        target: parseFloat(g.target) || 0,
+        current: parseFloat(g.current) || 0,
+      }));
+
+      // Construir el objeto del participante
+      let newParticipants;
+
+      if (idToEdit) {
+        // MODO EDICIÃ“N
+        newParticipants = appState.participants.map((p) => {
+          if (p.id === idToEdit) {
+            return {
+              ...p,
+              name: name,
+              budget: calculatedTotalBudget, // Â¡AQUÍ VA EL DATO REAL!
+              incomes: finalIncomes, // Â¡AQUÍ VAN LOS OBJETOS REALES!
+              sharedSavingsPercent: sharedPercent,
+              independentSavingsPercent: independentPercent,
+              goals: goalsToSave,
+            };
+          }
+          return p;
+        });
+        showModal("Datos actualizados correctamente.");
+      } else {
+        // MODO CREACIÃ“N
+        const newP = {
+          id: generateUUID(),
+          name: name,
+          budget: calculatedTotalBudget, // Â¡AQUÍ VA EL DATO REAL!
+          incomes: finalIncomes,
+          sharedSavingsPercent: sharedPercent,
+          independentSavingsPercent: independentPercent,
+          goals: goalsToSave,
+          firebaseUid: null,
+        };
+        newParticipants = [...appState.participants, newP];
+        showModal("Participante creado correctamente.");
+      }
+
+      // Guardar y Actualizar UI
+      saveState({ participants: newParticipants });
+      modal.classList.add("hidden");
+      modal.classList.remove("flex");
+    };
+  }
+}
+
+// 5. FUNCIÃ“N MAESTRA: Abrir para Editar
+function openParticipantEditModal(id) {
+  const p = appState.participants.find((p) => p.id === id);
+  if (!p) return;
+
+  const modal = document.getElementById("add-participant-modal");
+  const idInput = document.getElementById("participant-id-to-edit");
+  const nameInput = document.getElementById("p-name");
+  const avatarEl = document.getElementById("participant-avatar-preview");
+  const sharedInput = document.getElementById("p-shared-savings");
+  const indepInput = document.getElementById("p-independent-savings");
+
+  if (idInput) idInput.value = id;
+  if (nameInput) nameInput.value = p.name;
+  if (sharedInput) sharedInput.value = p.sharedSavingsPercent;
+  if (indepInput) indepInput.value = p.independentSavingsPercent;
+
+  if (avatarEl) {
+    const nameVal = p.name.trim();
+    let initials = "--";
+    if (nameVal.length > 0) {
+      const parts = nameVal.split(" ");
+      if (parts.length >= 2) initials = (parts[0][0] + parts[1][0]).toUpperCase();
+      else initials = nameVal.substring(0, 2).toUpperCase();
+    }
+    avatarEl.textContent = initials;
+  }
+
+  // Cargar Ingresos (Retrocompatibilidad)
+  if (p.incomes && Array.isArray(p.incomes) && p.incomes.length > 0) {
+    tempIncomes = JSON.parse(JSON.stringify(p.incomes));
+  } else {
+    // Si no tiene ingresos previos, creamos uno base con la fecha de hoy
+    const today = new Date().toISOString().split("T")[0];
+    tempIncomes = [{ name: "Ingreso Principal", amount: p.budget || 0, date: today }];
+  }
+  renderIncomeInputs();
+
+  // Cargar Metas
+  tempParticipantGoals = p.goals ? JSON.parse(JSON.stringify(p.goals)) : [];
+  renderGoalInputs();
+
+  if (modal) {
+    modal.classList.remove("hidden");
+    modal.classList.add("flex");
+    document.body.classList.add("no-scroll");
+  }
+}
+
+// --- RENDERIZADO DE METAS (Diseño Limpio) ---
+
+// Helpers globales para Metas
+window.updateTempGoal = (index, field, value) => {
+  tempParticipantGoals[index][field] = field === "target" ? parseFloat(value) : value;
+};
+
+// 2. RENDERIZAR LISTA DE METAS
+
+// Helpers globales para Ingresos
+window.updateTempIncome = (index, field, value) => {
+  tempIncomes[index][field] = field === "amount" ? parseFloat(value) : value;
+  renderIncomeInputs(); // Re-render para actualizar el total
+};
+
+// ================================================================
+// HELPER MAESTRO (DISEÃ‘O RESTAURADO + MEJOR ESPACIADO)
+// ================================================================
+function renderExpenseListForRange(allExpenses, methodId, range, containerId, participantsMap) {
+  const container = containerId ? document.getElementById(containerId) : null;
+
+  // CAMBIO ÃšNICO: Aumenté el padding del contenedor a 'p-6' (antes p-4)
+  if (container) {
+    container.innerHTML = "";
+    container.className = "flex-grow overflow-y-auto bg-gray-50 p-6";
+  }
+
+  const safeReturn = { total: 0, expenses: [] };
+
+  if (!range || !range.startDate || !range.closingDate) {
+    if (container)
+      container.innerHTML = `
+            <div class="flex flex-col items-center justify-center py-12 opacity-50">
+                <i class="fas fa-calendar-times text-3xl mb-2 text-gray-300"></i>
+                <p class="text-xs text-gray-400">Fechas no disponibles</p>
+            </div>`;
+    return safeReturn;
+  }
+
+  const startObj = new Date(range.startDate + "T00:00:00Z");
+  const endObj = new Date(range.closingDate + "T00:00:00Z");
+  const startMs = startObj.getTime();
+  const endMs = endObj.getTime();
+
+  // 1. Filtrar gastos REALES
+  let filtered = allExpenses.filter((exp) => {
+    const expDate = new Date(exp.date + "T00:00:00Z").getTime();
+    if (exp.isFixed) return false;
+    return exp.paymentMethodId === methodId && expDate >= startMs && expDate <= endMs;
+  });
+
+  // 2. PROYECTAR GASTOS FIJOS
+  const fixedDefinitions = allExpenses.filter((e) => e.isFixed && e.paymentMethodId === methodId);
+
+  fixedDefinitions.forEach((base) => {
+    const baseDate = new Date(base.date + "T00:00:00Z");
+    const baseTime = baseDate.getTime();
+    const dayOfExpense = baseDate.getUTCDate();
+    const recurrenceMonths = base.fixedRecurrenceMonths || 12;
+
+    let iterYear = startObj.getUTCFullYear();
+    let iterMonth = startObj.getUTCMonth();
+    const endYear = endObj.getUTCFullYear();
+    const endMonth = endObj.getUTCMonth();
+
+    while (iterYear * 12 + iterMonth <= endYear * 12 + endMonth) {
+      let projectedDate = new Date(Date.UTC(iterYear, iterMonth, dayOfExpense));
+      if (projectedDate.getUTCMonth() !== iterMonth) {
+        projectedDate = new Date(Date.UTC(iterYear, iterMonth + 1, 0));
+      }
+      const projStr = projectedDate.toISOString().split("T")[0];
+      const projTime = projectedDate.getTime();
+
+      const isInsideCycle = projTime >= startMs && projTime <= endMs;
+      const isAfterCreation = projTime >= baseTime;
+      const monthsDiff = (iterYear - baseDate.getUTCFullYear()) * 12 + (iterMonth - baseDate.getUTCMonth());
+      const isWithinRecurrence = monthsDiff >= 0 && monthsDiff < recurrenceMonths;
+
+      if (isInsideCycle && isAfterCreation && isWithinRecurrence) {
+        const manualEntryExists = allExpenses.some((e) => !e.isFixed && e.date === projStr && e.description.toLowerCase().trim() === base.description.toLowerCase().trim());
+
+        if (!manualEntryExists) {
+          filtered.push({
+            ...base,
+            id: `proj_${base.id}_${projStr}`,
+            date: projStr,
+            isProjected: true,
+            payerId: base.payerId,
+          });
+        }
+      }
+      iterMonth++;
+      if (iterMonth > 11) {
+        iterMonth = 0;
+        iterYear++;
+      }
+    }
+  });
+
+  const total = filtered.reduce((sum, exp) => sum + (parseFloat(exp.amount) || 0), 0);
+
+  // 3. RENDERIZADO VISUAL (DISEÃ‘O PREVIO RESTAURADO)
+  if (container) {
+    if (filtered.length === 0) {
+      container.innerHTML = `
+                <div class="flex flex-col items-center justify-center py-10 text-gray-300">
+                    <div class="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-3">
+                        <i class="fas fa-receipt text-2xl opacity-50"></i>
+                    </div>
+                    <p class="text-xs font-bold uppercase tracking-widest opacity-60">Sin movimientos</p>
+                </div>`;
+    } else {
+      const fixedList = filtered.filter((e) => e.isProjected || e.isFixed);
+      const normalList = filtered.filter((e) => !e.isProjected && !e.isFixed);
+
+      fixedList.sort((a, b) => new Date(b.date) - new Date(a.date));
+      normalList.sort((a, b) => new Date(b.date) - new Date(a.date));
+
+      // --- HELPER INTERNO (El diseño que te gustaba) ---
+      const createDetailRow = (exp) => {
+        const dateObj = new Date(exp.date + "T00:00:00Z");
+        const dayNum = dateObj.getUTCDate();
+        const monthShort = dateObj.toLocaleString("es-ES", { month: "short", timeZone: "UTC" }).toUpperCase().replace(".", "");
+        const payerName = participantsMap.get(exp.payerId) || exp.payerNameGuest || "Desconocido";
+
+        const isProjected = exp.isProjected;
+        const opacityClass = isProjected ? "opacity-75" : "";
+        // Borde transparente por defecto, se ve en hover
+        const borderClass = isProjected ? "border-dashed border-indigo-200 bg-indigo-50/30" : "border-solid border-transparent bg-white shadow-sm hover:shadow-md";
+
+        return `
+                <div class="flex items-center gap-4 p-4 rounded-2xl border ${borderClass} transition-all duration-200 mb-3 ${opacityClass}">
+                    <div class="flex-shrink-0 w-10 h-10 flex flex-col items-center justify-center rounded-xl bg-gray-50 border border-gray-100 text-gray-600">
+                        <span class="text-[8px] font-bold uppercase leading-none opacity-60">${monthShort}</span>
+                        <span class="text-sm font-black leading-tight">${dayNum}</span>
+                    </div>
+                    
+                    <div class="flex-grow min-w-0">
+                        <div class="flex justify-between items-start">
+                            <p class="text-xs font-bold text-gray-800 truncate pr-2" title="${exp.description}">
+                                ${exp.description}
+                            </p>
+                            <span class="text-sm font-black text-gray-900 whitespace-nowrap">
+                                ${formatCurrency(exp.amount)}
+                            </span>
+                        </div>
+                        <div class="flex items-center gap-2 mt-0.5">
+                            <span class="text-[10px] text-gray-400 font-medium flex items-center">
+                                <i class="fas fa-user-circle text-[9px] mr-1 opacity-70"></i> ${payerName}
+                            </span>
+                            ${isProjected ? '<span class="text-[9px] bg-indigo-100 text-indigo-600 px-1.5 rounded-md font-bold">Fijo</span>' : ""}
+                            ${exp.category ? `<span class="text-[9px] text-gray-300">â€¢ ${exp.category}</span>` : ""}
+                        </div>
+                    </div>
+                </div>`;
+      };
+
+      let htmlContent = "";
+
+      // SECCIÃ“N FIJOS
+      if (fixedList.length > 0) {
+        const subTotalFixed = fixedList.reduce((sum, e) => sum + e.amount, 0);
+        htmlContent += `
+                <div class="mb-6">
+                    <div class="flex items-end justify-between mb-3 px-1">
+                        <h4 class="text-[10px] font-black text-indigo-900 uppercase tracking-widest flex items-center gap-2">
+                            <span class="w-1.5 h-4 bg-indigo-500 rounded-full"></span> Fijos / Suscripciones
+                        </h4>
+                        <span class="text-[10px] font-bold bg-indigo-50 text-indigo-600 px-2 py-0.5 rounded-lg">${formatCurrency(subTotalFixed)}</span>
+                    </div>
+                    <div class="">
+                        ${fixedList.map(createDetailRow).join("")}
+                    </div>
+                </div>`;
+      }
+
+      // SECCIÃ“N VARIABLES
+      if (normalList.length > 0) {
+        const subTotalNormal = normalList.reduce((sum, e) => sum + e.amount, 0);
+        htmlContent += `
+                <div class="mb-2">
+                    <div class="flex items-end justify-between mb-3 px-1">
+                        <h4 class="text-[10px] font-black text-gray-500 uppercase tracking-widest flex items-center gap-2">
+                            <span class="w-1.5 h-4 bg-gray-300 rounded-full"></span> Consumo Variable
+                        </h4>
+                        <span class="text-[10px] font-bold bg-gray-100 text-gray-500 px-2 py-0.5 rounded-lg">${formatCurrency(subTotalNormal)}</span>
+                    </div>
+                    <div class="">
+                        ${normalList.map(createDetailRow).join("")}
+                    </div>
+                </div>`;
+      }
+
+      container.innerHTML = htmlContent;
+    }
+  }
+
+  return { total: total, expenses: filtered };
+}
+
+// Helper para manejar el click en las pestañas
+function setupTabSwitching(totalCurr, totalPrev) {
+  const btnPrev = document.getElementById("pm-tab-prev");
+  const btnCurr = document.getElementById("pm-tab-curr");
+  const contentPrev = document.getElementById("pm-content-prev");
+  const contentCurr = document.getElementById("pm-content-curr");
+  const totalDisplay = document.getElementById("pm-total-amount");
+
+  // Estilos activos e inactivos
+  const activeClass = ["text-indigo-600", "border-indigo-600"];
+  const inactiveClass = ["text-gray-500", "border-transparent"];
+
+  // Estado inicial (Actual activo)
+  const setTab = (isCurrent) => {
+    if (isCurrent) {
+      // Mostrar Actual
+      contentCurr.classList.remove("hidden");
+      contentPrev.classList.add("hidden");
+
+      btnCurr.classList.add(...activeClass);
+      btnCurr.classList.remove(...inactiveClass);
+      document.getElementById("pm-date-curr").classList.replace("text-gray-400", "text-indigo-400");
+
+      btnPrev.classList.remove(...activeClass);
+      btnPrev.classList.add(...inactiveClass);
+      document.getElementById("pm-date-prev").classList.replace("text-indigo-400", "text-gray-400");
+
+      animateNumber("pm-total-amount", totalCurr); // Animación opcional
+    } else {
+      // Mostrar Anterior
+      contentPrev.classList.remove("hidden");
+      contentCurr.classList.add("hidden");
+
+      btnPrev.classList.add(...activeClass);
+      btnPrev.classList.remove(...inactiveClass);
+      document.getElementById("pm-date-prev").classList.replace("text-gray-400", "text-indigo-400");
+
+      btnCurr.classList.remove(...activeClass);
+      btnCurr.classList.add(...inactiveClass);
+      document.getElementById("pm-date-curr").classList.replace("text-indigo-400", "text-gray-400");
+
+      animateNumber("pm-total-amount", totalPrev);
+    }
+  };
+
+  // Limpiar listeners viejos (clonando el nodo es un truco rápido, o usando onclick directo)
+  btnPrev.onclick = () => setTab(false);
+  btnCurr.onclick = () => setTab(true);
+
+  // Iniciar en "Actual"
+  setTab(true);
+}
+
+// Helper para obtener fechas de mes simple (Efectivo/Débito)
+function getMonthDates(dateObj) {
+  const year = dateObj.getFullYear();
+  const month = dateObj.getMonth();
+  const start = new Date(Date.UTC(year, month, 1));
+  const end = new Date(Date.UTC(year, month + 1, 0)); // Ãšltimo día del mes
+
+  return {
+    startDate: start.toISOString().split("T")[0],
+    closingDate: end.toISOString().split("T")[0],
+  };
+}
+
+function closePaymentMethodDetailModal() {
+  const modal = document.getElementById("payment-method-detail-modal");
+  modal.classList.add("hidden");
+  modal.classList.remove("flex");
+  document.body.classList.remove("no-scroll");
+}
+
+// ================================================================
+// LISTENERS DEL MODAL DE TARJETA (CON LÃ“GICA DE PAGO)
+// ================================================================
+function setupPaymentMethodModalListeners() {
+  // 1. Cerrar modal
+  document.getElementById("close-payment-detail-modal-btn").addEventListener("click", closePaymentMethodDetailModal);
+
+  // 2. Listener para abrir el modal desde las tarjetas del dashboard
+  const container = document.getElementById("credit-card-summary-cards");
+  container.addEventListener("click", (e) => {
+    const card = e.target.closest(".payment-method-summary-card");
+    const inPopover = e.target.closest("[data-popover]");
+    if (card && card.dataset.methodId && !inPopover) {
+      openPaymentMethodDetailModal(card.dataset.methodId);
+    }
+  });
+
+  // 3. LÃ“GICA DEL NUEVO BOTÃ“N "CERRAR CICLO / PAGAR"
+  document.getElementById("btn-manual-close-cycle").addEventListener("click", () => {
+    // Obtener el total visualizado actualmente
+    const totalText = document.getElementById("pm-total-amount").textContent;
+    const amountToPay = parseFloat(totalText.replace(/[S/$,]/g, "").trim()); // Limpiar S/ y comas
+
+    if (isNaN(amountToPay) || amountToPay <= 0) {
+      return showModal("No hay deuda pendiente para cerrar en este ciclo.", null, "Saldo en Cero");
+    }
+
+    // Obtener el nombre de la tarjeta desde el título del modal
+    const methodName = document.querySelector("#payment-method-detail-modal .modal-title").textContent;
+
+    // Cerrar este modal
+    closePaymentMethodDetailModal();
+
+    // Abrir el modal de gastos configurado como PAGO
+    openUnifiedExpenseModal(null); // Null = Nuevo gasto
+
+    // Pre-llenar los datos para facilitar el pago
+    setTimeout(() => {
+      document.getElementById("expense-description").value = `Pago Tarjeta: ${methodName}`;
+      document.getElementById("expense-amount").value = amountToPay.toFixed(2);
+
+      // Intentar establecer categoría "Financiero" o similar si existe
+      // (Esto depende de tus categorías, si no existe, el usuario la elige)
+      const catInput = document.getElementById("expense-category");
+      // Si tienes una categoría llamada "Pagos", "Deudas" o "Financiero", descomenta esto:
+      // setActiveTag("expense-category", "modal-category-tags", "Financiero");
+
+      // Establecer fecha de hoy
+      document.getElementById("expense-date").value = new Date().toISOString().split("T")[0];
+
+      showModal(`Se ha preparado el registro del pago por <b>${formatCurrency(amountToPay)}</b>.<br>Guárdalo para cerrar la deuda del ciclo.`, null, "Cerrar Ciclo");
+    }, 100);
+  });
+}
+
+
+
+// Maneja la selección de etiquetas dentro del modal
+function handleModalTagSelection(event) {
+  const clickedTag = event.target.closest(".filter-tag");
+  if (!clickedTag) return; // No se hizo clic en una etiqueta
+
+  const container = clickedTag.parentElement;
+  // Ejemplo: container.id = 'modal-payment-method-tags'
+  const baseId = container.id.replace("-tags", "").replace("modal-", ""); // Obtiene 'payment-method'
+  const hiddenInput = document.getElementById(`new-expense-${baseId}`); // Construye 'new-expense-payment-method'
+
+  if (!hiddenInput) {
+    console.error(`Hidden input not found for ID: new-expense-${baseId}`); // Log de error si no encuentra el input
+    return;
+  }
+
+  const value = clickedTag.dataset.value;
+  const isActive = clickedTag.classList.contains("active");
+
+  // Deseleccionar todas las etiquetas en el mismo contenedor
+  container.querySelectorAll(".filter-tag").forEach((tag) => tag.classList.remove("active"));
+
+  // Si se hizo clic en una etiqueta que no estaba activa, activarla
+  if (!isActive) {
+    clickedTag.classList.add("active");
+    hiddenInput.value = value;
+  } else {
+    // Si se hizo clic en una etiqueta activa, desactivarla (limpiar selección)
+    hiddenInput.value = "";
+  }
+  // Disparar evento change manualmente para lógica dependiente (subcategorías)
+  hiddenInput.dispatchEvent(new Event("change", { bubbles: true }));
+}
+
+// Actualiza las etiquetas de subcategoría basadas en la categoría seleccionada
+// ================================================================
+
+
+
+// --- Utilidades ---
+const generateUUID = () => crypto.randomUUID();
+
+// Utilidad eliminada: showModal local entraba en conflicto y referenciaba DOM inexistente.
+
+
+
+
+const formatCurrency = (value) =>
+  new Intl.NumberFormat("es-PE", {
+    style: "currency",
+    currency: "PEN",
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  }).format(value);
+const formatDate = (isoString) => {
+  if (!isoString) return "";
+  const date = new Date(isoString + "T00:00:00Z"); // Use Z for UTC to avoid timezone issues with date-only strings
+  return date.toLocaleDateString("es-ES", { day: "2-digit", timeZone: "UTC" }); // Specify UTC timezone
+};
+const formatShortDate = (isoString) => {
+  if (!isoString) return "";
+  const date = new Date(isoString + "T00:00:00Z");
+  // Devuelve formato DD/MM
+  return date.toLocaleDateString("es-ES", {
+    day: "2-digit",
+    month: "2-digit",
+    timeZone: "UTC",
+  });
+};
+const getFilterMonthString = (date) => {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  return `${year}-${month}`;
+};
+function formatTitleCase(str) {
+  if (!str) return "";
+  return str
+    .toLowerCase()
+    .split(" ")
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(" ");
+}
+
+// CÁLCULO DE CICLOS (VERSIÃ“N ROBUSTA TIMEZONE-SAFE)
+// ================================================================
+function getCycleDates(method, referenceDate) {
+  if (method.type !== "credit") {
+    return { startDate: null, closingDate: null, paymentDate: null };
+  }
+
+  // 1. Obtener valores de configuración (asegurando enteros)
+  const closingDay = parseInt(method.closingDay) || 20;
+  const paymentDay = parseInt(method.paymentDay) || 5;
+
+  // 2. Obtener componentes de fecha LOCAL de la referencia (Hoy)
+  // Esto evita que "Feb 2 20:00" se convierta en "Feb 3" por UTC
+  const currentYear = referenceDate.getFullYear();
+  const currentMonth = referenceDate.getMonth(); // 0 = Enero
+  const currentDay = referenceDate.getDate();
+
+  // 3. Crear fechas comparables en UTC puro (normalizando a las 00:00:00Z)
+  // Definimos el cierre tentativo de ESTE mes calendario
+  let closingDateEpoch = Date.UTC(currentYear, currentMonth, closingDay);
+  const referenceDateEpoch = Date.UTC(currentYear, currentMonth, currentDay);
+
+  // 4. LÃ“GICA DE SALTO DE MES
+  // Si la fecha de referencia (hoy) ya pasó el cierre, el ciclo activo termina el próximo mes.
+  // Ej: Hoy 12, Cierre 10. => Estamos en el ciclo que cierra el 10 del SIGUIENTE mes.
+  if (referenceDateEpoch > closingDateEpoch) {
+    // Sumamos 1 mes a la fecha de cierre
+    const nextMonth = new Date(closingDateEpoch);
+    nextMonth.setUTCMonth(nextMonth.getUTCMonth() + 1);
+    closingDateEpoch = nextMonth.getTime();
+  }
+
+  // 5. Construir objetos de fecha finales
+  const activeClosingDate = new Date(closingDateEpoch);
+
+  // Calcular inicio: Fecha de cierre del mes anterior + 1 día
+  const prevClosingDate = new Date(activeClosingDate);
+  prevClosingDate.setUTCMonth(prevClosingDate.getUTCMonth() - 1);
+
+  const activeStartDate = new Date(prevClosingDate);
+  activeStartDate.setUTCDate(activeStartDate.getUTCDate() + 1);
+
+  // 6. Calcular Fecha de Pago
+  let paymentDateObj = new Date(activeClosingDate);
+
+  // Lógica de pago: Si el día de pago es menor o igual al día de cierre, 
+  // generalmente se paga al mes siguiente del cierre.
+  // Ej: Cierre 10, Pago 5. El cierre es Feb 10, se paga Marzo 5.
+  if (paymentDay <= closingDay) {
+    paymentDateObj.setUTCMonth(paymentDateObj.getUTCMonth() + 1);
+  }
+  paymentDateObj.setUTCDate(paymentDay);
+
+  // Formatear a String YYYY-MM-DD
+  const paymentDateString = paymentDateObj.toISOString().split("T")[0];
+  const isManual = method.manualClosures && method.manualClosures[paymentDateString];
+
+  return {
+    startDate: activeStartDate.toISOString().split("T")[0],
+    closingDate: activeClosingDate.toISOString().split("T")[0],
+    paymentDate: paymentDateString,
+    isManual: !!isManual,
+  };
+}
+
+// --- Funciones de Autenticación (REDUCIDAS) ---
+
+function openLogoutConfirmModal() {
+  document.getElementById("logout-confirm-modal").classList.add("flex");
+  document.getElementById("logout-confirm-modal").classList.remove("hidden");
+}
+
+function closeLogoutConfirmModal() {
+  document.getElementById("logout-confirm-modal").classList.add("hidden");
+  document.getElementById("logout-confirm-modal").classList.remove("flex");
+}
+
+
+
+
+
+// --- Lógica de INICIALIZACIÃ“N y GESTIÃ“N DE MONEDERO ---
+async function initializeFirebase() {
+  if (!isFirebaseActive) {
+    loadLocalState();
+    document.getElementById("auth-status").textContent = "âš ï¸ MODO LOCAL DE EMERGENCIA.";
+    document.getElementById("initial-loading-screen").classList.add("hidden");
+    document.getElementById("main-content-wrapper").classList.remove("hidden");
+    setupUILogic(false);
+    return;
+  }
+
+  try {
+    app = initializeApp(firebaseConfig);
+    db = getFirestore(app);
+    auth = getAuth(app);
+
+    onAuthStateChanged(auth, async (user) => {
+      try {
+        // <-- ADDED TRY BLOCK FOR ROBUSTNESS
+        // Si estamos en Canvas y no hay usuario, intentar logueo con token
+        if (IS_CANVAS_ENV && !user && initialAuthToken) {
+          try {
+            await signInWithCustomToken(auth, initialAuthToken);
+            // El listener se volverá a ejecutar con el nuevo estado, así que salimos.
+            return;
+          } catch (e) {
+            console.error("Fallo el inicio de sesión en Canvas:", e);
+            // Si falla, operar en modo local.
+            loadLocalState();
+            setupUILogic(false);
+            return;
+          }
+        }
+
+        // Si hay un usuario (de cualquier método), proceder.
+        if (user) {
+          userId = user.uid;
+          document.getElementById("current-user-id").innerHTML = `Mi UID: <strong>${userId}</strong>`;
+
+          // Revisar si el usuario ya está en un monedero
+          const userProfileRef = getUserProfileRef(db, userId);
+          const userProfileSnap = await getDoc(userProfileRef);
+
+          if (userProfileSnap.exists() && userProfileSnap.data().walletId) {
+            // El usuario ya tiene un monedero, cargar datos
+            currentWalletId = userProfileSnap.data().walletId;
+            document.getElementById("initial-loading-screen").classList.add("hidden");
+            document.getElementById("main-content-wrapper").classList.remove("hidden");
+            setupUILogic(true);
+            setupRealTimeDataListener();
+          } else {
+            // Es un usuario nuevo o sin monedero, guiarlo a la configuración
+            document.getElementById("initial-loading-screen").classList.add("hidden");
+            document.getElementById("main-content-wrapper").classList.remove("hidden");
+            setupUILogic(true);
+            updateWalletSidebarView(false);
+
+            const sidebar = document.getElementById("participant-sidebar");
+            if (!sidebar.classList.contains("open")) {
+              const backdrop = document.getElementById("sidebar-backdrop");
+              sidebar.classList.add("open");
+              backdrop.classList.add("open");
+              document.body.classList.add("no-scroll");
+            }
+            showModal("Bienvenido. Para empezar, crea un nuevo monedero o únete a uno existente.", null, "Primeros Pasos");
+          }
+        } else {
+          // Si NO hay usuario y NO estamos en Canvas, redirigir al login.
+          if (!IS_CANVAS_ENV) {
+            // ---> DISABLE REDIRECT FOR PREVIEW <---
+            console.log("Deshabilitando redirección al login para poder ver el diseño (localhost)");
+            // window.location.href = REDIRECT_URL_LOGOUT;
+            document.getElementById("initial-loading-screen").classList.add("hidden");
+            document.getElementById("main-content-wrapper").classList.remove("hidden");
+            setupUILogic(false);
+          } else {
+            // Estado sin autenticación dentro de Canvas (modo local)
+            userId = "anonymous_canvas";
+            loadLocalState();
+            document.getElementById("initial-loading-screen").classList.add("hidden");
+            document.getElementById("main-content-wrapper").classList.remove("hidden");
+
+            setupUILogic(false);
+          }
+        }
+      } catch (error) {
+        // <-- ADDED CATCH BLOCK
+        console.error("Error durante el cambio de estado de autenticación:", error);
+        showModal("Ocurrió un error al verificar tu sesión. Por favor, intenta recargar la página.", error.message, "Error de Autenticación");
+        document.getElementById("initial-loading-screen").classList.add("hidden");
+        document.getElementById("main-content-wrapper").classList.remove("hidden");
+      }
+    });
+  } catch (error) {
+    console.error("Error al inicializar Firebase:", error);
+    showModal("Error crítico al inicializar Firebase.", error.message, "Fallo de Conexión");
+    loadLocalState();
+    setupUILogic(false);
+  }
+}
+
+function updateWalletSidebarView(hasWallet) {
+  const preControls = document.getElementById("pre-wallet-controls");
+  const postControls = document.getElementById("post-wallet-controls");
+  if (hasWallet) {
+    preControls.classList.add("hidden");
+    postControls.classList.remove("hidden");
+  } else {
+    preControls.classList.remove("hidden");
+    postControls.classList.add("hidden");
+    // Chequear si hay datos viejos para migrar
+    const migrationNotice = document.getElementById("migration-notice");
+    const oldDataRef = getOldUserFinanceDocRef(db, userId);
+    getDoc(oldDataRef).then((docSnap) => {
+      if (docSnap.exists()) {
+        migrationNotice.classList.remove("hidden");
+      }
+    });
+  }
+}
+
+async function handleCreateWallet() {
+  try {
+    const newWalletRef = await addDoc(getWalletsCollectionRef(db), {
+      createdAt: new Date().toISOString(),
+      owner: userId,
+    });
+    currentWalletId = newWalletRef.id;
+
+    const defaultWalletState = {
+      participants: [],
+      categories: [],
+      paymentMethods: [
+        { id: "m1", name: "Efectivo", type: "cash" },
+        { id: "m2", name: "Débito", type: "cash" },
+      ],
+      expenses: [],
+    };
+
+    let walletData;
+
+    const oldDataRef = getOldUserFinanceDocRef(db, userId);
+    const oldDataSnap = await getDoc(oldDataRef);
+
+    if (oldDataSnap.exists()) {
+      // Migrar datos viejos, asegurando que todas las propiedades existan
+      walletData = { ...defaultWalletState, ...oldDataSnap.data() };
+
+      // Asegurarse de que al menos un participante esté vinculado al usuario actual
+      const currentUserIsParticipant = walletData.participants.some((p) => p.firebaseUid === userId);
+      if (!currentUserIsParticipant && walletData.participants.length > 0) {
+        walletData.participants[0].firebaseUid = userId;
+      } else if (walletData.participants.length === 0) {
+        // Si los datos migrados no tenían participantes, añadir al usuario actual.
+        walletData.participants.push({
+          id: generateUUID(),
+          name: "Yo",
+          budget: 1000,
+          sharedSavingsPercent: 10,
+          independentSavingsPercent: 5,
+          firebaseUid: userId,
+        });
+      }
+    } else {
+      // Crear un monedero nuevo desde cero
+      walletData = { ...defaultWalletState };
+      walletData.participants.push({
+        id: generateUUID(),
+        name: "Yo",
+        budget: 1000,
+        sharedSavingsPercent: 10,
+        independentSavingsPercent: 5,
+        firebaseUid: userId,
+      });
+    }
+
+    const batch = writeBatch(db);
+    batch.set(getWalletDocRef(db, currentWalletId), walletData); // Establecer datos en el nuevo monedero
+    batch.set(getUserProfileRef(db, userId), { walletId: currentWalletId }); // Vincular usuario al monedero
+
+    await batch.commit();
+
+    // Cerrar sidebar y cargar la UI principal
+    const sidebar = document.getElementById("participant-sidebar");
+    const backdrop = document.getElementById("sidebar-backdrop");
+    sidebar.classList.remove("open");
+    backdrop.classList.remove("open");
+    document.body.classList.remove("no-scroll");
+
+    setupRealTimeDataListener();
+  } catch (error) {
+    console.error("Error al crear el monedero:", error);
+    showModal("No se pudo crear el monedero. Revisa tu conexión y los permisos de la base de datos.", error.message, "Error Crítico");
+  }
+}
+
+async function handleJoinWallet(e) {
+  e.preventDefault();
+  const walletIdToJoin = document.getElementById("join-wallet-id-input").value.trim();
+  if (!walletIdToJoin) return;
+
+  const walletRef = getWalletDocRef(db, walletIdToJoin);
+  const walletSnap = await getDoc(walletRef);
+
+  if (!walletSnap.exists()) {
+    return showModal("El ID del monedero no es válido.", null, "Error al Unirse");
+  }
+
+  currentWalletId = walletIdToJoin;
+  await setDoc(getUserProfileRef(db, userId), { walletId: currentWalletId });
+
+  // Cerrar sidebar y cargar la UI principal
+  const sidebar = document.getElementById("participant-sidebar");
+  const backdrop = document.getElementById("sidebar-backdrop");
+  sidebar.classList.remove("open");
+  backdrop.classList.remove("open");
+  document.body.classList.remove("no-scroll");
+
+  setupRealTimeDataListener();
+}
+
+function setupDataManagementListeners() {
+  // --- Export Logic: delegado a export.js ---
+  if (typeof window.setupExportListeners === 'function') {
+    window.setupExportListeners();
+  }
+
+  // --- Import Logic (New Modal System) ---
+  const importModal = document.getElementById("import-json-modal");
+  const importForm = document.getElementById("import-json-form");
+  const jsonInputArea = document.getElementById("json-input-area");
+  const cancelImportBtn = document.getElementById("cancel-import-btn");
+  document.getElementById("format-data-btn").addEventListener("click", runDataMigration);
+
+  // Open the modal
+  document.getElementById("restore-json-btn").addEventListener("click", () => {
+    importModal.classList.remove("hidden");
+    importModal.classList.add("flex");
+  });
+
+  // Close the modal
+  cancelImportBtn.addEventListener("click", () => {
+    importModal.classList.add("hidden");
+    importModal.classList.remove("flex");
+    jsonInputArea.value = ""; // Clear textarea
+  });
+
+  // Handle the import submission
+  importForm.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const jsonString = jsonInputArea.value.trim();
+
+    if (!jsonString) {
+      showModal("El campo de texto está vacío. Por favor, pega tus datos de respaldo.", null, "Error");
+      return;
+    }
+
+    try {
+      const importedState = JSON.parse(jsonString);
+      // Strip _meta field if it came from our new exporter
+      if (importedState._meta) delete importedState._meta;
+
+      if (importedState && typeof importedState.participants !== "undefined" && typeof importedState.expenses !== "undefined") {
+        if (isFirebaseActive && db && currentWalletId) {
+          await setDoc(getWalletDocRef(db, currentWalletId), importedState);
+
+          importModal.classList.add("hidden");
+          importModal.classList.remove("flex");
+          jsonInputArea.value = "";
+
+          showModal("Datos restaurados y sincronizados. La página se recargará.", null, "Restauración Completa");
+          setTimeout(() => window.location.reload(), 2000);
+        } else {
+          appState = importedState;
+          localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(appState));
+          renderUI();
+          showModal("Datos restaurados localmente.", null, "Restauración Completa");
+        }
+      } else {
+        throw new Error("El formato del JSON no es válido. Faltan propiedades esenciales (participants/expenses).");
+      }
+    } catch (error) {
+      showModal(`Error al procesar el JSON: ${error.message}`, error.stack, "Error de Importación");
+    }
+  });
+}
+
+async function runDataMigration() {
+  // 1. CONFIRMACIÃ“N DE SEGURIDAD
+  const confirmation = window.prompt("Esto formateará todos los nombres y descripciones en la base de datos (Ej. 'SUPERMERCADO' -> 'Supermercado'). Esta acción es irreversible.\n\nEscribe 'FORMATEAR' para confirmar.");
+
+  if (confirmation !== "FORMATEAR") {
+    return showModal("Formateo cancelado.");
+  }
+
+  try {
+    showModal("Iniciando formateo... Esto puede tardar un momento.", null, "Procesando");
+
+    // 2. CREAR COPIAS LIMPIAS DE LOS DATOS
+    const newParticipants = appState.participants.map((p) => ({
+      ...p,
+      name: formatTitleCase(p.name), // Limpia el nombre del participante
+    }));
+
+    const newCategories = appState.categories.map((c) => ({
+      ...c,
+      name: formatTitleCase(c.name), // Limpia el nombre de la categoría
+      subcategories: c.subcategories.map((sub) => formatTitleCase(sub)), // Limpia cada subcategoría
+    }));
+
+    const newPaymentMethods = appState.paymentMethods.map((m) => ({
+      ...m,
+      name: formatTitleCase(m.name), // Limpia el nombre del método de pago
+    }));
+
+    const newExpenses = appState.expenses.map((e) => ({
+      ...e,
+      description: formatTitleCase(e.description), // Limpia la descripción
+      subcategory: e.subcategory ? formatTitleCase(e.subcategory) : null, // Limpia la subcategoría
+      payerNameGuest: e.payerNameGuest ? formatTitleCase(e.payerNameGuest) : null, // Limpia el nombre del invitado
+    }));
+
+    // 3. CREAR EL NUEVO OBJETO DE ESTADO COMPLETO
+    const newState = {
+      participants: newParticipants,
+      categories: newCategories,
+      paymentMethods: newPaymentMethods,
+      expenses: newExpenses,
+    };
+
+    // 4. GUARDAR TODO EL OBJETO LIMPIO EN FIREBASE
+    await saveState(newState);
+
+    // 5. MOSTRAR Ã‰XITO
+    showModal("Â¡Ã‰xito! Todos los datos han sido formateados. Los cambios se reflejarán ahora.", null, "Formateo Completo");
+  } catch (error) {
+    console.error("Error durante la migración:", error);
+    showModal("Ocurrió un error durante el formateo. Revisa la consola.", error.message, "Error Crítico");
+  }
+}
+
+function setupRealTimeDataListener() {
+  if (!db || !currentWalletId) return;
+  if (unsubscribeListener) unsubscribeListener();
+
+  const docRef = getWalletDocRef(db, currentWalletId);
+
+  unsubscribeListener = onSnapshot(docRef, (docSnap) => {
+    if (docSnap.exists()) {
+      const loadedData = docSnap.data();
+      const defaultState = {
+        participants: [],
+        categories: [],
+        paymentMethods: [],
+        expenses: [],
+      };
+      appState = { ...defaultState, ...loadedData };
+
+      const linkedParticipant = appState.participants.find((p) => p.firebaseUid === userId);
+      myParticipantId = linkedParticipant ? linkedParticipant.id : null;
+
+      // --- ESTAS LÍNEAS CAUSAN EL ERROR PORQUE BORRASTE EL HTML ---
+      const shareInput = document.getElementById("share-wallet-id"); // Chequeo de seguridad
+      if (shareInput) shareInput.value = currentWalletId;
+
+      // âŒ BORRAR O COMENTAR ESTAS LÍNEAS:
+      // document.getElementById("connection-dot").classList.remove("sync-red");
+      // document.getElementById("connection-dot").classList.add("sync-green");
+      // document.getElementById("auth-status-text").textContent = "âœ… Conectado al monedero.";
+
+      updateWalletSidebarView(true);
+      renderUI();
+    } else {
+      showModal("Este monedero ya no existe.", null, "Error");
+      updateWalletSidebarView(false);
+    }
+  });
+}
+
+// --- Funciones de Soporte ---
+function loadLocalState() {
+  const savedData = localStorage.getItem(LOCAL_STORAGE_KEY);
+  if (savedData) {
+    try {
+      const loadedData = JSON.parse(savedData);
+      appState = { ...appState, ...loadedData };
+    } catch (e) {
+      console.error("Error al cargar estado local:", e);
+    }
+  }
+}
+
+// REEMPLAZA TU FUNCIÃ“N saveState CON ESTA VERSIÃ“N OPTIMISTA:
+
+async function saveState(updates) {
+  // 1. ACTUALIZACIÃ“N OPTIMISTA (INSTANTÁNEA)
+  // Actualizamos la memoria local inmediatamente para que el usuario vea el cambio ya.
+  appState = { ...appState, ...updates };
+  renderUI();
+
+  // 2. SINCRONIZACIÃ“N CON FIREBASE (SEGUNDO PLANO)
+  if (isFirebaseActive && db && currentWalletId) {
+    try {
+      await updateDoc(getWalletDocRef(db, currentWalletId), updates);
+      // No necesitamos llamar a renderUI aquí de nuevo porque ya lo hicimos arriba,
+      // y el listener onSnapshot se encargará de confirmar los datos si es necesario.
+    } catch (error) {
+      console.error("Error al guardar en Firebase:", error);
+
+      // Si falla la nube, guardamos en local como respaldo
+      localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(appState));
+
+      showModal("Error de conexión. Se guardó localmente, pero verifica tu internet.", error.message, "Advertencia de Sincronización");
+    }
+  } else {
+    // MODO LOCAL
+    localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(appState));
+    // renderUI() ya se llamó arriba
+  }
+}
+
+function linkParticipantToUser(participantId) {
+  if (!userId || userId === "anonymous_canvas" || userId === "loading") {
+    return showModal("Debes estar autenticado para vincular una cuenta.", null, "Acceso Denegado");
+  }
+
+  const newParticipants = appState.participants.map((p) => {
+    // Desvincular si este usuario ya estaba vinculado a otro participante
+    if (p.firebaseUid === userId) p.firebaseUid = null;
+    // Vincular al nuevo participante
+    if (p.id === participantId) p.firebaseUid = userId;
+    return p;
+  });
+
+  saveState({ participants: newParticipants });
+  showModal("Â¡Cuenta vinculada exitosamente!", null, "Vinculación Exitosa");
+}
+
+// NUEVO: Función para configurar los listeners de los filtros dinámicos y el popover
+// ================================================================
+// ===== 2. REEMPLAZA ESTA FUNCIÃ“N COMPLETA =====
+// ================================================================
+function setupDynamicFilterListeners() {
+  const popoverButton = document.getElementById("filter-popover-button");
+  const popover = document.getElementById("filter-popover");
+  const closePopoverButton = document.getElementById("close-filter-popover-btn");
+  const resetFiltersButton = document.getElementById("reset-filters-btn");
+  const descriptionInput = document.getElementById("filter-description");
+  const categoryTagsContainer = document.getElementById("filter-tag-categories");
+  const participantTagsContainer = document.getElementById("filter-tag-participants");
+  const paymentMethodTagsContainer = document.getElementById("filter-tag-payment-methods");
+  const selectedTagsContainer = document.getElementById("selected-filter-tags");
+
+  // Abrir/Cerrar Popover (Sin cambios)
+  popoverButton.addEventListener("click", (e) => {
+    e.stopPropagation();
+    popover.classList.toggle("hidden");
+  });
+  closePopoverButton.addEventListener("click", () => {
+    popover.classList.add("hidden");
+  });
+
+  // Cerrar popover si se hace click fuera (Sin cambios)
+  document.addEventListener("click", (e) => {
+    if (!popover.classList.contains("hidden") && !popover.contains(e.target) && e.target !== popoverButton && !popoverButton.contains(e.target)) {
+      popover.classList.add("hidden");
+    }
+  });
+
+  // Aplicar filtro de descripción al escribir (Sin cambios)
+  descriptionInput.addEventListener("input", (e) => {
+    activeFilters.description = e.target.value.toLowerCase();
+    renderUI();
+  });
+
+  // Manejar clicks en las etiquetas de categoría (Sin cambios)
+  categoryTagsContainer.addEventListener("click", (e) => {
+    const target = e.target.closest(".filter-tag.category-tag");
+    if (target) {
+      const categoryName = target.dataset.value;
+      activeFilters.category = activeFilters.category === categoryName ? null : categoryName;
+      renderUI();
+    }
+  });
+
+  // --- INICIO DE MODIFICACIÃ“N ---
+  // Manejar clicks en las etiquetas de participante (Â¡Y AHORA INVITADO!)
+  participantTagsContainer.addEventListener("click", (e) => {
+    const target = e.target.closest(".filter-tag.participant-tag");
+    if (target) {
+      const value = target.dataset.value;
+
+      if (value === "guest") {
+        // Es la etiqueta de invitado
+        activeFilters.guestOnly = !activeFilters.guestOnly;
+        activeFilters.participant = null; // Desactiva filtro de participante
+      } else {
+        // Es una etiqueta de participante normal
+        const participantId = value;
+        activeFilters.participant = activeFilters.participant === participantId ? null : participantId;
+        activeFilters.guestOnly = false; // Desactiva filtro de invitado
+      }
+      renderUI();
+    }
+  });
+  // --- FIN DE MODIFICACIÃ“N ---
+
+  // Manejar clicks en las etiquetas de método de pago (Sin cambios)
+  paymentMethodTagsContainer.addEventListener("click", (e) => {
+    const target = e.target.closest(".filter-tag.payment-method-tag");
+    if (target) {
+      const methodId = target.dataset.value;
+      activeFilters.paymentMethod = activeFilters.paymentMethod === methodId ? null : methodId;
+      renderUI();
+    }
+  });
+
+  // --- INICIO DE MODIFICACIÃ“N ---
+  // Botón para limpiar filtros
+  resetFiltersButton.addEventListener("click", () => {
+    descriptionInput.value = "";
+    activeFilters.description = "";
+    activeFilters.category = null;
+    activeFilters.participant = null;
+    activeFilters.paymentMethod = null;
+    activeFilters.guestOnly = false; // <-- AÃ‘ADIDO
+    renderUI();
+  });
+
+  // Delegación para remover etiquetas seleccionadas
+  selectedTagsContainer.addEventListener("click", (e) => {
+    const target = e.target.closest(".selected-tag-remove");
+    if (target) {
+      const filterType = target.dataset.type;
+      if (filterType === "category") {
+        activeFilters.category = null;
+      } else if (filterType === "participant") {
+        activeFilters.participant = null;
+      } else if (filterType === "paymentMethod") {
+        activeFilters.paymentMethod = null;
+      } else if (filterType === "guest") {
+        // <-- AÃ‘ADIDO
+        activeFilters.guestOnly = false;
+      }
+      renderUI();
+    }
+  });
+  // --- FIN DE MODIFICACIÃ“N ---
+}
+/**
+ * TOMA LOS BALANCES DE TODOS LOS PARTICIPANTES Y CALCULA EL NÃšMERO
+ * MÍNIMO DE TRANSACCIONES PARA SALDAR TODAS LAS DEUDAS.
+ *
+ * @param {Array} participantData - El array de participantes de calculateSummary()
+ * @returns {Array} Un array de objetos { from, to, amount }
+ */
+// ================================================================
+// ===== (Función duplicada eliminada) =====
+// ================================================================
+// MODIFICADO: Función para actualizar el estado visual del botón de filtros y las etiquetas seleccionadas
+// ================================================================
+// ===== 4. REEMPLAZA ESTA FUNCIÃ“N COMPLETA =====
+// ================================================================
+function updateFilterUIState() {
+  const popoverButton = document.getElementById("filter-popover-button");
+  const selectedTagsContainer = document.getElementById("selected-filter-tags");
+  const noFiltersLabel = document.getElementById("no-filters-label");
+
+  const descActive = !!activeFilters.description;
+  const catActive = !!activeFilters.category;
+  const partActive = !!activeFilters.participant;
+  const pmActive = !!activeFilters.paymentMethod;
+  const guestActive = !!activeFilters.guestOnly; // <-- AÃ‘ADIDO
+  const isActive = descActive || catActive || partActive || pmActive || guestActive; // <-- MODIFICADO
+
+  // Actualizar botón principal
+  popoverButton.classList.toggle("active", isActive);
+  popoverButton.classList.toggle("bg-indigo-100", isActive);
+  popoverButton.classList.toggle("text-indigo-700", isActive);
+
+  // Actualizar etiquetas seleccionadas en el popover
+  selectedTagsContainer.innerHTML = "";
+  let hasSelectedTags = false;
+
+  if (catActive) {
+    selectedTagsContainer.insertAdjacentHTML(
+      "beforeend",
+      `<span class="filter-tag category-tag active">
+               ${activeFilters.category}
+               <button data-type="category" class="selected-tag-remove ml-1.5 text-indigo-100 hover:text-white">&times;</button>
+            </span>`
+    );
+    hasSelectedTags = true;
+  }
+  if (partActive) {
+    const participant = appState.participants.find((p) => p.id === activeFilters.participant);
+    if (participant) {
+      selectedTagsContainer.insertAdjacentHTML(
+        "beforeend",
+        `<span class="filter-tag participant-tag active">
+                 ${participant.name}
+                 <button data-type="participant" class="selected-tag-remove ml-1.5 text-purple-100 hover:text-white">&times;</button>
+              </span>`
+      );
+      hasSelectedTags = true;
+    }
+  }
+
+  // --- INICIO DE MODIFICACIÃ“N ---
+  // NUEVO: Añadir etiqueta seleccionada para Invitado
+  if (guestActive) {
+    selectedTagsContainer.insertAdjacentHTML(
+      "beforeend",
+      `<span class="filter-tag participant-tag active">
+                 <i class="fas fa-user-tag fa-fw mr-1"></i>Invitado
+                 <button data-type="guest" class="selected-tag-remove ml-1.5 text-purple-100 hover:text-white">&times;</button>
+              </span>`
+    );
+    hasSelectedTags = true;
+  }
+
+  if (pmActive) {
+    const paymentMethod = appState.paymentMethods.find((m) => m.id === activeFilters.paymentMethod);
+    if (paymentMethod) {
+      selectedTagsContainer.insertAdjacentHTML(
+        "beforeend",
+        `<span class="filter-tag payment-method-tag active">
+                 ${paymentMethod.name}
+                 <button data-type="paymentMethod" class="selected-tag-remove ml-1.5 text-green-100 hover:text-white">&times;</button>
+              </span>`
+      );
+      hasSelectedTags = true;
+    }
+  }
+
+  // Mostrar/ocultar el label "No hay filtros"
+  if (noFiltersLabel) noFiltersLabel.classList.toggle("hidden", catActive || partActive || pmActive || guestActive); // <-- MODIFICADO
+
+  // Actualizar estado 'active' de las etiquetas clickeables en las listas
+  document.querySelectorAll("#filter-tag-categories .filter-tag").forEach((tag) => {
+    tag.classList.toggle("active", tag.dataset.value === activeFilters.category);
+  });
+
+  // Actualizar estado activo de etiquetas de participante e invitado
+  document.querySelectorAll("#filter-tag-participants .filter-tag").forEach((tag) => {
+    const value = tag.dataset.value;
+    if (value === "guest") {
+      tag.classList.toggle("active", activeFilters.guestOnly);
+    } else {
+      tag.classList.toggle("active", tag.dataset.value === activeFilters.participant);
+    }
+  });
+
+  document.querySelectorAll("#filter-tag-payment-methods .filter-tag").forEach((tag) => {
+    tag.classList.toggle("active", tag.dataset.value === activeFilters.paymentMethod);
+  });
+  // --- FIN DE MODIFICACIÃ“N ---
+
+  // Sincronizar el input de descripción con el estado (Sin cambios)
+  const descriptionInput = document.getElementById("filter-description");
+  if (descriptionInput && descriptionInput.value !== activeFilters.description) {
+    descriptionInput.value = activeFilters.description;
+  }
+}
+// ================================================================
+// LÃ“GICA ROBUSTA DEL SIDEBAR (ABRIR / CERRAR)
+// ================================================================
+function setupSidebarInteraction() {
+  const sidebar = document.getElementById("participant-sidebar");
+  const appLayout = document.getElementById("app-layout");
+  const toggleBtn = document.getElementById("close-sidebar-btn"); // El botón de la flecha (<)
+  const openHeaderBtn = document.getElementById("open-participants-sidebar-btn"); // Botón del header
+  const backdrop = document.getElementById("sidebar-backdrop");
+
+  // Función interna para alternar
+  const toggle = (forceState = null) => {
+    const isOpen = forceState !== null ? forceState : !sidebar.classList.contains("open");
+
+    sidebar.classList.toggle("open", isOpen);
+    appLayout.classList.toggle("sidebar-is-open", isOpen);
+
+    if (backdrop) {
+      backdrop.classList.toggle("open", isOpen);
+      // Asegurar visibilidad en móvil
+      backdrop.style.display = isOpen ? "block" : "none";
+    }
+  };
+
+  // 1. Conectar el botón de la flecha (El que está fallando)
+  if (toggleBtn) {
+    // Truco: Clonamos el botón para eliminar cualquier listener viejo o corrupto
+    const newToggleBtn = toggleBtn.cloneNode(true);
+    toggleBtn.parentNode.replaceChild(newToggleBtn, toggleBtn);
+
+    newToggleBtn.addEventListener("click", (e) => {
+      e.stopPropagation(); // Evita que el clic se propague
+      console.log("Clic en sidebar toggle"); // Para depuración
+      toggle();
+    });
+  } else {
+    console.error("No se encontró el botón #close-sidebar-btn");
+  }
+
+  // 2. Conectar el botón del Header ("Configuración")
+  if (openHeaderBtn) {
+    const newOpenBtn = openHeaderBtn.cloneNode(true);
+    openHeaderBtn.parentNode.replaceChild(newOpenBtn, openHeaderBtn);
+
+    newOpenBtn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      toggle(true); // Forzar abrir
+    });
+  }
+
+  // 3. Conectar el Backdrop (Cerrar al hacer clic fuera)
+  if (backdrop) {
+    backdrop.addEventListener("click", () => toggle(false));
+  }
+
+  // 4. Exponer la función globalmente por si la necesitamos en otros lados
+  window.toggleSidebarGlobal = toggle;
+}
+
+function setupUILogic(isFirebaseMode) {
+  console.log("Configurando lógica de UI (Reparada)...");
+
+  // 1. NAVEGACIÃ“N DEL SIDEBAR (Iconos colapsados)
+  const sidebarCollapsed = document.getElementById("sidebar-collapsed-content");
+
+  if (sidebarCollapsed) {
+    // Clonamos para eliminar cualquier listener basura anterior
+    const newSidebarCollapsed = sidebarCollapsed.cloneNode(true);
+    sidebarCollapsed.parentNode.replaceChild(newSidebarCollapsed, sidebarCollapsed);
+
+    newSidebarCollapsed.addEventListener("click", (e) => {
+      // Buscamos el elemento clickeado que tenga el atributo 'data-panel-id'
+      // Esto funciona aunque hagas clic en el ícono <i> o en el borde del botón <a>
+      const target = e.target.closest("[data-panel-id]");
+
+      if (target) {
+        e.preventDefault(); // Evita que el enlace recargue la página o suba
+        const panelId = target.dataset.panelId;
+
+        console.log("Clic detectado en panel:", panelId); // Debug para confirmar
+
+        // 1. Mostrar el contenido correcto (Participantes, Wallet o Datos)
+        if (typeof showSidebarPanel === "function") {
+          showSidebarPanel(panelId);
+        }
+
+        // 2. Abrir el sidebar si está cerrado
+        const sidebar = document.getElementById("participant-sidebar");
+        // Usamos la función global si existe (la que creamos hace poco)
+        if (typeof toggleSidebarGlobal === "function") {
+          toggleSidebarGlobal(true);
+        } else if (sidebar) {
+          // Fallback manual por si acaso
+          sidebar.classList.remove("w-[88px]");
+          sidebar.classList.add("w-80", "md:w-96");
+          document.getElementById("sidebar-collapsed-content").classList.add("hidden");
+          document.getElementById("sidebar-expanded-content").classList.remove("hidden");
+          document.getElementById("sidebar-expanded-content").classList.add("flex");
+
+          // Rotar flecha
+          const arrow = document.querySelector("#close-sidebar-btn i");
+          if (arrow) arrow.classList.add("rotate-180");
+        }
+      }
+    });
+  } else {
+    console.error("No se encontró el contenedor #sidebar-collapsed-content");
+  }
+
+  // 2. RESTO DE LA CONFIGURACIÃ“N (Gráficos, Calendario, etc.)
+
+  // Menú Móvil
+  const mobileAddBtn = document.getElementById("mobile-add-expense-btn");
+  if (mobileAddBtn) {
+    const newBtn = mobileAddBtn.cloneNode(true);
+    mobileAddBtn.parentNode.replaceChild(newBtn, mobileAddBtn);
+    newBtn.addEventListener("click", () => {
+      if (typeof openUnifiedExpenseModal === "function") openUnifiedExpenseModal(null);
+    });
+  }
+
+  // Gráfico Colapsable
+  const chartToggleBtn = document.getElementById("toggle-chart-btn");
+  if (chartToggleBtn) {
+    const newChartBtn = chartToggleBtn.cloneNode(true);
+    chartToggleBtn.parentNode.replaceChild(newChartBtn, chartToggleBtn);
+    newChartBtn.addEventListener("click", () => {
+      const chartContent = document.getElementById("chart-collapsible-content");
+      const chartIcon = document.getElementById("chart-toggle-icon");
+      if (chartContent) chartContent.classList.toggle("open");
+      if (chartIcon) chartIcon.classList.toggle("rotate-180");
+    });
+  }
+
+  // Inicializadores de Módulos
+  if (typeof setupCustomSelects === "function") setupCustomSelects();
+  if (typeof setupSidebarInteraction === "function") setupSidebarInteraction(); // Botón cerrar sidebar
+
+  // Modales
+  if (typeof setupCategoryModalListeners === "function") setupCategoryModalListeners();
+  if (typeof setupPaymentMethodListeners === "function") setupPaymentMethodListeners();
+  if (typeof setupParticipantModalListeners === "function") setupParticipantModalListeners();
+  if (typeof setupUserProfileLogic === "function") setupUserProfileLogic();
+  if (typeof setupUnifiedExpenseListeners === "function") setupUnifiedExpenseListeners();
+  if (typeof setupPaymentMethodModalListeners === "function") setupPaymentMethodModalListeners();
+  if (typeof setupSettlementModalListeners === "function") setupSettlementModalListeners();
+  if (typeof setupDynamicFilterListeners === "function") setupDynamicFilterListeners();
+  if (typeof setupDataManagementListeners === "function") setupDataManagementListeners();
+
+  // Render inicial local
+  if (!isFirebaseMode) {
+    renderUI();
+  }
+}
+
+// --- El resto de las funciones (render, cálculo, etc.) se mantienen mayormente sin cambios ---
+
+// CORREGIDO: Añadir más chequeos en setupCustomSelects
+function setupCustomSelects() {
+  window.addEventListener("click", (e) => {
+    document.querySelectorAll(".custom-select-container").forEach((container) => {
+      if (!container.contains(e.target)) {
+        const optionsDiv = container.querySelector(".custom-select-options");
+        if (optionsDiv) optionsDiv.classList.add("hidden");
+        const chevronIcon = container.querySelector(".fa-chevron-down");
+        if (chevronIcon) chevronIcon.classList.remove("rotate-180");
+      }
+    });
+  });
+
+  document.querySelectorAll(".custom-select-container").forEach((container) => {
+    const button = container.querySelector(".custom-select-button");
+    const optionsContainer = container.querySelector(".custom-select-options");
+    const chevron = button ? button.querySelector(".fa-chevron-down") : null; // Get chevron here
+
+    if (!button || !optionsContainer) {
+      // console.warn('Custom select missing button or options container:', container);
+      return;
+    }
+
+    button.addEventListener("click", (e) => {
+      e.stopPropagation();
+      // Close other open selects
+      document.querySelectorAll(".custom-select-options").forEach((otherOptions) => {
+        if (otherOptions !== optionsContainer) {
+          otherOptions.classList.add("hidden");
+          const parentContainer = otherOptions.closest(".custom-select-container");
+          if (parentContainer) {
+            const otherChevron = parentContainer.querySelector(".fa-chevron-down");
+            if (otherChevron) otherChevron.classList.remove("rotate-180");
+          }
+        }
+      });
+
+      // Toggle current select
+      optionsContainer.classList.toggle("hidden");
+      if (chevron) chevron.classList.toggle("rotate-180"); // Use chevron variable
+    });
+
+    optionsContainer.addEventListener("click", (e) => {
+      const option = e.target.closest(".custom-select-option");
+      if (option) {
+        const hiddenInput = container.querySelector('input[type="hidden"]');
+        const display = button.querySelector(".custom-select-display");
+
+        if (!hiddenInput || !display) return; // Chequeo adicional
+
+        display.textContent = option.textContent.trim();
+        display.classList.remove("text-gray-500");
+        hiddenInput.value = option.dataset.value;
+
+        optionsContainer.querySelectorAll(".custom-select-option").forEach((opt) => opt.classList.remove("selected"));
+        option.classList.add("selected");
+
+        optionsContainer.classList.add("hidden");
+        if (chevron) chevron.classList.remove("rotate-180"); // Use chevron variable
+        hiddenInput.dispatchEvent(new Event("change", { bubbles: true }));
+      }
+    });
+  });
+}
+// --- LÃ“GICA DE PESTAÃ‘AS DEL HISTORIAL ---
+window.switchHistoryTab = function (tab) {
+  currentHistoryTab = tab;
+
+  // Actualizar estilos de los botones
+  const btnExp = document.getElementById("tab-history-expenses");
+  const btnInc = document.getElementById("tab-history-incomes");
+
+  if (tab === "expenses") {
+    btnExp.className = "flex-1 py-2 text-sm font-bold rounded-lg bg-white text-gray-800 shadow-sm transition-all";
+    btnInc.className = "flex-1 py-2 text-sm font-bold rounded-lg text-gray-500 hover:bg-gray-200 transition-all";
+  } else {
+    btnInc.className = "flex-1 py-2 text-sm font-bold rounded-lg bg-white text-gray-800 shadow-sm transition-all";
+    btnExp.className = "flex-1 py-2 text-sm font-bold rounded-lg text-gray-500 hover:bg-gray-200 transition-all";
+  }
+
+  // Volver a renderizar la lista (esto llamará a renderExpenseReportByCategory)
+  renderUI();
+};
+
+function setupLiquidateListeners() {
+  //document.getElementById('liquidate-month-btn').addEventListener('click', liquidateMonth);
+}
+
+// ================================================================
+// OBTENER GASTOS DEL MES (LÃ“GICA ROBUSTA Y ESTRICTA)
+// ================================================================
+// ================================================================
+// OBTENER GASTOS (VISTA FINANCIERA INTELIGENTE)
+// ================================================================
+function getExpensesForCurrentView() {
+  const allExpenses = appState.expenses || [];
+  const resultExpenses = [];
+
+  // Año y Mes del filtro visual
+  const viewYear = currentFilterDate.getFullYear();
+  const viewMonth = currentFilterDate.getMonth();
+
+  // Definir rango exacto del mes calendario (1 al 31)
+  const startMs = new Date(Date.UTC(viewYear, viewMonth, 1)).getTime();
+  const endMs = new Date(Date.UTC(viewYear, viewMonth + 1, 0, 23, 59, 59)).getTime();
+
+  // 1. GASTOS MANUALES
+  const realExpenses = allExpenses.filter((e) => {
+    if (e.isFixed) return false;
+    const expDate = new Date(e.date + "T00:00:00Z").getTime();
+    return expDate >= startMs && expDate <= endMs;
+  });
+
+  resultExpenses.push(...realExpenses);
+
+  // 2. PROYECCIÃ“N DE GASTOS FIJOS
+  const fixedDefinitions = allExpenses.filter((e) => e.isFixed);
+
+  fixedDefinitions.forEach((base) => {
+    const baseDate = new Date(base.date + "T00:00:00Z");
+    const recurrenceMonths = base.fixedRecurrenceMonths || 12;
+    const baseTime = baseDate.getTime();
+
+    // Proyectar solo para este mes visual
+    let iterYear = viewYear;
+    let iterMonth = viewMonth;
+    const dayOfExpense = baseDate.getUTCDate();
+
+    let projectedDate = new Date(Date.UTC(iterYear, iterMonth, dayOfExpense));
+
+    // Ajuste fin de mes
+    if (projectedDate.getUTCMonth() !== iterMonth) {
+      projectedDate = new Date(Date.UTC(iterYear, iterMonth + 1, 0));
+    }
+
+    const projStr = projectedDate.toISOString().split("T")[0];
+    const projTime = projectedDate.getTime();
+
+    // Validaciones
+    const isInsideMonth = projTime >= startMs && projTime <= endMs;
+    const isAfterCreation = projTime >= baseTime;
+
+    const diffMonths = (iterYear - baseDate.getUTCFullYear()) * 12 + (iterMonth - baseDate.getUTCMonth());
+    const isWithinRecurrence = diffMonths >= 0 && diffMonths < recurrenceMonths;
+
+    if (isInsideMonth && isAfterCreation && isWithinRecurrence) {
+      const exists = allExpenses.some(e =>
+        !e.isFixed &&
+        e.date === projStr &&
+        e.description.toLowerCase().trim() === base.description.toLowerCase().trim()
+      );
+
+      if (!exists) {
+        resultExpenses.push({
+          ...base,
+          id: `proj_${base.id}_${projStr}`,
+          date: projStr,
+          isProjected: true,
+          payerId: base.payerId
+        });
+      }
+    }
+  });
+
+  return resultExpenses;
+}
+async function liquidateMonth() {
+  if (!db || userId === "loading") return showModal("La base de datos no está lista.");
+
+  const { participantData, guestDebtTotal } = calculateSummary(
+    appState,
+    appState.expenses.filter((e) => e.date.startsWith(getFilterMonthString(currentFilterDate)))
+  );
+  const balances = participantData.filter((p) => Math.abs(p.balance) > 0.01);
+  if (balances.length === 0 && guestDebtTotal === 0) return showModal("Las cuentas ya están claras.", null, "Liquidación Completa");
+
+  if (window.prompt(`Se crearán transacciones de ajuste. Escribe 'LIQUIDAR' para confirmar.`) !== "LIQUIDAR") return showModal("Liquidación cancelada.");
+
+  const newExpenses = [...appState.expenses];
+  const now = new Date().toISOString().split("T")[0];
+  let numSettlements = 0;
+
+  const debtors = balances.filter((p) => p.balance < 0).sort((a, b) => a.balance - b.balance);
+  const creditors = balances.filter((p) => p.balance > 0).sort((a, b) => b.balance - a.balance);
+
+  let i = 0,
+    j = 0;
+  while (i < debtors.length && j < creditors.length) {
+    let debtor = debtors[i],
+      creditor = creditors[j];
+    const amount = Math.min(Math.abs(debtor.balance), creditor.balance);
+
+    if (amount > 0.01) {
+      newExpenses.push({
+        id: generateUUID(),
+        type: "personal",
+        description: `REEMBOLSO: ${debtor.name} a ${creditor.name}`,
+        amount,
+        payerId: debtor.id,
+        category: "Liquidación",
+        subcategory: "Reembolso",
+        paymentMethodId: "m1",
+        date: now,
+        dateCreated: new Date().toISOString(),
+      });
+      numSettlements++;
+      debtor.balance += amount;
+      creditor.balance -= amount;
+    }
+    if (Math.abs(debtor.balance) < 0.01) i++;
+    if (creditor.balance < 0.01) j++;
+  }
+  await saveState({ expenses: newExpenses });
+  showModal(`Â¡Liquidación completada! Se crearon ${numSettlements} ajustes.`, null, "Liquidación Exitosa");
+}
+
+// REEMPLAZA TU FUNCIÃ“N removeParticipant ACTUAL CON ESTA:
+
+function removeParticipant(id) {
+  // 1. Validar que no sea el último usuario
+  if (appState.participants.length <= 1) {
+    return showModal("Debe haber al menos un participante en el grupo.");
+  }
+
+  // 2. Buscar datos del participante
+  const participant = appState.participants.find((p) => p.id === id);
+  if (!participant) return;
+
+  // 3. VERIFICACIÃ“N DE SEGURIDAD: Â¿Tiene gastos asociados?
+  // Buscamos gastos donde este usuario sea el pagador (payerId)
+  // OJO: Si usas tarjetas de crédito, el dueño también cuenta.
+  const hasExpenses = appState.expenses.some((e) => e.payerId === id);
+
+  // También verificamos si es dueño de alguna tarjeta de crédito activa
+  const hasCreditCards = appState.paymentMethods.some((m) => m.type === "credit" && m.ownerId === id);
+
+  if (hasExpenses || hasCreditCards) {
+    return showModal(
+      `â›” <b>No se puede eliminar a ${participant.name}.</b><br><br>` + `Este usuario tiene gastos registrados o tarjetas asignadas. Si lo eliminas, se romperán los cálculos.<br><br>` + `<b>Solución:</b> Edita sus gastos y asígnalos a otra persona antes de borrarlo.`,
+      null,
+      "Acción Bloqueada por Seguridad"
+    );
+  }
+
+  // 4. Confirmación final (solo si no tiene gastos)
+  const confirmDelete = confirm(`Â¿Estás seguro de eliminar a "${participant.name}"?\n\nEsta acción no se puede deshacer.`);
+
+  if (!confirmDelete) return;
+
+  // 5. Proceder al borrado seguro
+  // Si era el usuario activo en los filtros, limpiamos el filtro
+  if (activeFilters.participant === id) {
+    activeFilters.participant = null;
+  }
+
+  const newParticipants = appState.participants.filter((p) => p.id !== id);
+  // Ya validamos que no tiene expenses, así que no hace falta filtrar expenses, pero por seguridad lo dejamos:
+  const newExpenses = appState.expenses.filter((e) => e.payerId !== id);
+
+  saveState({ participants: newParticipants, expenses: newExpenses });
+  showModal(`El participante "${participant.name}" ha sido eliminado correctamente.`);
+}
+
+function renderMonthSelector() {
+  const monthNameEl = document.getElementById("current-month-name");
+  const yearEl = document.getElementById("current-year");
+  if (monthNameEl && yearEl) {
+    monthNameEl.textContent = MONTH_NAMES[currentFilterDate.getMonth()];
+    yearEl.textContent = currentFilterDate.getFullYear();
+  }
+}
+
+function setupMonthSelectorListeners() {
+  document.getElementById("prev-month-btn").addEventListener("click", () => {
+    currentFilterDate.setMonth(currentFilterDate.getMonth() - 1);
+    currentFilterDate.setDate(1); // <-- Â¡ESTA ES LA CORRECCIÃ“N!
+    renderUI();
+  });
+  document.getElementById("next-month-btn").addEventListener("click", () => {
+    currentFilterDate.setMonth(currentFilterDate.getMonth() + 1);
+    currentFilterDate.setDate(1); // <-- Â¡ESTA ES LA CORRECCIÃ“N!
+    renderUI();
+  });
+}
+
+function removeExpense(id) {
+  const newExpenses = appState.expenses.filter((e) => e.id !== id);
+  saveState({ expenses: newExpenses });
+  showModal("Gasto eliminado.");
+}
+
+// ================================================================
+// LISTENERS MÃ‰TODOS DE PAGO (CON TITULAR DE TARJETA)
+// ================================================================
+function setupPaymentMethodListeners() {
+  const modal = document.getElementById("payment-methods-modal");
+  const form = document.getElementById("payment-method-form");
+
+  // Elementos del DOM
+  const typeInput = document.getElementById("method-type");
+  const ownerContainer = document.getElementById("card-owner-container");
+  const ownerSelect = document.getElementById("method-owner");
+  const configFields = document.getElementById("cc-config-fields");
+  const typeIcon = document.getElementById("method-type-icon");
+
+  // Función auxiliar para llenar el select de dueños
+  const populateOwners = () => {
+    const currentVal = ownerSelect.value;
+    ownerSelect.innerHTML = '<option value="">-- Selecciona al titular --</option>';
+    appState.participants.forEach((p) => {
+      const option = document.createElement("option");
+      option.value = p.id;
+      option.textContent = p.name;
+      ownerSelect.appendChild(option);
+    });
+    ownerSelect.value = currentVal; // Restaurar valor si existía
+  };
+
+  // 1. Botón de Abrir
+  const openBtn = document.getElementById("open-payment-methods-modal-btn");
+  if (openBtn) {
+    openBtn.addEventListener("click", () => {
+      modal.classList.remove("hidden");
+      modal.classList.add("flex");
+      renderPaymentMethodsModal(appState.paymentMethods);
+      populateOwners(); // Cargar lista al abrir
+    });
+  }
+
+  // 2. Botón de Cerrar
+  const closeBtn = document.getElementById("close-payment-methods-modal-btn");
+  if (closeBtn) {
+    closeBtn.addEventListener("click", () => {
+      modal.classList.add("hidden");
+      modal.classList.remove("flex");
+      resetPaymentForm();
+    });
+  }
+
+  // 3. Lógica del Selector de Tipo (Mostrar/Ocultar campos)
+  if (typeInput) {
+    // Inicializar visualmente custom select
+    initializeCustomSelect("method-type");
+
+    typeInput.addEventListener("change", (e) => {
+      const val = e.target.value;
+      const isCredit = val === "credit";
+
+      // Mostrar/Ocultar campos específicos de TC
+      if (configFields) configFields.classList.toggle("hidden", !isCredit);
+      if (ownerContainer) ownerContainer.classList.toggle("hidden", !isCredit);
+
+      // Actualizar icono visual
+      if (typeIcon) typeIcon.className = isCredit ? "fas fa-credit-card text-indigo-500" : "fas fa-wallet text-emerald-500";
+
+      // Si cambiamos a crédito, asegurarnos de tener la lista actualizada
+      if (isCredit) populateOwners();
+    });
+  }
+
+  // 4. Cancelar Edición
+  const cancelBtn = document.getElementById("cancel-edit-method-btn");
+  if (cancelBtn) cancelBtn.addEventListener("click", resetPaymentForm);
+
+  // 5. Guardar (Submit)
+  if (form) {
+    form.addEventListener("submit", (e) => {
+      e.preventDefault();
+      const id = document.getElementById("method-id-to-edit").value;
+      const name = formatTitleCase(document.getElementById("method-name").value);
+      const type = document.getElementById("method-type").value;
+      const ownerId = document.getElementById("method-owner").value;
+
+      const method = { name, type };
+
+      if (type === "credit") {
+        const closingDay = parseInt(document.getElementById("cc-config-closing-day").value);
+        const paymentDay = parseInt(document.getElementById("cc-config-payment-day").value);
+
+        if (isNaN(closingDay) || closingDay < 1 || closingDay > 31) {
+          return showModal("El día de cierre debe ser válido (1-31).");
+        }
+        if (isNaN(paymentDay) || paymentDay < 1 || paymentDay > 31) {
+          return showModal("El día de pago debe ser válido (1-31).");
+        }
+        if (!ownerId) {
+          return showModal("Debes asignar un Titular a la tarjeta de crédito.");
+        }
+
+        method.closingDay = closingDay; // <--- NUEVO
+        method.paymentDay = paymentDay;
+        method.ownerId = ownerId;
+      } else {
+        // Si es efectivo, borramos el ownerId por si acaso
+        method.ownerId = null;
+      }
+
+      let newMethods;
+      if (id) {
+        // Mantener cierres manuales si existen al editar
+        const oldMethod = appState.paymentMethods.find((m) => m.id === id);
+        if (oldMethod && oldMethod.manualClosures) method.manualClosures = oldMethod.manualClosures;
+
+        newMethods = appState.paymentMethods.map((m) => (m.id === id ? { ...m, ...method } : m));
+        showModal(`Método '${name}' actualizado.`);
+      } else {
+        method.id = `m${generateUUID()}`;
+        newMethods = [...appState.paymentMethods, method];
+        showModal(`Método '${name}' creado.`);
+      }
+      saveState({ paymentMethods: newMethods });
+
+      resetPaymentForm();
+      renderPaymentMethodsModal(newMethods);
+    });
+  }
+}
+
+function setupExpenseFormListeners() {
+  document.getElementById("expense-is-fixed").addEventListener("change", (e) => {
+    document.getElementById("fixed-recurrence-container").classList.toggle("hidden", !e.target.checked);
+  });
+
+  document.getElementById("expense-category").addEventListener("change", (e) => {
+    const categoryName = e.target.value;
+    const subCatContainer = document.querySelector("#expense-subcategory-button").closest(".custom-select-container");
+    const subCatOptions = subCatContainer.querySelector(".custom-select-options");
+    const subCatDisplay = subCatContainer.querySelector(".custom-select-display");
+    const subCatInput = subCatContainer.querySelector('input[type="hidden"]');
+    const subCatButton = subCatContainer.querySelector("button");
+
+    subCatOptions.innerHTML = "";
+    subCatDisplay.textContent = "Selecciona subcategoría";
+    subCatInput.value = "";
+
+    const selectedCategory = appState.categories.find((c) => c.name === categoryName);
+    if (selectedCategory && selectedCategory.subcategories.length > 0) {
+      selectedCategory.subcategories.forEach((sub) => {
+        subCatOptions.insertAdjacentHTML("beforeend", `<div class="custom-select-option" data-value="${sub}">${sub}</div>`);
+      });
+      subCatButton.disabled = false;
+      subCatButton.classList.remove("bg-gray-100");
+    } else {
+      subCatButton.disabled = true;
+      subCatButton.classList.add("bg-gray-100");
+    }
+  });
+
+  document.getElementById("expense-payment-method-id").addEventListener("change", (e) => {
+    const selectedMethodId = e.target.value;
+    const method = appState.paymentMethods.find((m) => m.id === selectedMethodId);
+    const ccDetails = document.getElementById("credit-card-details");
+    if (method && method.type === "credit") {
+      ccDetails.classList.remove("hidden");
+      const { startDate, paymentDate } = getCycleDates(method, new Date()); // Usa la fecha actual para el formulario
+      document.getElementById("cc-cycle-start-display").textContent = formatDate(startDate);
+      document.getElementById("cc-payment-date-display").textContent = formatDate(paymentDate);
+    } else {
+      ccDetails.classList.add("hidden");
+    }
+  });
+
+  document.getElementById("expense-form").addEventListener("submit", (e) => {
+    e.preventDefault();
+    try {
+      const description = document.getElementById("expense-description").value.trim();
+      const amount = parseFloat(document.getElementById("expense-amount").value);
+      const payerId = document.getElementById("expense-paid-by").value;
+      const type = document.getElementById("expense-type").value;
+      const category = document.getElementById("expense-category").value;
+      const subcategory = document.getElementById("expense-subcategory").value;
+      const paymentMethodId = document.getElementById("expense-payment-method-id").value;
+      const isFixed = document.getElementById("expense-is-fixed").checked;
+
+      if (!description || !amount || !payerId || !category || !paymentMethodId) {
+        return showModal("Por favor, completa todos los campos requeridos.");
+      }
+
+      const paymentMethod = appState.paymentMethods.find((m) => m.id === paymentMethodId);
+      const { startDate, paymentDate } = paymentMethod && paymentMethod.type === "credit" ? getCycleDates(paymentMethod, new Date()) : {}; // Usa la fecha actual para el formulario
+      const fixedRecurrenceMonths = isFixed ? parseInt(document.getElementById("fixed-recurrence-months").value) || 1 : 0;
+
+      const newExpense = {
+        id: generateUUID(),
+        description,
+        amount,
+        payerId,
+        type,
+        category,
+        subcategory,
+        paymentMethodId,
+        isFixed,
+        date: new Date().toISOString().split("T")[0],
+        dateCreated: new Date().toISOString(),
+        ccCycleStart: startDate || null,
+        ccPaymentDate: paymentDate || null,
+        fixedRecurrenceMonths,
+      };
+      saveState({ expenses: [...appState.expenses, newExpense] });
+      e.target.reset();
+      // Reiniciar la apariencia de los selects a su estado inicial
+      document.querySelectorAll(".custom-select-display").forEach((d) => {
+        d.textContent = "Selecciona una opción";
+        d.classList.add("text-gray-500");
+      });
+      document.querySelector("#expense-type-button .custom-select-display").textContent = "Personal";
+    } catch (error) {
+      showModal("Error al añadir el gasto.", error.message);
+    }
+  });
+}
+
+function setupExpenseModalListeners() {
+  const modal = document.getElementById("edit-expense-modal");
+  const guestContainer = document.getElementById("guest-payer-input-container");
+  const guestInput = document.getElementById("guest-payer-name");
+
+  document.getElementById("close-edit-expense-modal-btn").addEventListener("click", () => {
+    modal.classList.add("hidden");
+    if (editExpenseDatepicker) {
+      editExpenseDatepicker.destroy();
+      editExpenseDatepicker = null;
+    }
+  });
+
+  document.getElementById("add-guest-payer-btn").addEventListener("click", () => {
+    guestContainer.classList.toggle("hidden");
+
+    const payerButton = document.getElementById("edit-expense-payer-button");
+    const payerDisplay = payerButton.querySelector(".custom-select-display");
+    const payerInput = document.getElementById("edit-expense-payer");
+
+    payerInput.value = "";
+    payerDisplay.textContent = "Selecciona pagador";
+    payerDisplay.classList.add("text-gray-500");
+
+    if (!guestContainer.classList.contains("hidden")) {
+      guestInput.focus();
+    }
+  });
+
+  document.getElementById("edit-expense-category").addEventListener("change", (e) => {
+    const categoryName = e.target.value;
+    const subCatContainer = document.querySelector("#edit-expense-subcategory-button").closest(".custom-select-container");
+    const subCatOptions = subCatContainer.querySelector(".custom-select-options");
+    const subCatDisplay = subCatContainer.querySelector(".custom-select-display");
+    const subCatInput = subCatContainer.querySelector('input[type="hidden"]');
+    const subCatButton = subCatContainer.querySelector("button");
+
+    subCatOptions.innerHTML = "";
+    subCatDisplay.textContent = "Selecciona subcategoría";
+    subCatInput.value = "";
+
+    const selectedCategory = appState.categories.find((c) => c.name === categoryName);
+    if (selectedCategory && selectedCategory.subcategories.length > 0) {
+      selectedCategory.subcategories.forEach((sub) => {
+        subCatOptions.insertAdjacentHTML("beforeend", `<div class="custom-select-option" data-value="${sub}">${sub}</div>`);
+      });
+      subCatButton.disabled = false;
+      subCatButton.classList.remove("bg-gray-100");
+    } else {
+      subCatButton.disabled = true;
+      subCatButton.classList.add("bg-gray-100");
+    }
+  });
+
+  document.getElementById("edit-expense-form").addEventListener("submit", (e) => {
+    e.preventDefault();
+    const id = document.getElementById("edit-expense-id").value;
+    const newDescription = formatTitleCase(document.getElementById("edit-expense-description").value);
+    const newAmount = parseFloat(document.getElementById("edit-expense-amount").value);
+    const newDate = document.getElementById("edit-expense-date").value; // <-- AÃ‘ADIDA
+    const newCategory = document.getElementById("edit-expense-category").value;
+    const newSubcategory = formatTitleCase(document.getElementById("edit-expense-subcategory").value);
+    const newType = document.getElementById("edit-expense-type").value;
+    const newPaymentMethodId = document.getElementById("edit-expense-payment-method-id").value;
+    const newIsFixed = document.getElementById("edit-expense-is-fixed").checked;
+    let newPayerId = document.getElementById("edit-expense-payer").value;
+    let newPayerName = "";
+
+    if (!guestContainer.classList.contains("hidden") && guestInput.value.trim()) {
+      newPayerId = `guest_${generateUUID()}`;
+      newPayerName = formatTitleCase(guestInput.value);
+    } else if (!newPayerId) {
+      return showModal("Selecciona un pagador o añade un invitado.");
+    }
+
+    if (newAmount <= 0 || !newDescription || !newCategory) {
+      return showModal("Completa todos los campos: descripción, monto, y categoría.");
+    }
+
+    const updatedExpenses = appState.expenses.map((exp) => {
+      if (exp.id === id) {
+        return {
+          ...exp,
+          description: newDescription,
+          amount: newAmount,
+          date: newDate, // <-- AÃ‘ADIDA
+          category: newCategory,
+          subcategory: newSubcategory,
+          type: newType,
+          isFixed: newIsFixed,
+          paymentMethodId: newPaymentMethodId,
+          payerId: newPayerId,
+          payerNameGuest: newPayerName,
+        };
+      }
+      return exp;
+    });
+
+    saveState({ expenses: updatedExpenses });
+    modal.classList.add("hidden");
+  });
+}
+
+// ================================================================
+// LÃ“GICA DE CÁLCULO MAESTRA (CORREGIDA)
+// ================================================================
+function calculateSummary(state, filteredExpenses) {
+  const participants = state.participants || [];
+  const paymentMethodsMap = new Map((state.paymentMethods || []).map((m) => [m.id, m]));
+
+  // 1. Inicializar datos de participantes
+  const participantData = participants.map((p) => {
+    // Asegurar que sean números flotantes
+    const budget = parseFloat(p.budget) || 0;
+    const sharedPct = parseFloat(p.sharedSavingsPercent) || 0;
+    const indepPct = parseFloat(p.independentSavingsPercent) || 0;
+
+    return {
+      ...p,
+      budget: budget,
+      spent: 0,
+      contributionPaid: 0,
+      contributionByMethod: {},
+      // Cálculo del ahorro
+      sharedSavingsGoal: (budget * sharedPct) / 100,
+      independentSavingsGoal: (budget * indepPct) / 100,
+      // Cálculo de lo disponible real (Presupuesto - Ahorros)
+      availableForSpending: budget * (1 - (sharedPct + indepPct) / 100),
+    };
+  });
+
+  const participantMap = new Map(participantData.map((p) => [p.id, p]));
+  let totalSpent = 0;
+
+  // Resumen del Invitado (Deuda externa)
+  const guestSummary = { spent: 0, balance: 0 };
+
+  // 2. Procesar Gastos
+  filteredExpenses.forEach((expense) => {
+    const amount = parseFloat(expense.amount) || 0; // Forzar número
+    totalSpent += amount;
+
+    // --- A. REGISTRAR PAGO (Quién puso el dinero) ---
+    let realPayerId = expense.payerId;
+    const method = paymentMethodsMap.get(expense.paymentMethodId);
+
+    // Si es tarjeta de crédito con dueño, el dueño es quien paga
+    if (method && method.type === "credit" && method.ownerId) {
+      realPayerId = method.ownerId;
+    }
+
+    const realPayer = participantMap.get(realPayerId);
+    if (realPayer) {
+      realPayer.contributionPaid += amount;
+      const methodId = expense.paymentMethodId || "unknown";
+      realPayer.contributionByMethod[methodId] = (realPayer.contributionByMethod[methodId] || 0) + amount;
+    }
+
+    // --- B. REGISTRAR CONSUMO (Quién gastó presupuesto) ---
+    if (expense.type === "shared") {
+      const registeredCount = participants.length;
+      let guestsCount = 0;
+
+      if (expense.guests && Array.isArray(expense.guests)) guestsCount = expense.guests.length;
+      else if (expense.guestName) guestsCount = 1;
+
+      const numPayees = registeredCount + guestsCount;
+      const splitAmount = amount / numPayees;
+
+      // Repartir consumo entre participantes registrados
+      participantData.forEach((p) => {
+        p.spent += splitAmount;
+      });
+
+      // Registrar consumo de invitados
+      if (guestsCount > 0) guestSummary.spent += splitAmount * guestsCount;
+
+      expense.splitAmount = splitAmount; // Guardar para uso visual si se requiere
+    } else {
+      // Gasto Personal
+      const consumer = participantMap.get(expense.payerId);
+      if (consumer) {
+        consumer.spent += amount;
+      } else if (expense.payerId && expense.payerId.startsWith("guest_")) {
+        guestSummary.spent += amount;
+      }
+    }
+  });
+
+  // 3. CÁLCULO FINAL DE TOTALES
+  let globalTotalRemainingBudget = 0;
+  let globalSharedSavingsGoal = 0;
+
+  participantData.forEach((p) => {
+    // Balance de liquidez (Lo que pagué vs lo que gasté)
+    p.balance = p.contributionPaid - p.spent;
+
+    // Presupuesto restante (Lo que puedo gastar - lo que ya gasté)
+    p.remainingBudget = p.availableForSpending - p.spent;
+
+    // Sumar al global (Acumuladores)
+    globalTotalRemainingBudget += p.remainingBudget;
+    globalSharedSavingsGoal += p.sharedSavingsGoal;
+  });
+
+  guestSummary.balance = 0 - guestSummary.spent;
+
+  return {
+    globalTotalRemainingBudget, // Este es el valor que alimenta la tarjeta principal
+    globalSharedSavingsGoal,
+    totalSpent,
+    guestBalanceNet: guestSummary.balance,
+    participantData,
+  };
+}
+// ================================================================
+// ===== FIN DEL REEMPLAZO 1 =====
+// ================================================================
+function calculateSettlementsByMethod(participantData, paymentMethods) {
+  const settlementsByMethod = {};
+
+  // Usamos copia profunda para no modificar los datos originales
+  const participants = JSON.parse(JSON.stringify(participantData));
+  const methodsMap = new Map(paymentMethods.map((m) => [m.id, m.name]));
+
+  // 1. Iterar por CADA método de pago
+  paymentMethods.forEach((method) => {
+    const methodId = method.id;
+    const methodName = method.name;
+    const transactions = [];
+
+    // 2. Encontrar deudores y acreedores SOLO para ESE método
+    const debtors = participants.filter((p) => p.balanceByMethod[methodId] && p.balanceByMethod[methodId] < -0.01).sort((a, b) => a.balanceByMethod[methodId] - b.balanceByMethod[methodId]);
+
+    const creditors = participants.filter((p) => p.balanceByMethod[methodId] && p.balanceByMethod[methodId] > 0.01).sort((a, b) => b.balanceByMethod[methodId] - a.balanceByMethod[methodId]);
+
+    let i = 0; // Puntero deudores
+    let j = 0; // Puntero acreedores
+
+    // 3. Algoritmo de liquidación (greedy)
+    while (i < debtors.length && j < creditors.length) {
+      const debtor = debtors[i];
+      const creditor = creditors[j];
+
+      // Cuánto debe el deudor y cuánto se le debe al acreedor *en este método*
+      const debt = Math.abs(debtor.balanceByMethod[methodId]);
+      const credit = creditor.balanceByMethod[methodId];
+
+      const amount = Math.min(debt, credit);
+
+      if (amount > 0.01) {
+        // 4. Registrar la transacción
+        transactions.push({
+          from: debtor.name,
+          to: creditor.name,
+          amount: amount,
+        });
+
+        // 5. Actualizar balances virtuales para seguir calculando
+        debtor.balanceByMethod[methodId] += amount;
+        creditor.balanceByMethod[methodId] -= amount;
+      }
+
+      // 6. Mover punteros si alguien llega a cero
+      if (Math.abs(debtor.balanceByMethod[methodId]) < 0.01) i++;
+      if (Math.abs(creditor.balanceByMethod[methodId]) < 0.01) j++;
+    }
+
+    // 7. Si hubo transacciones, guardarlas bajo el nombre del método
+    if (transactions.length > 0) {
+      settlementsByMethod[methodName] = transactions;
+    }
+  });
+
+  return settlementsByMethod;
+}
+
+function toggleCalendarAccordion() {
+  const accordion = document.getElementById("calendar-accordion");
+  const content = document.getElementById("calendar-accordion-content");
+  const toggleWrapper = document.getElementById("calendar-toggle-wrapper");
+
+  if (!accordion || !content || !toggleWrapper) {
+    console.error("Elementos del acordeón del calendario no encontrados.");
+    return;
+  }
+
+  accordion.classList.toggle("open");
+  content.classList.toggle("open");
+  toggleWrapper.classList.toggle("hidden"); // Oculta/muestra el icono
+}
+function calculateDailySpending(allExpenses, filterMonthString) {
+  const dailySpendingMap = new Map();
+  let maxSpending = 0;
+
+  // 1. Filtra los gastos del mes y los agrupa por día
+  allExpenses
+    .filter((e) => e.date && e.date.startsWith(filterMonthString))
+    .forEach((expense) => {
+      const day = expense.date; // e.g., "2025-11-05"
+      const currentSpending = (dailySpendingMap.get(day) || 0) + expense.amount;
+      dailySpendingMap.set(day, currentSpending);
+    });
+
+  // 2. Encuentra el gasto máximo de ese mes
+  if (dailySpendingMap.size > 0) {
+    maxSpending = Math.max(...dailySpendingMap.values());
+  }
+
+  return { dailySpendingMap, maxSpending };
+}
+
+function animateNumber(elementId, finalValue) {
+  const element = document.getElementById(elementId);
+  if (!element) return;
+  const currentValueText = element.textContent
+    .replace(/[S/$,]/g, "")
+    .trim()
+    .replace(",", ".");
+  const currentValue = parseFloat(currentValueText) || 0;
+  const data = { value: currentValue };
+  gsap.to(data, {
+    value: finalValue,
+    duration: 1.0,
+    ease: "power2.out",
+    onUpdate: () => {
+      element.textContent = formatCurrency(data.value);
+      element.classList.toggle("metric-spent", data.value < 0);
+      element.classList.toggle("metric-remaining", data.value >= 0);
+    },
+  });
+}
+// --- LÃ“GICA DE PERFIL DE USUARIO ---
+
+// --- LÃ“GICA DE PERFIL DE USUARIO AVANZADA ---
+// --- LÃ“GICA DE PERFIL PROFESIONAL ---
+// --- LÃ“GICA DE PERFIL (V3 - FUNCIONALIDAD CORREGIDA) ---
+function setupUserProfileLogic() {
+  console.log("Inicializando lógica de perfil...");
+
+  // Referencias a elementos
+  const btnOpen = document.getElementById("open-user-profile-btn");
+  const btnClose = document.getElementById("close-profile-modal-btn");
+  const btnCloseMobile = document.getElementById("close-profile-mobile-btn");
+  const btnCancel = document.getElementById("cancel-profile-btn");
+  const btnLogout = document.getElementById('logout-btn').addEventListener('click', () => {
+    ui.confirm(
+      "Cerrar Sesión",
+      "Â¿Estás seguro de que quieres salir del sistema?",
+      async () => {
+        // Tu lógica de logout aquí
+        try {
+          if (unsubscribeListener) unsubscribeListener();
+          await signOut(auth);
+        } catch (e) {
+          showModal("Error al salir", e.message);
+        }
+      },
+      "warning",
+      "Sí, Salir"
+    );
+  });
+
+  const modal = document.getElementById("user-profile-modal");
+  const form = document.getElementById("user-profile-form");
+
+  // Inputs del formulario
+  const iName = document.getElementById("profile-first-name");
+  const iLast = document.getElementById("profile-last-name");
+  const iUser = document.getElementById("profile-username");
+  const iEmail = document.getElementById("profile-email");
+  const iPhone = document.getElementById("profile-phone");
+  const iRecovery = document.getElementById("profile-recovery-email");
+  const iPass = document.getElementById("profile-password");
+
+  // Elementos visuales (Panel Izquierdo)
+  const previewName = document.getElementById("display-fullname-preview");
+  const previewUser = document.getElementById("display-username-preview");
+  const modalInitials = document.getElementById("modal-profile-initials");
+  const btnInitials = document.getElementById("user-initials-display"); // Botón del header
+
+  // 1. FUNCIÃ“N PARA ACTUALIZAR LA VISTA PREVIA (IZQUIERDA)
+  window.updateProfileUI = () => {
+    let pName = "Usuario";
+    let pUser = "@usuario";
+    let initials = "--";
+
+    // Obtener datos del estado global
+    if (myParticipantId) {
+      const p = appState.participants.find((x) => x.id === myParticipantId);
+      if (p) {
+        pName = p.name;
+        pUser = p.username ? `@${p.username}` : `@${p.name.split(" ")[0].toLowerCase()}`;
+      }
+    } else if (appState.participants.length > 0) {
+      pName = appState.participants[0].name; // Fallback
+    }
+
+    // Calcular iniciales
+    const parts = pName.trim().split(" ");
+    if (parts.length >= 2) initials = (parts[0][0] + parts[1][0]).toUpperCase();
+    else if (parts.length === 1 && parts[0]) initials = parts[0].substring(0, 2).toUpperCase();
+
+    // Pintar en UI
+    if (btnInitials) btnInitials.textContent = initials;
+    if (modalInitials) modalInitials.textContent = initials;
+    if (previewName) previewName.textContent = pName;
+    if (previewUser) previewUser.textContent = pUser;
+  };
+
+  // 2. ABRIR MODAL Y CARGAR DATOS EN INPUTS
+  if (btnOpen) {
+    btnOpen.addEventListener("click", () => {
+      let pData = null;
+      if (myParticipantId) pData = appState.participants.find((x) => x.id === myParticipantId);
+      else if (appState.participants.length > 0) pData = appState.participants[0];
+
+      if (pData) {
+        const parts = pData.name.split(" ");
+        iName.value = parts[0] || "";
+        iLast.value = parts.slice(1).join(" ") || "";
+        iUser.value = pData.username || "";
+        iPhone.value = pData.phone || "";
+        iRecovery.value = pData.recoveryEmail || "";
+      }
+
+      // Email de Auth (Firebase)
+      if (typeof auth !== "undefined" && auth.currentUser) {
+        iEmail.value = auth.currentUser.email;
+      } else {
+        iEmail.value = "demo@app.com"; // Modo local
+      }
+
+      iPass.value = ""; // Siempre limpia por seguridad
+
+      updateProfileUI(); // Refrescar vista previa
+      modal.classList.remove("hidden");
+      modal.classList.add("flex");
+    });
+  }
+
+  // 3. CERRAR MODAL
+  const closeModal = () => {
+    modal.classList.add("hidden");
+    modal.classList.remove("flex");
+  };
+  if (btnClose) btnClose.addEventListener("click", closeModal);
+  if (btnCloseMobile) btnCloseMobile.addEventListener("click", closeModal);
+  if (btnCancel) btnCancel.addEventListener("click", closeModal);
+
+  // Logout desde perfil
+  if (btnLogout) {
+    btnLogout.addEventListener("click", () => {
+      closeModal();
+      openLogoutConfirmModal();
+    });
+  }
+
+  // 4. LISTENER EN TIEMPO REAL (Refleja lo que escribes en la tarjeta izquierda)
+  const updateRealTime = () => {
+    const n = iName.value.trim();
+    const l = iLast.value.trim();
+    const u = iUser.value.trim();
+
+    if (previewName) previewName.textContent = n || l ? `${n} ${l}` : "Usuario";
+    if (previewUser) previewUser.textContent = u ? `@${u}` : "@usuario";
+
+    let i = "--";
+    if (n && l) i = (n[0] + l[0]).toUpperCase();
+    else if (n) i = n.substring(0, 2).toUpperCase();
+    if (modalInitials) modalInitials.textContent = i;
+  };
+  iName.addEventListener("input", updateRealTime);
+  iLast.addEventListener("input", updateRealTime);
+  iUser.addEventListener("input", updateRealTime);
+
+  // 5. GUARDAR DATOS (SUBMIT)
+  if (form) {
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      console.log("Intentando guardar perfil...");
+
+      // Buscar el botón de guardar dinámicamente (por si acaso)
+      const saveBtn = form.querySelector("button[type='submit']") || document.querySelector("button[form='user-profile-form']");
+      const originalText = saveBtn ? saveBtn.innerHTML : "Guardar";
+
+      if (saveBtn) {
+        saveBtn.innerHTML = '<i class="fas fa-circle-notch fa-spin"></i> Guardando...';
+        saveBtn.disabled = true;
+      }
+
+      const fullName = formatTitleCase(`${iName.value} ${iLast.value}`).trim();
+      const username = iUser.value.trim();
+      const phone = iPhone.value.trim();
+      const recovery = iRecovery.value.trim();
+      const email = iEmail.value.trim();
+      const pass = iPass.value;
+
+      if (!fullName) {
+        if (saveBtn) {
+          saveBtn.innerHTML = originalText;
+          saveBtn.disabled = false;
+        }
+        return showModal("El nombre es obligatorio.");
+      }
+
+      try {
+        // A. GUARDAR EN BASE DE DATOS (Perfil Visual)
+        let targetId = myParticipantId;
+        // Si no hay ID vinculado, intentamos vincular al primero disponible
+        if (!targetId && appState.participants.length > 0) targetId = appState.participants[0].id;
+
+        if (targetId) {
+          const newParticipants = appState.participants.map((p) => {
+            if (p.id === targetId) {
+              return {
+                ...p,
+                name: fullName,
+                username: username,
+                phone: phone,
+                recoveryEmail: recovery,
+              };
+            }
+            return p;
+          });
+
+          // Guardar estado global
+          await saveState({ participants: newParticipants });
+          console.log("Datos visuales guardados en DB");
+        }
+
+        // B. GUARDAR EN FIREBASE AUTH (Seguridad)
+        let authMessage = "";
+        let needLogin = false;
+
+        if (typeof auth !== "undefined" && auth.currentUser && userId !== "anonymous_canvas") {
+          // Cambiar Email
+          if (email && email !== auth.currentUser.email) {
+            await import("https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js").then((module) => module.updateEmail(auth.currentUser, email));
+            authMessage += "Correo actualizado. ";
+          }
+          // Cambiar Password
+          if (pass && pass.length > 0) {
+            await import("https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js").then((module) => module.updatePassword(auth.currentUser, pass));
+            authMessage += "Contraseña actualizada. ";
+            needLogin = true;
+          }
+        }
+
+        // Finalizar
+        closeModal();
+        renderUI(); // Refrescar toda la app
+
+        if (needLogin) {
+          showModal("Contraseña cambiada. Por seguridad, inicia sesión de nuevo.", null, "Seguridad");
+        } else {
+          showModal(`Perfil guardado correctamente. ${authMessage}`, null, "Ã‰xito");
+        }
+      } catch (error) {
+        console.error("Error guardando perfil:", error);
+
+        // Si falla Auth (requiere login reciente), avisamos pero NO revertimos los datos visuales
+        if (error.code === "auth/requires-recent-login") {
+          closeModal();
+          renderUI();
+          showModal("Tus datos personales se guardaron, pero para cambiar la contraseña/correo necesitas cerrar sesión y volver a entrar.", null, "Aviso de Seguridad");
+        } else {
+          showModal("Error al guardar.", error.message);
+        }
+      } finally {
+        if (saveBtn) {
+          saveBtn.innerHTML = originalText;
+          saveBtn.disabled = false;
+        }
+      }
+    });
+  } else {
+    console.error("No se encontró el formulario #user-profile-form");
+  }
+}
+
+// IMPORTANTE: Llama a esta función al final de setupUILogic() o initializeFirebase()
+// Y agrega una llamada a window.updateProfileUI() dentro de renderUI() para que se refresque siempre.
+
+// ================================================================
+// RENDER DASHBOARD (CORREGIDO: IDs ESTABLES)
+// ================================================================
+// ================================================================
+// RENDER DASHBOARD (VERSIÃ“N FINAL: ESTABLE + POPOVERS + TÍTULO CLEAN)
+// ================================================================
+function renderDashboard(summary) {
+  if (!summary) return;
+
+  // 1. CÁLCULOS MATEMÁTICOS
+  let totalBudget = 0, spentPercent = 0, totalFixed = 0, totalAccumulated = 0, totalTarget = 0, savingsPercent = 0;
+  let daysRemaining = 1, globalDailyBudget = 0;
+
+  try {
+    totalBudget = (summary.globalTotalRemainingBudget || 0) + (summary.totalSpent || 0);
+    spentPercent = totalBudget > 0 ? (summary.totalSpent / totalBudget) * 100 : 0;
+
+    if (appState && appState.expenses) {
+      totalFixed = appState.expenses.filter((e) => e.isFixed).reduce((sum, e) => sum + e.amount, 0);
+    }
+
+    if (appState && appState.participants) {
+      appState.participants.forEach((p) => {
+        if (p.goals) {
+          p.goals.forEach(g => {
+            totalAccumulated += parseFloat(g.current) || 0;
+            totalTarget += parseFloat(g.target) || 0;
+          });
+        }
+      });
+    }
+    savingsPercent = totalTarget > 0 ? (totalAccumulated / totalTarget) * 100 : 0;
+
+    const now = new Date();
+    const lastDayOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+    const currentDay = now.getDate();
+    daysRemaining = Math.max(1, lastDayOfMonth - currentDay + 1);
+    globalDailyBudget = Math.max(0, summary.globalTotalRemainingBudget / daysRemaining);
+  } catch (e) {
+    console.error("Error cálculos dashboard", e);
+  }
+
+  const CARD_STYLE = "bg-white rounded-3xl p-5 border border-gray-100 shadow-sm flex flex-col justify-between h-auto relative overflow-hidden group transition-all hover:shadow-md w-full md:w-[280px]";
+
+  // --- HELPER PARA ENCONTRAR TARJETAS (IDs Estables) ---
+  const getCard = (stableId, fallbackSelector) => {
+    let card = document.getElementById(stableId);
+    if (!card && fallbackSelector) {
+      card = document.querySelector(fallbackSelector);
+      if (card) card.id = stableId;
+    }
+    return card;
+  };
+
+  // A. TARJETA DISPONIBLE
+  const saldoCard = getCard("dashboard-card-saldo", ".balance-glass-card.saldo-glow");
+  if (saldoCard) {
+    saldoCard.className = CARD_STYLE;
+    saldoCard.innerHTML = `
+            <div class="absolute right-0 top-0 w-24 h-24 bg-emerald-50 rounded-bl-full -mr-4 -mt-4 transition-transform group-hover:scale-110"></div>
+            <div class="relative z-10 flex justify-between items-start">
+                <div>
+                    <div class="flex items-center gap-2 mb-1"><div class="w-2 h-2 rounded-full bg-emerald-500"></div><p class="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Disponible Global</p></div>
+                    <span class="text-4xl font-black text-gray-900 tracking-tighter mt-10 block">${formatCurrency(summary.globalTotalRemainingBudget)}</span>
+                </div>
+                <div class="w-10 h-10 rounded-xl bg-white border border-emerald-100 text-emerald-600 flex items-center justify-center shadow-sm"><i class="fas fa-wallet text-lg"></i></div>
+            </div>
+            <div class="relative z-10 mt-auto">
+                <div class="flex justify-between text-[10px] font-bold text-gray-400 mb-1.5"><span>Restante</span><span class="text-emerald-600">${(100 - spentPercent).toFixed(0)}%</span></div>
+                <div class="w-full bg-gray-100 h-2 rounded-full overflow-hidden"><div class="h-full bg-emerald-500 rounded-full transition-all duration-1000" style="width: ${Math.max(0, 100 - spentPercent)}%"></div></div>
+            </div>`;
+  }
+
+  // B. TARJETA GASTADO
+  const gastoCard = getCard("dashboard-card-spent", ".balance-glass-card.gasto-glow");
+  if (gastoCard) {
+    gastoCard.className = CARD_STYLE;
+    gastoCard.innerHTML = `
+            <div class="absolute right-0 top-0 w-24 h-24 bg-orange-50 rounded-bl-full -mr-4 -mt-4 transition-transform group-hover:scale-110"></div>
+            <div class="relative z-10 flex justify-between items-start">
+                <div>
+                    <div class="flex items-center gap-2 mb-1"><div class="w-2 h-2 rounded-full bg-orange-500"></div><p class="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Gastado</p></div>
+                    <span class="text-4xl font-black text-gray-900 tracking-tighter mt-10 block">${formatCurrency(summary.totalSpent)}</span>
+                </div>
+                <div class="w-10 h-10 rounded-xl bg-white border border-orange-100 text-orange-500 flex items-center justify-center shadow-sm"><i class="fas fa-chart-line text-lg"></i></div>
+            </div>
+            <div class="relative z-10 mt-auto">
+                <div class="flex justify-between text-[10px] font-bold text-gray-400 mb-1.5"><span>Consumo</span><span class="text-orange-500">${spentPercent.toFixed(0)}%</span></div>
+                <div class="w-full bg-gray-100 h-2 rounded-full overflow-hidden"><div class="h-full bg-orange-500 rounded-full transition-all duration-1000" style="width: ${Math.min(100, spentPercent)}%"></div></div>
+            </div>`;
+  }
+
+  // C. TARJETA AHORRO
+  let savingsCard = document.getElementById("dashboard-card-savings");
+  if (!savingsCard) {
+    const topBlock = document.getElementById("dashboard-top-block");
+    if (topBlock && topBlock.children.length >= 3) {
+      savingsCard = topBlock.children[2];
+      savingsCard.id = "dashboard-card-savings";
+    }
+  }
+  if (savingsCard) {
+    savingsCard.className = CARD_STYLE;
+    savingsCard.innerHTML = `
+            <div class="absolute right-0 top-0 w-24 h-24 bg-purple-50 rounded-bl-full -mr-4 -mt-4"></div>
+            <div class="relative z-10 flex justify-between items-start">
+                <div>
+                    <div class="flex items-center gap-2 mb-1"><div class="w-2 h-2 rounded-full bg-purple-500"></div><p class="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Fondo Ahorro</p></div>
+                    <span class="text-4xl font-black text-gray-900 tracking-tighter mt-10 block">${formatCurrency(totalAccumulated)}</span>
+                </div>
+                <div class="w-10 h-10 rounded-xl bg-white border border-purple-100 text-purple-500 flex items-center justify-center shadow-sm"><i class="fas fa-piggy-bank text-lg"></i></div>
+            </div>
+            <div class="relative z-10 mt-auto">
+                <div class="flex justify-between text-[10px] font-bold text-gray-400 mb-1.5"><span>Meta: ${formatCurrency(totalTarget)}</span><span class="text-purple-600">${savingsPercent.toFixed(0)}%</span></div>
+                <div class="w-full bg-gray-100 h-2 rounded-full overflow-hidden"><div class="h-full bg-purple-500 rounded-full transition-all duration-1000" style="width: ${Math.min(100, savingsPercent)}%"></div></div>
+            </div>`;
+  }
+
+  // D. TARJETA MÃ‰TRICAS
+  let metricsCard = document.getElementById("dashboard-card-metrics");
+  if (!metricsCard) {
+    const topBlock = document.getElementById("dashboard-top-block");
+    if (topBlock && topBlock.children.length >= 4) {
+      metricsCard = topBlock.children[3];
+      metricsCard.id = "dashboard-card-metrics";
+    }
+  }
+  if (metricsCard) {
+    metricsCard.className = CARD_STYLE;
+    metricsCard.innerHTML = `
+            <div class="absolute -right-6 -top-6 w-24 h-24 bg-indigo-50 rounded-full opacity-50 transition-transform group-hover:scale-110"></div>
+            <div class="relative z-10 flex justify-between items-start">
+                <div>
+                    <div class="flex items-center gap-2 mb-1"><div class="w-2 h-2 rounded-full bg-indigo-500"></div><p class="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Max. Diario</p></div>
+                    <span class="text-4xl font-black text-gray-900 tracking-tighter mt-10 block">${formatCurrency(globalDailyBudget)}</span>
+                </div>
+                <div class="w-10 h-10 rounded-xl bg-white border border-indigo-100 text-indigo-500 flex items-center justify-center shadow-sm"><i class="fas fa-calendar-day text-lg"></i></div>
+            </div>
+            <div class="relative z-10 mt-auto">
+                <div class="flex items-center justify-between bg-indigo-50/50 rounded-lg p-2 border border-indigo-50">
+                    <span class="text-[10px] font-bold text-gray-500 uppercase">Días restantes</span>
+                    <div class="flex items-center gap-1.5"><i class="fas fa-hourglass-half text-xs text-indigo-400"></i><span class="text-sm font-bold text-indigo-600">${daysRemaining} días</span></div>
+                </div>
+            </div>`;
+  }
+
+  const fixedTotalEl = document.getElementById("display-fixed-total");
+  if (fixedTotalEl) fixedTotalEl.textContent = formatCurrency(totalFixed);
+
+  // =========================================================
+  // SECCIÃ“N SALDOS INDIVIDUALES (GENERADA 100% POR JS)
+  // =========================================================
+
+  // 1. Buscamos el CONTENEDOR PADRE (La tarjeta completa)
+  const participantsCard = document.getElementById("saldos-individuales-card");
+
+  if (participantsCard) {
+    // A. Aplicamos estilos al contenedor padre para asegurar consistencia
+    participantsCard.className = "bg-white rounded-3xl p-5 border border-gray-100 shadow-sm flex-grow flex flex-col h-full";
+
+    // B. Limpieza de popovers
+    if (window.activePopovers) window.activePopovers.forEach((p) => p.destroy());
+    window.activePopovers = [];
+    document.querySelectorAll(".dynamic-popover-container").forEach((el) => el.remove());
+
+    let cardsHTML = "";
+    let popoversHTML = "";
+
+    // C. Generar HTML de las tarjetas internas (Participantes)
+    summary.participantData.forEach((p) => {
+      const summaryData = summary.participantData.find((pd) => pd.id === p.id) || {};
+      const personalDailyBudget = Math.max(0, summaryData.remainingBudget / daysRemaining);
+      const isPositive = summaryData.remainingBudget >= 0;
+      const colorClass = isPositive ? "emerald" : "rose";
+      const triggerId = `trigger-popover-${p.id}`;
+      const popoverId = `saldo-popover-${p.id}`;
+
+      const personalFixedExpenses = appState.expenses
+        .filter(e => e.isFixed && e.type === 'personal' && e.payerId === p.id)
+        .reduce((sum, exp) => sum + exp.amount, 0);
+
+      cardsHTML += `
+                <div id="${triggerId}" class="bg-white rounded-3xl p-4 border border-gray-200 shadow-sm flex flex-col justify-between h-auto relative overflow-hidden group transition-all w-full">
+                    <div class="absolute right-0 bottom-0 w-24 h-24 bg-${colorClass}-50 rounded-tl-full -mr-4 -mb-4 transition-transform group-hover:scale-110"></div>
+                    <div class="relative z-10 flex justify-between items-start">
+                        <div>
+                            <p class="text-sm font-bold text-gray-500 uppercase tracking-wider mb-1">${p.name}</p>
+                            <span class="text-2xl font-black text-gray-900 tracking-tighter block">${formatCurrency(summaryData.remainingBudget)}</span>
+                        </div>
+                        <div class="w-10 h-10 rounded-xl bg-white border border-${colorClass}-100 text-${colorClass}-500 flex items-center justify-center shadow-sm"><i class="fas fa-user text-lg"></i></div>
+                    </div>
+                    <div class="relative z-10 mt-auto pt-4">
+                        <div class="flex items-center justify-between bg-${colorClass}-50/50 rounded-lg p-2 border border-${colorClass}-50">
+                            <span class="text-[10px] font-bold text-gray-500 uppercase">Max. Diario</span>
+                            <span class="text-sm font-bold text-${colorClass}-600">${formatCurrency(personalDailyBudget)}</span>
+                        </div>
+                    </div>
+                </div>`;
+
+      popoversHTML += `
+                <div id="${popoverId}" role="tooltip" class="dynamic-popover-container absolute z-[9999] invisible inline-block w-64 text-sm text-gray-500 transition-opacity duration-300 bg-white border border-gray-200 rounded-xl shadow-2xl opacity-0">
+                    <div class="px-4 py-3 bg-gray-50 border-b border-gray-200 rounded-t-xl">
+                        <h3 class="font-bold text-gray-900">Balance de ${p.name}</h3>
+                    </div>
+                    <div class="p-4 space-y-2">
+                        <div class="flex justify-between items-center text-xs">
+                            <span class="text-gray-500">Ahorro Personal</span>
+                            <span class="font-bold text-emerald-600">${formatCurrency(p.independentSavingsGoal || 0)}</span>
+                        </div>
+                        <div class="flex justify-between items-center text-xs">
+                            <span class="text-gray-500">Aporte Mutuo</span>
+                            <span class="font-bold text-indigo-600">${formatCurrency(p.sharedSavingsGoal || 0)}</span>
+                        </div>
+                        <div class="flex justify-between items-center text-xs">
+                            <span class="text-gray-500">Gastos Fijos</span>
+                            <span class="font-bold text-gray-600">${formatCurrency(personalFixedExpenses)}</span>
+                        </div>
+                        <div class="border-t border-gray-100 my-2"></div>
+                        <div class="flex justify-between items-center">
+                            <span class="font-bold text-gray-700">Gasto Total</span>
+                            <span class="font-bold text-orange-500">${formatCurrency(p.spent)}</span>
+                        </div>
+                    </div>
+                    <div data-popper-arrow></div>
+                </div>`;
+    });
+
+    // D. INYECCIÃ“N TOTAL (Header Nuevo + Grid)
+    // Aquí es donde el JS sobrescribe cualquier título viejo del HTML
+    participantsCard.innerHTML = `
+            <div class="flex items-center gap-2 mt-3 shrink-0">
+                <div class="w-2 h-2 rounded-full bg-indigo-500"></div>
+                <p class="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Saldos Individuales</p>
+            </div>
+            <div id="participant-summary-cards" class="grid grid-cols-1 gap-3 w-full flex-grow">
+                ${cardsHTML}
+            </div>
+        `;
+
+    // E. Inyectar Popovers al body
+    document.body.insertAdjacentHTML("beforeend", popoversHTML);
+
+    // F. Inicializar Popovers
+    setTimeout(() => {
+      if (window.Popover) {
+        summary.participantData.forEach((p) => {
+          const trg = document.getElementById(`trigger-popover-${p.id}`);
+          const pop = document.getElementById(`saldo-popover-${p.id}`);
+          if (trg && pop) {
+            const instance = new window.Popover(pop, trg, { placement: "bottom", triggerType: "hover", offset: 10 });
+            window.activePopovers.push(instance);
+          }
+        });
+      }
+    }, 100);
+  }
+  const subtitle = document.getElementById("dashboard-subtitle");
+  if (subtitle && typeof currentFilterDate !== "undefined") {
+    subtitle.textContent = `Resumen de ${MONTH_NAMES[currentFilterDate.getMonth()]} ${currentFilterDate.getFullYear()}`;
+  }
+}
+
+function renderParticipantsConfig(participants, summary) {
+  const countBadge = document.getElementById("participant-count-badge");
+  const countSidebar = document.getElementById("sidebar-participant-count");
+
+  if (countBadge) countBadge.textContent = participants.length;
+  if (countSidebar) {
+    countSidebar.textContent = participants.length;
+    countSidebar.classList.toggle("show", participants.length > 0);
+  }
+
+  const listEl = document.getElementById("participants-list");
+  if (!listEl) return;
+
+  listEl.innerHTML = participants
+    .map((p) => {
+      const summaryData = summary.participantData.find((pd) => pd.id === p.id) || {};
+
+      // Iniciales
+      const parts = p.name.trim().split(" ");
+      let initials = (parts[0][0] + (parts.length > 1 ? parts[1][0] : "")).toUpperCase();
+
+      // Estado de Vinculación
+      let statusBadge = "";
+      let borderClass = "border-gray-100";
+      let ringClass = "ring-transparent";
+
+      if (p.firebaseUid === userId) {
+        statusBadge = `<span class="text-[9px] font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-100">TÃš</span>`;
+        borderClass = "border-emerald-200"; // Resaltar tu propia tarjeta
+      } else if (p.firebaseUid && p.firebaseUid !== userId) {
+        statusBadge = `<span class="text-[9px] font-bold text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-md border border-indigo-100"><i class="fas fa-check-circle"></i></span>`;
+      } else if (userId && userId !== "anonymous_canvas" && !myParticipantId) {
+        statusBadge = `<button data-id="${p.id}" class="link-participant-btn text-[9px] font-bold text-white bg-indigo-600 px-2 py-1 rounded hover:bg-indigo-700 shadow-sm transition-transform active:scale-95">Vincular</button>`;
+      }
+
+      return `
+        <div class="relative bg-white p-4 rounded-2xl border ${borderClass} shadow-sm hover:shadow-md transition-all group">
+            
+            <div class="flex items-center gap-4">
+                <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-gray-800 to-black text-white flex items-center justify-center text-sm font-bold shadow-md shrink-0">
+                    ${initials}
+                </div>
+                
+                <div class="min-w-0 flex-1">
+                    <div class="flex justify-between items-start mb-1">
+                        <h4 class="font-bold text-gray-900 truncate text-sm">${p.name}</h4>
+                        ${statusBadge}
+                    </div>
+                    <p class="text-xs text-gray-500">Presupuesto: <span class="font-semibold text-gray-800">${formatCurrency(p.budget)}</span></p>
+                </div>
+            </div>
+
+            <div class="absolute right-2 bottom-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                <button data-id="${p.id}" class="edit-participant-btn w-8 h-8 flex items-center justify-center rounded-lg bg-gray-50 text-gray-500 hover:bg-indigo-50 hover:text-indigo-600 transition-colors" title="Editar">
+                    <i class="fas fa-pen text-xs"></i>
+                </button>
+                <button data-id="${p.id}" class="remove-participant-btn w-8 h-8 flex items-center justify-center rounded-lg bg-gray-50 text-gray-500 hover:bg-rose-50 hover:text-rose-600 transition-colors" title="Eliminar">
+                    <i class="fas fa-trash text-xs"></i>
+                </button>
+            </div>
+        </div>`;
+    })
+    .join("");
+
+  // Re-conectar listeners
+  listEl.querySelectorAll(".edit-participant-btn").forEach((btn) => btn.addEventListener("click", (e) => openParticipantEditModal(e.currentTarget.dataset.id)));
+  listEl.querySelectorAll(".remove-participant-btn").forEach((btn) => btn.addEventListener("click", (e) => removeParticipant(e.currentTarget.dataset.id)));
+  listEl.querySelectorAll(".link-participant-btn").forEach((btn) => btn.addEventListener("click", (e) => linkParticipantToUser(e.currentTarget.dataset.id)));
+
+  updateExpenseFormParticipants(participants);
+  updateDynamicFilterTagOptions();
+}
+
+// MODIFICADO: Poblar contenedores de etiquetas en el popover
+// ================================================================
+// ===== 3. REEMPLAZA ESTA FUNCIÃ“N COMPLETA =====
+// ================================================================
+function updateDynamicFilterTagOptions() {
+  const categoryTagsContainer = document.getElementById("filter-tag-categories");
+  const participantTagsContainer = document.getElementById("filter-tag-participants");
+  const paymentMethodTagsContainer = document.getElementById("filter-tag-payment-methods");
+
+  categoryTagsContainer.innerHTML = "";
+  participantTagsContainer.innerHTML = "";
+  paymentMethodTagsContainer.innerHTML = "";
+
+  // Añadir etiquetas de categoría (Sin cambios)
+  if (appState.categories.length > 0) {
+    appState.categories.forEach((cat) => {
+      const isActive = activeFilters.category === cat.name;
+      categoryTagsContainer.insertAdjacentHTML("beforeend", `<button data-value="${cat.name}" class="filter-tag category-tag ${isActive ? "active" : ""}">${cat.name}</button>`);
+    });
+  } else {
+    categoryTagsContainer.innerHTML = '<span class="text-xs text-gray-500 italic m-1">No hay categorías.</span>';
+  }
+
+  // --- INICIO DE MODIFICACIÃ“N ---
+  // Añadir etiquetas de participante
+  if (appState.participants.length > 0) {
+    appState.participants.forEach((p) => {
+      const isActive = activeFilters.participant === p.id;
+      participantTagsContainer.insertAdjacentHTML("beforeend", `<button data-value="${p.id}" class="filter-tag participant-tag ${isActive ? "active" : ""}">${p.name}</button>`);
+    });
+  } else {
+    participantTagsContainer.innerHTML = '<span class="text-xs text-gray-500 italic m-1">No hay participantes.</span>';
+  }
+
+  // Â¡NUEVO! Añadir etiqueta estática de Invitado
+  const isGuestActive = activeFilters.guestOnly;
+  participantTagsContainer.insertAdjacentHTML(
+    "beforeend",
+    `
+            <button data-value="guest" class="filter-tag participant-tag ${isGuestActive ? "active" : ""}">
+                <i class="fas fa-user-tag fa-fw mr-1"></i>Invitado
+            </button>
+        `
+  );
+  // --- FIN DE MODIFICACIÃ“N ---
+
+  // Añadir etiquetas de método de pago (Sin cambios)
+  if (appState.paymentMethods.length > 0) {
+    appState.paymentMethods.forEach((m) => {
+      const isActive = activeFilters.paymentMethod === m.id;
+      paymentMethodTagsContainer.insertAdjacentHTML("beforeend", `<button data-value="${m.id}" class="filter-tag payment-method-tag ${isActive ? "active" : ""}">${m.name}</button>`);
+    });
+  } else {
+    paymentMethodTagsContainer.innerHTML = '<span class="text-xs text-gray-500 italic m-1">No hay métodos de pago.</span>';
+  }
+}
+
+// ================================================================
+// RENDERIZADO DE CATEGORÍAS (BLOQUES SEPARADOS IZQ/DER)
+// ================================================================
+// ================================================================
+// RENDERIZADO DE CATEGORÍAS (AHORA CON BOTÃ“N EDITAR)
+// ================================================================
+function renderCategoriesModal(categories) {
+  const displayEl = document.getElementById("categories-display");
+  const totalBudgetEl = document.getElementById("total-budget-display");
+
+  // Elementos de selectores en el formulario de gastos (para actualizarlos en tiempo real)
+  const optionsContainer = document.querySelector("#expense-category-button")?.nextElementSibling;
+  const editOptionsContainer = document.querySelector("#edit-expense-category-button")?.nextElementSibling;
+
+  displayEl.innerHTML = "";
+  if (optionsContainer) optionsContainer.innerHTML = "";
+  if (editOptionsContainer) editOptionsContainer.innerHTML = "";
+
+  let totalBudget = 0;
+
+  if (categories.length === 0) {
+    displayEl.innerHTML = `
+      <div class="flex flex-col items-center justify-center py-10 text-gray-400 opacity-60">
+          <i class="fas fa-inbox text-3xl mb-2"></i>
+          <p class="text-xs text-center">Sin categorías.<br>Crea una a la derecha.</p>
+      </div>`;
+  } else {
+    categories.forEach((cat) => {
+      const budget = parseFloat(cat.budget) || 0;
+      totalBudget += budget;
+      const budgetInfo = budget > 0 ? formatCurrency(budget) : "S/ --";
+      const subCount = cat.subcategories ? cat.subcategories.length : 0;
+
+      displayEl.insertAdjacentHTML(
+        "beforeend",
+        `
+        <div class="group flex items-center justify-between rounded-xl bg-white p-3 shadow-sm ring-1 ring-gray-100 transition-all hover:shadow-md hover:ring-indigo-500/20">
+            
+            <div class="flex items-center gap-3 flex-1 min-w-0 mr-2">
+                <div class="h-1.5 w-1.5 flex-shrink-0 rounded-full bg-indigo-500"></div>
+                <span class="truncate text-sm font-bold text-gray-700" title="${cat.name}">${cat.name}</span>
+            </div>
+
+            <div class="flex items-center justify-end gap-2 flex-shrink-0">
+                
+                ${subCount > 0 ? `<span class="hidden sm:inline-flex items-center justify-center rounded-md bg-gray-50 px-2 py-1 text-[10px] font-medium text-gray-400 border border-gray-100 whitespace-nowrap">${subCount} sub</span>` : ""}
+                
+                <span class="text-xs font-bold ${budget > 0 ? "text-gray-900" : "text-gray-300"} whitespace-nowrap text-right min-w-[60px] mr-2">
+                    ${budgetInfo}
+                </span>
+                
+                <button data-name="${cat.name}" class="edit-category-btn flex h-7 w-7 items-center justify-center rounded-full text-gray-400 opacity-0 transition-all hover:bg-blue-50 hover:text-blue-600 group-hover:opacity-100" title="Editar">
+                    <i class="fas fa-pen text-xs"></i>
+                </button>
+
+                <button data-name="${cat.name}" class="remove-category-btn flex h-7 w-7 items-center justify-center rounded-full text-gray-300 opacity-0 transition-all hover:bg-red-50 hover:text-red-500 group-hover:opacity-100" title="Eliminar">
+                    <i class="fas fa-times text-xs"></i>
+                </button>
+            </div>
+        </div>`
+      );
+
+      // Actualizar selects de gastos en segundo plano
+      const optionHTML = `<div class="custom-select-option" data-value="${cat.name}">${cat.name}</div>`;
+      if (optionsContainer) optionsContainer.insertAdjacentHTML("beforeend", optionHTML);
+      if (editOptionsContainer) editOptionsContainer.insertAdjacentHTML("beforeend", optionHTML);
+    });
+
+    // LISTENER PARA ELIMINAR
+    displayEl.querySelectorAll(".remove-category-btn").forEach((btn) => {
+      btn.addEventListener("click", (e) => {
+        const name = e.currentTarget.dataset.name;
+        ui.confirm(
+          "Borrar Categoría",
+          `Â¿Eliminar la categoría "<b>${name}</b>"?`,
+          () => removeCategory(name),
+          "error"
+        );
+      });
+    });
+
+    // LISTENER PARA EDITAR (El que faltaba)
+    displayEl.querySelectorAll(".edit-category-btn").forEach((btn) => {
+      btn.addEventListener("click", (e) => {
+        loadCategoryForEdit(e.currentTarget.dataset.name);
+      });
+    });
+  }
+
+  if (totalBudgetEl) totalBudgetEl.textContent = formatCurrency(totalBudget);
+
+  if (typeof populateModalTags === "function") populateModalTags();
+  if (typeof updateDynamicFilterTagOptions === "function") updateDynamicFilterTagOptions();
+}
+
+// ================================================================
+// LISTENERS DEL MODAL DE CATEGORÍAS
+// ================================================================
+// ================================================================
+// LÃ“GICA DE EDICIÃ“N Y GUARDADO DE CATEGORÍAS
+// ================================================================
+
+// Variable temporal para saber qué estamos editando
+let editingCategoryName = null;
+
+function loadCategoryForEdit(name) {
+  const category = appState.categories.find(c => c.name === name);
+  if (!category) return;
+
+  // 1. Llenar el formulario
+  document.getElementById("category-name").value = category.name;
+  document.getElementById("category-budget").value = category.budget || "";
+  document.getElementById("subcategory-list").value = category.subcategories ? category.subcategories.join(", ") : "";
+
+  // 2. Marcar estado de edición
+  editingCategoryName = name; // Guardamos el nombre original
+
+  // 3. Cambiar visualmente el botón
+  const submitBtn = document.querySelector("button[form='category-form']");
+  if (submitBtn) {
+    submitBtn.textContent = "Actualizar Categoría";
+    submitBtn.classList.remove("bg-gray-900");
+    submitBtn.classList.add("bg-indigo-600");
+  }
+}
+
+function setupCategoryModalListeners() {
+  const modal = document.getElementById("categories-modal");
+  const form = document.getElementById("category-form");
+  const openBtn = document.getElementById("open-categories-modal-btn");
+  const closeBtn = document.getElementById("close-categories-modal-btn");
+  const clearBtn = document.getElementById("btn-clear-category-form");
+
+  const resetFormState = () => {
+    form.reset();
+    editingCategoryName = null;
+    const submitBtn = document.querySelector("button[form='category-form']");
+    if (submitBtn) {
+      submitBtn.textContent = "Guardar Categoría";
+      submitBtn.classList.add("bg-gray-900");
+      submitBtn.classList.remove("bg-indigo-600");
+    }
+  };
+
+  if (openBtn) {
+    openBtn.addEventListener("click", () => {
+      modal.classList.remove("hidden");
+      modal.classList.add("flex");
+      renderCategoriesModal(appState.categories);
+      resetFormState(); // Limpiar al abrir
+    });
+  }
+
+  const closeModal = () => {
+    modal.classList.add("hidden");
+    modal.classList.remove("flex");
+    resetFormState();
+  };
+
+  if (closeBtn) closeBtn.addEventListener("click", closeModal);
+  if (clearBtn) clearBtn.addEventListener("click", resetFormState);
+
+  if (form) {
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const nameInput = document.getElementById("category-name");
+      const budgetInput = document.getElementById("category-budget");
+      const subInput = document.getElementById("subcategory-list");
+
+      const newName = formatTitleCase(nameInput.value);
+      const budget = parseFloat(budgetInput.value) || 0;
+      const subcategoriesString = subInput.value.trim();
+
+      if (!newName) return;
+
+      const subcategories = subcategoriesString
+        ? subcategoriesString.split(",").map((s) => formatTitleCase(s.trim())).filter((s) => s)
+        : [];
+
+      // Copia profunda para manipular
+      let newCategories = JSON.parse(JSON.stringify(appState.categories));
+      let updates = {};
+
+      if (editingCategoryName) {
+        // --- MODO EDICIÃ“N ---
+        const index = newCategories.findIndex(c => c.name === editingCategoryName);
+        if (index !== -1) {
+          // Actualizar objeto
+          newCategories[index] = { name: newName, budget, subcategories };
+
+          // Si el nombre cambió, debemos migrar los gastos
+          if (editingCategoryName !== newName) {
+            const newExpenses = appState.expenses.map(exp => {
+              if (exp.category === editingCategoryName) {
+                return { ...exp, category: newName };
+              }
+              return exp;
+            });
+            updates.expenses = newExpenses; // Preparamos la actualización de gastos
+          }
+          showModal(`Categoría actualizada correctamente.`);
+        }
+      } else {
+        // --- MODO CREACIÃ“N ---
+        // Verificar duplicados
+        const exists = newCategories.some(c => c.name.toLowerCase() === newName.toLowerCase());
+        if (exists) return showModal("Ya existe una categoría con ese nombre.");
+
+        newCategories.push({ name: newName, subcategories, budget });
+        showModal(`Categoría '${newName}' creada.`);
+      }
+
+      // Guardar todo junto
+      updates.categories = newCategories;
+      await saveState(updates);
+
+      // UI
+      resetFormState();
+      renderCategoriesModal(newCategories);
+
+      // Si estamos editando y cambiamos el nombre, hay que refrescar el dashboard también
+      if (updates.expenses) renderUI();
+      else nameInput.focus(); // Si es creación rápida, foco para seguir
+    });
+  }
+}
+
+function removeCategory(nameToRemove) {
+  // NUEVO: Desactivar filtro si se elimina la categoría activa
+  if (activeFilters.category === nameToRemove) {
+    activeFilters.category = null;
+  }
+  saveState({ categories: appState.categories.filter((c) => c.name !== nameToRemove) });
+}
+// ================================================================
+// LOGICA UNIFICADA DEL MODAL DE GASTOS (CREAR Y EDITAR)
+// ================================================================
+
+let expenseDatepicker = null;
+
+// ================================================================
+// VERSIÃ“N FINAL: ABRIR MODAL DE GASTO
+// ================================================================
+function openUnifiedExpenseModal(expenseId = null) {
+  const modal = document.getElementById("expense-modal");
+  const form = document.getElementById("unified-expense-form");
+  const title = document.getElementById("expense-modal-title");
+  const btnSave = document.getElementById("btn-save-expense");
+  const idInput = document.getElementById("expense-id-hidden");
+  const dateInput = document.getElementById("expense-date");
+
+  const guestSection = document.getElementById("guest-management-section");
+  const guestInput = document.getElementById("new-guest-name");
+
+  const modalTitleDisplay = document.getElementById("expense-modal-title-display");
+  const displayAmount = document.getElementById("display-expense-amount");
+  const finalTotalDisplay = document.getElementById("final-total-display");
+  const baseAmountDisplay = document.getElementById("base-amount-display");
+  const itemsCountSidebar = document.getElementById("items-count-display-sidebar");
+
+  if (!form) return console.error("No se encontró el formulario unified-expense-form");
+
+  // 1. Limpieza
+  form.reset();
+  tempItemsList = [];
+  tempGuestList = [];
+
+  // Reset displays
+  if (displayAmount) displayAmount.textContent = "0.00";
+  if (finalTotalDisplay) finalTotalDisplay.textContent = "S/ 0.00";
+  if (baseAmountDisplay) baseAmountDisplay.textContent = "S/ 0.00";
+  if (itemsCountSidebar) itemsCountSidebar.textContent = "0 ítems";
+
+  if (typeof renderGuestListInModal === "function") renderGuestListInModal();
+  if (typeof populateModalTags === "function") populateModalTags();
+
+  document.querySelectorAll("#expense-modal .filter-tag.active").forEach((t) => t.classList.remove("active"));
+
+  // Datepicker
+  if (expenseDatepicker) expenseDatepicker.destroy();
+  if (typeof window.Datepicker !== "undefined" && dateInput) {
+    expenseDatepicker = new window.Datepicker(dateInput, {
+      format: "yyyy-mm-dd",
+      autohide: true,
+    });
+  }
+
+  // Smart Spinners
+  if (typeof setupSmartSpinners === "function") setupSmartSpinners();
+
+  // ==========================
+  // MODO: EDITAR
+  // ==========================
+  if (expenseId) {
+    const expense = appState.expenses.find((e) => e.id === expenseId);
+    if (!expense) return showModal("Error: Gasto no encontrado");
+
+    idInput.value = expense.id;
+    if (title) title.textContent = "Editar Gasto";
+    if (modalTitleDisplay) modalTitleDisplay.textContent = "Editar Gasto";
+    btnSave.textContent = "Guardar Cambios";
+
+    document.getElementById("expense-description").value = expense.description;
+    document.getElementById("expense-amount").value = expense.amount;
+
+    if (expenseDatepicker) expenseDatepicker.setDate(expense.date || new Date());
+    else dateInput.value = expense.date;
+
+    setActiveTag("expense-payer", "modal-payer-tags", expense.payerId);
+    setActiveTag("expense-type", "modal-type-tags", expense.type);
+    setActiveTag("expense-payment-method", "modal-payment-method-tags", expense.paymentMethodId);
+    setActiveTag("expense-category", "modal-category-tags", expense.category);
+
+    if (typeof updateModalSubcategoryTags === "function") updateModalSubcategoryTags();
+    setTimeout(() => {
+      setActiveTag("expense-subcategory", "modal-subcategory-tags", expense.subcategory);
+    }, 0);
+
+    document.getElementById("expense-is-fixed").checked = expense.isFixed;
+    document.getElementById("fixed-recurrence-container").classList.toggle("hidden", !expense.isFixed);
+    if (expense.fixedRecurrenceMonths) document.getElementById("expense-recurrence-months").value = expense.fixedRecurrenceMonths;
+
+    const toggle = document.getElementById("multi-item-toggle");
+    if (toggle) {
+      if (expense.items && expense.items.length > 0) {
+        toggle.checked = true;
+        window.tempItemsList = [...expense.items];
+      } else {
+        toggle.checked = false;
+      }
+      toggle.dispatchEvent(new Event("change"));
+    }
+    if (typeof renderTempItemsListInModal === "function") renderTempItemsListInModal();
+
+    // Invitados
+    if (expense.type === "shared") {
+      if (guestSection) guestSection.classList.remove("hidden");
+      if (expense.guests && Array.isArray(expense.guests)) {
+        tempGuestList = [...expense.guests];
+      } else if (expense.guestName) {
+        tempGuestList = [expense.guestName];
+      }
+      if (typeof renderGuestListInModal === "function") renderGuestListInModal();
+    } else {
+      if (guestSection) guestSection.classList.add("hidden");
+    }
+  }
+  // ==========================
+  // MODO: CREAR
+  // ==========================
+  else {
+    idInput.value = "";
+    if (title) title.textContent = "Registrar Nuevo Gasto";
+    if (modalTitleDisplay) modalTitleDisplay.textContent = "Registrar Gasto";
+    btnSave.textContent = "Registrar";
+    const todayStr = new Date().toISOString().split("T")[0];
+
+    if (expenseDatepicker) expenseDatepicker.setDate(new Date());
+    else dateInput.value = todayStr;
+
+    setActiveTag("expense-type", "modal-type-tags", "personal");
+
+    const toggle = document.getElementById("multi-item-toggle");
+    if (toggle) {
+      toggle.checked = false;
+      // ensure list is reset
+      window.tempItemsList = [];
+      toggle.dispatchEvent(new Event("change"));
+    }
+
+    if (guestSection) guestSection.classList.add("hidden");
+    if (guestInput) guestInput.value = "";
+  }
+
+  modal.classList.remove("hidden");
+  modal.classList.add("flex");
+  document.body.classList.add("no-scroll");
+}
+
+// Helper para activar etiquetas visualmente al abrir editar
+function setActiveTag(inputId, containerId, value) {
+  if (!value) return;
+  const input = document.getElementById(inputId);
+  if (input) input.value = value;
+
+  const container = document.getElementById(containerId);
+  if (container) {
+    const tag = container.querySelector(`button[data-value="${value}"]`);
+    if (tag) tag.classList.add("active");
+  }
+}
+
+// 2. Función Maestra para CERRAR
+function closeUnifiedExpenseModal() {
+  const modal = document.getElementById("expense-modal");
+  modal.classList.add("hidden");
+  modal.classList.remove("flex");
+  document.body.classList.remove("no-scroll");
+}
+
+// 3. Función Maestra para GUARDAR (Submit)
+// ================================================================
+// GUARDAR GASTO (ACTUALIZADO CON ARRAY DE GUESTOS)
+// ================================================================
+function handleUnifiedSave(event) {
+  event.preventDefault();
+
+  try {
+    const id = document.getElementById("expense-id-hidden").value;
+    const isMultiItem = document.getElementById("multi-item-toggle").checked;
+
+    const description = formatTitleCase(document.getElementById("expense-description").value);
+    const amount = parseFloat(document.getElementById("expense-amount").value);
+    const date = document.getElementById("expense-date").value;
+
+    const payerId = document.getElementById("expense-payer").value;
+    const type = document.getElementById("expense-type").value;
+    const category = document.getElementById("expense-category").value;
+    const subcategory = formatTitleCase(document.getElementById("expense-subcategory").value);
+    const paymentMethodId = document.getElementById("expense-payment-method").value;
+
+    const isFixed = document.getElementById("expense-is-fixed").checked;
+    const recurrence = isFixed ? parseInt(document.getElementById("expense-recurrence-months").value) || 12 : 0;
+
+    // Validaciones
+    let missing = [];
+    if (!description) missing.push("Descripción");
+    if (!amount || amount <= 0) missing.push("Monto válido");
+    if (!date) missing.push("Fecha");
+    if (!payerId) missing.push("Pagador");
+    if (!category) missing.push("Categoría");
+    if (!paymentMethodId) missing.push("Método de Pago");
+    if (isMultiItem && tempItemsList.length === 0) missing.push("Lista de productos vacía");
+
+    if (missing.length > 0) return showModal(`Faltan campos: ${missing.join(", ")}`);
+
+    // Fechas TC
+    const paymentMethod = appState.paymentMethods.find((m) => m.id === paymentMethodId);
+    const expenseDateObj = new Date(date + "T00:00:00Z");
+    const { startDate, paymentDate } = paymentMethod && paymentMethod.type === "credit" ? getCycleDates(paymentMethod, expenseDateObj) : {};
+
+    // --- GUARDAR INVITADOS ---
+    // Si es compartido, guardamos el array temporal. Si no, array vacío.
+    const guestsToSave = type === "shared" ? tempItemsList : []; // OJO: Â¡ERROR! Aquí usé la lista equivocada en mi mente. CORRIGIENDO:
+    const realGuestsToSave = type === "shared" ? tempGuestList : []; // <--- ESTA ES LA CORRECTA
+
+    const expenseData = {
+      description,
+      amount,
+      items: isMultiItem ? window.tempItemsList : [],
+      payerId,
+      type,
+      category,
+      subcategory: subcategory || null,
+      paymentMethodId,
+      isFixed,
+      fixedRecurrenceMonths: recurrence,
+      date,
+      ccCycleStart: startDate || null,
+      ccPaymentDate: paymentDate || null,
+      guests: realGuestsToSave, // Guardamos el array de invitados
+    };
+
+    let newExpensesArray;
+
+    if (id) {
+      newExpensesArray = appState.expenses.map((e) => {
+        if (e.id === id) {
+          // Mantener ID y fecha creación
+          // Ojo: Mantener guestName antiguo si existiera no es necesario porque migramos a 'guests'
+          return { ...e, ...expenseData };
+        }
+        return e;
+      });
+    } else {
+      const newExpense = {
+        id: generateUUID(),
+        dateCreated: new Date().toISOString(),
+        ...expenseData,
+      };
+      newExpensesArray = [...appState.expenses, newExpense];
+    }
+
+    saveState({ expenses: newExpensesArray });
+    closeUnifiedExpenseModal();
+    showModal(id ? "Gasto actualizado correctamente." : "Gasto registrado exitosamente.", null, "Ã‰xito");
+  } catch (error) {
+    console.error(error);
+    showModal("Error al guardar el gasto.", error.message);
+  }
+}
+
+// ----------------------------------------------------------------
+// PREMIUM RENDERING HELPERS
+// ----------------------------------------------------------------
+
+window.populateModalTags = populateModalTags;
+
+function populateModalTags() {
+  const expenses = appState.expenses || [];
+  const categories = [...new Set(expenses.map((e) => e.category))];
+  const payerContainer = document.getElementById("modal-payer-tags");
+  const methodContainer = document.getElementById("modal-payment-method-tags");
+  const catContainerSidebar = document.getElementById("modal-category-tags-sidebar");
+
+  // Icons mapping for categories
+  const catIcons = {
+    "Comida": "utensils", "Hogar": "home", "Salud": "heartbeat", "Transporte": "bus",
+    "Educación": "graduation-cap", "Ocio": "gamepad", "Regalos": "gift", "Servicios": "bolt",
+    "Suscripciones": "mobile-alt", "Mascotas": "paw", "Supermercado": "shopping-cart",
+    "Café": "coffee", "Alcohol": "glass-martini-alt", "Ahorro": "piggy-bank"
+  };
+
+  // Helper for rendering tags with specific styles
+  const renderTags = (container, list, type) => {
+    if (!container) return;
+
+    // More compact styling to match reference
+    const baseClass = "filter-tag px-2 py-1 rounded-md text-[9px] font-bold uppercase tracking-wide transition-all flex items-center gap-1.5 border";
+
+    let colors = "";
+    let iconClass = "";
+
+    if (type === "payer") {
+      // Users: Subtle blue theme
+      colors = "bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 border-blue-100 dark:border-blue-800/30 hover:bg-blue-100 dark:hover:bg-blue-900/30";
+      iconClass = "fas fa-user";
+    } else if (type === "method") {
+      // Methods: Subtle green theme
+      colors = "bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400 border-emerald-100 dark:border-emerald-800/30 hover:bg-emerald-100 dark:hover:bg-emerald-900/30";
+      iconClass = "fas fa-credit-card";
+    } else if (type === "cat") {
+      // Categories: Subtle orange theme
+      colors = "bg-orange-50 dark:bg-orange-900/20 text-orange-600 dark:text-orange-400 border-orange-100 dark:border-orange-800/30 hover:bg-orange-100 dark:hover:bg-orange-900/30";
+    }
+
+    container.innerHTML = list.map(item => {
+      const icon = type === "cat" ? (catIcons[item] || "folder") : "";
+      const iconHtml = icon ? `<i class="fas fa-${icon} text-[10px] opacity-80"></i>` : (iconClass ? `<i class="${iconClass} text-[10px] opacity-80"></i>` : ``);
+
+      return `<button type="button" data-value="${item}" 
+        class="${baseClass} ${colors}">
+        ${iconHtml}
+        ${item}
+      </button>`;
+    }).join('');
+  };
+
+  if (payerContainer) {
+    const participants = appState.participants || [];
+    const names = participants.map(u => u.name);
+    renderTags(payerContainer, names, "payer");
+  }
+
+  if (methodContainer) {
+    const methods = (appState.paymentMethods || []).map(m => m.name);
+    renderTags(methodContainer, methods, "method");
+  }
+
+  // Populate categories in SIDEBAR instead of right column
+  if (catContainerSidebar) {
+    const standardCats = ["Comida", "Hogar", "Servicios", "Supermercado", "Ocio", "Suscripciones", "Transporte"];
+    const allCats = [...new Set([...standardCats, ...categories].filter(Boolean))];
+    renderTags(catContainerSidebar, allCats, "cat");
+  }
+}
+
+window.renderGuestListInModal = renderGuestListInModal;
+
+function renderGuestListInModal() {
+  // Now delegates to the unified split preview which handles the improved design
+  if (typeof window.updateSplitPreview === 'function') {
+    window.updateSplitPreview();
+  }
+}
+
+window.removeGuestFromList = function (index) {
+  if (tempGuestList) {
+    tempGuestList.splice(index, 1);
+    // renderGuestListInModal(); // OLD RENDER
+    if (window.updateSplitPreview) window.updateSplitPreview(); // NEW RENDER
+  }
+};
+
+// ================================================================
+// NEW: SMART SPLIT & AUTO-BALANCING LOGIC
+// ================================================================
+window.updateSplitPreview = function () {
+  const container = document.getElementById("split-breakdown-list");
+  if (!container) return;
+
+  const amount = parseFloat(document.getElementById("expense-amount").value) || 0;
+  const splitType = document.getElementById("split-type-select").value || "equal";
+
+  // 1. Gather all participants (Users + Guests)
+  let allParticipants = [];
+
+  // Add Registered Users (if Shared)
+  if (appState.participants) {
+    appState.participants.forEach(p => {
+      allParticipants.push({ id: p.id, name: p.name, type: 'user' });
+    });
+  }
+
+  // Add Guests
+  if (tempGuestList && tempGuestList.length > 0) {
+    tempGuestList.forEach((gName, idx) => {
+      allParticipants.push({ id: `guest-${idx}`, name: gName, type: 'guest' });
+    });
+  }
+
+  // If list is empty
+  if (allParticipants.length === 0) {
+    container.innerHTML = `<p class="col-span-full text-center text-[10px] text-slate-400">No hay participantes seleccionados.</p>`;
+    return;
+  }
+
+  // 2. Calculate Shares
+  const count = allParticipants.length;
+  let share = 0;
+
+  if (splitType === 'equal') {
+    share = amount / count;
+  }
+
+  // 3. Render Grid
+  // Responsive Grid: 1 col mobile, up to 4 cols desktop
+  container.className = "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2 mb-2";
+
+  container.innerHTML = allParticipants.map(p => {
+    let valDisplay = "";
+    let inputHtml = "";
+
+    // Base input class for cleaner look
+    const inputClass = "split-input w-12 bg-transparent border-none text-right font-black text-xs text-slate-700 dark:text-white p-0 focus:ring-0 placeholder-slate-300";
+
+    if (splitType === 'equal') {
+      valDisplay = `<span class="font-black text-slate-700 dark:text-white text-xs text-right">S/ ${share.toFixed(2)}</span>`;
+    } else if (splitType === 'percent') {
+      const percentVal = (100 / count).toFixed(1);
+      inputHtml = `<div class="flex items-center justify-end gap-0.5 border-b border-indigo-100 dark:border-indigo-800 focus-within:border-indigo-500 transition-colors"><input type="number" class="${inputClass}" value="${percentVal}" data-id="${p.id}" data-type="percent" /> <span class="text-[9px] font-bold text-slate-400">%</span></div>`;
+    } else if (splitType === 'exact') {
+      const exactVal = (amount / count).toFixed(2);
+      inputHtml = `<div class="flex items-center justify-end gap-0.5 border-b border-indigo-100 dark:border-indigo-800 focus-within:border-indigo-500 transition-colors"><span class="text-[9px] font-bold text-slate-400">S/</span><input type="number" class="${inputClass}" value="${exactVal}" data-id="${p.id}" data-type="exact" /></div>`;
+    }
+
+    // New Design: Name Left | Amount Right | Delete Integrated
+    // Registered Users: Locked (No delete button)
+    const canDelete = p.type === 'guest';
+    const deleteBtn = canDelete
+      ? `<button onclick="window.removeGuestFromList(${p.id.split('-')[1]})" class="text-slate-300 hover:text-rose-500 transition-colors p-1" title="Eliminar"><i class="fas fa-times-circle text-xs"></i></button>`
+      : `<i class="fas fa-lock text-[8px] text-slate-300 p-1" title="Registrado"></i>`;
+
+    return `
+      <div class="flex items-center justify-between p-2 bg-white dark:bg-slate-800 rounded-lg border border-slate-100 dark:border-slate-700 shadow-sm group min-w-0">
+          
+          <!-- Left: Name & Icon -->
+          <div class="flex items-center gap-1.5 overflow-hidden min-w-0 flex-1">
+             ${deleteBtn}
+             <span class="text-[10px] font-bold text-slate-700 dark:text-slate-200 truncate" title="${p.name}">${p.name}</span>
+          </div>
+
+          <!-- Right: Amount/Input -->
+          <div class="flex-shrink-0 ml-1.5 text-right flex items-center justify-end min-h-[20px]">
+            ${valDisplay}
+            ${inputHtml}
+          </div>
+      </div>`;
+  }).join('');
+
+  // 4. Attach Listeners
+  if (splitType !== 'equal') {
+    container.querySelectorAll('.split-input').forEach(input => {
+      input.addEventListener('change', (e) => handleSplitChange(e.target, amount, count));
+    });
+  }
+};
+
+window.handleSplitChange = function (changedInput, totalAmount, count) {
+  const val = parseFloat(changedInput.value) || 0;
+  const type = changedInput.dataset.type;
+  const currentId = changedInput.dataset.id;
+
+  if (type === 'percent') {
+    const remaining = 100 - val;
+    const othersShare = remaining / (count - 1);
+    document.querySelectorAll('.split-input').forEach(inp => {
+      if (inp.dataset.id !== currentId) inp.value = othersShare.toFixed(1);
+    });
+  } else {
+    const remaining = totalAmount - val;
+    const othersShare = remaining / (count - 1);
+    document.querySelectorAll('.split-input').forEach(inp => {
+      if (inp.dataset.id !== currentId) inp.value = othersShare.toFixed(2);
+    });
+  }
+};
+
+window.removeParticipant = function (id) {
+  if (id.startsWith('guest-')) {
+    const idx = parseInt(id.split('-')[1]);
+    removeGuestFromList(idx);
+  } else {
+    // Show alert for locked users
+    showModal("No se puede eliminar", "Los usuarios registrados son participantes fijos en gastos compartidos.");
+  }
+};
+
+
+window.updateModalSubcategoryTags = updateModalSubcategoryTags;
+
+function updateModalSubcategoryTags() {
+  const catInput = document.getElementById("expense-category");
+  const subSection = document.getElementById("modal-subcategory-section");
+  const subContainer = document.getElementById("modal-subcategory-tags");
+
+  if (!catInput || !subSection || !subContainer) return;
+
+  const categoryName = catInput.value;
+  const category = appState.categories.find(c => c.name === categoryName);
+
+  if (!category || !category.subcategories || category.subcategories.length === 0) {
+    subSection.classList.add("hidden");
+    return;
+  }
+
+  subSection.classList.remove("hidden");
+  subContainer.innerHTML = category.subcategories.map(sub => `
+    <button type="button" data-value="${sub}" 
+      class="filter-tag px-3 py-1 rounded-lg border border-slate-100 dark:border-slate-800 text-[9px] font-bold uppercase tracking-tight transition-all hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-400">
+      ${sub}
+    </button>
+  `).join('');
+}
+
+// 4. SETUP SMART SPINNERS (DUMMY/HELPER) - Moved to bottom for enhanced logic
+
+
+// ================================================================
+// ================================================================
+// Helper required for ID generation
+window.generateUUID = function () {
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
+    var r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8);
+    return v.toString(16);
+  });
+};
+
+window.renderTempItemsListInModal = renderTempItemsListInModal;
+
+function renderTempItemsListInModal() {
+  const container = document.getElementById("expense-item-list-container");
+  const amountInput = document.getElementById("expense-amount");
+  const itemsCountSidebar = document.getElementById("items-count-display-sidebar");
+
+  if (!container) return;
+
+  container.innerHTML = "";
+  let total = 0;
+  let count = 0;
+
+  if (!window.tempItemsList || window.tempItemsList.length === 0) {
+    container.innerHTML = `
+      <div class="p-8 text-center space-y-2">
+        <div class="size-12 rounded-full bg-slate-50 dark:bg-slate-800 flex items-center justify-center mx-auto mb-2">
+          <i class="fas fa-shopping-basket text-slate-200 text-lg"></i>
+        </div>
+        <p class="text-xs font-bold text-slate-400">Lista vacía</p>
+      </div>
+    `;
+  } else {
+    window.tempItemsList.forEach((item, index) => {
+      const subtotal = (item.quantity || 1) * (item.amount || 0);
+      total += subtotal;
+      count++;
+
+      container.insertAdjacentHTML("beforeend", `
+        <div class="grid grid-cols-12 gap-2 px-4 py-3 items-center hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors group">
+          <div class="col-span-6 pl-2">
+            <div class="text-xs font-bold text-slate-700 dark:text-white truncate" title="${item.desc}">${item.desc}</div>
+          </div>
+          <div class="col-span-2 text-center text-xs font-semibold text-slate-500">${item.quantity || 1}</div>
+          <div class="col-span-3 text-right pr-2">
+             <span class="text-[10px] text-slate-400">S/</span>
+             <span class="text-xs font-bold text-slate-800 dark:text-white">${subtotal.toFixed(2)}</span>
+          </div>
+          <div class="col-span-1 text-center">
+            <button type="button" class="text-slate-300 hover:text-rose-500 transition-colors p-1" 
+               onclick="window.deleteTempItem('${item.id}')">
+               <i class="fas fa-times text-xs"></i>
+            </button>
+          </div>
+        </div>
+      `);
+    });
+  }
+
+  // Update Sidebar Count if exists
+  if (itemsCountSidebar) itemsCountSidebar.textContent = `${count} ítem${count !== 1 ? "s" : ""}`;
+
+  const toggle = document.getElementById("multi-item-toggle");
+  // CRITICAL: Update main amount ONLY if items exist, otherwise let user type
+  if (toggle && toggle.checked && amountInput) {
+    amountInput.value = total.toFixed(2);
+    // Dispatch input event to update other calculations
+    amountInput.dispatchEvent(new Event("input"));
+    // Lock input to prevent discrepancies
+    amountInput.readOnly = true;
+    amountInput.classList.add("bg-slate-50", "text-slate-500");
+  } else if (toggle && !toggle.checked && amountInput) {
+    amountInput.readOnly = false;
+    amountInput.classList.remove("bg-slate-50", "text-slate-500");
+  }
+}
+
+// Global delete handler
+window.deleteTempItem = function (id) {
+  if (!window.tempItemsList) return;
+  // Ensure we compare strings properly
+  window.tempItemsList = window.tempItemsList.filter(i => String(i.id) !== String(id));
+  renderTempItemsListInModal();
+};
+
+// ================================================================
+// CONFIGURACIÃ“N DE LISTENERS (ACTUALIZADA CON INVITADOS)
+// ================================================================
+function setupUnifiedExpenseListeners() {
+  const amountInput = document.getElementById("expense-amount");
+  const displayAmount = document.getElementById("display-expense-amount");
+  const finalTotalDisplay = document.getElementById("final-total-display");
+  const baseAmountDisplay = document.getElementById("base-amount-display");
+  const itemsTotalDisplay = document.getElementById("items-total-display");
+
+  const multiToggle = document.getElementById("multi-item-toggle");
+  const addItemBtn = document.getElementById("add-item-to-list-btn");
+
+  const itemDescInput = document.querySelector('input[name="new-item-desc-input"]');
+  const itemQtyInput = document.querySelector('input[name="new-item-quantity-input"]');
+  const itemPriceInput = document.querySelector('input[name="new-item-amount-input"]');
+  const itemSubtotalDisplay = document.getElementById("new-item-subtotal-display");
+
+  // Helper para actualizar todos los displays de monto
+  const updateAllDisplays = (val) => {
+    const numericVal = parseFloat(val) || 0;
+    const itemsTotal = itemsTotalDisplay ? parseFloat(itemsTotalDisplay.textContent.replace(/[^\d.-]/g, "")) || 0 : 0;
+
+    if (displayAmount) displayAmount.textContent = numericVal.toFixed(2);
+    if (finalTotalDisplay) finalTotalDisplay.textContent = formatCurrency(numericVal);
+    if (baseAmountDisplay) baseAmountDisplay.textContent = formatCurrency(Math.max(0, numericVal - itemsTotal));
+
+    if (window.updateSplitPreview) window.updateSplitPreview();
+  };
+
+  // 1. Botones de Apertura/Cierre
+  const openBtn = document.getElementById("open-expense-modal-btn");
+  const closeBtn = document.getElementById("close-expense-modal-btn");
+  const cancelBtn = document.getElementById("cancel-expense-modal-btn");
+
+  if (openBtn) openBtn.onclick = () => openUnifiedExpenseModal(null);
+  if (closeBtn) closeBtn.onclick = closeUnifiedExpenseModal;
+  if (cancelBtn) cancelBtn.onclick = closeUnifiedExpenseModal;
+
+  // --- HELPERS GLOBALES ---
+  window.toggleExpenseType = (type) => {
+    document.getElementById("expense-type").value = type;
+
+    // Visual State
+    // Visual State
+    const pBtn = document.getElementById("type-btn-personal");
+    const sBtn = document.getElementById("type-btn-shared");
+    const guestSection = document.getElementById("guest-management-section");
+    const sharedBadge = document.getElementById("shared-badge");
+
+    if (type === "shared") {
+      pBtn.className = "px-6 py-2 rounded-lg text-[11px] font-black uppercase tracking-wide transition-all text-slate-400 hover:text-slate-600 dark:text-slate-500";
+      sBtn.className = "px-6 py-2 rounded-lg text-[11px] font-black uppercase tracking-wide transition-all bg-white dark:bg-slate-700 text-slate-800 dark:text-white shadow-sm";
+
+      if (guestSection) guestSection.classList.remove("hidden");
+      if (sharedBadge) {
+        sharedBadge.classList.add("inline-flex");
+        sharedBadge.classList.remove("hidden");
+      }
+
+      // SMART LOGIC: Auto-fetch all registered users if list is empty
+      // We don't modify "tempGuestList" (guests) but "updateSplitPreview" will pull appState.participants
+      // Trigger render
+      window.updateSplitPreview();
+
+    } else {
+      pBtn.className = "px-6 py-2 rounded-lg text-[11px] font-black uppercase tracking-wide transition-all bg-white dark:bg-slate-700 text-slate-800 dark:text-white shadow-sm";
+      sBtn.className = "px-6 py-2 rounded-lg text-[11px] font-black uppercase tracking-wide transition-all text-slate-400 hover:text-slate-600 dark:text-slate-500";
+
+      if (guestSection) guestSection.classList.add("hidden");
+      if (sharedBadge) {
+        sharedBadge.classList.remove("inline-flex");
+        sharedBadge.classList.add("hidden");
+      }
+    }
+  };
+
+  window.closeUnifiedExpenseModal = closeUnifiedExpenseModal;
+
+  // Listeners for Split Type
+  // Listeners for Split Type
+  document.querySelectorAll(".split-tag").forEach(btn => {
+    btn.addEventListener("click", (e) => {
+      const val = e.target.dataset.val;
+      const select = document.getElementById("split-type-select");
+      if (select) select.value = val;
+      // Visual update
+      document.querySelectorAll(".split-tag").forEach(b => {
+        b.className = "split-tag px-2 py-0.5 rounded text-[8px] font-bold uppercase text-slate-400 hover:text-slate-600 border border-transparent";
+        b.classList.remove("bg-indigo-100", "text-indigo-700", "active");
+      });
+      e.target.className = "split-tag px-2 py-0.5 rounded text-[8px] font-bold uppercase transition-all bg-indigo-100 text-indigo-700 active";
+
+      if (window.updateSplitPreview) window.updateSplitPreview();
+    });
+  });
+
+  // Listeners for Adding Guest
+  const btnAddGuest = document.getElementById("btn-add-guest");
+  const guestInput = document.getElementById("new-guest-name");
+
+  const handleAddGuest = () => {
+    const name = guestInput.value.trim();
+    if (name) {
+      tempGuestList.push(name);
+      guestInput.value = "";
+      window.updateSplitPreview();
+    }
+  };
+
+  if (btnAddGuest) btnAddGuest.onclick = handleAddGuest;
+  if (guestInput) {
+    guestInput.onkeydown = (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        handleAddGuest();
+      }
+    };
+  }
+
+  // 2. Guardado
+  const form = document.getElementById("unified-expense-form");
+  if (form) {
+    form.onsubmit = (e) => {
+      if (multiToggle?.checked) renderTempItemsListInModal();
+      handleUnifiedSave(e);
+    };
+  }
+
+  // 3. Sincronización de Monto (MEJORADO: No restrictivo al escribir)
+  if (amountInput) {
+    amountInput.oninput = (e) => {
+      updateAllDisplays(e.target.value);
+    };
+    amountInput.onchange = (e) => {
+      const val = parseFloat(e.target.value);
+      if (!isNaN(val)) e.target.value = val.toFixed(2);
+    };
+  }
+
+  // 4. Botones Incremento/Decremento (NUEVO: Usando IDs correctos)
+  const btnPlus = document.getElementById("btn-amount-plus");
+  const btnMinus = document.getElementById("btn-amount-minus");
+  if (btnPlus && amountInput) {
+    btnPlus.onclick = () => {
+      amountInput.value = (parseFloat(amountInput.value || 0) + 1).toFixed(2);
+      updateAllDisplays(amountInput.value);
+    };
+  }
+  if (btnMinus && amountInput) {
+    btnMinus.onclick = () => {
+      amountInput.value = Math.max(0, parseFloat(amountInput.value || 0) - 1).toFixed(2);
+      updateAllDisplays(amountInput.value);
+    };
+  }
+
+  // 5. Toggle Gasto Fijo
+  const fixedToggle = document.getElementById("expense-is-fixed");
+  if (fixedToggle) {
+    fixedToggle.onchange = (e) => {
+      document.getElementById("fixed-recurrence-container").classList.toggle("hidden", !e.target.checked);
+    };
+  }
+
+  // 6. Desglose de Artículos (Multi-item)
+  if (multiToggle) {
+    multiToggle.onchange = (e) => {
+      const isMulti = e.target.checked;
+      if (amountInput) {
+        amountInput.readOnly = isMulti;
+        amountInput.classList.toggle("bg-slate-50", isMulti);
+      }
+      document.getElementById("multi-item-fields").classList.toggle("hidden", !isMulti);
+      if (isMulti) renderTempItemsListInModal();
+    };
+  }
+
+  // Subtotal fila entrada
+  const updateInputRowSubtotal = () => {
+    const qty = parseFloat(itemQtyInput?.value) || 0;
+    const price = parseFloat(itemPriceInput?.value) || 0;
+    if (itemSubtotalDisplay) itemSubtotalDisplay.textContent = (qty * price).toFixed(2);
+  };
+  [itemQtyInput, itemPriceInput].forEach(el => {
+    if (el) el.oninput = updateInputRowSubtotal;
+  });
+
+  // Botón añadir fila
+  if (addItemBtn) {
+    addItemBtn.onclick = (e) => {
+      e.preventDefault();
+      const desc = itemDescInput.value.trim();
+      const qty = parseFloat(itemQtyInput.value) || 1;
+      const price = parseFloat(itemPriceInput.value) || 0;
+
+      if (!desc || price <= 0) return;
+
+      if (!desc || price <= 0) return;
+
+      if (!window.tempItemsList) window.tempItemsList = [];
+      window.tempItemsList.push({ id: generateUUID(), desc, quantity: qty, amount: price });
+
+      itemDescInput.value = "";
+      itemQtyInput.value = "1";
+      itemPriceInput.value = "";
+
+      updateInputRowSubtotal();
+      renderTempItemsListInModal();
+      itemDescInput.focus();
+    };
+  }
+
+  // 7. Etiquetas de Selección (Tags)
+  const handleTagSelection = (e) => {
+    const btn = e.target.closest(".filter-tag");
+    if (!btn) return;
+
+    const container = btn.parentElement;
+    let inputId = "";
+
+    if (container.id === "modal-payer-tags") inputId = "expense-payer";
+    if (container.id === "modal-type-tags") inputId = "expense-type";
+    if (container.id === "modal-payment-method-tags") inputId = "expense-payment-method";
+    if (container.id === "modal-category-tags-sidebar") inputId = "expense-category";
+    if (container.id === "modal-subcategory-tags-sidebar") inputId = "expense-subcategory";
+
+    if (!inputId) return;
+    const input = document.getElementById(inputId);
+    if (!input) return;
+
+    // Toggle logic
+    const isAlreadyActive = btn.classList.contains("active");
+
+    // Reset siblings (opacity approach)
+    container.querySelectorAll("button").forEach(t => {
+      // Only reset active state markers
+      t.classList.remove("active");
+      t.style.opacity = "0.6";
+      t.style.borderColor = "transparent";
+    });
+
+    if (!isAlreadyActive) {
+      btn.classList.add("active");
+      btn.style.opacity = "1";
+      btn.style.borderColor = "currentColor";
+      input.value = btn.getAttribute("data-value");
+
+      if (inputId === "expense-category" && typeof updateModalSubcategoryTags === "function") {
+        updateModalSubcategoryTags();
+      }
+    } else {
+      input.value = "";
+      if (inputId === "expense-category") {
+        const subSection = document.getElementById("modal-subcategory-section-sidebar");
+        if (subSection) subSection.classList.add("hidden");
+      }
+      // Reset all opacity
+      container.querySelectorAll("button").forEach(t => t.style.opacity = "1");
+    }
+
+    // Special Handling for Type Toggle logic if needed
+    if (inputId === "expense-type" && typeof window.toggleExpenseType === "function") {
+      window.toggleExpenseType(input.value);
+    }
+  };
+
+  // Event Delegation for Tags
+  const tagContainers = ["modal-payer-tags", "modal-payment-method-tags", "modal-category-tags-sidebar", "modal-subcategory-tags-sidebar", "modal-type-tags"];
+  tagContainers.forEach(id => {
+    const el = document.getElementById(id);
+    if (el) {
+      el.removeEventListener("click", handleTagSelection);
+      el.addEventListener("click", handleTagSelection);
+    }
+  });
+
+  if (typeof setupSmartSpinners === "function") setupSmartSpinners();
+}
+
+
+
+// Listener global para actualizar subcategorías (Reutilizable)
+
+// NUEVA FUNCIÃ“N CLAVE PARA INICIALIZAR SELECTS
+// ================================================================
+// VERSIÃ“N SEGURA: No crashea si el elemento no existe
+// ================================================================
+function initializeCustomSelect(containerId) {
+  const element = document.getElementById(containerId);
+
+  // Si el input no existe, salimos silenciosamente en lugar de dar error
+  if (!element) return;
+
+  const container = element.closest(".custom-select-container");
+  if (!container) return; // Si no está dentro de un container select, salimos
+
+  const button = container.querySelector(".custom-select-button");
+  const optionsContainer = container.querySelector(".custom-select-options");
+  const hiddenInput = container.querySelector('input[type="hidden"]');
+  const display = button?.querySelector(".custom-select-display");
+
+  if (!button || !optionsContainer || !hiddenInput || !display) return;
+
+  // ... (Resto de tu lógica original para seleccionar la opción) ...
+  const options = Array.from(optionsContainer.querySelectorAll(".custom-select-option"));
+
+  if (options.length > 0 && !hiddenInput.value) {
+    const firstOption = options[0];
+    hiddenInput.value = firstOption.dataset.value;
+    display.textContent = firstOption.textContent.trim();
+    display.classList.remove("text-gray-500");
+    options.forEach((opt) => opt.classList.remove("selected"));
+    firstOption.classList.add("selected");
+  } else if (options.length > 0 && hiddenInput.value) {
+    const selectedOption = options.find((opt) => opt.dataset.value === hiddenInput.value);
+    if (selectedOption) {
+      display.textContent = selectedOption.textContent.trim();
+      display.classList.remove("text-gray-500");
+      options.forEach((opt) => opt.classList.remove("selected"));
+      selectedOption.classList.add("selected");
+    }
+  } else if (options.length === 0) {
+    hiddenInput.value = "";
+    display.textContent = "Selecciona una opción";
+    display.classList.add("text-gray-500");
+  }
+
+  if (hiddenInput.value) {
+    hiddenInput.dispatchEvent(new Event("change", { bubbles: true }));
+  }
+}
+// FIN NUEVA FUNCIÃ“N CLAVE
+
+function updateExpenseFormParticipants(participants) {
+  if (typeof populateModalTags === "function") {
+    populateModalTags();
+  }
+}
+
+function resetPaymentForm() {
+  document.getElementById("payment-method-form").reset();
+  document.getElementById("method-id-to-edit").value = "";
+
+  // Ocultar secciones TC
+  document.getElementById("cc-config-fields").classList.add("hidden");
+  document.getElementById("card-owner-container").classList.add("hidden");
+
+  // Resetear selector custom
+  const typeInput = document.getElementById("method-type");
+  if (typeInput) {
+    typeInput.value = "cash";
+    initializeCustomSelect("method-type");
+  }
+
+  // Resetear botones UI
+  document.getElementById("payment-form-title").textContent = "Nuevo Método";
+  document.getElementById("save-method-btn").textContent = "Guardar Método";
+  document.getElementById("cancel-edit-method-btn").classList.add("hidden");
+}
+
+function openPaymentMethodEditModal(id) {
+  const method = appState.paymentMethods.find((m) => m.id === id);
+  if (!method) return;
+  resetPaymentForm();
+
+  document.getElementById("method-id-to-edit").value = id;
+  document.getElementById("method-name").value = method.name;
+
+  // Configurar tipo
+  const typeInput = document.getElementById("method-type");
+  if (typeInput) {
+    typeInput.value = method.type;
+    initializeCustomSelect("method-type");
+    // Disparar evento manual para mostrar campos
+    typeInput.dispatchEvent(new Event("change"));
+  }
+
+  document.getElementById("payment-form-title").textContent = `Editar: ${method.name} `;
+  document.getElementById("save-method-btn").textContent = "Actualizar";
+  document.getElementById("cancel-edit-method-btn").classList.remove("hidden");
+
+  if (method.type === "credit") {
+    document.getElementById("cc-config-closing-day").value = method.closingDay || ""; // <--- NUEVO
+    document.getElementById("cc-config-payment-day").value = method.paymentDay;
+    // Llenar y seleccionar dueño
+    const ownerSelect = document.getElementById("method-owner");
+    // Llenamos las opciones primero (necesitamos los participantes)
+    ownerSelect.innerHTML = '<option value="">-- Selecciona al titular --</option>';
+    appState.participants.forEach((p) => {
+      const option = document.createElement("option");
+      option.value = p.id;
+      option.textContent = p.name;
+      ownerSelect.appendChild(option);
+    });
+    ownerSelect.value = method.ownerId || "";
+  }
+}
+
+function removePaymentMethod(idToRemove) {
+  if (["m1", "m2"].includes(idToRemove)) return showModal("No puedes eliminar los métodos de pago predeterminados.");
+  // NUEVO: Desactivar filtro si se elimina el método activo
+  if (activeFilters.paymentMethod === idToRemove) {
+    activeFilters.paymentMethod = null;
+  }
+  saveState({ paymentMethods: appState.paymentMethods.filter((m) => m.id !== idToRemove) });
+}
+
+// ================================================================
+// RENDERIZADO DE MÃ‰TODOS DE PAGO (DISEÃ‘O MASTER-DETAIL)
+// ================================================================
+// ================================================================
+// RENDERIZADO DE MÃ‰TODOS DE PAGO (ALINEACIÃ“N PERFECTA)
+// ================================================================
+function renderPaymentMethodsModal(methods) {
+  const displayEl = document.getElementById("payment-methods-display");
+  displayEl.innerHTML = "";
+
+  // Elementos de selectores antiguos
+  const optionsContainer = document.querySelector("#expense-payment-method-id-button")?.nextElementSibling;
+  const editOptionsContainer = document.querySelector("#edit-expense-payment-method-id-button")?.nextElementSibling;
+  if (optionsContainer) optionsContainer.innerHTML = "";
+  if (editOptionsContainer) editOptionsContainer.innerHTML = "";
+
+  if (methods.length === 0) {
+    displayEl.innerHTML = '<p class="text-sm italic text-center text-gray-400 mt-10">No hay métodos definidos.</p>';
+  } else {
+    methods.forEach((m) => {
+      const isCredit = m.type === "credit";
+      const iconClass = isCredit ? "fa-credit-card" : "fa-wallet";
+      const colorClass = isCredit ? "text-indigo-600 bg-indigo-100" : "text-emerald-600 bg-emerald-100";
+      const details = isCredit ? `Día Pago: ${m.paymentDay} ` : "Efectivo";
+
+      // Detectar si es por defecto (no se puede borrar)
+      const isDefault = ["m1", "m2"].includes(m.id);
+
+      displayEl.insertAdjacentHTML(
+        "beforeend",
+        `
+  < div class="group flex w-full items-center justify-between rounded-xl bg-white p-3 shadow-sm ring-1 ring-gray-100 transition-all hover:shadow-md hover:ring-indigo-500/20" >
+                    
+                    <div class="flex items-center gap-3 flex-1 min-w-0 mr-2">
+                        <div class="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg ${colorClass}">
+                            <i class="fas ${iconClass} text-xs"></i>
+                        </div>
+                        <span class="truncate text-sm font-bold text-gray-700" title="${m.name}">${m.name}</span>
+                    </div>
+
+                    <div class="flex items-center justify-end gap-3 flex-shrink-0">
+                        
+                        <span class="hidden sm:inline-flex w-28 items-center justify-center rounded-md bg-gray-50 py-1 text-[10px] font-medium text-gray-500 border border-gray-100 whitespace-nowrap">
+                            ${details}
+                        </span>
+                        
+                        <div class="flex items-center gap-1">
+                            <button data-id="${m.id}" class="edit-method-btn flex h-7 w-7 items-center justify-center rounded-full text-gray-400 opacity-0 transition-all hover:bg-blue-50 hover:text-blue-600 group-hover:opacity-100" title="Editar">
+                                <i class="fas fa-pen text-xs"></i>
+                            </button>
+                            
+                            <button data-id="${m.id}" 
+                                    class="remove-method-btn flex h-7 w-7 items-center justify-center rounded-full text-gray-400 transition-all 
+                                    ${isDefault ? "invisible pointer-events-none" : "opacity-0 hover:bg-red-50 hover:text-red-600 group-hover:opacity-100"}" 
+                                    title="Eliminar">
+                                <i class="fas fa-times text-xs"></i>
+                            </button>
+                        </div>
+                    </div >
+                </div > `
+      );
+
+      // Actualizar selects antiguos (si existen)
+      const optionHTML = `< div class="custom-select-option" data - value="${m.id}" > ${m.name}</div > `;
+      if (optionsContainer) optionsContainer.insertAdjacentHTML("beforeend", optionHTML);
+      if (editOptionsContainer) editOptionsContainer.insertAdjacentHTML("beforeend", optionHTML);
+    });
+  }
+
+  // Listeners
+  displayEl.querySelectorAll(".remove-method-btn").forEach((btn) => btn.addEventListener("click", (e) => removePaymentMethod(e.currentTarget.dataset.id)));
+  displayEl.querySelectorAll(".edit-method-btn").forEach((btn) => btn.addEventListener("click", (e) => openPaymentMethodEditModal(e.currentTarget.dataset.id)));
+
+  // Actualizar etiquetas globales
+  if (typeof populateModalTags === "function") populateModalTags();
+  if (typeof updateDynamicFilterTagOptions === "function") updateDynamicFilterTagOptions();
+}
+
+function createExpenseCardHTML(expense, participantsMap, paymentMethodsMap) {
+  // 1. Datos
+  let payerName = participantsMap.get(expense.payerId) || expense.payerNameGuest || "Desconocido";
+  const paymentMethod = paymentMethodsMap.get(expense.paymentMethodId);
+  const isShared = expense.type === "shared";
+  const isFixed = expense.isFixed;
+  const isGuestPayer = expense.payerId && expense.payerId.startsWith("guest_");
+  const hasItems = expense.items && expense.items.length > 0;
+
+  // 2. Fechas
+  const dateObj = new Date(expense.date + "T00:00:00Z");
+  const dayNum = dateObj.getUTCDate();
+  const monthShort = dateObj.toLocaleString("es-ES", { month: "short", timeZone: "UTC" }).toUpperCase().replace(".", "");
+
+  // 3. Estilos
+  const amountColorClass = "text-gray-900";
+
+  let dateBoxClass = "bg-gray-50 border-gray-200 text-gray-600";
+  let typeIconHtml = "";
+
+  if (isFixed) {
+    dateBoxClass = "bg-purple-50 border-purple-200 text-purple-600";
+    typeIconHtml = `<span class="ml-2 inline-flex items-center justify-center w-5 h-5 rounded-full bg-purple-100 text-purple-600" title="Gasto Fijo"><i class="fas fa-sync-alt text-[9px]"></i></span>`;
+  } else if (isShared) {
+    dateBoxClass = "bg-orange-50 border-orange-200 text-orange-600";
+    typeIconHtml = `<span class="ml-2 inline-flex items-center justify-center w-5 h-5 rounded-full bg-orange-100 text-orange-600" title="Compartido"><i class="fas fa-users text-[9px]"></i></span>`;
+  } else if (hasItems) {
+    typeIconHtml = `<span class="ml-2 inline-flex items-center justify-center w-5 h-5 rounded-full bg-blue-100 text-blue-600" title="Lista"><i class="fas fa-list-ul text-[9px]"></i></span>`;
+  }
+
+  // 4. Metadatos
+  const categoryTag = expense.category ? `<span class="text-[10px] text-gray-500 bg-white border border-gray-200 px-1.5 rounded">${expense.category}</span>` : "";
+  const methodText = paymentMethod ? `<span class="text-[10px] text-gray-400 ml-2">â€¢ ${paymentMethod.name}</span>` : "";
+
+  // --- DETALLES ---
+  const isCollapsible = isShared || hasItems;
+  let detailContent = "";
+
+  if (hasItems) {
+    const itemsList = expense.items
+      .map(
+        (item) => `
+  <div class="flex justify-between text-[10px] text-gray-500 py-1 border-b border-dashed border-gray-100 last:border-0">
+                <span>${item.desc}</span>
+                <span class="font-mono">${formatCurrency(item.amount)}</span>
+            </div>
+  `
+      )
+      .join("");
+    detailContent = `<div class="mt-3 pl-4 pr-2 space-y-1 border-l-2 border-gray-100 ml-4">${itemsList}</div>`;
+  } else if (isShared) {
+    let count = appState.participants.length;
+    if (expense.guests) count += expense.guests.length;
+    else if (expense.guestName) count += 1;
+    detailContent = `<div class="mt-2 pl-14 pr-2 text-[10px] text-orange-600 font-medium">Dividido entre ${count} personas(${formatCurrency(expense.amount / count)} c / u)</div>`;
+  }
+
+  // CAMBIOS AQUÍ: Agregado 'p-4', 'rounded-2xl', 'mb-1' y borde transparente por defecto
+  return `
+  <div class="group relative p-4 rounded-2xl border border-transparent hover:bg-gray-50 hover:border-gray-100 transition-all duration-200 mb-1" data-expense-id="${expense.id}">
+        
+        <div class="flex items-center gap-4">
+            
+            <div class="flex-shrink-0">
+                <div class="w-12 h-12 flex flex-col items-center justify-center rounded-xl border ${dateBoxClass} shadow-sm">
+                    <span class="text-[9px] font-bold uppercase leading-none opacity-80">${monthShort}</span>
+                    <span class="text-lg font-black leading-tight">${dayNum}</span>
+                </div>
+            </div>
+
+            <div class="flex-grow min-w-0 cursor-pointer expense-header" ${isCollapsible ? `data-toggle='${expense.id}'` : ""}>
+                <div class="flex items-center">
+                    <p class="text-sm font-bold text-gray-800 truncate leading-tight">
+                        ${expense.description}
+                    </p>
+                    ${typeIconHtml}
+                    ${isCollapsible ? '<i class="fas fa-caret-down text-[10px] text-gray-300 ml-2 transition-transform duration-200"></i>' : ""}
+                </div>
+                
+                <div class="flex items-center mt-1 overflow-hidden">
+                    ${categoryTag}
+                    <p class="text-[10px] text-gray-400 truncate ml-2 flex items-center">
+                         <i class="fas fa-user-circle text-[9px] mr-1"></i> ${payerName} ${methodText}
+                    </p>
+                </div>
+            </div>
+
+            <div class="flex items-center gap-3 flex-shrink-0 pl-2">
+                
+                <div class="hidden sm:flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                    <button data-id="${expense.id}" class="edit-expense-btn w-8 h-8 flex items-center justify-center rounded-xl bg-white border border-gray-200 text-gray-400 hover:text-indigo-600 hover:border-indigo-200 transition-colors shadow-sm" title="Editar">
+                        <i class="fas fa-pen text-[10px]"></i>
+                    </button>
+                    <button data-id="${expense.id}" class="delete-btn w-8 h-8 flex items-center justify-center rounded-xl bg-white border border-gray-200 text-gray-400 hover:text-red-600 hover:border-red-200 transition-colors shadow-sm" title="Eliminar">
+                        <i class="fas fa-trash text-[10px]"></i>
+                    </button>
+                </div>
+
+                <span class="text-base font-black ${amountColorClass} whitespace-nowrap w-[80px] text-right">
+                    ${formatCurrency(expense.amount)}
+                </span>
+            </div>
+        </div>
+
+        <div id='detail-${expense.id}' class='expense-detail hidden overflow-hidden transition-all'>
+            ${detailContent}
+        </div>
+    </div>
+  `;
+}
+// 1. Variable de estado para saber en qué pestaña estamos
+
+// 2. Función para cambiar pestaña (conectada a los botones del HTML)
+window.switchHistoryTab = function (tab) {
+  currentHistoryTab = tab;
+
+  // Cambiar estilos de los botones visualmente
+  const btnExp = document.getElementById("tab-history-expenses");
+  const btnInc = document.getElementById("tab-history-incomes");
+
+  if (tab === "expenses") {
+    btnExp.className = "flex-1 py-2 text-sm font-bold rounded-lg bg-white text-gray-800 shadow-sm transition-all";
+    btnInc.className = "flex-1 py-2 text-sm font-bold rounded-lg text-gray-500 hover:bg-gray-200 transition-all";
+  } else {
+    btnInc.className = "flex-1 py-2 text-sm font-bold rounded-lg bg-white text-gray-800 shadow-sm transition-all";
+    btnExp.className = "flex-1 py-2 text-sm font-bold rounded-lg text-gray-500 hover:bg-gray-200 transition-all";
+  }
+
+  // Recargar la vista
+  renderUI();
+};
+
+function renderExpenseReportByCategory(allExpensesInMonth, summary) {
+  const reportEl = document.getElementById("expense-report-by-category");
+  const diagnosticEl = document.getElementById("expense-diagnostic");
+  reportEl.innerHTML = "";
+
+  // ========================================================
+  // PARTE A: SI ESTAMOS EN LA PESTAÃ‘A "INGRESOS"
+  // ========================================================
+  // A. MODO INGRESOS
+  if (typeof currentHistoryTab !== "undefined" && currentHistoryTab === "incomes") {
+    diagnosticEl.textContent = "Mostrando fuentes de ingreso del mes.";
+
+    let allIncomes = [];
+    const monthFilter = getFilterMonthString(currentFilterDate);
+
+    appState.participants.forEach((p) => {
+      if (p.incomes && Array.isArray(p.incomes)) {
+        // CAMBIO CLAVE: Necesitamos el índice original (i) para poder borrarlo luego
+        p.incomes.forEach((inc, i) => {
+          const incDate = inc.date || monthFilter + "-01";
+
+          if (incDate.startsWith(monthFilter)) {
+            allIncomes.push({
+              participantId: p.id, // <--- Guardamos ID del dueño
+              originalIndex: i, // <--- Guardamos la posición en su lista
+              payerName: p.name,
+              description: inc.name || "Ingreso",
+              amount: parseFloat(inc.amount),
+              date: incDate,
+            });
+          }
+        });
+      }
+    });
+
+    allIncomes.sort((a, b) => new Date(b.date) - new Date(a.date));
+
+    if (allIncomes.length === 0) {
+      reportEl.innerHTML = `<div class='flex flex-col items-center justify-center py-12 text-gray-300 opacity-60'><i class="fas fa-wallet text-4xl mb-2"></i><p class="text-sm font-medium">No hay ingresos este mes.</p></div>`;
+      return;
+    }
+
+    // Renderizar Tarjetas de Ingreso
+    allIncomes.forEach((inc) => {
+      const d = new Date(inc.date + "T00:00:00Z");
+      const dayNum = d.getUTCDate();
+      const monthShort = d.toLocaleString("es-ES", { month: "short", timeZone: "UTC" }).toUpperCase().replace(".", "");
+
+      // CAMBIO VISUAL: Añadimos el botón de basura a la derecha
+      reportEl.insertAdjacentHTML(
+        "beforeend",
+        `
+  <div class="flex items-center gap-4 p-4 rounded-2xl bg-white border border-emerald-100 shadow-sm mb-2 hover:shadow-md transition-all group relative">
+                <div class="flex-shrink-0">
+                    <div class="w-12 h-12 flex flex-col items-center justify-center rounded-xl bg-emerald-50 text-emerald-600">
+                        <span class="text-[9px] font-bold uppercase leading-none opacity-80">${monthShort}</span>
+                        <span class="text-lg font-black leading-tight">${dayNum}</span>
+                    </div>
+                </div>
+                <div class="flex-grow min-w-0">
+                    <p class="text-sm font-bold text-gray-800 truncate">${inc.description}</p>
+                    <p class="text-[10px] text-gray-400 flex items-center">
+                        <i class="fas fa-user-circle text-[9px] mr-1"></i> ${inc.payerName}
+                    </p>
+                </div>
+                <div class="flex items-center gap-3 flex-shrink-0 text-right">
+                    <span class="text-base font-black text-emerald-600">+ ${formatCurrency(inc.amount)}</span>
+                    
+                    <button onclick="deleteIncomeFromHistory('${inc.participantId}', ${inc.originalIndex})" 
+                            class="w-8 h-8 flex items-center justify-center rounded-xl bg-white border border-gray-200 text-gray-400 hover:text-red-600 hover:border-red-200 transition-colors shadow-sm opacity-100 sm:opacity-0 sm:group-hover:opacity-100">
+                        <i class="fas fa-trash text-[10px]"></i>
+                    </button>
+                </div>
+            </div>`
+      );
+    });
+
+    return;
+  }
+
+  // ========================================================
+  // PARTE B: TU CÃ“DIGO ORIGINAL (GASTOS) - INTACTO
+  // ========================================================
+
+  // 1. Filtrado
+  let filteredExpenses = allExpensesInMonth;
+  if (selectedDayFilter) {
+    filteredExpenses = filteredExpenses.filter((e) => e.date === selectedDayFilter);
+    document.getElementById("expense-diagnostic").textContent = `Viendo gastos del ${formatShortDate(selectedDayFilter)} `;
+  }
+  if (activeFilters.description) {
+    const term = activeFilters.description.toLowerCase();
+    filteredExpenses = filteredExpenses.filter((e) => e.description.toLowerCase().includes(term) || (e.subcategory && e.subcategory.toLowerCase().includes(term)));
+  }
+  if (activeFilters.category) filteredExpenses = filteredExpenses.filter((e) => e.category === activeFilters.category);
+  if (activeFilters.participant) filteredExpenses = filteredExpenses.filter((e) => e.payerId === activeFilters.participant);
+  if (activeFilters.paymentMethod) filteredExpenses = filteredExpenses.filter((e) => e.paymentMethodId === activeFilters.paymentMethod);
+  if (activeFilters.guestOnly) filteredExpenses = filteredExpenses.filter((e) => e.payerId.startsWith("guest_"));
+
+  document.getElementById("expense-diagnostic").textContent = `Mostrando ${filteredExpenses.length} movimientos.`;
+
+  if (filteredExpenses.length === 0) {
+    reportEl.innerHTML = `<div class='flex flex-col items-center justify-center py-12 text-gray-300 opacity-60'><i class="fas fa-search text-4xl mb-2"></i><p class="text-sm font-medium">No hay gastos con estos filtros.</p></div>`;
+    return;
+  }
+
+  const participantsMap = new Map(appState.participants.map((p) => [p.id, p.name]));
+  const paymentMethodsMap = new Map(appState.paymentMethods.map((m) => [m.id, m]));
+
+  const groupedExpenses = filteredExpenses.reduce((acc, expense) => {
+    const category = expense.category || "Sin Categoría";
+    if (!acc[category]) acc[category] = [];
+    acc[category].push(expense);
+    return acc;
+  }, {});
+
+  Object.keys(groupedExpenses)
+    .sort()
+    .forEach((categoryName) => {
+      const expenses = groupedExpenses[categoryName];
+      const categoryTotal = expenses.reduce((sum, exp) => sum + exp.amount, 0);
+      const categoryConfig = appState.categories.find((c) => c.name === categoryName);
+      const budget = categoryConfig?.budget || 0;
+
+      let progressBarHtml = "";
+      let financialInfoHtml = "";
+      let amountColor = "text-gray-900";
+      let cardBorderClass = "border-gray-100";
+
+      if (budget > 0) {
+        const percent = (categoryTotal / budget) * 100;
+        const remaining = budget - categoryTotal;
+
+        let barColorClass = "bg-emerald-50";
+        let badgeClass = "text-emerald-600 bg-emerald-100";
+        let statusLabel = `Quedan ${formatCurrency(remaining)} `;
+
+        if (percent > 100) {
+          barColorClass = "bg-rose-50";
+          badgeClass = "text-rose-600 bg-rose-100";
+          amountColor = "text-rose-600";
+          cardBorderClass = "border-rose-200";
+          statusLabel = `Excedido ${formatCurrency(Math.abs(remaining))} `;
+        } else if (percent > 85) {
+          barColorClass = "bg-amber-50";
+          badgeClass = "text-amber-600 bg-amber-100";
+        }
+
+        progressBarHtml = `
+  <div class="absolute top-0 left-0 h-full ${barColorClass} transition-all duration-1000 ease-out"
+style="width: ${Math.min(100, percent)}%; z-index: 0;">
+            </div>
+  `;
+
+        financialInfoHtml = `
+  <div class="text-right">
+                <div class="leading-none mb-1">
+                    <span class="text-lg font-black ${amountColor}">${formatCurrency(categoryTotal)}</span>
+                    <span class="text-xs text-gray-400 font-medium">/ ${formatCurrency(budget)}</span>
+                </div>
+                <span class="inline-block px-1.5 py-0.5 rounded text-[9px] font-bold uppercase tracking-wide ${badgeClass}">
+                    ${statusLabel}
+                </span>
+            </div>
+  `;
+      } else {
+        financialInfoHtml = `
+  <div class="text-right">
+                    <span class="block text-lg font-black text-gray-800 leading-none">
+                    ${formatCurrency(categoryTotal)}
+                </span>
+                <span class="text-[10px] font-bold text-gray-300 uppercase tracking-wider mt-0.5 block">Sin límite</span>
+            </div>
+  `;
+      }
+
+      const contentId = `cat-content-${categoryName.replace(/[^a-zA-Z0-9]/g, "-")}`;
+
+      const categoryCard = document.createElement("div");
+      categoryCard.className = `bg-white rounded-3xl shadow-sm border ${cardBorderClass} overflow-hidden mb-3 transition-all hover:shadow-md group relative w-full`;
+
+      categoryCard.innerHTML = `
+  <button class="category-toggle-btn w-full text-left p-0 focus:outline-none relative block" data-target-id="${contentId}">
+    ${progressBarHtml}
+<div class="relative z-10 p-4 flex items-center justify-between gap-4">
+  <div class="flex items-center gap-4 overflow-hidden">
+    <div class="w-10 h-10 rounded-xl bg-white/60 backdrop-blur-md border border-gray-100 flex-shrink-0 flex items-center justify-center text-gray-400 group-hover:text-indigo-600 transition-colors">
+      <i class="fas fa-folder-open"></i>
+    </div>
+    <div class="min-w-0">
+      <h4 class="text-base font-extrabold text-gray-800 truncate leading-tight">${categoryName}</h4>
+      <p class="text-[10px] text-gray-500 font-medium truncate opacity-80">${expenses.length} transacciones</p>
+    </div>
+  </div>
+  <div class="flex items-center gap-4 flex-shrink-0">
+    ${financialInfoHtml}
+    <div class="w-8 h-8 rounded-full bg-white/50 flex items-center justify-center transition-colors group-hover:bg-white">
+      <i class="chevron fas fa-chevron-down text-gray-400 text-xs transition-transform duration-300 group-hover:text-indigo-500"></i>
+    </div>
+  </div>
+</div>
+        </button>
+
+  <div id="${contentId}" class="category-collapsible-content bg-white border-t border-gray-100 relative z-20">
+    <div class="px-12 py-3 space-y-1">
+      ${expenses
+          .sort((a, b) => new Date(b.dateCreated || b.date) - new Date(a.dateCreated || a.date))
+          .map((exp) => createExpenseCardHTML(exp, participantsMap, paymentMethodsMap))
+          .join("")}
+    </div>
+  </div>
+`;
+
+      reportEl.appendChild(categoryCard);
+    });
+
+  reportEl.onclick = (e) => {
+    handleExpenseReportClick(e);
+  };
+}
+
+function getCalendarCycleHighlights() {
+  const activeCycleDates = new Set();
+  const paymentDates = new Set();
+  const today = new Date(); // Usamos 'hoy' para calcular los ciclos *actuales*
+
+  try {
+    const creditCards = appState.paymentMethods.filter((m) => m.type === "credit" && m.paymentDay);
+
+    creditCards.forEach((card) => {
+      // Usamos la función que ya existe en tu código
+      const { startDate, closingDate, paymentDate } = getCycleDates(card, today);
+
+      if (paymentDate) {
+        paymentDates.add(paymentDate);
+      }
+
+      if (startDate && closingDate) {
+        let currentDate = new Date(startDate + "T00:00:00Z");
+        const endDate = new Date(closingDate + "T00:00:00Z");
+
+        // Itera día por día y añade al Set
+        while (currentDate <= endDate) {
+          activeCycleDates.add(currentDate.toISOString().split("T")[0]);
+          currentDate.setUTCDate(currentDate.getUTCDate() + 1);
+        }
+      }
+    });
+  } catch (error) {
+    console.error("Error al calcular los ciclos del calendario:", error);
+  }
+
+  return { activeCycleDates, paymentDates };
+}
+
+// ================================================================
+// CALENDARIO COMPACTO (DISEÃ‘O ESTRICTO Y FUNCIONAL)
+// ================================================================
+function renderInteractiveCalendar() {
+  const container = document.getElementById("interactive-calendar-container");
+  if (!container) return;
+
+  // 1. Datos Base
+  const viewDate = currentFilterDate;
+  const viewYear = viewDate.getFullYear();
+  const viewMonth = viewDate.getMonth();
+  const activeDateString = selectedDayFilter || new Date().toISOString().split("T")[0];
+
+  if (!window.pickerYearOffset) window.pickerYearOffset = viewYear;
+
+  // 2. Datos de Gastos
+  const filterMonthString = getFilterMonthString(viewDate);
+  const { dailySpendingMap } = calculateDailySpending(appState.expenses, filterMonthString);
+
+  // 3. Matriz de Días
+  const daysArray = [];
+  const firstDayOfMonth = new Date(viewYear, viewMonth, 1);
+  const startDate = new Date(firstDayOfMonth);
+  startDate.setDate(startDate.getDate() - firstDayOfMonth.getDay());
+
+  for (let i = 0; i < 42; i++) {
+    const current = new Date(startDate);
+    current.setDate(startDate.getDate() + i);
+    const dateStr = current.toISOString().split("T")[0];
+    const isCurrentMonth = current.getMonth() === viewMonth;
+    const isToday = dateStr === new Date().toISOString().split("T")[0];
+    const isSelected = selectedDayFilter === dateStr;
+    const hasSpending = dailySpendingMap.get(dateStr) > 0;
+
+    daysArray.push({
+      dateStr,
+      dayNum: current.getDate(),
+      isCurrentMonth,
+      isToday,
+      isSelected,
+      hasSpending,
+    });
+  }
+
+  // 4. Estado Colapsado/Expandido
+  let activeRowIndex = 0;
+  daysArray.forEach((day, index) => {
+    if (day.dateStr === activeDateString && day.isCurrentMonth) activeRowIndex = Math.floor(index / 7);
+  });
+  const isExpanded = container.classList.contains("expanded");
+
+  // --- RENDERIZADO HTML ---
+  let contentHtml = "";
+
+  // A. VISTA: SELECTOR DE AÃ‘O/MES (Compacto)
+  if (isMonthPickerVisible) {
+    let monthsGrid = "";
+    MONTH_NAMES.forEach((m, idx) => {
+      const isSelected = idx === viewMonth && window.pickerYearOffset === viewYear;
+      // Botones de mes compactos
+      const btnClass = isSelected ? "bg-gray-900 text-white font-bold" : "text-gray-600 hover:bg-gray-100 font-medium";
+
+      monthsGrid += `
+  <button onclick="selectMonthFromPicker(${idx})" class="h-8 rounded-lg text-xs transition-colors ${btnClass}">
+    ${m.substring(0, 3)}
+                </button>`;
+    });
+
+    contentHtml = `
+  <div class="h-full flex flex-col animate-fade-in">
+                <div class="flex items-center justify-between mb-2 px-2">
+                    <button id="picker-prev-year" class="w-6 h-6 flex items-center justify-center rounded hover:bg-gray-100 text-gray-400"><i class="fas fa-chevron-left text-xs"></i></button>
+                    <span class="text-sm font-bold text-gray-800">${window.pickerYearOffset}</span>
+                    <button id="picker-next-year" class="w-6 h-6 flex items-center justify-center rounded hover:bg-gray-100 text-gray-400"><i class="fas fa-chevron-right text-xs"></i></button>
+                </div>
+                <div class="grid grid-cols-4 gap-1 flex-grow content-start">
+                    ${monthsGrid}
+                </div>
+                <button id="calendar-title-btn-back" class="mt-2 text-[10px] text-gray-400 font-bold uppercase hover:text-gray-600 py-1 text-center w-full border-t border-gray-50">
+                    Volver
+                </button>
+            </div>
+  `;
+  } else {
+    // B. VISTA: DÍAS (Compacto)
+
+    // Header Simple
+    const headerHtml = `
+  <div class="flex items-center justify-between mb-2">
+                <button id="calendar-title-btn" class="flex items-center gap-2 text-sm font-bold text-gray-800 hover:text-indigo-600 transition-colors">
+                    <span>${MONTH_NAMES[viewMonth]} ${viewYear}</span>
+                    <i class="fas fa-caret-down text-gray-300 text-xs"></i>
+                </button>
+                <div class="flex gap-1">
+                    <button id="cal-prev-btn" class="w-6 h-6 flex items-center justify-center rounded hover:bg-gray-100 text-gray-400"><i class="fas fa-chevron-left text-[10px]"></i></button>
+                    <button id="cal-next-btn" class="w-6 h-6 flex items-center justify-center rounded hover:bg-gray-100 text-gray-400"><i class="fas fa-chevron-right text-[10px]"></i></button>
+                </div>
+            </div>
+  `;
+
+    // Días Semana
+    const weekDaysHtml = `
+  <div class="grid grid-cols-7 mb-1 border-b border-gray-100 pb-1">
+    ${["D", "L", "M", "M", "J", "V", "S"].map((d) => `<div class="text-center text-[9px] font-bold text-gray-400">${d}</div>`).join("")}
+            </div>
+  `;
+
+    // Grid Días
+    let rowsHtml = "";
+    const startRow = isExpanded ? 0 : activeRowIndex;
+    const endRow = isExpanded ? 6 : activeRowIndex + 1;
+
+    for (let r = startRow; r < endRow; r++) {
+      let rowContent = "";
+      for (let d = 0; d < 7; d++) {
+        const day = daysArray[r * 7 + d];
+
+        // Estilos mínimos
+        let btnClass = "w-full h-8 rounded flex flex-col items-center justify-center relative transition-colors ";
+        let textClass = "text-xs ";
+        let dotHtml = "";
+
+        if (day.isSelected) {
+          btnClass += "bg-gray-900"; // Negro para selección (consistente con tus botones)
+          textClass += "text-white font-bold";
+        } else if (day.isToday) {
+          btnClass += "bg-indigo-50 text-indigo-700 font-bold"; // Hoy resaltado suave
+        } else if (!day.isCurrentMonth) {
+          textClass += "text-gray-300"; // Mes anterior muy tenue
+        } else {
+          btnClass += "text-gray-700 hover:bg-gray-50"; // Normal
+        }
+
+        if (day.hasSpending && !day.isSelected) {
+          const dotColor = day.isToday ? "bg-indigo-400" : "bg-emerald-400";
+          dotHtml = `<span class="absolute bottom-1 w-1 h-1 rounded-full ${dotColor}"></span>`;
+        }
+
+        rowContent += `
+  <div class="p-[1px]">
+    <button onclick="handleCalendarDayClick('${day.dateStr}')" class="${btnClass}">
+      <span class="${textClass}">${day.dayNum}</span>
+      ${dotHtml}
+    </button>
+                    </div>`;
+      }
+      rowsHtml += `<div class="grid grid-cols-7">${rowContent}</div>`;
+    }
+
+    // Botón Expansión (Línea muy fina)
+    const toggleIcon = isExpanded ? "fa-chevron-up" : "fa-chevron-down";
+    const toggleHtml = `
+  <button id="calendar-toggle-btn" class="w-full flex justify-center py-0.5 mt-1 text-gray-300 hover:text-gray-500 transition-colors cursor-pointer" title="${isExpanded ? "Ver menos" : "Ver mes"}">
+    <i class="fas ${toggleIcon} text-[10px]"></i>
+            </button>
+  `;
+
+    contentHtml = `
+  <div class="animate-fade-in">
+    ${headerHtml}
+                ${weekDaysHtml}
+                ${rowsHtml}
+                ${toggleHtml}
+            </div>
+  `;
+  }
+
+  // Contenedor Principal (Estilo Tarjeta Simple)
+  container.innerHTML = `
+  <div class="bg-white rounded-2xl border border-gray-200 p-3 shadow-sm">
+    ${contentHtml}
+        </div>
+  `;
+
+  // Listeners
+  if (isMonthPickerVisible) {
+    document.getElementById("picker-prev-year").onclick = (e) => {
+      e.stopPropagation();
+      window.pickerYearOffset--;
+      renderInteractiveCalendar();
+    };
+    document.getElementById("picker-next-year").onclick = (e) => {
+      e.stopPropagation();
+      window.pickerYearOffset++;
+      renderInteractiveCalendar();
+    };
+    document.getElementById("calendar-title-btn-back").onclick = (e) => {
+      e.stopPropagation();
+      isMonthPickerVisible = false;
+      renderInteractiveCalendar();
+    };
+  } else {
+    document.getElementById("calendar-title-btn").onclick = (e) => {
+      e.stopPropagation();
+      isMonthPickerVisible = true;
+      window.pickerYearOffset = viewYear;
+      renderInteractiveCalendar();
+    };
+    document.getElementById("cal-prev-btn").onclick = (e) => {
+      e.stopPropagation();
+      currentFilterDate.setMonth(currentFilterDate.getMonth() - 1);
+      currentFilterDate.setDate(1);
+      renderUI();
+    };
+    document.getElementById("cal-next-btn").onclick = (e) => {
+      e.stopPropagation();
+      currentFilterDate.setMonth(currentFilterDate.getMonth() + 1);
+      currentFilterDate.setDate(1);
+      renderUI();
+    };
+    document.getElementById("calendar-toggle-btn").onclick = (e) => {
+      e.stopPropagation();
+      container.classList.toggle("expanded");
+      renderInteractiveCalendar();
+    };
+  }
+}
+
+// --- FUNCIONES GLOBALES DE AYUDA ---
+
+// Seleccionar mes desde el picker
+window.selectMonthFromPicker = function (monthIndex) {
+  // Actualizar la fecha global
+  currentFilterDate.setFullYear(window.pickerYearOffset);
+  currentFilterDate.setMonth(monthIndex);
+  currentFilterDate.setDate(1);
+
+  // Cerrar picker y actualizar
+  isMonthPickerVisible = false;
+  renderUI(); // Esto llamará a renderInteractiveCalendar internamente
+};
+
+// Función Global de Clic
+window.handleCalendarDayClick = function (dateStr) {
+  if (selectedDayFilter === dateStr) {
+    selectedDayFilter = null; // Quitar filtro
+  } else {
+    selectedDayFilter = dateStr; // Activar filtro
+  }
+  renderInteractiveCalendar(); // Actualiza visualmente (borde azul)
+  renderUI(); // Filtra la lista de abajo
+};
+
+function renderMonthPickerDropdown() {
+  const monthListContainerEl = document.getElementById("month-list-container");
+  const yearDisplayEl = document.getElementById("month-picker-year");
+
+  if (!monthListContainerEl || !yearDisplayEl) return;
+
+  // 1. Actualizar el año visible en el picker
+  yearDisplayEl.textContent = monthPickerYear;
+
+  // 2. Obtener el año y mes de la vista actual (para el highlight)
+  const viewYear = currentFilterDate.getFullYear();
+  const viewMonth = currentFilterDate.getMonth();
+
+  // 3. Limpiar y generar los 12 meses
+  monthListContainerEl.innerHTML = "";
+  MONTH_NAMES.forEach((name, index) => {
+    // El mes está "activo" SOLO SI el año del picker coincide con el año de la vista
+    const isActive = index === viewMonth && monthPickerYear === viewYear;
+    monthListContainerEl.insertAdjacentHTML("beforeend", `<button data-month="${index}" class="month-picker-btn ${isActive ? "active" : ""}" >${name.substring(0, 3)}</button>`);
+  });
+}
+// MODIFICADO: Añadir rotación de icono chevron al expandir/colapsar
+function handleExpenseReportClick(e) {
+  // 1. CLIC EN CATEGORÍA (ACORDEÃ“N VELOZ)
+  const btn = e.target.closest(".category-toggle-btn");
+
+  if (btn) {
+    e.preventDefault();
+    const targetId = btn.dataset.targetId;
+    const content = document.getElementById(targetId);
+    const isOpen = content.classList.contains("open");
+
+    // A. SI VAMOS A ABRIR, CERRAMOS EL ANTERIOR INMEDIATAMENTE
+    if (!isOpen) {
+      // Buscamos solo UNO (querySelector es más rápido que All)
+      const activeContent = document.querySelector('.category-collapsible-content.open');
+      const activeBtn = document.querySelector('.category-toggle-btn.open');
+
+      if (activeContent && activeContent.id !== targetId) {
+        activeContent.classList.remove('open');
+        if (activeBtn) activeBtn.classList.remove('open');
+      }
+    }
+
+    // B. CAMBIAR EL ESTADO DEL ACTUAL
+    // Usamos requestAnimationFrame para asegurar que el cierre anterior se procesó
+    requestAnimationFrame(() => {
+      content.classList.toggle("open");
+      btn.classList.toggle("open");
+    });
+
+    return;
+  }
+
+  // 2. CLIC EN BOTONES INTERNOS (Lógica de gastos intacta)
+  const target = e.target.closest("button, .expense-header");
+  if (!target) return;
+
+  const id = target.dataset.id;
+  const toggleId = target.dataset.toggle;
+
+  if (toggleId && target.classList.contains("expense-header")) {
+    const detail = document.getElementById(`detail-${toggleId}`);
+    const icon = target.closest(".expense-header")?.querySelector(".fa-caret-down");
+    if (detail) {
+      detail.classList.toggle("hidden");
+      if (icon) icon.classList.toggle("rotate-180");
+    }
+  }
+  else if (id && target.classList.contains("edit-expense-btn")) openUnifiedExpenseModal(id);
+  else if (id && target.classList.contains("delete-btn")) {
+    ui.confirm(
+      "Eliminar Gasto",
+      "Esta acción no se puede deshacer. Â¿Deseas borrar este registro?",
+      () => removeExpense(id),
+      "error", // Tipo rojo
+      "Sí, Eliminar"
+    );
+  }
+}
+
+// ================================================================
+// RENDERIZADO DE GASTOS FIJOS (DISEÃ‘O INTEGRADO / SIN BORDES EXTRA)
+// ================================================================
+// ================================================================
+// RENDERIZADO DE GASTOS FIJOS (CON CONTADOR DE MESES RESTANTES)
+// ================================================================
+// ================================================================
+// RENDERIZADO DE GASTOS FIJOS (CONTADOR DE MESES SIMPLIFICADO)
+// ================================================================
+// ================================================================
+// RENDERIZADO DE GASTOS FIJOS (CORREGIDO: EVITA DOBLE CLICK)
+// ================================================================
+function renderFixedExpensesSummary(expensesForMonth) {
+  let fixedEl = document.getElementById("fixed-expenses-summary");
+  if (!fixedEl) return;
+
+  // 1. Filtrar solo fijos
+  const fixedExpenses = expensesForMonth.filter((e) => e.isFixed);
+
+  if (fixedExpenses.length === 0) {
+    fixedEl.innerHTML = `
+  <div class="h-full flex flex-col items-center justify-center text-center py-10 opacity-50">
+          <i class="fas fa-calendar-check text-3xl mb-2 text-gray-300"></i>
+          <span class="text-sm text-gray-400 font-medium">Sin fijos este mes</span>
+      </div>`;
+    return;
+  }
+
+  const sharedFixed = fixedExpenses.filter((exp) => exp.type === "shared");
+  const personalFixed = fixedExpenses.filter((exp) => exp.type === "personal");
+
+  // Helper: Renglón
+  const createCompactRow = (exp) => {
+    let recurrenceHtml = "";
+
+    // Lógica de meses restantes
+    const totalMonths = exp.fixedRecurrenceMonths || 0;
+
+    if (totalMonths > 0 && exp.dateCreated) {
+      const startDate = new Date(exp.dateCreated);
+      const currentDate = new Date(exp.date + "T00:00:00Z");
+
+      const monthsPassed = (currentDate.getFullYear() - startDate.getFullYear()) * 12 + (currentDate.getMonth() - startDate.getMonth());
+
+      const currentInstallment = monthsPassed + 1;
+      const remaining = totalMonths - currentInstallment;
+
+      if (remaining >= 0) {
+        let textColor = "text-gray-400";
+        if (remaining === 0) textColor = "text-orange-500 font-bold";
+        else if (remaining < 3) textColor = "text-indigo-500 font-semibold";
+
+        recurrenceHtml = `<div class="text-[10px] ${textColor} leading-none mt-0.5">${remaining}m</div>`;
+      }
+    }
+
+    return `
+  <div class="flex items-center justify-between py-2 border-b border-gray-50 last:border-0 hover:bg-gray-50 px-2 rounded transition-colors group/row">
+          <div class="min-w-0 flex-1 pr-3">
+              <p class="text-sm font-bold text-gray-700 truncate leading-tight" title="${exp.description}">
+                  ${exp.description}
+              </p>
+              ${recurrenceHtml}
+          </div>
+          <div class="flex items-center gap-3">
+              <span class="text-sm font-black text-gray-900 text-right">
+                  ${formatCurrency(exp.amount)}
+              </span>
+              <button onclick="stopFixedExpense('${exp.id}', '${exp.date}')" 
+                      class="opacity-0 group-hover/row:opacity-100 text-gray-300 hover:text-red-500 transition-all p-1"
+                      title="Cancelar Suscripción">
+                  <i class="fas fa-ban text-xs"></i>
+              </button>
+          </div>
+      </div>`;
+  };
+
+  // Helper: Sección Plegable
+  const createSection = (title, colorName, expenses) => {
+    if (expenses.length === 0) return "";
+
+    const sectionId = `fixed-group-${title.replace(/\s+/g, "-")}`;
+    const subTotal = expenses.reduce((sum, e) => sum + e.amount, 0);
+    const barColor = colorName === "orange" ? "bg-orange-400" : "bg-indigo-400";
+
+    return `
+      <div class="mb-3 group-section">
+          <div class="flex items-center justify-between py-2 px-1 hover:bg-gray-50 rounded-lg group transition-colors">
+              <button class="flex items-center gap-2 flex-grow text-left toggle-fixed-btn" data-target="${sectionId}">
+                  <div class="w-1.5 h-4 ${barColor} rounded-full"></div>
+                  <h4 class="text-xs font-bold text-gray-500 uppercase tracking-wider group-hover:text-gray-800 transition-colors">
+                      ${title}
+                  </h4>
+              </button>
+              <span class="text-xs font-black text-gray-800 bg-white px-2 py-0.5 rounded-md border border-gray-100 shadow-sm">
+                  ${formatCurrency(subTotal)}
+              </span>
+          </div>
+          <div id="${sectionId}" class="pl-3 border-l-2 border-gray-100 ml-1.5 space-y-1 ${title === 'Compartidos' ? '' : 'hidden'}">
+              ${expenses.map(createCompactRow).join("")}
+          </div>
+      </div>`;
+  };
+
+  fixedEl.innerHTML = `
+  <div class="flex flex-col h-full bg-white rounded-2xl shadow-sm border border-gray-100 p-4 relative overflow-hidden">
+          <div class="flex items-center justify-between mb-4 z-10">
+              <h3 class="text-sm font-black text-gray-800 uppercase tracking-wide flex items-center gap-2">
+                  <i class="fas fa-calendar-alt text-indigo-500"></i> Fijos
+              </h3>
+              <div class="text-[10px] font-bold text-indigo-600 bg-indigo-50 px-2 py-1 rounded-lg">
+                   Total: ${formatCurrency(sharedFixed.reduce((s, e) => s + e.amount, 0) + personalFixed.reduce((s, e) => s + e.amount, 0))}
+              </div>
+          </div>
+
+          <div class="flex-grow overflow-y-auto custom-scrollbar pr-1 -mr-1">
+              ${createSection("Compartidos", "indigo", sharedFixed)}
+              ${appState.participants.map(p => {
+    const pExpenses = personalFixed.filter(exp => exp.payerId === p.id);
+    return createSection(p.name, "orange", pExpenses);
+  }).join("")}
+          </div>
+          
+           <!--Decoración de fondo-->
+  <div class="absolute -bottom-6 -right-6 w-24 h-24 bg-gradient-to-br from-gray-50 to-indigo-50/50 rounded-full blur-2xl -z-0"></div>
+      </div>
+  `;
+
+  // --- CORRECCIÓN CRÍTICA ---
+  // Clonamos el elemento para eliminar TODOS los listeners anteriores
+  const newFixedEl = fixedEl.cloneNode(true);
+  fixedEl.parentNode.replaceChild(newFixedEl, fixedEl);
+  fixedEl = newFixedEl; // Actualizamos la referencia
+
+  // Listener Único y Limpio
+  fixedEl.addEventListener("click", (e) => {
+    const btn = e.target.closest(".toggle-fixed-btn");
+    if (btn) {
+      e.stopPropagation();
+      const targetId = btn.dataset.target;
+      const contentDiv = document.getElementById(targetId);
+
+      // Chevron icon handling if present, though new HTML structure uses simpler markup?
+      // Wait, new structure doesn't include chevron icon explicitly in previous `createSection`.
+      // Let's rely on collapsing logic only.
+
+      if (contentDiv) {
+        if (contentDiv.classList.contains("hidden")) {
+          contentDiv.classList.remove("hidden");
+        } else {
+          contentDiv.classList.add("hidden");
+        }
+      }
+    }
+  });
+}
+
+// ===================================
+// FUNCIÓN: CANCELAR GASTO FIJO
+// ===================================
+window.stopFixedExpense = async (projId, dateStr) => {
+  // 1. Extraer ID original
+  let originalId = projId;
+  if (projId.startsWith("proj_vis_")) {
+    originalId = projId.replace("proj_vis_", "");
+  } else if (projId.startsWith("proj_fin_")) {
+    // Fallback for financial projections
+    const match = projId.match(/proj_fin_(.*?)_\d{4}-\d{2}-\d{2}/);
+    if (match && match[1]) originalId = match[1];
+  }
+
+  // 2. Buscar gasto
+  const expenseIndex = appState.expenses.findIndex(e => e.id === originalId);
+  if (expenseIndex === -1) {
+    showModal("Error: Gasto original no encontrado.");
+    return;
+  }
+
+  const expense = appState.expenses[expenseIndex];
+  if (!expense.isFixed) {
+    showModal("Este gasto no es fijo.");
+    return;
+  }
+
+  // 3. Confirmar acción
+  ui.confirm(
+    "Cancelar Suscripción",
+    "¿Deseas cancelar esta suscripción? El gasto dejará de generarse a partir de esta fecha.",
+    async () => {
+      // 4. Calcular meses transcurridos
+      const startDate = new Date(expense.date);
+      const targetDate = new Date(dateStr);
+
+      // Diferencia en meses
+      const diff = (targetDate.getFullYear() - startDate.getFullYear()) * 12 + (targetDate.getMonth() - startDate.getMonth());
+
+      if (diff < 0) {
+        showModal("Error al calcular fechas.");
+        return;
+      }
+
+      // Actualizar recurrencia
+      const newAppState = JSON.parse(JSON.stringify(appState));
+      newAppState.expenses[expenseIndex].fixedRecurrenceMonths = diff;
+
+      await saveState(newAppState);
+
+      showModal("Suscripción cancelada correctamente.");
+      renderUI();
+    },
+    "error",
+    "Sí, Cancelar"
+  );
+};
+// ================================================================
+// HELPER: CALCULAR DEUDAS POR TARJETA DE CRÃ‰DITO
+// ================================================================
+// ================================================================
+// HELPER: CALCULAR REEMBOLSOS POR MÃ‰TODO (TODOS)
+// ================================================================
+function calculateDetailedReimbursements(expenses, participants, paymentMethods) {
+  // Clave: "methodId_financierId" (Para separar Efectivo de Juan vs Efectivo de Maria)
+  const debtsBySource = {};
+
+  const pMap = new Map(participants.map((p) => [p.id, p.name]));
+  const methodMap = new Map(paymentMethods.map((m) => [m.id, m]));
+
+  expenses.forEach((exp) => {
+    const method = methodMap.get(exp.paymentMethodId);
+    if (!method) return;
+
+    // 1. DETERMINAR EL FINANCIADOR (QUIÃ‰N PUSO EL DINERO)
+    let financierId = null;
+
+    if (method.type === "credit" && method.ownerId) {
+      // En crédito, paga el dueño de la tarjeta
+      financierId = method.ownerId;
+    } else {
+      // En efectivo/débito, paga quien registró el gasto
+      financierId = exp.payerId;
+    }
+
+    // Si es un invitado quien pagó (guest_...), no entra en este desglose de reembolso a usuarios
+    // (La app asume que si paga un invitado, es deuda externa, no interna a reembolsar)
+    if (!financierId || financierId.startsWith("guest_")) return;
+
+    const financierName = pMap.get(financierId) || "Desconocido";
+    const uniqueKey = `${method.id}_${financierId} `;
+
+    // Inicializar estructura
+    if (!debtsBySource[uniqueKey]) {
+      debtsBySource[uniqueKey] = {
+        methodName: method.name,
+        methodType: method.type, // 'credit' o 'cash'
+        ownerId: financierId,
+        ownerName: financierName,
+        totalReimburse: 0,
+        debtors: {},
+      };
+    }
+
+    const sourceData = debtsBySource[uniqueKey];
+    let debtorsList = [];
+
+    // 2. CALCULAR QUIÃ‰N DEBE
+    if (exp.type === "shared") {
+      let count = participants.length;
+      if (exp.guests) count += exp.guests.length;
+      else if (exp.guestName) count += 1;
+
+      const splitAmount = exp.amount / count;
+
+      // Todos deben pagarle al financiador (menos él mismo)
+      participants.forEach((p) => {
+        if (p.id !== financierId) {
+          debtorsList.push({ name: p.name, amount: splitAmount });
+        }
+      });
+
+      // Invitados también deben
+      let guestCount = 0;
+      if (exp.guests) guestCount = exp.guests.length;
+      else if (exp.guestName) guestCount = 1;
+
+      if (guestCount > 0) {
+        debtorsList.push({ name: "Invitado(s)", amount: splitAmount * guestCount });
+      }
+    } else {
+      // Gasto Personal pagado por otro (El consumidor debe pagarle al financiador)
+      if (exp.payerId !== financierId) {
+        const debtorName = pMap.get(exp.payerId) || "Invitado";
+        debtorsList.push({ name: debtorName, amount: exp.amount });
+      }
+    }
+
+    // 3. ACUMULAR DEUDAS
+    debtorsList.forEach((item) => {
+      if (!sourceData.debtors[item.name]) sourceData.debtors[item.name] = 0;
+      sourceData.debtors[item.name] += item.amount;
+      sourceData.totalReimburse += item.amount;
+    });
+  });
+
+  return debtsBySource;
+}
+
+// ================================================================
+// LIQUIDACIÃ“N (CORREGIDA: SIN ERRORES DE VARIABLE)
+// ================================================================
+function renderSharedBalanceSummary(summary, expensesForMonth) {
+  const settlementContentEl = document.getElementById("settlement-summary-content");
+  if (!settlementContentEl) return;
+
+  const participantsMap = new Map(appState.participants.map((p) => [p.id, p.name]));
+  const allExpenses = appState.expenses || [];
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  // --- VARIABLES INICIALIZADAS CORRECTAMENTE ---
+  let html = "";
+  const aggregatedResults = [];
+  let globalTotalToCollect = 0;
+  let cardsHtml = "";
+  // ---------------------------------------------
+
+  // 1. PROCESAR MÃ‰TODOS
+  appState.paymentMethods.forEach((method) => {
+    let range = {};
+    let subtitle = "";
+
+    if (method.type === "credit") {
+      const cycleBase = getCycleDates(method, today);
+      if (cycleBase.closingDate) {
+        const closingDateBase = new Date(cycleBase.closingDate + "T00:00:00Z");
+        if (today > closingDateBase) {
+          const nextMonthRef = new Date(today);
+          nextMonthRef.setMonth(nextMonthRef.getMonth() + 1);
+          range = getCycleDates(method, nextMonthRef);
+        } else {
+          range = cycleBase;
+        }
+        subtitle = `Ciclo: ${formatShortDate(range.startDate)} - ${formatShortDate(range.closingDate)} `;
+      } else return;
+    } else {
+      const y = currentFilterDate.getFullYear();
+      const m = currentFilterDate.getMonth();
+      range = {
+        startDate: new Date(Date.UTC(y, m, 1)).toISOString().split("T")[0],
+        closingDate: new Date(Date.UTC(y, m + 1, 0)).toISOString().split("T")[0],
+      };
+      subtitle = `Mes: ${MONTH_NAMES[m]} `;
+    }
+
+    const calc = renderExpenseListForRange(allExpenses, method.id, range, null, participantsMap);
+    const expensesInCycle = calc.expenses;
+
+    if (expensesInCycle.length === 0) return;
+
+    let financierId = method.type === "credit" && method.ownerId ? method.ownerId : null;
+    if (!financierId) financierId = expensesInCycle.length > 0 ? expensesInCycle[0].payerId : null;
+    if (!financierId || financierId.startsWith("guest_")) return;
+
+    const financierName = participantsMap.get(financierId) || "Varios";
+    const debtors = {};
+    let totalReimburse = 0;
+
+    expensesInCycle.forEach((exp) => {
+      let currentFinancier = financierId ? financierId : exp.payerId;
+      if (!currentFinancier || currentFinancier.startsWith("guest_")) return;
+
+      if (exp.type === "shared") {
+        let count = appState.participants.length;
+        if (exp.guests) count += exp.guests.length;
+        else if (exp.guestName) count += 1;
+        const split = exp.amount / count;
+
+        appState.participants.forEach((p) => {
+          if (p.id !== currentFinancier) {
+            if (!debtors[p.name]) debtors[p.name] = 0;
+            debtors[p.name] += split;
+            totalReimburse += split;
+          }
+        });
+
+        let gc = exp.guests ? exp.guests.length : exp.guestName ? 1 : 0;
+        if (gc > 0) {
+          const guestDebt = split * gc;
+          if (!debtors["Invitado(s)"]) debtors["Invitado(s)"] = 0;
+          debtors["Invitado(s)"] += guestDebt;
+          totalReimburse += guestDebt;
+        }
+      } else {
+        if (exp.payerId !== currentFinancier) {
+          const debtorName = participantsMap.get(exp.payerId) || "Invitado";
+          if (!debtors[debtorName]) debtors[debtorName] = 0;
+          debtors[debtorName] += exp.amount;
+          totalReimburse += exp.amount;
+        }
+      }
+    });
+
+    if (totalReimburse < 0.1) return;
+
+    // Guardamos el ID AQUÍ para usarlo luego
+    const cardIdUnique = `settle-card-${method.id}`;
+
+    aggregatedResults.push({
+      cardId: cardIdUnique, // <--- Guardado correctamente
+      methodName: method.name,
+      methodType: method.type,
+      ownerName: financierName,
+      totalReimburse: totalReimburse,
+      debtors: debtors,
+      subtitle: subtitle,
+    });
+  });
+
+  // 2. GENERAR HTML
+  globalTotalToCollect = aggregatedResults.reduce((sum, card) => sum + card.totalReimburse, 0);
+
+  if (aggregatedResults.length > 0) {
+    aggregatedResults.forEach((card) => {
+      const isCredit = card.methodType === "credit";
+      const headerBg = isCredit ? "bg-gray-900" : "bg-emerald-600";
+      const iconHtml = isCredit ? `<div class="w-8 h-5 rounded border border-gray-500 bg-gray-700/50 flex items-center justify-center"><div class="w-full h-[1px] bg-gray-500"></div></div>` : `<i class="fas fa-wallet text-white/80 text-lg"></i>`;
+
+      const debtorsHtml = Object.entries(card.debtors)
+        .map(
+          ([name, amount]) => `
+    <div class="flex justify-between items-center py-2 border-b border-gray-100 last:border-0 text-xs">
+                    <div class="flex items-center gap-2">
+                        <span class="w-2 h-2 rounded-full bg-rose-500"></span>
+                        <span class="font-bold text-gray-600">${name}</span>
+                    </div>
+                    <span class="font-black text-gray-800">${formatCurrency(amount)}</span>
+                </div>
+    `
+        )
+        .join("");
+
+      cardsHtml += `
+    <div class="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden mb-3 group">
+                <button class="w-full text-left toggle-settle-btn focus:outline-none p-0" data-target="${card.cardId}">
+                    <div class="bg-gray-900 p-4 relative overflow-hidden">
+                        <div class="absolute right-0 top-0 h-full w-1/3 opacity-10 bg-white rotate-12 scale-150"></div>
+                        <div class="flex justify-between items-center relative z-10">
+                            <div class="flex items-center gap-3">
+                                ${iconHtml}
+                                <div>
+                                    <p class="text-[9px] text-white/60 font-bold uppercase tracking-wider">Recibe: ${card.ownerName}</p>
+                                    <p class="text-white font-bold text-sm tracking-wide">${card.methodName}</p>
+                                </div>
+                            </div>
+                            <div class="text-right">
+                                <p class="text-[9px] text-white/60 font-bold uppercase">Total</p>
+                                <p class="text-white font-black text-lg leading-none">${formatCurrency(card.totalReimburse)}</p>
+                            </div>
+                        </div>
+                        <div class="absolute bottom-1 left-1/2 transform -translate-x-1/2 text-white/30 text-[10px]">
+                            <i class="fas fa-chevron-down transition-transform duration-300 chevron-icon"></i>
+                        </div>
+                    </div>
+                </button>
+                <div id="${card.cardId}" class="hidden p-4 border-t border-gray-100 bg-gray-50">
+                    <div class="flex justify-between items-center mb-2">
+                         <p class="text-[10px] font-bold text-gray-400 uppercase tracking-wide">Desglose (${card.subtitle}):</p>
+                    </div>
+                    <div class="bg-white rounded-xl p-3 border border-gray-200 shadow-sm space-y-1">
+                        ${debtorsHtml}
+                    </div>
+                </div>
+            </div>
+ `;
+    });
+  } else {
+    cardsHtml = `
+    <div class="text-center py-12 opacity-50">
+             <i class="fas fa-check-circle text-4xl text-green-400 mb-2"></i>
+             <p class="text-sm font-bold text-gray-500">Todo saldado</p>
+        </div>
+ `;
+  }
+
+  html = `
+    <div class="bg-indigo-50 border border-indigo-200 p-4 rounded-xl mb-6 text-center">
+            <p class="text-xs font-bold text-indigo-800 uppercase">Total a Reembolsar</p>
+            <span class="text-3xl font-black text-indigo-900">${formatCurrency(globalTotalToCollect)}</span>
+        </div>
+    <div class="space-y-1">
+      ${cardsHtml}
+    </div>
+  `;
+
+  settlementContentEl.innerHTML = html;
+
+  settlementContentEl.querySelectorAll(".toggle-settle-btn").forEach((btn) => {
+    btn.addEventListener("click", (e) => {
+      const targetId = btn.dataset.target;
+      const content = document.getElementById(targetId);
+      const chevron = btn.querySelector(".chevron-icon");
+      if (content.classList.contains("hidden")) {
+        content.classList.remove("hidden");
+        if (chevron) chevron.classList.add("rotate-180");
+      } else {
+        content.classList.add("hidden");
+        if (chevron) chevron.classList.remove("rotate-180");
+      }
+    });
+  });
+}
+
+
+function setupSettlementModalListeners() {
+  const modal = document.getElementById("settlement-modal");
+  const openBtn = document.getElementById("open-settlement-modal-btn");
+  const closeBtnTop = document.getElementById("close-settlement-modal-btn");
+  const closeBtnBottom = document.getElementById("close-settlement-modal-btn-bottom");
+
+  if (!modal || !openBtn || !closeBtnTop || !closeBtnBottom) {
+    console.warn("Faltan elementos del modal de liquidación.");
+    return;
+  }
+
+  const openModal = () => {
+    // La función renderUI() ya habrá llenado el contenido.
+    // Solo necesitamos mostrar el modal.
+    modal.classList.remove("hidden");
+    modal.classList.add("flex");
+    document.body.classList.add("no-scroll");
+  };
+
+  const closeModal = () => {
+    modal.classList.add("hidden");
+    modal.classList.remove("flex");
+    document.body.classList.remove("no-scroll");
+  };
+
+  openBtn.addEventListener("click", openModal);
+  closeBtnTop.addEventListener("click", closeModal);
+  closeBtnBottom.addEventListener("click", closeModal);
+}
+// ================================================================
+// ===== 2. REEMPLAZA ESTA FUNCIÃ“N COMPLETA =====
+// ================================================================
+function renderCategoryChart(filteredExpenses) {
+  const ctx = document.getElementById("category-chart").getContext("2d");
+  const noDataEl = document.getElementById("chart-no-data");
+
+  if (categoryChart) categoryChart.destroy();
+
+  // Aplicar filtros dinámicos también al gráfico
+  const descriptionFilter = activeFilters.description;
+  const categoryFilter = activeFilters.category;
+  const participantFilter = activeFilters.participant;
+  const paymentMethodFilter = activeFilters.paymentMethod;
+  const guestOnlyFilter = activeFilters.guestOnly; // <-- Â¡ESTA ES LA LÍNEA QUE FALTABA!
+
+  let chartFilteredExpenses = filteredExpenses;
+  if (descriptionFilter) {
+    chartFilteredExpenses = chartFilteredExpenses.filter((e) => e.description.toLowerCase().includes(descriptionFilter) || (e.subcategory && e.subcategory.toLowerCase().includes(descriptionFilter)));
+  }
+  if (categoryFilter) {
+    chartFilteredExpenses = chartFilteredExpenses.filter((e) => e.category === categoryFilter);
+  }
+  if (participantFilter) {
+    chartFilteredExpenses = chartFilteredExpenses.filter((e) => e.payerId === participantFilter);
+  }
+  if (paymentMethodFilter) {
+    chartFilteredExpenses = chartFilteredExpenses.filter((e) => e.paymentMethodId === paymentMethodFilter);
+  }
+  if (guestOnlyFilter) {
+    chartFilteredExpenses = chartFilteredExpenses.filter((e) => e.payerId.startsWith("guest_"));
+  }
+
+  if (chartFilteredExpenses.length === 0) {
+    noDataEl.classList.remove("hidden");
+    if (categoryChart) {
+      categoryChart.destroy();
+      categoryChart = null;
+    }
+    return;
+  }
+
+  // (El resto de la función es idéntico y no necesita cambios)
+  noDataEl.classList.add("hidden");
+
+  const groupedData = chartFilteredExpenses.reduce((acc, expense) => {
+    const category = expense.category || "Sin Categoría";
+    acc[category] = (acc[category] || 0) + expense.amount;
+    return acc;
+  }, {});
+
+  const labels = Object.keys(groupedData);
+  const datasets = [
+    {
+      label: "Gasto",
+      data: [],
+      backgroundColor: "#4f46e5", // Indigo
+    },
+    {
+      label: "Excedente",
+      data: [],
+      backgroundColor: "#ef4444", // Red
+    },
+  ];
+
+  labels.forEach((label) => {
+    const totalSpent = groupedData[label];
+    const category = appState.categories.find((c) => c.name === label);
+    const budget = category?.budget || 0;
+
+    if (budget > 0 && totalSpent > budget) {
+      datasets[0].data.push(budget);
+      datasets[1].data.push(totalSpent - budget);
+    } else {
+      datasets[0].data.push(totalSpent);
+      datasets[1].data.push(0);
+    }
+  });
+
+  categoryChart = new Chart(ctx, {
+    type: "bar",
+    data: {
+      labels: labels,
+      datasets: datasets,
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      indexAxis: "y",
+      scales: {
+        x: { stacked: true, beginAtZero: true },
+        y: { stacked: true },
+      },
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          callbacks: {
+            label: function (context) {
+              let label = context.dataset.label || "";
+              if (label) label += ": ";
+              label += formatCurrency(context.raw);
+              return label;
+            },
+          },
+        },
+      },
+    },
+  });
+}
+
+function renderCreditCardSummary(expensesForMonth, allExpenses) {
+  const paymentMethods = appState.paymentMethods || [];
+  const participants = appState.participants || [];
+
+  // Mapa de nombres para búsqueda rápida
+  const participantsMap = new Map(participants.map((p) => [p.id, p.name]));
+
+  const container = document.getElementById("credit-card-summary-cards");
+  const section = document.getElementById("credit-card-summary-section");
+
+  // FECHA DE REFERENCIA: Usamos "Ahora" (Local)
+  // La función getCycleDates se encargará de normalizar esto para evitar errores de zona horaria
+  const today = new Date();
+
+  // Limpiar instancias de popovers viejas para evitar fugas de memoria o tooltips fantasmas
+  if (window.paymentMethodPopovers) {
+    window.paymentMethodPopovers.forEach((popover) => popover.destroy());
+  }
+  window.paymentMethodPopovers = [];
+
+  if (!container || !section) return;
+  container.innerHTML = "";
+
+  let globalTotalCycleDebt = 0;
+
+  // Paleta de colores para las tarjetas
+  const cardColors = ["bg-cyan-600", "bg-purple-600", "bg-rose-600", "bg-amber-600", "bg-emerald-600", "bg-blue-600"];
+
+  paymentMethods.forEach((method, index) => {
+    let range = {};
+    let dateText = "";
+
+    // 1. LÃ“GICA DE CICLO (CORREGIDA Y SIMPLIFICADA)
+    if (method.type === "credit") {
+      // Confiamos ciegamente en la nueva lógica robusta de getCycleDates
+      // Le pasamos 'today' y ella nos devuelve el ciclo ACTIVO (sea el actual o el siguiente si ya cortó)
+      const cycle = getCycleDates(method, today);
+
+      if (cycle.closingDate) {
+        range = cycle;
+        dateText = `${formatShortDate(range.startDate)} - ${formatShortDate(range.closingDate)}`;
+      } else {
+        // Fallback por si faltan datos de configuración
+        range = { startDate: null, closingDate: null };
+        dateText = "Configurar Ciclo";
+      }
+    } else {
+      // Lógica para Efectivo/Débito: Usamos el mes del filtro visual actual
+      const y = currentFilterDate.getFullYear();
+      const m = currentFilterDate.getMonth();
+      range = {
+        startDate: new Date(Date.UTC(y, m, 1)).toISOString().split("T")[0],
+        closingDate: new Date(Date.UTC(y, m + 1, 0)).toISOString().split("T")[0],
+      };
+      dateText = MONTH_NAMES[m];
+    }
+
+    // 2. CALCULAR TOTALES DEL RANGO
+    // Usamos allExpenses para buscar en todo el historial, no solo en el mes visual
+    const calculation = renderExpenseListForRange(allExpenses, method.id, range, null, participantsMap);
+    const totalSpent = calculation.total;
+    const expensesToConsider = calculation.expenses;
+
+    globalTotalCycleDebt += totalSpent;
+
+    // 3. PREPARAR DATOS VISUALES
+    let ownerName = "Efectivo";
+    if (method.ownerId) {
+      const owner = participants.find((p) => p.id === method.ownerId);
+      if (owner) ownerName = owner.name;
+    }
+
+    const bottomColor = cardColors[index % cardColors.length];
+    const popoverId = `card-popover-${method.id}`;
+
+    // 4. CALCULAR DESGLOSE DE DEUDA (Quién debe qué dentro de este ciclo)
+    const debtMap = new Map();
+    participants.forEach((p) => debtMap.set(p.id, { name: p.name, total: 0 }));
+    let debtGuest = 0;
+
+    expensesToConsider.forEach((e) => {
+      if (e.type === "shared") {
+        let guestCount = 0;
+        if (e.guests && Array.isArray(e.guests)) guestCount = e.guests.length;
+        else if (e.guestName) guestCount = 1;
+
+        const totalPayees = participants.length + guestCount;
+        const splitAmount = e.amount / totalPayees;
+
+        debtMap.forEach((d) => (d.total += splitAmount)); // Todos suman deuda
+        if (guestCount > 0) debtGuest += splitAmount * guestCount;
+      } else {
+        // Gasto personal
+        const pd = debtMap.get(e.payerId);
+        if (pd) pd.total += e.amount;
+        else if (e.payerId && e.payerId.startsWith("guest")) debtGuest += e.amount;
+      }
+    });
+
+    // 5. GENERAR HTML DEL POPOVER (Detalle al pasar el mouse)
+    let popContent = "";
+    debtMap.forEach((d) => {
+      if (d.total > 0.01) {
+        popContent += `
+    <div class="flex justify-between items-center py-1.5 border-b border-dashed border-gray-100 last:border-0">
+              <span class="text-gray-500 font-medium">${d.name}</span>
+              <span class="text-gray-900 font-bold">${formatCurrency(d.total)}</span>
+          </div>
+ `;
+      }
+    });
+    if (debtGuest > 0.01) {
+      popContent += `
+    <div class="flex justify-between items-center py-1.5 border-b border-dashed border-gray-100 last:border-0">
+            <span class="text-orange-500 font-medium">Invitado(s)</span>
+            <span class="text-orange-600 font-bold">${formatCurrency(debtGuest)}</span>
+        </div>
+ `;
+    }
+    if (!popContent) popContent = '<div class="text-center py-2 text-[10px] text-gray-300">Sin consumo en este ciclo</div>';
+
+    // 6. ICONO SEGÃšN TIPO
+    const isCredit = method.type === "credit";
+    const iconClass = isCredit ? "fa-credit-card" : "fa-wallet";
+
+    // 7. GENERAR HTML DE LA TARJETA
+    const cardHTML = `
+    <div class="relative mb-3">
+          <div class="w-full rounded-xl overflow-hidden shadow-md cursor-pointer payment-method-summary-card transform transition-all duration-200 hover:scale-[1.02] hover:shadow-lg"
+               data-popover-target="${popoverId}" 
+               data-popover-trigger="hover" 
+               data-method-id="${method.id}">
+              
+              <div class="bg-gray-900 px-4 py-3 relative overflow-hidden">
+                  <div class="absolute right-0 top-0 h-full w-1/2 opacity-10" style="background-image: radial-gradient(#fff 1px, transparent 1px); background-size: 8px 8px;"></div>
+                  <div class="flex justify-between items-center relative z-10">
+                      <div class="w-8 h-6 rounded bg-gradient-to-br from-yellow-200 to-yellow-500 border border-yellow-600 opacity-90 flex items-center justify-center"><div class="w-full h-[1px] bg-yellow-700/30"></div></div>
+                      <i class="fas fa-wifi text-gray-500 rotate-90 text-xs"></i>
+                  </div>
+                  <div class="mt-2 flex justify-between items-end relative z-10">
+                       <p class="text-white font-bold text-sm tracking-wide truncate max-w-[120px]">${method.name}</p>
+                       <p class="text-[9px] text-gray-400 font-mono bg-gray-800/50 px-1.5 rounded">${dateText}</p>
+                  </div>
+              </div>
+              <div class="${bottomColor} px-4 py-2.5 relative">
+                  <div class="absolute top-0 left-0 right-0 h-1 bg-gradient-to-b from-black/20 to-transparent"></div>
+                  <div class="flex justify-between items-center">
+                      <div class="flex flex-col">
+                          <span class="text-[8px] text-white/70 font-bold uppercase tracking-widest">TITULAR</span>
+                          <span class="text-white font-bold text-xs truncate max-w-[100px]">${ownerName}</span>
+                      </div>
+                      <p class="text-white text-lg font-black tracking-tight drop-shadow-md">${formatCurrency(totalSpent)}</p>
+                  </div>
+                  <div class="absolute top-[-10px] right-4 flex opacity-80">
+                      <div class="w-5 h-5 rounded-full bg-red-500/90 backdrop-blur-sm shadow-sm"></div>
+                      <div class="w-5 h-5 rounded-full bg-yellow-500/90 backdrop-blur-sm -ml-2 shadow-sm"></div>
+                  </div>
+              </div>
+          </div>
+
+          <div data-popover id="${popoverId}" role="tooltip" class="absolute z-[100] invisible inline-block w-56 text-xs transition-opacity duration-300 bg-white border border-gray-100 rounded-xl shadow-xl opacity-0">
+              <div class="px-4 py-3">
+                  <h4 class="text-[9px] font-bold text-gray-400 uppercase tracking-widest mb-2 border-b border-gray-100 pb-1">Desglose del Ciclo</h4>
+                  ${popContent}
+              </div>
+              <div data-popper-arrow class="w-2 h-2 bg-white border-l border-t border-gray-100 transform rotate-45"></div>
+          </div>
+      </div>
+    `;
+    container.insertAdjacentHTML("beforeend", cardHTML);
+  });
+
+  // 8. INICIALIZAR POPOVERS (Flowbite)
+  container.querySelectorAll("[data-popover-target]").forEach((triggerEl) => {
+    const popoverId = triggerEl.getAttribute("data-popover-target");
+    const popoverEl = document.getElementById(popoverId);
+    if (popoverEl && window.Popover) {
+      const options = {
+        placement: "left",
+        triggerType: "hover",
+        offset: 10,
+      };
+      const popoverInstance = new window.Popover(popoverEl, triggerEl, options);
+      window.paymentMethodPopovers.push(popoverInstance);
+    }
+  });
+
+  // 9. ACTUALIZAR TÍTULO DE LA SECCIÃ“N
+  if (paymentMethods.length === 0) {
+    section.classList.add("hidden");
+  } else {
+    section.classList.remove("hidden");
+    const titleEl = section.querySelector("h3");
+    if (titleEl) {
+      titleEl.innerHTML = `Resumen tarjetas <span class="ml-2 text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded-lg font-bold">${formatCurrency(globalTotalCycleDebt)}</span>`;
+    }
+  }
+}
+
+// ================================================================
+// LÃ“GICA DE LIQUIDACIÃ“N (SETTLEMENTS)
+// ================================================================
+function calculateSettlements(participantData) {
+  let debtors = participantData
+    .filter((p) => p.balance < -0.01)
+    .map((p) => ({ ...p, balance: Math.abs(p.balance) }))
+    .sort((a, b) => b.balance - a.balance);
+
+  let creditors = participantData
+    .filter((p) => p.balance > 0.01)
+    .sort((a, b) => b.balance - a.balance);
+
+  const transactions = [];
+
+  let i = 0; // Index debtor
+  let j = 0; // Index creditor
+
+  while (i < debtors.length && j < creditors.length) {
+    const debtor = debtors[i];
+    const creditor = creditors[j];
+
+    const amount = Math.min(debtor.balance, creditor.balance);
+
+    if (amount > 0.01) {
+      transactions.push({
+        from: debtor.name,
+        to: creditor.name,
+        amount: amount,
+      });
+    }
+
+    debtor.balance -= amount;
+    creditor.balance -= amount;
+
+    if (debtor.balance < 0.01) i++;
+    if (creditor.balance < 0.01) j++;
+  }
+
+  return transactions;
+}
+
+function renderSettlementModal(summary) {
+  const container = document.getElementById("settlement-summary-content");
+  if (!container) return;
+
+  const { participantData, guestBalanceNet } = summary;
+  const settlements = calculateSettlements(participantData);
+
+  // Calcular el balance máximo absoluto para las barras porcentuales
+  const maxBalance = Math.max(...participantData.map(p => Math.abs(p.balance)), 0.01);
+
+  let html = "";
+
+  // 1. Header del Resumen
+  html += `
+    < div class="mb-8 p-1" >
+      <h4 class="text-xs font-black text-gray-400 uppercase tracking-widest mb-4 flex items-center gap-2">
+        <i class="fas fa-chart-pie text-gray-300"></i> Balance de Cuentas
+      </h4>
+      <div class="space-y-4">
+  `;
+
+  // 2. Lista de Balances (Barras Visuales)
+  participantData.forEach((p) => {
+    const isPositive = p.balance >= 0;
+    const isZero = Math.abs(p.balance) < 0.01;
+
+    // Colores y Estilos
+    const colorClass = isPositive ? "bg-emerald-500" : "bg-rose-500";
+    const bgClass = isPositive ? "bg-emerald-50" : "bg-rose-50";
+    const textClass = isPositive ? "text-emerald-700" : "text-rose-700";
+    const sign = isPositive ? "+" : "";
+
+    // Ancho Relativo (Mínimo 2px para que se vea algo)
+    const widthPercent = (Math.abs(p.balance) / maxBalance) * 100;
+    const barWidth = Math.max(widthPercent, 1);
+
+    html += `
+          <div class="relative group">
+              <div class="flex justify-between items-end mb-1.5 px-1">
+                  <div class="flex flex-col">
+                    <span class="text-sm font-bold text-gray-800 leading-none">${p.name}</span>
+                    <span class="text-[10px] font-medium text-gray-400 mt-0.5">
+                      Gastó: ${formatCurrency(p.spent)}
+                    </span>
+                  </div>
+                  <div class="text-right">
+             ${!isZero ? `
+                    <span class="text-sm font-black ${textClass}">${sign}${formatCurrency(p.balance)}</span>
+             ` : `
+                    <span class="text-xs font-bold text-gray-400 flex items-center gap-1"><i class="fas fa-check-circle"></i> Saldado</span>
+             `}
+                  </div>
+              </div>
+              
+              <div class="w-full bg-gray-100 rounded-lg h-2.5 overflow-hidden relative">
+                 ${!isZero ? `
+                  <div class="${colorClass} h-full rounded-r-lg shadow-sm transition-all duration-500 ease-out" style="width: ${barWidth}%"></div>
+                 ` : `
+                  <div class="bg-gray-200 h-full w-full opacity-50"></div>
+                 `}
+              </div>
+          </div>
+      `;
+  });
+  html += "</div></div > "; // Cierre del container de balances
+
+  // 3. Alerta de Invitados
+  if (Math.abs(guestBalanceNet) > 0.01) {
+    html += `
+        <div class="relative bg-orange-50 border border-orange-100 p-5 rounded-2xl mb-8 overflow-hidden">
+             <div class="absolute -right-6 -top-6 text-orange-100 text-9xl">
+                <i class="fas fa-exclamation-circle opacity-20 transform rotate-12"></i>
+             </div>
+             <div class="relative z-10">
+                <div class="flex items-center gap-2 mb-1">
+                  <div class="bg-orange-100 text-orange-600 rounded-full p-1.5 w-6 h-6 flex items-center justify-center text-xs">
+                    <i class="fas fa-user-friends"></i>
+                  </div>
+                  <h4 class="text-xs font-bold text-orange-800 uppercase tracking-wide">Invitados Externos</h4>
+                </div>
+                <div class="flex justify-between items-end mt-2">
+                   <p class="text-[11px] text-orange-700 leading-tight max-w-[70%]">
+                      Hay gastos asignados a personas fuera del grupo. Debes cobrar este dinero por tu cuenta.
+                   </p>
+                   <span class="font-black text-xl text-orange-600">${formatCurrency(Math.abs(guestBalanceNet))}</span>
+                </div>
+             </div>
+        </div>
+      `;
+  }
+
+  // 4. Plan de Pagos (Resultados del Algoritmo)
+  html += `
+    <div>
+      <h4 class="text-xs font-black text-gray-400 uppercase tracking-widest mb-4 flex items-center gap-2">
+        <i class="fas fa-hand-holding-usd text-gray-300"></i> Plan de Pagos
+      </h4>
+  `;
+
+  if (settlements.length === 0) {
+    html += `
+          <div class="flex flex-col items-center justify-center py-10 px-4 bg-gray-50/50 rounded-3xl border border-dashed border-gray-200 text-center">
+              <div class="w-20 h-20 bg-emerald-50 text-emerald-500 rounded-full flex items-center justify-center mb-4 shadow-sm ring-4 ring-white">
+                  <i class="fas fa-check-double text-3xl"></i>
+              </div>
+              <h3 class="text-gray-900 font-bold text-lg mb-1">¡Cuentas Claras!</h3>
+              <p class="text-gray-500 text-sm max-w-[200px] leading-relaxed">No hay deudas pendientes entre los participantes.</p>
+          </div>
+      `;
+  } else {
+    html += '<div class="space-y-3">';
+    settlements.forEach((tx) => {
+      html += `
+              <div class="group relative bg-white hover:bg-indigo-50/30 p-0 rounded-2xl border border-gray-100 hover:border-indigo-100 transition-all shadow-sm hover:shadow-md overflow-hidden">
+                  
+                  <!-- Decoración de Borde -->
+                  <div class="absolute left-0 top-0 bottom-0 w-1.5 bg-indigo-500"></div>
+
+                  <div class="flex items-center justify-between p-5 pl-7">
+                      <!-- Izquierda: Flujo -->
+                      <div class="flex flex-col gap-3 flex-1">
+                           <!-- Deudor -->
+                           <div class="flex items-center gap-3">
+                              <div class="w-8 h-8 rounded-full bg-rose-50 text-rose-500 flex items-center justify-center text-xs font-bold border border-rose-100">
+                                ${tx.from.charAt(0)}
+                              </div>
+                              <div>
+                                <p class="text-[10px] text-gray-400 font-bold uppercase tracking-wider mb-0.5">Paga</p>
+                                <p class="text-sm font-bold text-gray-800">${tx.from}</p>
+                              </div>
+                           </div>
+
+                           <!-- Flecha Conectora (Visual) -->
+                           <div class="pl-3.5 -my-1">
+                              <div class="h-4 border-l-2 border-dashed border-indigo-100 ml-0.5"></div>
+                           </div>
+                           
+                           <!-- Acreedor -->
+                           <div class="flex items-center gap-3">
+                              <div class="w-8 h-8 rounded-full bg-emerald-50 text-emerald-500 flex items-center justify-center text-xs font-bold border border-emerald-100">
+                                ${tx.to.charAt(0)}
+                              </div>
+                              <div>
+                                <p class="text-[10px] text-gray-400 font-bold uppercase tracking-wider mb-0.5">Recibe</p>
+                                <p class="text-sm font-bold text-gray-800">${tx.to}</p>
+                              </div>
+                           </div>
+                      </div>
+
+                      <!-- Derecha: Monto -->
+                      <div class="text-right pl-4 border-l border-gray-50">
+                          <p class="text-[10px] text-indigo-400 font-bold uppercase tracking-wider mb-1">Monto</p>
+                          <p class="text-xl font-black text-indigo-600 tracking-tight">${formatCurrency(tx.amount)}</p>
+                      </div>
+                  </div>
+              </div>
+          `;
+    });
+    html += "</div>";
+  }
+  html += "</div>"; // Cierre container pagos
+
+  container.innerHTML = html;
+}
+
+// ================================================================
+// ===== FIN DEL REEMPLAZO =====
+// ================================================================
+// --- Main Render Function ---
+// ================================================================
+// RENDER UI (MAESTRO)
+// ================================================================
+function renderUI() {
+  if (!appState) return;
+
+  // 1. Obtener listas
+  let visualList = getVisualExpenses(currentFilterDate);
+  let financialList = getFinancialExpenses(currentFilterDate);
+
+  // 2. Filtros (Si hay búsqueda, aplicarla a ambas)
+  if (activeFilters.description) {
+    const t = activeFilters.description.toLowerCase();
+    visualList = visualList.filter(e => e.description.toLowerCase().includes(t));
+    financialList = financialList.filter(e => e.description.toLowerCase().includes(t));
+  }
+  // ... aplicar otros filtros igual ...
+
+  // 3. Calcular
+  const summary = calculateSummary(appState, financialList); // Calcula saldo con la financiera
+
+  // 4. Renderizar (Mantén tus funciones actuales)
+  if (typeof renderDashboard === 'function') renderDashboard(summary);
+  if (typeof renderParticipantsConfig === 'function') renderParticipantsConfig(appState.participants, summary);
+  if (typeof renderCategoriesModal === 'function') renderCategoriesModal(appState.categories);
+  if (typeof renderPaymentMethodsModal === 'function') renderPaymentMethodsModal(appState.paymentMethods);
+
+  // La tarjeta de crédito se calcula sola con todo el historial
+  if (typeof renderCreditCardSummary === 'function') renderCreditCardSummary(visualList, appState.expenses);
+
+  // Lista visual (centro)
+  if (typeof renderExpenseReportByCategory === 'function') renderExpenseReportByCategory(visualList, summary);
+  if (typeof renderCategoryChart === 'function') renderCategoryChart(visualList);
+  if (typeof renderFixedExpensesSummary === 'function') renderFixedExpensesSummary(visualList);
+  if (typeof renderInteractiveCalendar === 'function') renderInteractiveCalendar();
+  if (typeof renderSettlementModal === 'function') renderSettlementModal(summary); // AÑADIDO: Renderizar liquidación
+
+  if (typeof updateFilterUIState === 'function') updateFilterUIState();
+}
+// --- FUNCIONES NUEVAS PARA METAS Y CIERRE ---
+
+// 1. Renderizar inputs de metas en el modal
+
+// Helpers globales (necesarios porque el HTML se inyecta como texto)
+
+window.removeTempGoal = (index) => {
+  tempParticipantGoals.splice(index, 1);
+  renderGoalInputs();
+};
+
+// 2. Lógica del Modal de Asignación (Cierre de Mes)
+// ================================================================
+// 2. ABRIR MODAL DE ASIGNACIÃ“N (CÁLCULO DE SALDO REAL)
+// ================================================================
+function openAllocationModal() {
+  // 1. PREPARAR FECHAS
+  const filterMonthString = getFilterMonthString(currentFilterDate);
+  const filterViewDate = new Date(currentFilterDate.getTime());
+  const viewYear = filterViewDate.getUTCFullYear();
+  const viewMonth = filterViewDate.getUTCMonth();
+
+  const allExpenses = appState.expenses || [];
+  let expensesForMonth = allExpenses.filter((e) => e.date && e.date.startsWith(filterMonthString));
+
+  // 2. INCLUIR PROYECCIONES DE GASTOS FIJOS (Igual que en el Dashboard)
+  // Si no hacemos esto, el modal creerá que tienes dinero disponible que en realidad está comprometido para gastos fijos futuros.
+  const baseFixedExpenses = allExpenses.filter((e) => e.isFixed);
+
+  baseFixedExpenses.forEach((baseExpense) => {
+    const baseDate = new Date(baseExpense.date + "T00:00:00Z");
+    const recurrenceMonths = baseExpense.fixedRecurrenceMonths || 12;
+
+    const baseYear = baseDate.getUTCFullYear();
+    const baseMonth = baseDate.getUTCMonth();
+    const monthDifference = (viewYear - baseYear) * 12 + (viewMonth - baseMonth);
+
+    if (monthDifference > 0 && monthDifference < recurrenceMonths) {
+      // Ajuste de fecha para meses cortos
+      let projectedDate = new Date(Date.UTC(viewYear, viewMonth, baseDate.getUTCDate()));
+      if (projectedDate.getUTCMonth() !== viewMonth) {
+        projectedDate = new Date(Date.UTC(viewYear, viewMonth + 1, 0));
+      }
+
+      // Verificar si ya existe manual para no duplicar
+      const alreadyExists = allExpenses.some((e) => e.date.startsWith(filterMonthString) && e.description.toLowerCase() === baseExpense.description.toLowerCase());
+
+      if (!alreadyExists) {
+        expensesForMonth.push({
+          ...baseExpense,
+          id: `proj_${baseExpense.id}_${monthDifference}`, // ID virtual
+          amount: parseFloat(baseExpense.amount), // Asegurar número
+          date: projectedDate.toISOString().split("T")[0],
+          isProjected: true,
+        });
+      }
+    }
+  });
+
+  // 3. CALCULAR SALDO FINAL
+  const { globalTotalRemainingBudget } = calculateSummary(appState, expensesForMonth);
+
+  // 4. VALIDACIÃ“N DE FONDOS
+  // Usamos un margen de error pequeño (0.01) por temas de decimales en JS
+  if (globalTotalRemainingBudget <= 0.01) {
+    return showModal("No tienes saldo disponible para asignar en este mes (descontando gastos fijos proyectados).", null, "Sin Fondos Excedentes");
+  }
+
+  // 5. RENDERIZADO DEL MODAL
+  const modal = document.getElementById("savings-allocation-modal");
+  const list = document.getElementById("goals-allocation-list");
+  const displayAmount = document.getElementById("allocation-available-amount");
+
+  displayAmount.textContent = formatCurrency(globalTotalRemainingBudget);
+  list.innerHTML = "";
+
+  let hasGoals = false;
+  appState.participants.forEach((p) => {
+    if (p.goals && p.goals.length > 0) {
+      hasGoals = true;
+      p.goals.forEach((g) => {
+        // Calcular progreso visual
+        const current = parseFloat(g.current) || 0;
+        const target = parseFloat(g.target) || 0;
+        const progress = target > 0 ? (current / target) * 100 : 0;
+
+        list.insertAdjacentHTML(
+          "beforeend",
+          `
+                    <div class="bg-white border border-gray-200 rounded-xl p-3 hover:shadow-md transition-shadow">
+                        <div class="flex justify-between mb-1">
+                            <span class="font-bold text-gray-700">${g.name} <span class="text-xs font-normal text-gray-500">(${p.name})</span></span>
+                            <span class="text-xs font-bold text-emerald-600">${formatCurrency(current)} / ${formatCurrency(target)}</span>
+                        </div>
+                        <div class="w-full bg-gray-200 rounded-full h-1.5 mb-3">
+                            <div class="bg-emerald-500 h-1.5 rounded-full" style="width: ${Math.min(100, progress)}%"></div>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <span class="text-xs font-bold text-gray-500">Asignar:</span>
+                            <div class="relative flex-1">
+                                <span class="absolute left-3 top-1.5 text-gray-400 text-xs">S/</span>
+                                <input type="number" min="0" step="0.01" 
+                                    class="allocation-input w-full bg-gray-50 border border-gray-200 rounded-lg py-1 pl-6 text-sm font-bold text-gray-800 focus:ring-emerald-500 focus:border-emerald-500"
+                                    data-participant-id="${p.id}"
+                                    data-goal-id="${g.id}"
+                                    placeholder="0.00">
+                            </div>
+                        </div>
+                    </div>
+                    `
+        );
+      });
+    }
+  });
+
+  if (!hasGoals) {
+    list.innerHTML = '<div class="text-center py-6"><p class="text-gray-500 italic mb-2">No hay metas configuradas.</p><p class="text-xs text-gray-400">Ve a "Configuración > Participantes" y edita uno para agregar metas.</p></div>';
+  }
+
+  modal.classList.remove("hidden");
+  modal.classList.add("flex");
+}
+
+// 3. Guardar la asignación de dinero a metas
+// --- REPARACIÃ“N DEL BOTÃ“N CONFIRMAR ASIGNACIÃ“N ---
+
+// 1. Versión mejorada de la función (con avisos)
+// ================================================================
+// 3. GUARDAR ASIGNACIÃ“N DE AHORROS (LÃ“GICA CORREGIDA)
+// ================================================================
+
+async function handleSaveAllocation() {
+  console.log("Procesando asignación de ahorros..."); // Depuración
+  const inputs = document.querySelectorAll(".allocation-input");
+  let updatesMade = false;
+
+  // 1. Crear copia profunda de los participantes para no mutar el estado directamente
+  // Esto es CRÍTICO para que Firebase detecte los cambios correctamente
+  const newParticipants = JSON.parse(JSON.stringify(appState.participants));
+
+  // 2. Iterar sobre los inputs del modal
+  inputs.forEach((input) => {
+    const amount = parseFloat(input.value);
+
+    // Solo procesar si el monto es válido y mayor a 0
+    if (!isNaN(amount) && amount > 0) {
+      const pId = input.dataset.participantId;
+      const gId = input.dataset.goalId;
+
+      // Buscar índices en el array nuevo
+      const pIndex = newParticipants.findIndex((x) => x.id === pId);
+      if (pIndex !== -1) {
+        // Asegurarse de que el array goals existe (prevención de errores)
+        if (!newParticipants[pIndex].goals) newParticipants[pIndex].goals = [];
+
+        const gIndex = newParticipants[pIndex].goals.findIndex((x) => x.id === gId);
+
+        if (gIndex !== -1) {
+          // Sumar al acumulado existente (asegurando que sea número)
+          const current = parseFloat(newParticipants[pIndex].goals[gIndex].current) || 0;
+          newParticipants[pIndex].goals[gIndex].current = current + amount;
+          updatesMade = true;
+        }
+      }
+    }
+  });
+
+  if (updatesMade) {
+    try {
+      // 3. Guardar en Firebase / LocalStorage
+      await saveState({ participants: newParticipants });
+
+      // 4. Cerrar Modal
+      document.getElementById("savings-allocation-modal").classList.add("hidden");
+      document.getElementById("savings-allocation-modal").classList.remove("flex");
+
+      // 5. Feedback y Renderizado
+      showModal("Â¡Fondos asignados a las metas correctamente!", null, "Ã‰xito");
+      renderUI();
+    } catch (e) {
+      console.error(e);
+      showModal("Error al guardar la asignación.", e.message);
+    }
+  } else {
+    showModal("No has ingresado ningún monto válido para asignar.", null, "Atención");
+  }
+}
+// ================================================================
+// LOGICA DE "SMART SPINNER" (ACELERACIÃ“N PROGRESIVA)
+// ================================================================
+function setupSmartSpinners() {
+  const input = document.getElementById("expense-amount");
+  const btnPlus = document.getElementById("btn-amount-plus");
+  const btnMinus = document.getElementById("btn-amount-minus");
+
+  if (!input || !btnPlus || !btnMinus) return;
+
+  let pressTimer = null;
+  let startTime = 0;
+
+  // Función que calcula el incremento según el tiempo presionado
+  const getStep = (elapsedMs) => {
+    if (elapsedMs > 5000) return 5.0; // Más de 5s: salta de 5 en 5
+    if (elapsedMs > 3000) return 1.0; // Más de 3s: salta de 1 en 1
+    if (elapsedMs > 1500) return 0.1; // Más de 1.5s: salta de 0.10
+    if (elapsedMs > 500) return 0.05; // Más de 0.5s: salta de 0.05
+    return 0.01; // Inicio: 0.01
+  };
+
+  const updateValue = (direction) => {
+    let currentVal = parseFloat(input.value) || 0;
+
+    // Calcular tiempo presionado
+    const elapsed = Date.now() - startTime;
+    const step = getStep(elapsed);
+
+    if (direction === "up") {
+      currentVal += step;
+    } else {
+      currentVal -= step;
+      if (currentVal < 0) currentVal = 0;
+    }
+
+    // Truco para evitar decimales locos (ej: 10.0000004)
+    input.value = currentVal.toFixed(2);
+
+    // Disparar evento 'input' para que se actualice el panel negro izquierdo visual
+    input.dispatchEvent(new Event("input"));
+  };
+
+  const startPress = (direction) => {
+    // 1. Acción inmediata al hacer clic
+    startTime = Date.now();
+    updateValue(direction);
+
+    // 2. Retraso antes de empezar a repetir (400ms para distinguir un clic de mantener)
+    // Luego repite cada 100ms (velocidad base)
+    setTimeout(() => {
+      if (pressTimer) return; // Si ya soltó, no iniciar
+
+      // Iniciar repetición
+      pressTimer = setInterval(() => {
+        updateValue(direction);
+      }, 80); // Velocidad de repetición (FPS)
+    }, 400);
+  };
+
+  const stopPress = () => {
+    if (pressTimer) {
+      clearInterval(pressTimer);
+      pressTimer = null;
+    }
+    // Reiniciar timer de start para evitar bugs
+    let highestId = window.setTimeout(() => { }, 0);
+    while (highestId--) {
+      window.clearTimeout(highestId);
+    }
+  };
+
+  // Listeners para Mouse (PC) y Touch (Móvil)
+
+  // --- BOTÃ“N MÁS ---
+  btnPlus.addEventListener("mousedown", (e) => {
+    e.preventDefault();
+    startPress("up");
+  });
+  btnPlus.addEventListener("touchstart", (e) => {
+    e.preventDefault();
+    startPress("up");
+  }); // Móvil
+
+  // --- BOTÃ“N MENOS ---
+  btnMinus.addEventListener("mousedown", (e) => {
+    e.preventDefault();
+    startPress("down");
+  });
+  btnMinus.addEventListener("touchstart", (e) => {
+    e.preventDefault();
+    startPress("down");
+  }); // Móvil
+
+  // --- DETENER (Al soltar o salir del botón) ---
+  const stopEvents = ["mouseup", "mouseleave", "touchend", "touchcancel"];
+  stopEvents.forEach((evt) => {
+    btnPlus.addEventListener(evt, stopPress);
+    btnMinus.addEventListener(evt, stopPress);
+  });
+}
+
+// --- CONEXIÃ“N FORZADA DEL BOTÃ“N AL CARGAR ---
+// Usamos un setTimeout para asegurar que el botón exista en el DOM antes de conectar el evento
+setTimeout(() => {
+  const btnSaveAlloc = document.getElementById("save-allocation-btn");
+  if (btnSaveAlloc) {
+    // Clonar el botón para limpiar listeners previos (evita duplicados si la página se recarga parcialmente)
+    const newBtn = btnSaveAlloc.cloneNode(true);
+    btnSaveAlloc.parentNode.replaceChild(newBtn, btnSaveAlloc);
+
+    // Agregar el evento limpio
+    newBtn.addEventListener("click", handleSaveAllocation);
+    console.log("Botón de asignación de ahorros conectado exitosamente.");
+  } else {
+    console.error("Error crítico: No se encontró el botón 'save-allocation-btn' en el HTML");
+  }
+}, 1000);
+
+// 2. FORZAR LA CONEXIÃ“N DEL BOTÃ“N (Esto es lo que faltaba)
+// Usamos un intervalo pequeño para asegurar que el botón ya existe en el HTML
+setTimeout(() => {
+  const btnSaveAlloc = document.getElementById("save-allocation-btn");
+  if (btnSaveAlloc) {
+    // Eliminamos listeners previos para evitar dobles clics
+    const newBtn = btnSaveAlloc.cloneNode(true);
+    btnSaveAlloc.parentNode.replaceChild(newBtn, btnSaveAlloc);
+
+    // Agregamos el evento limpio
+    newBtn.addEventListener("click", handleSaveAllocation);
+    console.log("Botón de asignación conectado correctamente.");
+  } else {
+    console.error("Error: No se encontró el botón 'save-allocation-btn' en el HTML");
+  }
+}, 1000);
+
+// --- FIN REPARACIÃ“N ---
+
+window.onload = initializeFirebase;
+window.onerror = function (message, source, lineno, colno, error) {
+  console.error("Error global:", message, error);
+  showModal("Ocurrió un error inesperado.", error?.message || message, "Error Crítico");
+  return true;
+};
+const userProfileBtn = document.getElementById("open-user-profile-btn");
+if (userProfileBtn) {
+  userProfileBtn.addEventListener("click", () => {
+    // Aquí puedes poner un console.log o abrir un modal futuro
+  });
+}
+
+// ================================================================
+// HELPER: MODAL DE CONFIRMACIÃ“N PERSONALIZADO (DINÁMICO)
+// ================================================================
+
+
+// ================================================================
+// FUNCIÓN BORRAR INGRESO (CON MODAL)
+// ================================================================
+window.deleteIncomeFromHistory = function (participantId, incomeIndex) {
+  ui.confirm(
+    "Eliminar Ingreso",
+    "Esta acción eliminará el ingreso y recalculará el presupuesto. ¿Deseas continuar?",
+    async () => {
+      // Lógica de borrado
+      const newParticipants = JSON.parse(JSON.stringify(appState.participants));
+      const pIndex = newParticipants.findIndex((p) => p.id === participantId);
+      if (pIndex === -1) {
+        showModal("Error: Participante no encontrado.");
+        return;
+      }
+
+      const participant = newParticipants[pIndex];
+      if (participant.incomes && participant.incomes[incomeIndex]) {
+        participant.incomes.splice(incomeIndex, 1);
+
+        // Recalcular presupuesto
+        const newTotalBudget = participant.incomes.reduce((sum, inc) => sum + (parseFloat(inc.amount) || 0), 0);
+        participant.budget = newTotalBudget;
+
+        await saveState({ participants: newParticipants });
+        showModal("Ingreso eliminado correctamente.");
+      }
+    },
+    "error",
+    "Sí, Eliminar"
+  );
+};
+
+// ================================================================
+// LÃ“GICA DE INGRESO RÁPIDO (Directo al Historial y Usuario)
+// ================================================================
+function setupQuickIncomeListeners() {
+  const btn = document.getElementById("quick-add-income-btn");
+  const modal = document.getElementById("quick-income-modal");
+  const closeBtn = document.getElementById("close-quick-income-modal");
+  const form = document.getElementById("quick-income-form");
+  const selectUser = document.getElementById("quick-income-user");
+  const dateInput = document.getElementById("quick-income-date");
+
+  if (!btn || !modal || !form) return;
+
+  // 1. ABRIR MODAL
+  btn.addEventListener("click", () => {
+    // Llenar select de usuarios
+    selectUser.innerHTML = "";
+    appState.participants.forEach((p) => {
+      const opt = document.createElement("option");
+      opt.value = p.id;
+      opt.textContent = p.name;
+      selectUser.appendChild(opt);
+    });
+
+    // Preseleccionar fecha de hoy
+    dateInput.value = new Date().toISOString().split("T")[0];
+
+    // Limpiar otros campos
+    document.getElementById("quick-income-amount").value = "";
+    document.getElementById("quick-income-desc").value = "";
+
+    modal.classList.remove("hidden");
+    modal.classList.add("flex");
+  });
+
+  // 2. CERRAR MODAL
+  const close = () => {
+    modal.classList.add("hidden");
+    modal.classList.remove("flex");
+  };
+  closeBtn.addEventListener("click", close);
+
+  // 3. GUARDAR (LA MAGIA)
+  form.addEventListener("submit", async (e) => {
+    e.preventDefault();
+
+    const userId = selectUser.value;
+    const desc = document.getElementById("quick-income-desc").value.trim();
+    const amount = parseFloat(document.getElementById("quick-income-amount").value);
+    const date = dateInput.value;
+
+    if (!userId || !desc || amount <= 0) return showModal("Datos inválidos.");
+
+    // Crear copia del estado para modificar
+    const newParticipants = JSON.parse(JSON.stringify(appState.participants));
+    const participantIndex = newParticipants.findIndex((p) => p.id === userId);
+
+    if (participantIndex !== -1) {
+      const p = newParticipants[participantIndex];
+
+      // A. Asegurar que existe el array incomes
+      if (!p.incomes) p.incomes = [];
+
+      // B. Añadir el nuevo ingreso
+      p.incomes.push({
+        name: formatTitleCase(desc),
+        amount: amount,
+        date: date,
+      });
+
+      // C. CRÍTICO: Recalcular el presupuesto total del usuario
+      // (Budget = Suma de todos sus incomes)
+      const newTotalBudget = p.incomes.reduce((sum, inc) => sum + (parseFloat(inc.amount) || 0), 0);
+      p.budget = newTotalBudget;
+
+      // D. Guardar y refrescar todo
+      await saveState({ participants: newParticipants });
+
+      close();
+
+      // Opcional: Si el historial está abierto en "Ingresos", forzamos refresco visual
+      if (typeof currentHistoryTab !== "undefined" && currentHistoryTab === "incomes") {
+        renderUI();
+      }
+
+      showModal(`Ingreso de ${formatCurrency(amount)} añadido a ${p.name}.`, null, "Ã‰xito");
+    } else {
+      showModal("Error: Usuario no encontrado.");
+    }
+  });
+}
+if (typeof setupQuickIncomeListeners === "function") setupQuickIncomeListeners();
+function getVisualExpenses(viewDate) {
+  const allExpenses = appState.expenses || [];
+  const result = [];
+  const viewYear = viewDate.getFullYear();
+  const viewMonth = viewDate.getMonth();
+
+  const startMs = new Date(Date.UTC(viewYear, viewMonth, 1)).getTime();
+  const endMs = new Date(Date.UTC(viewYear, viewMonth + 1, 0, 23, 59, 59)).getTime();
+
+  // 1. Manuales
+  const real = allExpenses.filter(e => {
+    if (e.isFixed) return false;
+    const t = new Date(e.date + "T00:00:00Z").getTime();
+    return t >= startMs && t <= endMs;
+  });
+  result.push(...real);
+
+  // 2. Proyecciones Fijas (Simplificadas al mes calendario)
+  const fixed = allExpenses.filter(e => e.isFixed);
+  fixed.forEach(base => {
+    const baseDate = new Date(base.date + "T00:00:00Z");
+    const recurrence = base.fixedRecurrenceMonths || 12;
+
+    // Proyectar solo si toca en este mes calendario
+    let targetDate = new Date(Date.UTC(viewYear, viewMonth, baseDate.getUTCDate()));
+    if (targetDate.getUTCMonth() !== viewMonth) targetDate = new Date(Date.UTC(viewYear, viewMonth + 1, 0));
+
+    const time = targetDate.getTime();
+    const baseTime = baseDate.getTime();
+
+    // Calcular diferencia meses
+    const diff = (targetDate.getFullYear() - baseDate.getFullYear()) * 12 + (targetDate.getMonth() - baseDate.getMonth());
+
+    if (time >= startMs && time <= endMs && time >= baseTime && diff >= 0 && diff < recurrence) {
+      const dStr = targetDate.toISOString().split("T")[0];
+      const exists = allExpenses.some(e => !e.isFixed && e.date === dStr && e.description.toLowerCase().trim() === base.description.toLowerCase().trim());
+      if (!exists) {
+        result.push({ ...base, id: `proj_vis_${base.id}`, date: dStr, isProjected: true });
+      }
+    }
+  });
+
+  return result;
+}
+function getFinancialExpenses(viewDate) {
+  const allExpenses = appState.expenses || [];
+  const result = [];
+  const viewYear = viewDate.getFullYear();
+  const viewMonth = viewDate.getMonth();
+  const paymentMethodsMap = new Map((appState.paymentMethods || []).map(m => [m.id, m]));
+
+  // 1. Manuales
+  const real = allExpenses.filter(e => {
+    if (e.isFixed) return false;
+
+    const expDate = new Date(e.date + "T00:00:00Z");
+    const method = paymentMethodsMap.get(e.paymentMethodId);
+
+    let financialMonth = expDate.getUTCMonth();
+    let financialYear = expDate.getUTCFullYear();
+
+    // SI ES TARJETA DE CRÃ‰DITO Y EL GASTO ES ANTES DEL CIERRE -> PERTENECE AL MES ANTERIOR
+    if (method && method.type === 'credit') {
+      const closingDay = parseInt(method.closingDay) || 31;
+      const day = expDate.getUTCDate();
+
+      // La lógica mágica: Si hoy es 2 y cierre es 10, esto es cuenta del mes pasado.
+      if (day <= closingDay) {
+        financialMonth -= 1;
+        if (financialMonth < 0) {
+          financialMonth = 11;
+          financialYear -= 1;
+        }
+      }
+    }
+
+    // Comparamos si este gasto pertenece "Financieramente" a la vista actual
+    return financialMonth === viewMonth && financialYear === viewYear;
+  });
+  result.push(...real);
+
+  // 2. Proyecciones Fijas (Aplicando la misma lógica financiera)
+  const fixed = allExpenses.filter(e => e.isFixed);
+  fixed.forEach(base => {
+    // Simplificación para no sobrecargar: 
+    // Proyectamos el gasto en la fecha que le tocaría este mes.
+    // Luego aplicamos la lógica financiera para ver si se queda o se va.
+    const baseDate = new Date(base.date + "T00:00:00Z");
+    const recurrence = base.fixedRecurrenceMonths || 12;
+    const dayOfExpense = baseDate.getUTCDate();
+
+    // Candidato 1: Proyección natural en este mes
+    let targetDate = new Date(Date.UTC(viewYear, viewMonth, dayOfExpense));
+    // Candidato 2: Proyección del mes siguiente (que podría caer financieramente en este mes si es antes del cierre)
+    let targetDateNext = new Date(Date.UTC(viewYear, viewMonth + 1, dayOfExpense));
+
+    // Revisamos ambos candidatos
+    [targetDate, targetDateNext].forEach(date => {
+      // Validar recurrencia
+      const diff = (date.getFullYear() - baseDate.getFullYear()) * 12 + (date.getMonth() - baseDate.getMonth());
+      if (date >= baseDate && diff >= 0 && diff < recurrence) {
+        // Aplicar lógica financiera a esta fecha proyectada
+        const method = paymentMethodsMap.get(base.paymentMethodId);
+        let finMonth = date.getUTCMonth();
+        let finYear = date.getUTCFullYear();
+
+        if (method && method.type === 'credit') {
+          const closingDay = parseInt(method.closingDay) || 31;
+          if (date.getUTCDate() <= closingDay) {
+            finMonth -= 1;
+            if (finMonth < 0) { finMonth = 11; finYear -= 1; }
+          }
+        }
+
+        // Si "cae" en el mes que estamos viendo, lo agregamos
+        if (finMonth === viewMonth && finYear === viewYear) {
+          const dStr = date.toISOString().split("T")[0];
+          const exists = allExpenses.some(e => !e.isFixed && e.date === dStr && e.description.toLowerCase().trim() === base.description.toLowerCase().trim());
+          if (!exists) {
+            result.push({ ...base, id: `proj_fin_${base.id}_${dStr}`, date: dStr, isProjected: true });
+          }
+        }
+      }
+    });
+  });
+
+  return result;
+}
+
+
+// ================================================================
+// FUNCIONES GLOBALES AÃ‘ADIDAS PARA CORRECCIÃ“N DE ERRORES
+// ================================================================
+
+window.handleManualCloseCycle = async (methodId) => {
+  if (!confirm("Â¿Estás seguro de que deseas cerrar el ciclo actual hoy?")) return;
+
+  const methodIndex = appState.paymentMethods.findIndex((m) => m.id === methodId);
+  if (methodIndex === -1) return;
+
+  // Clonamos para mutar de forma segura (aunque saveState suele manejarlo, es mejor ser explícito)
+  const newPaymentMethods = JSON.parse(JSON.stringify(appState.paymentMethods));
+  const method = newPaymentMethods[methodIndex];
+
+  // Necesitamos saber la KEY para manualClosures.
+  // Usamos la lógica de getCycleDates para obtener la paymentDate del ciclo ACTUAL.
+  const today = new Date();
+
+  if (typeof getCycleDates !== 'function') {
+    alert("Error crítico: getCycleDates no está definido.");
+    return;
+  }
+
+  const { paymentDate } = getCycleDates(method, today);
+
+  if (!paymentDate) {
+    alert("Error: No se puede determinar el ciclo para este método (o no es de crédito).");
+    return;
+  }
+
+  if (!method.manualClosures) method.manualClosures = {};
+
+  // Marcar como cerrado
+  method.manualClosures[paymentDate] = true;
+
+  try {
+    await saveState({ paymentMethods: newPaymentMethods });
+
+    if (typeof ui !== 'undefined' && ui.alert) {
+      ui.alert("Ã‰xito", "Ciclo cerrado manualmente.", "success");
+    } else {
+      alert("Ciclo cerrado correctamente.");
+    }
+
+    // Recargar modal
+    if (typeof openPaymentMethodDetailModal === 'function') {
+      openPaymentMethodDetailModal(methodId);
+    }
+  } catch (e) {
+    console.error(e);
+    alert("Error al guardar: " + e.message);
+  }
+};
+
+
