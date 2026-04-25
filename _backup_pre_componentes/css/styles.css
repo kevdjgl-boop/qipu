@@ -20,10 +20,14 @@ body {
 #main-content-wrapper {
   display: flex;
   flex-direction: column;
+  margin-left: 80px;
   height: 100vh;
   overflow-y: auto;
   box-sizing: border-box;
+  padding-left: 1.5rem;
+  padding-right: 1.5rem;
   gap: 1.5rem;
+  padding-bottom: 2rem;
 }
 
 #dashboard-container {
@@ -464,16 +468,7 @@ body {
 #chart-collapsible-content {
   max-height: 0;
   overflow: hidden;
-  transition: all 0.3s ease;
-}
-
-#participant-sidebar.open {
-  transform: translateY(-50%) translateX(0) !important;
-  z-index: 100;
-}
-
-select {
-  -webkit-appearance: none;
+  transition: max-height 0.5s ease-out;
 }
 
 #chart-collapsible-content.open {

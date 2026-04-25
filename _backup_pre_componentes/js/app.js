@@ -1,4 +1,4 @@
-// ================================================================
+﻿// ================================================================
 // GESTOR DE MODALES UNIFICADO (UI MANAGER)
 // ================================================================
 // ================================================================
@@ -1015,13 +1015,6 @@ function renderExpenseListForRange(allExpenses, methodId, range, containerId, pa
       const projStr = projectedDate.toISOString().split("T")[0];
       const projTime = projectedDate.getTime();
 
-      if (base.cancelledAt) {
-          const cancelledMs = new Date(base.cancelledAt + "T00:00:00Z").getTime();
-          if (projTime >= cancelledMs) {
-              break;
-          }
-      }
-
       const isInsideCycle = projTime >= startMs && projTime <= endMs;
       const isAfterCreation = projTime >= baseTime;
       const monthsDiff = (iterYear - baseDate.getUTCFullYear()) * 12 + (iterMonth - baseDate.getUTCMonth());
@@ -1080,9 +1073,8 @@ function renderExpenseListForRange(allExpenses, methodId, range, containerId, pa
         const borderClass = isProjected ? "border-dashed border-indigo-200 bg-indigo-50/30" : "border-solid border-transparent bg-white shadow-sm hover:shadow-md";
 
         return `
-                <div class="flex items-center gap-4 p-4 rounded-2xl border ${borderClass} transition-all duration-200 mb-3 ${opacityClass} cursor-pointer select-none" onclick="this.classList.toggle('ring-2'); this.classList.toggle('ring-green-500'); this.classList.toggle('bg-green-50'); const check = this.querySelector('.statement-check'); if(check) check.classList.toggle('hidden');">
-                    <div class="flex-shrink-0 w-10 h-10 flex flex-col items-center justify-center rounded-xl bg-gray-50 border border-gray-100 text-gray-600 relative">
-                        <i class="fas fa-check-circle text-green-500 absolute -top-2 -right-2 hidden statement-check bg-white rounded-full text-sm shadow-sm"></i>
+                <div class="flex items-center gap-4 p-4 rounded-2xl border ${borderClass} transition-all duration-200 mb-3 ${opacityClass}">
+                    <div class="flex-shrink-0 w-10 h-10 flex flex-col items-center justify-center rounded-xl bg-gray-50 border border-gray-100 text-gray-600">
                         <span class="text-[8px] font-bold uppercase leading-none opacity-60">${monthShort}</span>
                         <span class="text-sm font-black leading-tight">${dayNum}</span>
                     </div>
@@ -1100,7 +1092,7 @@ function renderExpenseListForRange(allExpenses, methodId, range, containerId, pa
                             <span class="text-[10px] text-gray-400 font-medium flex items-center">
                                 <i class="fas fa-user-circle text-[9px] mr-1 opacity-70"></i> ${payerName}
                             </span>
-                            ${isProjected ? `<span class="text-[9px] bg-indigo-100 text-indigo-600 px-1.5 rounded-md font-bold">Fijo</span><button onclick="event.stopPropagation(); cancelFixedExpense('${exp.id.split('_')[1]}', '${exp.date}')" class="text-red-400 hover:text-red-600 ml-1" title="Detener suscripción desde este mes" style="font-size:11px;"><i class="fas fa-times-circle"></i></button>` : ""}
+                            ${isProjected ? '<span class="text-[9px] bg-indigo-100 text-indigo-600 px-1.5 rounded-md font-bold">Fijo</span>' : ""}
                             ${exp.category ? `<span class="text-[9px] text-gray-300">â€¢ ${exp.category}</span>` : ""}
                         </div>
                     </div>
@@ -1512,12 +1504,8 @@ async function initializeFirebase() {
         } else {
           // Si NO hay usuario y NO estamos en Canvas, redirigir al login.
           if (!IS_CANVAS_ENV) {
-            // ---> DISABLE REDIRECT FOR PREVIEW <---
-            console.log("Deshabilitando redirección al login para poder ver el diseño (localhost)");
-            // window.location.href = REDIRECT_URL_LOGOUT;
-            document.getElementById("initial-loading-screen").classList.add("hidden");
-            document.getElementById("main-content-wrapper").classList.remove("hidden");
-            setupUILogic(false);
+            window.location.href = REDIRECT_URL_LOGOUT;
+            console.log("MODO LOCAL: Redirección a logout deshabilitada para Live Server.");
           } else {
             // Estado sin autenticación dentro de Canvas (modo local)
             userId = "anonymous_canvas";
@@ -2401,13 +2389,6 @@ function getExpensesForCurrentView() {
 
     const projStr = projectedDate.toISOString().split("T")[0];
     const projTime = projectedDate.getTime();
-
-    if (base.cancelledAt) {
-        const cancelledMs = new Date(base.cancelledAt + "T00:00:00Z").getTime();
-        if (projTime >= cancelledMs) {
-            return;
-        }
-    }
 
     // Validaciones
     const isInsideMonth = projTime >= startMs && projTime <= endMs;
@@ -3373,7 +3354,7 @@ function setupUserProfileLogic() {
 // ================================================================
 // RENDER DASHBOARD (VERSIÃ“N FINAL: ESTABLE + POPOVERS + TÍTULO CLEAN)
 // ================================================================
-function renderDashboard(summary, currentFinancialList = []) {
+function renderDashboard(summary) {
   if (!summary) return;
 
   // 1. CÁLCULOS MATEMÁTICOS
@@ -3384,8 +3365,8 @@ function renderDashboard(summary, currentFinancialList = []) {
     totalBudget = (summary.globalTotalRemainingBudget || 0) + (summary.totalSpent || 0);
     spentPercent = totalBudget > 0 ? (summary.totalSpent / totalBudget) * 100 : 0;
 
-    if (currentFinancialList) {
-      totalFixed = (currentFinancialList || []).filter((e) => e.isFixed).reduce((sum, e) => sum + e.amount, 0);
+    if (appState && appState.expenses) {
+      totalFixed = appState.expenses.filter((e) => e.isFixed).reduce((sum, e) => sum + e.amount, 0);
     }
 
     if (appState && appState.participants) {
@@ -3544,24 +3525,9 @@ function renderDashboard(summary, currentFinancialList = []) {
       const triggerId = `trigger-popover-${p.id}`;
       const popoverId = `saldo-popover-${p.id}`;
 
-      // 1. Unificar bajo lógica financiera (ciclos) y añadir parte compartida
-      const financialFixed = (currentFinancialList || []).filter(e => e.isFixed);
-
-      // A. Fijos Personales
-      const personalFixed = financialFixed
-        .filter(e => e.type === 'personal' && e.payerId === p.id)
+      const personalFixedExpenses = appState.expenses
+        .filter(e => e.isFixed && e.type === 'personal' && e.payerId === p.id)
         .reduce((sum, exp) => sum + exp.amount, 0);
-
-      // B. Parte proporcional de fijos compartidos
-      const sharedFixedShare = financialFixed
-        .filter(e => e.type === 'shared')
-        .reduce((sum, e) => {
-          const participantsCount = appState.participants ? appState.participants.length : 1;
-          return sum + (e.amount / participantsCount);
-        }, 0);
-
-      const totalFixedForParticipant = personalFixed + sharedFixedShare;
-      const variableExpenses = Math.max(0, p.spent - totalFixedForParticipant);
 
       cardsHTML += `
                 <div id="${triggerId}" class="bg-white rounded-3xl p-4 border border-gray-200 shadow-sm flex flex-col justify-between h-auto relative overflow-hidden group transition-all w-full">
@@ -3596,12 +3562,8 @@ function renderDashboard(summary, currentFinancialList = []) {
                             <span class="font-bold text-indigo-600">${formatCurrency(p.sharedSavingsGoal || 0)}</span>
                         </div>
                         <div class="flex justify-between items-center text-xs">
-                            <span class="text-gray-500">Gastos Variables</span>
-                            <span class="font-bold text-gray-600">${formatCurrency(variableExpenses)}</span>
-                        </div>
-                        <div class="flex justify-between items-center text-xs">
                             <span class="text-gray-500">Gastos Fijos</span>
-                            <span class="font-bold text-gray-600">${formatCurrency(totalFixedForParticipant)}</span>
+                            <span class="font-bold text-gray-600">${formatCurrency(personalFixedExpenses)}</span>
                         </div>
                         <div class="border-t border-gray-100 my-2"></div>
                         <div class="flex justify-between items-center">
@@ -5957,18 +5919,15 @@ function renderFixedExpensesSummary(expensesForMonth) {
 // ===================================
 // FUNCIÓN: CANCELAR GASTO FIJO
 // ===================================
-window.activeFEA = null; // Guardar contexto
-
 window.stopFixedExpense = async (projId, dateStr) => {
   // 1. Extraer ID original
   let originalId = projId;
-  if (projId.startsWith("proj_vis_")) originalId = projId.replace("proj_vis_", "");
-  else if (projId.startsWith("proj_fin_")) {
+  if (projId.startsWith("proj_vis_")) {
+    originalId = projId.replace("proj_vis_", "");
+  } else if (projId.startsWith("proj_fin_")) {
+    // Fallback for financial projections
     const match = projId.match(/proj_fin_(.*?)_\d{4}-\d{2}-\d{2}/);
     if (match && match[1]) originalId = match[1];
-  } else if (projId.startsWith("proj_")) {
-    const parts = projId.split("_");
-    if (parts.length >= 3) originalId = parts[1];
   }
 
   // 2. Buscar gasto
@@ -5984,218 +5943,36 @@ window.stopFixedExpense = async (projId, dateStr) => {
     return;
   }
 
-  const startDate = new Date(expense.date);
-  const targetDate = new Date(dateStr);
-  const diff = (targetDate.getFullYear() - startDate.getFullYear()) * 12 + (targetDate.getMonth() - startDate.getMonth());
+  // 3. Confirmar acción
+  ui.confirm(
+    "Cancelar Suscripción",
+    "¿Deseas cancelar esta suscripción? El gasto dejará de generarse a partir de esta fecha.",
+    async () => {
+      // 4. Calcular meses transcurridos
+      const startDate = new Date(expense.date);
+      const targetDate = new Date(dateStr);
 
-  if (diff < 0) { showModal("Error al calcular fechas."); return; }
+      // Diferencia en meses
+      const diff = (targetDate.getFullYear() - startDate.getFullYear()) * 12 + (targetDate.getMonth() - startDate.getMonth());
 
-  // 3. Abrir Modal FEA
-  window.activeFEA = { expense, expenseIndex, dateStr, diff };
+      if (diff < 0) {
+        showModal("Error al calcular fechas.");
+        return;
+      }
 
-  const modal = document.getElementById('fixed-expense-action-modal');
-  if (!modal) {
-     console.error("No se encontró fixed-expense-action-modal");
-     return;
-  }
-  
-  document.getElementById('fea-modal-title').textContent = expense.description;
-  
-  // Show main options, hide forms
-  document.getElementById('fea-main-options').classList.remove('hidden');
-  document.getElementById('fea-advance-form').classList.add('hidden');
-  document.getElementById('fea-advance-form').classList.remove('flex');
-  document.getElementById('fea-modify-form').classList.add('hidden');
-  document.getElementById('fea-modify-form').classList.remove('flex');
+      // Actualizar recurrencia
+      const newAppState = JSON.parse(JSON.stringify(appState));
+      newAppState.expenses[expenseIndex].fixedRecurrenceMonths = diff;
 
-  modal.classList.remove('hidden');
-  modal.classList.add('flex');
-  document.body.classList.add('no-scroll');
+      await saveState(newAppState);
+
+      showModal("Suscripción cancelada correctamente.");
+      renderUI();
+    },
+    "error",
+    "Sí, Cancelar"
+  );
 };
-
-// ===================================
-// LISTENERS DE MODAL FEA
-// ===================================
-document.addEventListener("DOMContentLoaded", () => {
-    const closeFeaModal = () => {
-        const modal = document.getElementById('fixed-expense-action-modal');
-        if (modal) {
-            modal.classList.add('hidden');
-            modal.classList.remove('flex');
-            document.body.classList.remove('no-scroll');
-        }
-        window.activeFEA = null;
-    };
-    
-    document.getElementById('close-fea-modal-btn')?.addEventListener('click', closeFeaModal);
-    
-    // Navigation inside FEA
-    const showAdvance = () => {
-       document.getElementById('fea-main-options').classList.add('hidden');
-       const advForm = document.getElementById('fea-advance-form');
-       advForm.classList.remove('hidden');
-       advForm.classList.add('flex');
-       
-       const context = window.activeFEA;
-       if(!context) return;
-       const left = context.expense.fixedRecurrenceMonths ? context.expense.fixedRecurrenceMonths - context.diff : 999;
-       const max = Math.max(1, left);
-       
-       const inp = document.getElementById('fea-advance-input');
-       inp.max = max;
-       inp.value = 1;
-       document.getElementById('fea-max-quotas-msg').textContent = max === 999 ? "Ilimitadas" : `Quedan ${max} cuotas.`;
-       updateAdvanceTotal();
-    };
-    
-    const showModify = () => {
-       document.getElementById('fea-main-options').classList.add('hidden');
-       const modForm = document.getElementById('fea-modify-form');
-       modForm.classList.remove('hidden');
-       modForm.classList.add('flex');
-       
-       const context = window.activeFEA;
-       if(!context) return;
-       document.getElementById('fea-modify-input').value = (context.expense.amount || 0).toFixed(2);
-    };
-    
-    const backToOptions = () => {
-       document.getElementById('fea-advance-form').classList.add('hidden');
-       document.getElementById('fea-advance-form').classList.remove('flex');
-       document.getElementById('fea-modify-form').classList.add('hidden');
-       document.getElementById('fea-modify-form').classList.remove('flex');
-       document.getElementById('fea-main-options').classList.remove('hidden');
-    };
-    
-    document.getElementById('fea-btn-advance')?.addEventListener('click', showAdvance);
-    document.getElementById('fea-btn-modify')?.addEventListener('click', showModify);
-    document.getElementById('fea-back-advance')?.addEventListener('click', backToOptions);
-    document.getElementById('fea-back-modify')?.addEventListener('click', backToOptions);
-
-    // Cancel action
-    document.getElementById('fea-btn-cancel')?.addEventListener('click', async () => {
-        const context = window.activeFEA;
-        if (!context) return;
-        closeFeaModal();
-        ui.confirm("Cancelar Suscripción", "¿Eliminar defintivamente a partir de esta fecha?", async () => {
-            const newAppState = JSON.parse(JSON.stringify(appState));
-            newAppState.expenses[context.expenseIndex].fixedRecurrenceMonths = context.diff;
-            await saveState(newAppState);
-            showModal("Suscripción cancelada correctamente.", null, "Éxito");
-            renderUI();
-        }, "error", "Sí, Eliminar");
-    });
-
-    // Advance Logic UI
-    const updateAdvanceTotal = () => {
-       const context = window.activeFEA;
-       if(!context) return;
-       const n = parseInt(document.getElementById('fea-advance-input').value) || 1;
-       document.getElementById('fea-advance-total').textContent = `S/ ${(context.expense.amount * n).toFixed(2)}`;
-    };
-
-    document.getElementById('fea-adv-minus')?.addEventListener('click', () => {
-       const inp = document.getElementById('fea-advance-input');
-       let val = parseInt(inp.value)||1;
-       if(val > 1) { inp.value = val - 1; updateAdvanceTotal(); }
-    });
-    document.getElementById('fea-adv-plus')?.addEventListener('click', () => {
-       const inp = document.getElementById('fea-advance-input');
-       let val = parseInt(inp.value)||1;
-       let max = parseInt(inp.max)||999;
-       if(val < max) { inp.value = val + 1; updateAdvanceTotal(); }
-    });
-
-    // Submit Advance
-    document.getElementById('fea-submit-advance')?.addEventListener('click', async () => {
-        const context = window.activeFEA;
-        if (!context) return;
-        const n = parseInt(document.getElementById('fea-advance-input').value) || 1;
-        closeFeaModal();
-        
-        const newAppState = JSON.parse(JSON.stringify(appState));
-        const exp = newAppState.expenses[context.expenseIndex];
-        
-        // Reducir la vida útil
-        if(exp.fixedRecurrenceMonths) {
-           exp.fixedRecurrenceMonths = Math.max(0, exp.fixedRecurrenceMonths - n);
-        }
-
-        const todayStr = new Date().toISOString().split("T")[0];
-        const advancedAmount = exp.amount * n;
-        
-        const advancedExpense = {
-            ...exp,
-            id: generateUUID(),
-            date: todayStr,
-            amount: advancedAmount,
-            isFixed: false,
-            isProjected: false,
-            description: `[Adelanto ${n} cuotas] ${exp.description}`
-        };
-        
-        if (advancedExpense.type === 'shared' && advancedExpense.guests) {
-            advancedExpense.guests = advancedExpense.guests.map(g => ({
-                ...g,
-                amount: (g.amount / exp.amount) * advancedAmount
-            }));
-        }
-        delete advancedExpense.fixedRecurrenceMonths;
-        delete advancedExpense.dateCreated;
-
-        newAppState.expenses.push(advancedExpense);
-        await saveState(newAppState);
-        showModal("Adelanto Registrado", `Has pagado S/ ${advancedAmount.toFixed(2)} por adelantado.`, "Éxito");
-        renderUI();
-    });
-
-    // Submit Modify
-    document.getElementById('fea-submit-modify')?.addEventListener('click', async () => {
-        const context = window.activeFEA;
-        if (!context) return;
-        
-        const newAmt = parseFloat(document.getElementById('fea-modify-input').value);
-        if (isNaN(newAmt) || newAmt <= 0) {
-            showModal("Error", "Ingresa un monto válido");
-            return;
-        }
-        closeFeaModal();
-
-        const newAppState = JSON.parse(JSON.stringify(appState));
-        const oldExp = newAppState.expenses[context.expenseIndex];
-        
-        // 1. Clonar EXACTAMENTE como estaba ANTES de mutar
-        const newExp = JSON.parse(JSON.stringify(oldExp));
-        
-        // 2. Limitar el gasto anterior
-        oldExp.fixedRecurrenceMonths = context.diff; 
-
-        // 3. Preparar el nuevo gasto a partir de la fecha
-        newExp.id = generateUUID();
-        newExp.date = context.dateStr; 
-        newExp.dateCreated = context.dateStr;
-        
-        const oldAmount = oldExp.amount || 1;
-        newExp.amount = newAmt;
-
-        if (newExp.type === 'shared' && newExp.guests) {
-            newExp.guests = newExp.guests.map(g => ({
-                ...g,
-                amount: typeof g.amount === "number" ? ((g.amount / oldAmount) * newAmt) : g.amount
-            }));
-        }
-
-        if (newExp.fixedRecurrenceMonths) {
-            // El original menos los meses que ya pasaron
-            newExp.fixedRecurrenceMonths = Math.max(1, newExp.fixedRecurrenceMonths - context.diff);
-        }
-
-        newAppState.expenses.push(newExp);
-        await saveState(newAppState);
-        showModal("Monto Ajustado", "El cobro continuará con el nuevo valor.", "Éxito");
-        renderUI();
-    });
-});
 // ================================================================
 // HELPER: CALCULAR DEUDAS POR TARJETA DE CRÃ‰DITO
 // ================================================================
@@ -7065,7 +6842,7 @@ function renderUI() {
   const summary = calculateSummary(appState, financialList); // Calcula saldo con la financiera
 
   // 4. Renderizar (Mantén tus funciones actuales)
-  if (typeof renderDashboard === 'function') renderDashboard(summary, financialList);
+  if (typeof renderDashboard === 'function') renderDashboard(summary);
   if (typeof renderParticipantsConfig === 'function') renderParticipantsConfig(appState.participants, summary);
   if (typeof renderCategoriesModal === 'function') renderCategoriesModal(appState.categories);
   if (typeof renderPaymentMethodsModal === 'function') renderPaymentMethodsModal(appState.paymentMethods);
@@ -7076,8 +6853,7 @@ function renderUI() {
   // Lista visual (centro)
   if (typeof renderExpenseReportByCategory === 'function') renderExpenseReportByCategory(visualList, summary);
   if (typeof renderCategoryChart === 'function') renderCategoryChart(visualList);
-  // UNIFICACIÓN FINANCIERA: La tabla de fijos ahora usa financialList
-  if (typeof renderFixedExpensesSummary === 'function') renderFixedExpensesSummary(financialList);
+  if (typeof renderFixedExpensesSummary === 'function') renderFixedExpensesSummary(visualList);
   if (typeof renderInteractiveCalendar === 'function') renderInteractiveCalendar();
   if (typeof renderSettlementModal === 'function') renderSettlementModal(summary); // AÑADIDO: Renderizar liquidación
 
@@ -7735,39 +7511,4 @@ window.handleManualCloseCycle = async (methodId) => {
   }
 };
 
-// Función para cancelar gastos fijos proyectados
-window.cancelFixedExpense = function(baseId, cancelDateStr) {
-    if(confirm('¿Seguro que deseas detener este pago fijo a partir de esta fecha? Ya no aparecerá en los meses posteriores.')) {
-        const expenseIndex = appState.expenses.findIndex(e => e.id === baseId);
-        if(expenseIndex !== -1) {
-            appState.expenses[expenseIndex].cancelledAt = cancelDateStr;
-            saveState({ expenses: appState.expenses });
-            
-            // Re-render si estamos en la vista de tarjetas
-            const modal = document.getElementById("payment-method-detail-modal");
-            if(modal && !modal.classList.contains("hidden")) {
-                // To safely get the current methodId without querying hidden DOM elements unnecessarily:
-                const paymentMethodInput = document.getElementById("payment-method-id");
-                if (paymentMethodInput && paymentMethodInput.value) {
-                    openPaymentMethodDetailModal(paymentMethodInput.value);
-                } else {
-                    // Try to infer it or just close and refresh
-                    modal.classList.add("hidden");
-                    modal.classList.remove("flex");
-                    if(typeof renderDashboard === 'function') renderDashboard();
-                }
-            } else {
-                // Re-render si estamos en el dashboard principal
-                const dashboardWrapper = document.getElementById("dashboard-blocks-wrapper");
-                if (dashboardWrapper && !dashboardWrapper.classList.contains("hidden")) {
-                    if(typeof renderDashboard === 'function') renderDashboard();
-                }
-            }
-            
-            // Re-render historial general si existe
-            if(typeof renderGeneralHistoryList === 'function') {
-                renderGeneralHistoryList();
-            }
-        }
-    }
-};
+
