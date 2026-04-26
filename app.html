@@ -3389,7 +3389,7 @@
             e.preventDefault();
             const today = new Date().toISOString().split("T")[0];
             // Actualizamos tempIncomes solo para añadir la fila visual
-            tempIncomes.push({ name: "Extra", amount: 0, date: today });
+            tempIncomes.push({ name: "Extra", amount: 0, date: today, dateCreated: new Date().toISOString() });
             renderIncomeInputs();
           };
         }
@@ -3443,6 +3443,7 @@
                 name: nameVal,
                 amount: amountVal,
                 date: dateVal,
+                dateCreated: tempIncomes[incomeRows.indexOf(row)]?.dateCreated || new Date().toISOString()
               });
             }
 
@@ -3544,7 +3545,7 @@
         } else {
           // Si no tiene ingresos previos, creamos uno base con la fecha de hoy
           const today = new Date().toISOString().split("T")[0];
-          tempIncomes = [{ name: "Ingreso Principal", amount: p.budget || 0, date: today }];
+          tempIncomes = [{ name: "Ingreso Principal", amount: p.budget || 0, date: today, dateCreated: new Date().toISOString() }];
         }
         renderIncomeInputs();
 
@@ -3890,7 +3891,7 @@
             // Establecer fecha de hoy
             document.getElementById("expense-date").value = new Date().toISOString().split("T")[0];
 
-            showModal(`Se ha preparado el registro del pago por <b>${formatCurrency(amountToPay)}</b>.<br>Guárdalo para cerrar la deuda del ciclo.`, null, "Cerrar Ciclo");
+            // showModal(`Se ha preparado el registro del pago por <b>${formatCurrency(amountToPay)}</b>.<br>Guárdalo para cerrar la deuda del ciclo.`, null, "Cerrar Ciclo");
           }, 100);
         });
       }
@@ -6921,7 +6922,7 @@
 
           saveState({ expenses: newExpensesArray });
           closeUnifiedExpenseModal();
-          showModal(id ? "Gasto actualizado correctamente." : "Gasto registrado exitosamente.", null, "Éxito");
+          // showModal(id ? "Gasto actualizado correctamente." : "Gasto registrado exitosamente.", null, "Éxito");
         } catch (error) {
           console.error(error);
           showModal("Error al guardar el gasto.", error.message);
@@ -7584,7 +7585,10 @@
             }
           });
 
-          allIncomes.sort((a, b) => new Date(b.date) - new Date(a.date));
+          allIncomes.sort((a, b) => {
+            if (b.date !== a.date) return b.date > a.date ? 1 : -1;
+            return new Date(b.dateCreated || b.date) - new Date(a.dateCreated || a.date);
+          });
 
           if (allIncomes.length === 0) {
             reportEl.innerHTML = `<div class='flex flex-col items-center justify-center py-12 text-gray-300 opacity-60'><i class="fas fa-wallet text-4xl mb-2"></i><p class="text-sm font-medium">No hay ingresos este mes.</p></div>`;
@@ -7687,8 +7691,13 @@
         const participantsMap = new Map(appState.participants.map((p) => [p.id, p.name]));
         const paymentMethodsMap = new Map(appState.paymentMethods.map((m) => [m.id, m]));
 
-        // 2. Ordenamiento cronológico global
-        const sortedExpenses = filteredExpenses.sort((a, b) => new Date(b.dateCreated || b.date) - new Date(a.dateCreated || a.date));
+        // 2. Ordenamiento cronológico robusto
+        const sortedExpenses = filteredExpenses.sort((a, b) => {
+          // Prioridad 1: Fecha del gasto (descendente)
+          if (b.date !== a.date) return b.date > a.date ? 1 : -1;
+          // Prioridad 2: Momento de registro (descendente)
+          return new Date(b.dateCreated || b.date) - new Date(a.dateCreated || a.date);
+        });
 
         // 3. Renderizado Lineal
         let reportHTML = pillsHtml;
@@ -9768,6 +9777,7 @@ function handleExpenseReportClick(e) {
               name: formatTitleCase(desc),
               amount: amount,
               date: date,
+              dateCreated: new Date().toISOString(),
             });
 
             // C. CRÍTICO: Recalcular el presupuesto total del usuario
@@ -9785,7 +9795,7 @@ function handleExpenseReportClick(e) {
               renderUI();
             }
 
-            showModal(`Ingreso de ${formatCurrency(amount)} añadido a ${p.name}.`, null, "Éxito");
+            // showModal(`Ingreso de ${formatCurrency(amount)} añadido a ${p.name}.`, null, "Éxito");
           } else {
             showModal("Error: Usuario no encontrado.");
           }

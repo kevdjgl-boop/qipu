@@ -312,7 +312,7 @@ window.handleUnifiedSave = function (event) {
 
         saveState({ expenses: newExpensesArray });
         closeUnifiedExpenseModal();
-        showModal(id ? "Gasto actualizado correctamente." : "Gasto registrado exitosamente.", null, "Ã‰xito");
+        // showModal(id ? "Gasto actualizado correctamente." : "Gasto registrado exitosamente.", null, "Éxito");
     } catch (error) {
         console.error(error);
         showModal("Error al guardar el gasto.", error.message);

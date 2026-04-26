@@ -772,7 +772,7 @@ function setupParticipantModalListeners() {
       e.preventDefault();
       const today = new Date().toISOString().split("T")[0];
       // Actualizamos tempIncomes solo para añadir la fila visual
-      tempIncomes.push({ name: "Extra", amount: 0, date: today });
+      tempIncomes.push({ name: "Extra", amount: 0, date: today, dateCreated: new Date().toISOString() });
       renderIncomeInputs();
     };
   }
@@ -4263,7 +4263,7 @@ function handleUnifiedSave(event) {
 
     saveState({ expenses: newExpensesArray });
     closeUnifiedExpenseModal();
-    showModal(id ? "Gasto actualizado correctamente." : "Gasto registrado exitosamente.", null, "Ã‰xito");
+    // showModal(id ? "Gasto actualizado correctamente." : "Gasto registrado exitosamente.", null, "Éxito");
   } catch (error) {
     console.error(error);
     showModal("Error al guardar el gasto.", error.message);
@@ -5253,7 +5253,10 @@ function renderExpenseReportByCategory(allExpensesInMonth, summary) {
       }
     });
 
-    allIncomes.sort((a, b) => new Date(b.date) - new Date(a.date));
+    allIncomes.sort((a, b) => {
+      if (b.date !== a.date) return b.date > a.date ? 1 : -1;
+      return new Date(b.dateCreated || b.date) - new Date(a.dateCreated || a.date);
+    });
 
     if (allIncomes.length === 0) {
       reportEl.innerHTML = `<div class='flex flex-col items-center justify-center py-12 text-gray-300 opacity-60'><i class="fas fa-wallet text-4xl mb-2"></i><p class="text-sm font-medium">No hay ingresos este mes.</p></div>`;
@@ -5424,7 +5427,10 @@ style="width: ${Math.min(100, percent)}%; z-index: 0;">
   <div id="${contentId}" class="category-collapsible-content bg-white border-t border-gray-100 relative z-20">
     <div class="px-12 py-3 space-y-1">
       ${expenses
-          .sort((a, b) => new Date(b.dateCreated || b.date) - new Date(a.dateCreated || a.date))
+          .sort((a, b) => {
+            if (b.date !== a.date) return b.date > a.date ? 1 : -1;
+            return new Date(b.dateCreated || b.date) - new Date(a.dateCreated || a.date);
+          })
           .map((exp) => createExpenseCardHTML(exp, participantsMap, paymentMethodsMap))
           .join("")}
     </div>
