@@ -5393,13 +5393,18 @@
      * TOMA LOS BALANCES NETOS y calcula el NÚMERO MÍNIMO de pagos.
      * Esto resuelve el problema de "A paga a B" y "B paga a A".
      */
-    function calculateSettlements(participantData) {
+    function calculateSettlements(participantData, guestList = []) {
       const transactions = [];
+
+      const allAccounts = [
+        ...participantData.map((p) => ({ name: p.name, balance: p.balance, isGuest: false })),
+        ...guestList.filter((g) => Math.abs(g.balance) > 0.01).map((g) => ({ name: g.name, balance: g.balance, isGuest: true }))
+      ];
 
       // 1. Usamos copia profunda para no modificar los datos originales
       const balances = JSON.parse(
         JSON.stringify(
-          participantData.filter((p) => Math.abs(p.balance) > 0.01) // Ignora los que están en 0
+          allAccounts.filter((p) => Math.abs(p.balance) > 0.01) // Ignora los que están en 0
         )
       );
 
@@ -5424,6 +5429,7 @@
             from: debtor.name, // Quién paga
             to: creditor.name, // Quién recibe
             amount: amount,
+            isGuestInvolved: debtor.isGuest || creditor.isGuest,
           });
 
           // 5. Actualiza balances virtuales para seguir calculando
@@ -6353,13 +6359,25 @@
       const participantMap = new Map(participantData.map((p) => [p.id, p]));
       let totalSpent = 0;
 
-      // Resumen del Invitado (Deuda externa)
-      const guestSummary = { spent: 0, balance: 0 };
+      // Resumen del Invitado y seguimiento individual
+      const guestMap = new Map();
+      const guestSummary = { spent: 0, balance: 0, contributionPaid: 0 };
 
       // 2. Procesar Gastos
       filteredExpenses.forEach((expense) => {
         const amount = parseFloat(expense.amount) || 0; // Forzar número
         totalSpent += amount;
+
+        const expenseGuests = (expense.guests && Array.isArray(expense.guests) && expense.guests.length > 0)
+          ? expense.guests
+          : (expense.guestName ? [expense.guestName] : []);
+
+        expenseGuests.forEach((gName, gIdx) => {
+          const gKey = `guest_${gIdx}`;
+          if (!guestMap.has(gKey)) {
+            guestMap.set(gKey, { id: gKey, name: `${gName} (Invitado)`, spent: 0, contributionPaid: 0, balance: 0, isGuest: true });
+          }
+        });
 
         // --- A. REGISTRAR PAGO (Quién puso el dinero) ---
         let realPayerId = expense.payerId;
@@ -6377,15 +6395,18 @@
           realPayer.contributionByMethod[methodId] = (realPayer.contributionByMethod[methodId] || 0) + amount;
         } else if (realPayerId && (realPayerId.startsWith("guest_") || realPayerId.startsWith("guest-"))) {
           guestSummary.contributionPaid = (guestSummary.contributionPaid || 0) + amount;
+          if (guestMap.has(realPayerId)) {
+            guestMap.get(realPayerId).contributionPaid += amount;
+          } else {
+            const fallbackName = (expenseGuests.length > 0 ? expenseGuests[0] : "Invitado") + " (Invitado)";
+            guestMap.set(realPayerId, { id: realPayerId, name: fallbackName, spent: 0, contributionPaid: amount, balance: 0, isGuest: true });
+          }
         }
 
         // --- B. REGISTRAR CONSUMO (Quién gastó presupuesto) ---
         if (expense.type === "shared") {
           const registeredCount = participants.length;
-          let guestsCount = 0;
-
-          if (expense.guests && Array.isArray(expense.guests)) guestsCount = expense.guests.length;
-          else if (expense.guestName) guestsCount = 1;
+          let guestsCount = expenseGuests.length;
 
           const numPayees = registeredCount + guestsCount;
 
@@ -6413,6 +6434,11 @@
                     itemShares[pId] += cost;
                   } else if (pId.startsWith("guest_") || pId.startsWith("guest-")) {
                     guestItemShares += cost;
+                    if (guestMap.has(pId)) {
+                      guestMap.get(pId).spent += cost;
+                    } else {
+                      guestMap.set(pId, { id: pId, name: "Invitado (Invitado)", spent: cost, contributionPaid: 0, balance: 0, isGuest: true });
+                    }
                   }
                 }
               });
@@ -6424,6 +6450,9 @@
                   itemShares[item.assignedTo] += cost;
                 } else if (item.assignedTo.startsWith("guest_") || item.assignedTo.startsWith("guest-")) {
                   guestItemShares += cost;
+                  if (guestMap.has(item.assignedTo)) {
+                    guestMap.get(item.assignedTo).spent += cost;
+                  }
                 }
               }
 
@@ -6435,6 +6464,12 @@
                   itemShares[p.id] += sharePerPerson;
                 });
                 guestItemShares += sharePerPerson * guestsCount;
+                if (guestsCount > 0) {
+                  expenseGuests.forEach((gName, gIdx) => {
+                    const gKey = `guest_${gIdx}`;
+                    if (guestMap.has(gKey)) guestMap.get(gKey).spent += sharePerPerson;
+                  });
+                }
               }
             });
 
@@ -6446,6 +6481,10 @@
             });
             if (guestsCount > 0) {
               guestSummary.spent += guestItemShares + (remainingSharePerPerson * guestsCount);
+              expenseGuests.forEach((gName, gIdx) => {
+                const gKey = `guest_${gIdx}`;
+                if (guestMap.has(gKey)) guestMap.get(gKey).spent += remainingSharePerPerson;
+              });
             }
             expense.splitAmount = numPayees > 0 ? amount / numPayees : 0;
           } else {
@@ -6457,7 +6496,13 @@
             });
 
             // Registrar consumo de invitados
-            if (guestsCount > 0) guestSummary.spent += splitAmount * guestsCount;
+            if (guestsCount > 0) {
+              guestSummary.spent += splitAmount * guestsCount;
+              expenseGuests.forEach((gName, gIdx) => {
+                const gKey = `guest_${gIdx}`;
+                if (guestMap.has(gKey)) guestMap.get(gKey).spent += splitAmount;
+              });
+            }
 
             expense.splitAmount = splitAmount;
           }
@@ -6466,8 +6511,9 @@
           const consumer = participantMap.get(expense.payerId);
           if (consumer) {
             consumer.spent += amount;
-          } else if (expense.payerId && expense.payerId.startsWith("guest_")) {
+          } else if (expense.payerId && (expense.payerId.startsWith("guest_") || expense.payerId.startsWith("guest-"))) {
             guestSummary.spent += amount;
+            if (guestMap.has(expense.payerId)) guestMap.get(expense.payerId).spent += amount;
           }
         }
       });
@@ -6490,12 +6536,19 @@
 
       guestSummary.balance = (guestSummary.contributionPaid || 0) - guestSummary.spent;
 
+      const guestList = Array.from(guestMap.values()).map(g => {
+        g.balance = g.contributionPaid - g.spent;
+        return g;
+      });
+
       return {
         globalTotalRemainingBudget, // Este es el valor que alimenta la tarjeta principal
         globalSharedSavingsGoal,
         totalSpent,
         guestBalanceNet: guestSummary.balance,
         participantData,
+        guestSummary,
+        guestList,
       };
     }
     // ================================================================
@@ -9824,62 +9877,124 @@
 
         if (expensesInCycle.length === 0) return;
 
-        let financierId = method.type === "credit" && method.ownerId ? method.ownerId : null;
-        if (!financierId) financierId = expensesInCycle.length > 0 ? expensesInCycle[0].payerId : null;
-        if (!financierId || financierId.startsWith("guest_")) return;
-
-        const financierName = participantsMap.get(financierId) || "Varios";
-        const debtors = {};
-        let totalReimburse = 0;
+        // Agrupar gastos por pagador real dentro de este método (incluyendo invitados)
+        const financierGroups = new Map();
 
         expensesInCycle.forEach((exp) => {
-          let currentFinancier = financierId ? financierId : exp.payerId;
-          if (!currentFinancier || currentFinancier.startsWith("guest_")) return;
+          let currentFinancier = exp.payerId;
+          if (method.type === "credit" && method.ownerId && !(exp.payerId && (exp.payerId.startsWith("guest_") || exp.payerId.startsWith("guest-")))) {
+            currentFinancier = method.ownerId;
+          }
+
+          if (!currentFinancier) return;
+
+          let currentFinancierName = "";
+          if (currentFinancier.startsWith("guest_") || currentFinancier.startsWith("guest-")) {
+            const gIdx = parseInt(currentFinancier.replace("guest_", "").replace("guest-", "")) || 0;
+            const gName = (exp.guests && exp.guests[gIdx]) || exp.guestName || "Invitado";
+            currentFinancierName = `${gName} (Invitado)`;
+          } else {
+            currentFinancierName = participantsMap.get(currentFinancier) || "Usuario";
+          }
+
+          if (!financierGroups.has(currentFinancier)) {
+            financierGroups.set(currentFinancier, {
+              financierName: currentFinancierName,
+              debtors: {},
+              totalReimburse: 0
+            });
+          }
+
+          const group = financierGroups.get(currentFinancier);
 
           if (exp.type === "shared") {
-            let count = appState.participants.length;
-            if (exp.guests) count += exp.guests.length;
-            else if (exp.guestName) count += 1;
-            const split = exp.amount / count;
+            const registeredCount = appState.participants.length;
+            const expGuests = (exp.guests && Array.isArray(exp.guests) && exp.guests.length > 0)
+              ? exp.guests
+              : (exp.guestName ? [exp.guestName] : []);
+            const numPayees = registeredCount + expGuests.length;
 
-            appState.participants.forEach((p) => {
-              if (p.id !== currentFinancier) {
-                if (!debtors[p.name]) debtors[p.name] = 0;
-                debtors[p.name] += split;
-                totalReimburse += split;
-              }
-            });
+            if (exp.items && exp.items.length > 0 && numPayees > 0) {
+              let itemsTotalCost = 0;
+              let itemShares = {};
+              appState.participants.forEach(p => { itemShares[p.id] = 0; });
 
-            let gc = exp.guests ? exp.guests.length : exp.guestName ? 1 : 0;
-            if (gc > 0) {
-              const guestDebt = split * gc;
-              if (!debtors["Invitado(s)"]) debtors["Invitado(s)"] = 0;
-              debtors["Invitado(s)"] += guestDebt;
-              totalReimburse += guestDebt;
+              exp.items.forEach(item => {
+                const qty = parseFloat(item.quantity) || 1;
+                const unitPrice = parseFloat(item.amount) || 0;
+                const itemTotal = qty * unitPrice;
+                itemsTotalCost += itemTotal;
+
+                const assignments = item.assignments || {};
+                let assignedUnitsSum = 0;
+
+                Object.keys(assignments).forEach(pId => {
+                  const assignedQty = parseFloat(assignments[pId]) || 0;
+                  if (assignedQty > 0) {
+                    assignedUnitsSum += assignedQty;
+                    const cost = assignedQty * unitPrice;
+                    if (itemShares[pId] !== undefined) {
+                      itemShares[pId] += cost;
+                    }
+                  }
+                });
+
+                if (assignedUnitsSum === 0 && item.assignedTo && itemShares[item.assignedTo] !== undefined) {
+                  itemShares[item.assignedTo] += itemTotal;
+                  assignedUnitsSum = qty;
+                }
+
+                const unassignedUnits = Math.max(0, qty - assignedUnitsSum);
+                if (unassignedUnits > 0) {
+                  const unassignedCost = unassignedUnits * unitPrice;
+                  const sharePerPerson = unassignedCost / numPayees;
+                  appState.participants.forEach(p => {
+                    itemShares[p.id] += sharePerPerson;
+                  });
+                }
+              });
+
+              const remainingAmount = Math.max(0, exp.amount - itemsTotalCost);
+              const remainingSharePerPerson = remainingAmount / numPayees;
+
+              appState.participants.forEach(p => {
+                const totalPersonShare = (itemShares[p.id] || 0) + remainingSharePerPerson;
+                if (p.id !== currentFinancier && totalPersonShare > 0.01) {
+                  group.debtors[p.name] = (group.debtors[p.name] || 0) + totalPersonShare;
+                  group.totalReimburse += totalPersonShare;
+                }
+              });
+            } else if (numPayees > 0) {
+              const split = exp.amount / numPayees;
+              appState.participants.forEach((p) => {
+                if (p.id !== currentFinancier) {
+                  group.debtors[p.name] = (group.debtors[p.name] || 0) + split;
+                  group.totalReimburse += split;
+                }
+              });
             }
           } else {
+            // Gasto personal
             if (exp.payerId !== currentFinancier) {
               const debtorName = participantsMap.get(exp.payerId) || "Invitado";
-              if (!debtors[debtorName]) debtors[debtorName] = 0;
-              debtors[debtorName] += exp.amount;
-              totalReimburse += exp.amount;
+              group.debtors[debtorName] = (group.debtors[debtorName] || 0) + exp.amount;
+              group.totalReimburse += exp.amount;
             }
           }
         });
 
-        if (totalReimburse < 0.1) return;
-
-        // Guardamos el ID AQUÍ para usarlo luego
-        const cardIdUnique = `settle-card-${method.id}`;
-
-        aggregatedResults.push({
-          cardId: cardIdUnique, // <--- Guardado correctamente
-          methodName: method.name,
-          methodType: method.type,
-          ownerName: financierName,
-          totalReimburse: totalReimburse,
-          debtors: debtors,
-          subtitle: subtitle,
+        financierGroups.forEach((group, fId) => {
+          if (group.totalReimburse > 0.05) {
+            aggregatedResults.push({
+              cardId: `settle-card-${method.id}-${fId}`,
+              methodName: method.name,
+              methodType: method.type,
+              ownerName: group.financierName,
+              totalReimburse: group.totalReimburse,
+              debtors: group.debtors,
+              subtitle: subtitle,
+            });
+          }
         });
       });
 

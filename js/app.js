@@ -2923,13 +2923,25 @@ function calculateSummary(state, filteredExpenses) {
   const participantMap = new Map(participantData.map((p) => [p.id, p]));
   let totalSpent = 0;
 
-  // Resumen del Invitado (Deuda externa)
-  const guestSummary = { spent: 0, balance: 0 };
+  // Resumen del Invitado y seguimiento individual
+  const guestMap = new Map();
+  const guestSummary = { spent: 0, balance: 0, contributionPaid: 0 };
 
   // 2. Procesar Gastos
   filteredExpenses.forEach((expense) => {
     const amount = parseFloat(expense.amount) || 0; // Forzar número
     totalSpent += amount;
+
+    const expenseGuests = (expense.guests && Array.isArray(expense.guests) && expense.guests.length > 0)
+      ? expense.guests
+      : (expense.guestName ? [expense.guestName] : []);
+
+    expenseGuests.forEach((gName, gIdx) => {
+      const gKey = `guest_${gIdx}`;
+      if (!guestMap.has(gKey)) {
+        guestMap.set(gKey, { id: gKey, name: `${gName} (Invitado)`, spent: 0, contributionPaid: 0, balance: 0, isGuest: true });
+      }
+    });
 
     // --- A. REGISTRAR PAGO (Quién puso el dinero) ---
     let realPayerId = expense.payerId;
@@ -2947,23 +2959,29 @@ function calculateSummary(state, filteredExpenses) {
       realPayer.contributionByMethod[methodId] = (realPayer.contributionByMethod[methodId] || 0) + amount;
     } else if (realPayerId && (realPayerId.startsWith("guest_") || realPayerId.startsWith("guest-"))) {
       guestSummary.contributionPaid = (guestSummary.contributionPaid || 0) + amount;
+      if (guestMap.has(realPayerId)) {
+        guestMap.get(realPayerId).contributionPaid += amount;
+      } else {
+        const fallbackName = (expenseGuests.length > 0 ? expenseGuests[0] : "Invitado") + " (Invitado)";
+        guestMap.set(realPayerId, { id: realPayerId, name: fallbackName, spent: 0, contributionPaid: amount, balance: 0, isGuest: true });
+      }
     }
 
     // --- B. REGISTRAR CONSUMO (Quién gastó presupuesto) ---
     if (expense.type === "shared") {
       const registeredCount = participants.length;
-      let guestsCount = 0;
-
-      if (expense.guests && Array.isArray(expense.guests)) guestsCount = expense.guests.length;
-      else if (expense.guestName) guestsCount = 1;
+      let guestsCount = expenseGuests.length;
 
       const numPayees = registeredCount + guestsCount;
 
       // --- Asignación detallada por ítems y cantidades por usuario ---
       const hasItems = expense.items && expense.items.length > 0;
 
-      if (hasItems) {
+      if (hasItems && numPayees > 0) {
         let totalItemsCost = 0;
+        let itemShares = {};
+        participantData.forEach(p => { itemShares[p.id] = 0; });
+        let guestItemShares = 0;
 
         expense.items.forEach(item => {
           const qty = parseFloat(item.quantity) || 1;
@@ -2983,8 +3001,13 @@ function calculateSummary(state, filteredExpenses) {
               const assignee = participantMap.get(pId);
               if (assignee) {
                 assignee.spent += cost;
-              } else if (pId && pId.startsWith("guest_")) {
-                guestSummary.spent += cost;
+              } else if (pId && (pId.startsWith("guest_") || pId.startsWith("guest-"))) {
+                guestItemShares += cost;
+                if (guestMap.has(pId)) {
+                  guestMap.get(pId).spent += cost;
+                } else {
+                  guestMap.set(pId, { id: pId, name: "Invitado (Invitado)", spent: cost, contributionPaid: 0, balance: 0, isGuest: true });
+                }
               }
             }
           });
@@ -2995,8 +3018,11 @@ function calculateSummary(state, filteredExpenses) {
             const assignee = participantMap.get(item.assignedTo);
             if (assignee) {
               assignee.spent += itemCost;
-            } else if (item.assignedTo && item.assignedTo.startsWith("guest_")) {
-              guestSummary.spent += itemCost;
+            } else if (item.assignedTo && (item.assignedTo.startsWith("guest_") || item.assignedTo.startsWith("guest-"))) {
+              guestItemShares += itemCost;
+              if (guestMap.has(item.assignedTo)) {
+                guestMap.get(item.assignedTo).spent += itemCost;
+              }
             }
           }
 
@@ -3006,7 +3032,13 @@ function calculateSummary(state, filteredExpenses) {
             const unassignedCost = unassignedQty * unitPrice;
             const sharePerPerson = unassignedCost / numPayees;
             participantData.forEach(p => { p.spent += sharePerPerson; });
-            if (guestsCount > 0) guestSummary.spent += sharePerPerson * guestsCount;
+            if (guestsCount > 0) {
+              guestSummary.spent += sharePerPerson * guestsCount;
+              expenseGuests.forEach((gName, gIdx) => {
+                const gKey = `guest_${gIdx}`;
+                if (guestMap.has(gKey)) guestMap.get(gKey).spent += sharePerPerson;
+              });
+            }
           }
         });
 
@@ -3015,12 +3047,24 @@ function calculateSummary(state, filteredExpenses) {
         if (remainingBase > 0.001 && numPayees > 0) {
           const shareBase = remainingBase / numPayees;
           participantData.forEach(p => { p.spent += shareBase; });
-          if (guestsCount > 0) guestSummary.spent += shareBase * guestsCount;
+          if (guestsCount > 0) {
+            guestSummary.spent += shareBase * guestsCount;
+            expenseGuests.forEach((gName, gIdx) => {
+              const gKey = `guest_${gIdx}`;
+              if (guestMap.has(gKey)) guestMap.get(gKey).spent += shareBase;
+            });
+          }
         }
       } else {
-        const splitAmount = amount / numPayees;
+        const splitAmount = numPayees > 0 ? amount / numPayees : 0;
         participantData.forEach((p) => { p.spent += splitAmount; });
-        if (guestsCount > 0) guestSummary.spent += splitAmount * guestsCount;
+        if (guestsCount > 0) {
+          guestSummary.spent += splitAmount * guestsCount;
+          expenseGuests.forEach((gName, gIdx) => {
+            const gKey = `guest_${gIdx}`;
+            if (guestMap.has(gKey)) guestMap.get(gKey).spent += splitAmount;
+          });
+        }
         expense.splitAmount = splitAmount;
       }
 
@@ -3029,8 +3073,9 @@ function calculateSummary(state, filteredExpenses) {
       const consumer = participantMap.get(expense.payerId);
       if (consumer) {
         consumer.spent += amount;
-      } else if (expense.payerId && expense.payerId.startsWith("guest_")) {
+      } else if (expense.payerId && (expense.payerId.startsWith("guest_") || expense.payerId.startsWith("guest-"))) {
         guestSummary.spent += amount;
+        if (guestMap.has(expense.payerId)) guestMap.get(expense.payerId).spent += amount;
       }
     }
   });
@@ -3053,12 +3098,19 @@ function calculateSummary(state, filteredExpenses) {
 
   guestSummary.balance = (guestSummary.contributionPaid || 0) - guestSummary.spent;
 
+  const guestList = Array.from(guestMap.values()).map(g => {
+    g.balance = g.contributionPaid - g.spent;
+    return g;
+  });
+
   return {
     globalTotalRemainingBudget, // Este es el valor que alimenta la tarjeta principal
     globalSharedSavingsGoal,
     totalSpent,
     guestBalanceNet: guestSummary.balance,
     participantData,
+    guestSummary,
+    guestList,
   };
 }
 // ================================================================
@@ -6678,62 +6730,124 @@ function renderSharedBalanceSummary(summary, expensesForMonth) {
 
     if (expensesInCycle.length === 0) return;
 
-    let financierId = method.type === "credit" && method.ownerId ? method.ownerId : null;
-    if (!financierId) financierId = expensesInCycle.length > 0 ? expensesInCycle[0].payerId : null;
-    if (!financierId || financierId.startsWith("guest_")) return;
-
-    const financierName = participantsMap.get(financierId) || "Varios";
-    const debtors = {};
-    let totalReimburse = 0;
+    // Agrupar gastos por pagador real dentro de este método (incluyendo invitados)
+    const financierGroups = new Map();
 
     expensesInCycle.forEach((exp) => {
-      let currentFinancier = financierId ? financierId : exp.payerId;
-      if (!currentFinancier || currentFinancier.startsWith("guest_")) return;
+      let currentFinancier = exp.payerId;
+      if (method.type === "credit" && method.ownerId && !(exp.payerId && (exp.payerId.startsWith("guest_") || exp.payerId.startsWith("guest-")))) {
+        currentFinancier = method.ownerId;
+      }
+
+      if (!currentFinancier) return;
+
+      let currentFinancierName = "";
+      if (currentFinancier.startsWith("guest_") || currentFinancier.startsWith("guest-")) {
+        const gIdx = parseInt(currentFinancier.replace("guest_", "").replace("guest-", "")) || 0;
+        const gName = (exp.guests && exp.guests[gIdx]) || exp.guestName || "Invitado";
+        currentFinancierName = `${gName} (Invitado)`;
+      } else {
+        currentFinancierName = participantsMap.get(currentFinancier) || "Usuario";
+      }
+
+      if (!financierGroups.has(currentFinancier)) {
+        financierGroups.set(currentFinancier, {
+          financierName: currentFinancierName,
+          debtors: {},
+          totalReimburse: 0
+        });
+      }
+
+      const group = financierGroups.get(currentFinancier);
 
       if (exp.type === "shared") {
-        let count = appState.participants.length;
-        if (exp.guests) count += exp.guests.length;
-        else if (exp.guestName) count += 1;
-        const split = exp.amount / count;
+        const registeredCount = appState.participants.length;
+        const expGuests = (exp.guests && Array.isArray(exp.guests) && exp.guests.length > 0)
+          ? exp.guests
+          : (exp.guestName ? [exp.guestName] : []);
+        const numPayees = registeredCount + expGuests.length;
 
-        appState.participants.forEach((p) => {
-          if (p.id !== currentFinancier) {
-            if (!debtors[p.name]) debtors[p.name] = 0;
-            debtors[p.name] += split;
-            totalReimburse += split;
-          }
-        });
+        if (exp.items && exp.items.length > 0 && numPayees > 0) {
+          let itemsTotalCost = 0;
+          let itemShares = {};
+          appState.participants.forEach(p => { itemShares[p.id] = 0; });
 
-        let gc = exp.guests ? exp.guests.length : exp.guestName ? 1 : 0;
-        if (gc > 0) {
-          const guestDebt = split * gc;
-          if (!debtors["Invitado(s)"]) debtors["Invitado(s)"] = 0;
-          debtors["Invitado(s)"] += guestDebt;
-          totalReimburse += guestDebt;
+          exp.items.forEach(item => {
+            const qty = parseFloat(item.quantity) || 1;
+            const unitPrice = parseFloat(item.amount) || 0;
+            const itemTotal = qty * unitPrice;
+            itemsTotalCost += itemTotal;
+
+            const assignments = item.assignments || {};
+            let assignedUnitsSum = 0;
+
+            Object.keys(assignments).forEach(pId => {
+              const assignedQty = parseFloat(assignments[pId]) || 0;
+              if (assignedQty > 0) {
+                assignedUnitsSum += assignedQty;
+                const cost = assignedQty * unitPrice;
+                if (itemShares[pId] !== undefined) {
+                  itemShares[pId] += cost;
+                }
+              }
+            });
+
+            if (assignedUnitsSum === 0 && item.assignedTo && itemShares[item.assignedTo] !== undefined) {
+              itemShares[item.assignedTo] += itemTotal;
+              assignedUnitsSum = qty;
+            }
+
+            const unassignedUnits = Math.max(0, qty - assignedUnitsSum);
+            if (unassignedUnits > 0) {
+              const unassignedCost = unassignedUnits * unitPrice;
+              const sharePerPerson = unassignedCost / numPayees;
+              appState.participants.forEach(p => {
+                itemShares[p.id] += sharePerPerson;
+              });
+            }
+          });
+
+          const remainingAmount = Math.max(0, exp.amount - itemsTotalCost);
+          const remainingSharePerPerson = remainingAmount / numPayees;
+
+          appState.participants.forEach(p => {
+            const totalPersonShare = (itemShares[p.id] || 0) + remainingSharePerPerson;
+            if (p.id !== currentFinancier && totalPersonShare > 0.01) {
+              group.debtors[p.name] = (group.debtors[p.name] || 0) + totalPersonShare;
+              group.totalReimburse += totalPersonShare;
+            }
+          });
+        } else if (numPayees > 0) {
+          const split = exp.amount / numPayees;
+          appState.participants.forEach((p) => {
+            if (p.id !== currentFinancier) {
+              group.debtors[p.name] = (group.debtors[p.name] || 0) + split;
+              group.totalReimburse += split;
+            }
+          });
         }
       } else {
+        // Gasto personal
         if (exp.payerId !== currentFinancier) {
           const debtorName = participantsMap.get(exp.payerId) || "Invitado";
-          if (!debtors[debtorName]) debtors[debtorName] = 0;
-          debtors[debtorName] += exp.amount;
-          totalReimburse += exp.amount;
+          group.debtors[debtorName] = (group.debtors[debtorName] || 0) + exp.amount;
+          group.totalReimburse += exp.amount;
         }
       }
     });
 
-    if (totalReimburse < 0.1) return;
-
-    // Guardamos el ID AQUÍ para usarlo luego
-    const cardIdUnique = `settle-card-${method.id}`;
-
-    aggregatedResults.push({
-      cardId: cardIdUnique, // <--- Guardado correctamente
-      methodName: method.name,
-      methodType: method.type,
-      ownerName: financierName,
-      totalReimburse: totalReimburse,
-      debtors: debtors,
-      subtitle: subtitle,
+    financierGroups.forEach((group, fId) => {
+      if (group.totalReimburse > 0.05) {
+        aggregatedResults.push({
+          cardId: `settle-card-${method.id}-${fId}`,
+          methodName: method.name,
+          methodType: method.type,
+          ownerName: group.financierName,
+          totalReimburse: group.totalReimburse,
+          debtors: group.debtors,
+          subtitle: subtitle,
+        });
+      }
     });
   });
 
@@ -7170,16 +7284,18 @@ function renderCreditCardSummary(expensesForMonth, allExpenses) {
   }
 }
 
-// ================================================================
-// LÃ“GICA DE LIQUIDACIÃ“N (SETTLEMENTS)
-// ================================================================
-function calculateSettlements(participantData) {
-  let debtors = participantData
+function calculateSettlements(participantData, guestList = []) {
+  const allAccounts = [
+    ...participantData.map((p) => ({ name: p.name, balance: p.balance, isGuest: false })),
+    ...guestList.filter((g) => Math.abs(g.balance) > 0.01).map((g) => ({ name: g.name, balance: g.balance, isGuest: true }))
+  ];
+
+  let debtors = allAccounts
     .filter((p) => p.balance < -0.01)
     .map((p) => ({ ...p, balance: Math.abs(p.balance) }))
     .sort((a, b) => b.balance - a.balance);
 
-  let creditors = participantData
+  let creditors = allAccounts
     .filter((p) => p.balance > 0.01)
     .sort((a, b) => b.balance - a.balance);
 
@@ -7199,6 +7315,7 @@ function calculateSettlements(participantData) {
         from: debtor.name,
         to: creditor.name,
         amount: amount,
+        isGuestInvolved: debtor.isGuest || creditor.isGuest,
       });
     }
 
@@ -7216,17 +7333,22 @@ function renderSettlementModal(summary) {
   const container = document.getElementById("settlement-summary-content");
   if (!container) return;
 
-  const { participantData, guestBalanceNet } = summary;
-  const settlements = calculateSettlements(participantData);
+  const { participantData, guestList = [], guestBalanceNet } = summary;
+  const settlements = calculateSettlements(participantData, guestList);
+
+  const allAccountsForBars = [
+    ...participantData,
+    ...guestList.filter(g => Math.abs(g.balance) > 0.01 || g.spent > 0 || g.contributionPaid > 0)
+  ];
 
   // Calcular el balance máximo absoluto para las barras porcentuales
-  const maxBalance = Math.max(...participantData.map(p => Math.abs(p.balance)), 0.01);
+  const maxBalance = Math.max(...allAccountsForBars.map(p => Math.abs(p.balance)), 0.01);
 
   let html = "";
 
   // 1. Header del Resumen
   html += `
-    < div class="mb-8 p-1" >
+    <div class="mb-8 p-1">
       <h4 class="text-xs font-black text-gray-400 uppercase tracking-widest mb-4 flex items-center gap-2">
         <i class="fas fa-chart-pie text-gray-300"></i> Balance de Cuentas
       </h4>
@@ -7234,7 +7356,7 @@ function renderSettlementModal(summary) {
   `;
 
   // 2. Lista de Balances (Barras Visuales)
-  participantData.forEach((p) => {
+  allAccountsForBars.forEach((p) => {
     const isPositive = p.balance >= 0;
     const isZero = Math.abs(p.balance) < 0.01;
 
@@ -7254,7 +7376,7 @@ function renderSettlementModal(summary) {
                   <div class="flex flex-col">
                     <span class="text-sm font-bold text-gray-800 leading-none">${p.name}</span>
                     <span class="text-[10px] font-medium text-gray-400 mt-0.5">
-                      Gastó: ${formatCurrency(p.spent)}
+                      Gastó: ${formatCurrency(p.spent || 0)} ${p.contributionPaid > 0 ? `| Pagó: ${formatCurrency(p.contributionPaid)}` : ''}
                     </span>
                   </div>
                   <div class="text-right">
@@ -7276,27 +7398,29 @@ function renderSettlementModal(summary) {
           </div>
       `;
   });
-  html += "</div></div > "; // Cierre del container de balances
+  html += "</div></div>"; // Cierre del container de balances
 
   // 3. Alerta de Invitados
   if (Math.abs(guestBalanceNet) > 0.01) {
+    const isGuestCreditor = guestBalanceNet > 0;
     html += `
-        <div class="relative bg-orange-50 border border-orange-100 p-5 rounded-2xl mb-8 overflow-hidden">
-             <div class="absolute -right-6 -top-6 text-orange-100 text-9xl">
-                <i class="fas fa-exclamation-circle opacity-20 transform rotate-12"></i>
-             </div>
+        <div class="relative ${isGuestCreditor ? 'bg-indigo-50 border-indigo-100' : 'bg-orange-50 border-orange-100'} border p-5 rounded-2xl mb-8 overflow-hidden">
              <div class="relative z-10">
                 <div class="flex items-center gap-2 mb-1">
-                  <div class="bg-orange-100 text-orange-600 rounded-full p-1.5 w-6 h-6 flex items-center justify-center text-xs">
+                  <div class="${isGuestCreditor ? 'bg-indigo-100 text-indigo-600' : 'bg-orange-100 text-orange-600'} rounded-full p-1.5 w-6 h-6 flex items-center justify-center text-xs">
                     <i class="fas fa-user-friends"></i>
                   </div>
-                  <h4 class="text-xs font-bold text-orange-800 uppercase tracking-wide">Invitados Externos</h4>
+                  <h4 class="text-xs font-bold ${isGuestCreditor ? 'text-indigo-800' : 'text-orange-800'} uppercase tracking-wide">
+                    ${isGuestCreditor ? 'Reembolso Pendiente a Invitado' : 'Cobro Pendiente a Invitado'}
+                  </h4>
                 </div>
                 <div class="flex justify-between items-end mt-2">
-                   <p class="text-[11px] text-orange-700 leading-tight max-w-[70%]">
-                      Hay gastos asignados a personas fuera del grupo. Debes cobrar este dinero por tu cuenta.
+                   <p class="text-[11px] ${isGuestCreditor ? 'text-indigo-700' : 'text-orange-700'} leading-tight max-w-[70%]">
+                      ${isGuestCreditor 
+                        ? 'El invitado pagó gastos por el grupo. El grupo debe reembolsarle este saldo.' 
+                        : 'Hay gastos asignados a personas fuera del grupo. Debes cobrar este dinero.'}
                    </p>
-                   <span class="font-black text-xl text-orange-600">${formatCurrency(Math.abs(guestBalanceNet))}</span>
+                   <span class="font-black text-xl ${isGuestCreditor ? 'text-indigo-600' : 'text-orange-600'}">${formatCurrency(Math.abs(guestBalanceNet))}</span>
                 </div>
              </div>
         </div>
