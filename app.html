@@ -2352,69 +2352,164 @@
 
   <!-- Modal de Categorías -->
   <div id="categories-modal"
-    class="fixed inset-0 z-50 hidden items-center justify-center bg-gray-600 bg-opacity-70 backdrop-blur-sm p-4 transition-opacity">
-    <div class="flex h-[85vh] w-full max-w-6xl overflow-hidden rounded-3xl bg-white shadow-2xl ring-1 ring-gray-900/5">
-      <div class="hidden w-2/5 flex-col border-r border-gray-100 bg-gray-50/50 p-8 md:flex">
-        <div class="mb-8">
-          <div class="flex items-center gap-4 text-gray-800">
-            <div
-              class="flex h-12 w-12 items-center justify-center rounded-2xl bg-white shadow-sm ring-1 ring-gray-900/5">
-              <i class="fas fa-tags text-xl text-indigo-600"></i>
+    class="fixed inset-0 z-50 hidden items-center justify-center bg-slate-900/60 backdrop-blur-md p-4 transition-all duration-300">
+    <div class="flex h-[88vh] w-full max-w-5xl overflow-hidden rounded-3xl bg-white shadow-2xl ring-1 ring-slate-900/10 animate-pop">
+      
+      <!-- Panel Izquierdo: Lista de Categorías Existentes -->
+      <div class="hidden w-[42%] flex-col border-r border-slate-100 bg-slate-50/70 p-6 md:flex">
+        <div class="mb-5 flex items-center justify-between">
+          <div class="flex items-center gap-3">
+            <div class="flex h-11 w-11 items-center justify-center rounded-2xl bg-indigo-600 text-white shadow-md shadow-indigo-200">
+              <i class="fas fa-tags text-lg"></i>
             </div>
             <div>
-              <h3 class="text-xl font-bold leading-tight">Categorías</h3>
-              <p class="text-xs text-gray-500 font-medium mt-0.5">Gestiona tus presupuestos</p>
+              <h3 class="text-lg font-black text-slate-800 leading-tight">Categorías</h3>
+              <p class="text-[11px] text-slate-400 font-medium">Presupuestos y clasificación</p>
             </div>
           </div>
+          <span id="categories-count-badge" class="px-2.5 py-1 text-[11px] font-black rounded-xl bg-indigo-50 text-indigo-600 border border-indigo-100">0</span>
         </div>
 
-        <div class="flex-grow overflow-y-auto pr-2 custom-scrollbar">
-          <div id="categories-display" class="space-y-3">
-            <p class="text-center text-sm italic text-gray-400 mt-10">Cargando lista...</p>
+        <!-- Buscador rápido en categorías -->
+        <div class="relative mb-4">
+          <i class="fas fa-search absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-xs"></i>
+          <input type="text" id="search-category-input" placeholder="Buscar categoría..."
+            class="w-full pl-9 pr-4 py-2 text-xs font-semibold rounded-xl bg-white border border-slate-200/80 text-slate-700 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all shadow-xs" />
+        </div>
+
+        <!-- Lista con scroll estilizado -->
+        <div class="flex-grow overflow-y-auto pr-1.5 custom-scrollbar space-y-2.5" id="categories-display">
+          <div class="flex flex-col items-center justify-center py-12 text-slate-400 opacity-60">
+            <i class="fas fa-circle-notch fa-spin text-2xl mb-2 text-indigo-500"></i>
+            <p class="text-xs">Cargando lista...</p>
           </div>
         </div>
 
-        <div class="mt-8 border-t border-gray-200 pt-5">
-          <div class="flex items-center justify-between text-xs text-gray-400 font-medium">
-            <span>PRESUPUESTO TOTAL</span>
-            <span id="total-budget-display" class="font-bold text-gray-700 text-lg">S/ 0.00</span>
+        <!-- Widget Presupuesto Total -->
+        <div class="mt-4 pt-4 border-t border-slate-200/70">
+          <div class="bg-gradient-to-br from-slate-900 to-indigo-950 p-4 rounded-2xl text-white shadow-sm flex items-center justify-between">
+            <div>
+              <span class="text-[9px] font-bold uppercase tracking-wider text-indigo-200/80 block">Presupuesto Mensual Total</span>
+              <span id="total-budget-display" class="font-black text-xl text-white tracking-tight">S/ 0.00</span>
+            </div>
+            <div class="h-10 w-10 rounded-xl bg-white/10 flex items-center justify-center text-indigo-300">
+              <i class="fas fa-coins text-lg"></i>
+            </div>
           </div>
         </div>
       </div>
 
-      <div class="flex flex-1 flex-col bg-white p-0 overflow-hidden">
-        <div class="flex items-center justify-between px-8 py-6 border-b border-gray-100">
-          <h2 class="text-2xl font-bold text-gray-900">Configuración</h2>
-          <button id="close-categories-modal-btn"
-            class="group rounded-full p-2 text-gray-300 transition-colors hover:bg-gray-50 hover:text-gray-600">
-            <i class="fas fa-times text-xl"></i>
+      <!-- Panel Derecho: Formulario de Creación / Edición -->
+      <div class="flex flex-1 flex-col bg-white overflow-hidden">
+        <!-- Cabecera del formulario -->
+        <div class="flex items-center justify-between px-8 py-5 border-b border-slate-100">
+          <div class="flex items-center gap-3">
+            <div id="form-mode-indicator" class="h-2.5 w-2.5 rounded-full bg-emerald-500 animate-pulse"></div>
+            <div>
+              <h2 id="category-form-title" class="text-lg font-black text-slate-800">Nueva Categoría</h2>
+              <p id="category-form-subtitle" class="text-[11px] text-slate-400 font-medium">Asigna nombre, presupuesto mensual y tipo</p>
+            </div>
+          </div>
+          <button id="close-categories-modal-btn" class="size-9 rounded-full bg-slate-50 text-slate-400 hover:bg-slate-100 hover:text-slate-700 flex items-center justify-center transition-all">
+            <i class="fas fa-times text-sm"></i>
           </button>
         </div>
 
-        <form id="category-form" class="flex flex-grow flex-col space-y-8 p-8 overflow-y-auto">
-          <div class="space-y-3">
-            <label class="text-xs font-bold text-gray-500 uppercase tracking-wide">Nombre de la Categoría</label>
-            <input type="text" id="category-name" placeholder="Ej: Alimentación, Transporte..." required
-              class="w-full rounded-2xl border-none bg-gray-50 px-5 py-4 text-gray-900 font-semibold placeholder-gray-400 ring-1 ring-inset ring-gray-200 focus:ring-2 focus:ring-indigo-600 transition-shadow" />
-          </div>
-          <div class="space-y-3">
-            <label class="text-xs font-bold text-gray-500 uppercase tracking-wide">Presupuesto Mensual</label>
+        <!-- Formulario de Configuración -->
+        <form id="category-form" class="flex flex-grow flex-col space-y-5 p-8 overflow-y-auto custom-scrollbar">
+          <!-- Nombre de la categoría -->
+          <div class="space-y-1.5">
+            <label class="text-[11px] font-bold text-slate-600 uppercase tracking-wider flex items-center gap-1.5">
+              <i class="fas fa-pen text-indigo-500"></i>Nombre de la Categoría
+            </label>
             <div class="relative">
-              <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-5">
-                <span class="text-gray-400 font-bold text-lg">S/</span>
+              <input type="text" id="category-name" placeholder="Ej: Alimentación, Transporte, Salud..." required
+                class="w-full rounded-2xl bg-slate-50/80 border border-slate-200 px-4 py-3.5 text-sm text-slate-800 font-bold placeholder-slate-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-600 transition-all shadow-xs" />
+            </div>
+          </div>
+
+          <!-- Selector de Tipo de Gasto / Naturaleza -->
+          <div class="space-y-1.5">
+            <label class="text-[11px] font-bold text-slate-600 uppercase tracking-wider flex items-center gap-1.5">
+              <i class="fas fa-layer-group text-indigo-500"></i>Tipo de Categoría
+            </label>
+            <div class="grid grid-cols-2 sm:grid-cols-3 gap-2" id="category-type-selector">
+              <label class="cursor-pointer">
+                <input type="radio" name="category-nature" value="variable" checked class="peer sr-only">
+                <div class="p-3 rounded-2xl border border-slate-200 bg-slate-50/50 text-center peer-checked:bg-indigo-50/70 peer-checked:border-indigo-500 peer-checked:text-indigo-700 peer-checked:shadow-xs transition-all hover:bg-slate-100/60">
+                  <i class="fas fa-shopping-bag text-sm mb-1 block"></i>
+                  <span class="text-xs font-bold block">Variable</span>
+                  <span class="text-[9px] text-slate-400 block peer-checked:text-indigo-500">Día a día</span>
+                </div>
+              </label>
+              <label class="cursor-pointer">
+                <input type="radio" name="category-nature" value="fixed" class="peer sr-only">
+                <div class="p-3 rounded-2xl border border-slate-200 bg-slate-50/50 text-center peer-checked:bg-indigo-50/70 peer-checked:border-indigo-500 peer-checked:text-indigo-700 peer-checked:shadow-xs transition-all hover:bg-slate-100/60">
+                  <i class="fas fa-home text-sm mb-1 block"></i>
+                  <span class="text-xs font-bold block">Fijo</span>
+                  <span class="text-[9px] text-slate-400 block peer-checked:text-indigo-500">Mensual</span>
+                </div>
+              </label>
+              <label class="cursor-pointer col-span-2 sm:col-span-1">
+                <input type="radio" name="category-nature" value="savings" class="peer sr-only">
+                <div class="p-3 rounded-2xl border border-slate-200 bg-slate-50/50 text-center peer-checked:bg-indigo-50/70 peer-checked:border-indigo-500 peer-checked:text-indigo-700 peer-checked:shadow-xs transition-all hover:bg-slate-100/60">
+                  <i class="fas fa-piggy-bank text-sm mb-1 block"></i>
+                  <span class="text-xs font-bold block">Ahorro / Meta</span>
+                  <span class="text-[9px] text-slate-400 block peer-checked:text-indigo-500">Inversión</span>
+                </div>
+              </label>
+            </div>
+          </div>
+
+          <!-- Presupuesto Mensual con atajos -->
+          <div class="space-y-1.5">
+            <div class="flex items-center justify-between">
+              <label class="text-[11px] font-bold text-slate-600 uppercase tracking-wider flex items-center gap-1.5">
+                <i class="fas fa-wallet text-indigo-500"></i>Límite Presupuestal Mensual
+              </label>
+              <span class="text-[10px] text-slate-400 font-semibold">(Opcional)</span>
+            </div>
+            <div class="relative">
+              <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-4">
+                <span class="text-slate-400 font-black text-base">S/</span>
               </div>
               <input type="number" id="category-budget" placeholder="0.00" min="0" step="0.01"
-                class="w-full rounded-2xl border-none bg-gray-50 py-4 pl-12 pr-5 text-gray-900 font-bold text-xl placeholder-gray-400 ring-1 ring-inset ring-gray-200 focus:ring-2 focus:ring-indigo-600 transition-shadow" />
+                class="w-full rounded-2xl bg-slate-50/80 border border-slate-200 py-3.5 pl-11 pr-4 text-slate-900 font-black text-lg placeholder-slate-300 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-600 transition-all shadow-xs" />
             </div>
+            <!-- Botones rápidos de presupuesto -->
+            <div class="flex flex-wrap gap-1.5 pt-1">
+              <button type="button" onclick="const b = document.getElementById('category-budget'); b.value = (parseFloat(b.value || 0) + 100).toFixed(2);" class="px-2.5 py-1 text-[10px] font-bold rounded-lg bg-slate-100 text-slate-600 hover:bg-indigo-50 hover:text-indigo-600 transition-all">+ S/ 100</button>
+              <button type="button" onclick="const b = document.getElementById('category-budget'); b.value = (parseFloat(b.value || 0) + 250).toFixed(2);" class="px-2.5 py-1 text-[10px] font-bold rounded-lg bg-slate-100 text-slate-600 hover:bg-indigo-50 hover:text-indigo-600 transition-all">+ S/ 250</button>
+              <button type="button" onclick="const b = document.getElementById('category-budget'); b.value = (parseFloat(b.value || 0) + 500).toFixed(2);" class="px-2.5 py-1 text-[10px] font-bold rounded-lg bg-slate-100 text-slate-600 hover:bg-indigo-50 hover:text-indigo-600 transition-all">+ S/ 500</button>
+              <button type="button" onclick="const b = document.getElementById('category-budget'); b.value = (parseFloat(b.value || 0) + 1000).toFixed(2);" class="px-2.5 py-1 text-[10px] font-bold rounded-lg bg-slate-100 text-slate-600 hover:bg-indigo-50 hover:text-indigo-600 transition-all">+ S/ 1,000</button>
+              <button type="button" onclick="document.getElementById('category-budget').value = '';" class="px-2.5 py-1 text-[10px] font-bold rounded-lg bg-rose-50 text-rose-500 hover:bg-rose-100 transition-all ml-auto">Borrar</button>
+            </div>
+          </div>
+
+          <!-- Subcategorías separadas por comas -->
+          <div class="space-y-1.5">
+            <label class="text-[11px] font-bold text-slate-600 uppercase tracking-wider flex items-center gap-1.5">
+              <i class="fas fa-tags text-indigo-500"></i>Subcategorías / Etiquetas
+            </label>
+            <input type="text" id="subcategory-list" placeholder="Ej: Supermercado, Restaurantes, Snacks (separados por coma)"
+              class="w-full rounded-2xl bg-slate-50/80 border border-slate-200 px-4 py-3 text-xs text-slate-800 font-semibold placeholder-slate-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-600 transition-all shadow-xs" />
+            <p class="text-[10px] text-slate-400 font-medium">Escribe nombres separados por comas para agrupar subtags.</p>
           </div>
         </form>
 
-        <div class="flex items-center justify-end gap-4 border-t border-gray-100 px-8 py-5 bg-white">
+        <!-- Barra de Botones Inferior -->
+        <div class="flex items-center justify-between border-t border-slate-100 px-8 py-4 bg-white shrink-0">
           <button type="button" id="btn-clear-category-form"
-            class="rounded-xl px-6 py-3 text-sm font-bold text-gray-500 transition-colors hover:bg-gray-50 hover:text-gray-800">Limpiar</button>
-          <button type="submit" form="category-form"
-            class="rounded-xl bg-gray-900 px-8 py-3 text-sm font-bold text-white shadow-lg transition-all hover:bg-gray-800 hover:shadow-xl hover:-translate-y-0.5">Guardar
-            Categoría</button>
+            class="rounded-xl px-5 py-2.5 text-xs font-bold text-slate-500 transition-colors hover:bg-slate-50 hover:text-slate-800">
+            Limpiar formulario
+          </button>
+          <div class="flex items-center gap-2">
+            <button type="submit" form="category-form"
+              class="rounded-xl bg-indigo-600 px-6 py-2.5 text-xs font-black text-white shadow-md shadow-indigo-200 transition-all hover:bg-indigo-700 hover:shadow-lg active:scale-95 flex items-center gap-2">
+              <i class="fas fa-save text-xs"></i>
+              <span id="btn-submit-category-text">Guardar Categoría</span>
+            </button>
+          </div>
         </div>
       </div>
     </div>
@@ -7316,97 +7411,190 @@
     }
 
     // ================================================================
-    // RENDERIZADO DE CATEGORÍAS (BLOQUES SEPARADOS IZQ/DER)
+    // RENDERIZADO Y CONTROL DEL MODAL DE CATEGORÍAS (REDISEÑO MODERNO)
     // ================================================================
+    let editingCategoryName = null;
+
     function renderCategoriesModal(categories) {
       const displayEl = document.getElementById("categories-display");
       const totalBudgetEl = document.getElementById("total-budget-display");
+      const countBadgeEl = document.getElementById("categories-count-badge");
+      const searchInput = document.getElementById("search-category-input");
 
       const optionsContainer = document.querySelector("#expense-category-button")?.nextElementSibling;
       const editCategoryOptions = document.querySelector("#edit-expense-category-button")?.nextElementSibling;
 
+      if (!displayEl) return;
       displayEl.innerHTML = "";
       if (optionsContainer) optionsContainer.innerHTML = "";
       if (editCategoryOptions) editCategoryOptions.innerHTML = "";
 
-      let totalBudget = 0;
+      const query = (searchInput?.value || "").toLowerCase().trim();
+      const filteredCategories = query
+        ? categories.filter(c => c.name.toLowerCase().includes(query) || (c.subcategories && c.subcategories.some(s => s.toLowerCase().includes(query))))
+        : categories;
 
-      if (categories.length === 0) {
+      let totalBudget = 0;
+      if (countBadgeEl) countBadgeEl.textContent = categories.length;
+
+      if (filteredCategories.length === 0) {
         displayEl.innerHTML = `
-            <div class="flex flex-col items-center justify-center py-10 text-gray-400 opacity-60">
-                <i class="fas fa-inbox text-3xl mb-2"></i>
-                <p class="text-xs text-center">Sin categorías.<br>Crea una a la derecha.</p>
-            </div>`;
+          <div class="flex flex-col items-center justify-center py-12 text-slate-400 text-center">
+            <div class="size-12 rounded-2xl bg-slate-100 text-slate-400 flex items-center justify-center mb-2">
+              <i class="fas fa-inbox text-xl"></i>
+            </div>
+            <p class="text-xs font-bold text-slate-600">${query ? 'Sin resultados' : 'Sin categorías'}</p>
+            <p class="text-[10px] text-slate-400 mt-0.5">${query ? 'Prueba con otro término' : 'Crea una nueva en el formulario'}</p>
+          </div>`;
       } else {
-        categories.forEach((cat) => {
+        filteredCategories.forEach((cat) => {
           const budget = parseFloat(cat.budget) || 0;
           totalBudget += budget;
-          const budgetInfo = budget > 0 ? formatCurrency(budget) : "S/ --";
+          const budgetInfo = budget > 0 ? formatCurrency(budget) : "Sin límite";
           const subCount = cat.subcategories ? cat.subcategories.length : 0;
+          const isEditingThis = editingCategoryName && editingCategoryName.toLowerCase() === cat.name.toLowerCase();
 
-          // --- DISEÑO BLOQUES RÍGIDOS ---
+          const nature = cat.nature || (cat.isFixed ? "fixed" : "variable");
+          let natureBadge = `<span class="px-2 py-0.5 rounded-lg text-[9px] font-black bg-indigo-50 text-indigo-600 border border-indigo-100 flex items-center gap-1"><i class="fas fa-shopping-bag text-[8px]"></i>Variable</span>`;
+          if (nature === "fixed") {
+            natureBadge = `<span class="px-2 py-0.5 rounded-lg text-[9px] font-black bg-emerald-50 text-emerald-600 border border-emerald-100 flex items-center gap-1"><i class="fas fa-home text-[8px]"></i>Fijo</span>`;
+          } else if (nature === "savings") {
+            natureBadge = `<span class="px-2 py-0.5 rounded-lg text-[9px] font-black bg-violet-50 text-violet-600 border border-violet-100 flex items-center gap-1"><i class="fas fa-piggy-bank text-[8px]"></i>Ahorro</span>`;
+          }
+
           displayEl.insertAdjacentHTML(
             "beforeend",
             `
-                <div class="group flex items-center justify-between rounded-xl bg-white p-3 shadow-sm ring-1 ring-gray-100 transition-all hover:shadow-md hover:ring-indigo-500/20">
-                    
-                    <div class="flex items-center gap-3 flex-1 min-w-0 mr-2">
-                        <div class="h-1.5 w-1.5 flex-shrink-0 rounded-full bg-indigo-500"></div>
-                        <span class="truncate text-sm font-bold text-gray-700" title="${cat.name}">${cat.name}</span>
-                    </div>
+            <div class="group relative flex items-center justify-between rounded-2xl p-3.5 transition-all ${isEditingThis ? 'bg-indigo-50/80 border-2 border-indigo-500 shadow-sm' : 'bg-white border border-slate-100 shadow-2xs hover:shadow-md hover:border-indigo-200'}">
+              <div class="flex items-center gap-3 flex-1 min-w-0 mr-2">
+                <div class="size-9 rounded-xl bg-slate-100 text-slate-600 group-hover:bg-indigo-600 group-hover:text-white flex items-center justify-center font-bold text-xs shrink-0 transition-colors shadow-2xs">
+                  ${cat.name.charAt(0).toUpperCase()}
+                </div>
+                <div class="min-w-0 flex-1">
+                  <div class="flex items-center gap-1.5 flex-wrap">
+                    <span class="truncate text-xs font-black text-slate-800" title="${cat.name}">${cat.name}</span>
+                    ${natureBadge}
+                  </div>
+                  <div class="flex items-center gap-2 mt-0.5">
+                    <span class="text-[10px] font-bold ${budget > 0 ? 'text-indigo-600' : 'text-slate-400'}">${budgetInfo}</span>
+                    ${subCount > 0 ? `<span class="text-[9px] text-slate-400">• ${subCount} subtag${subCount !== 1 ? 's' : ''}</span>` : ''}
+                  </div>
+                </div>
+              </div>
 
-                    <div class="flex items-center justify-end gap-3 flex-shrink-0">
-                        
-                        ${subCount > 0 ? `<span class="hidden sm:inline-flex items-center justify-center rounded-md bg-gray-50 px-2 py-1 text-[10px] font-medium text-gray-400 border border-gray-100 whitespace-nowrap">${subCount} sub</span>` : ""}
-                        
-                        <span class="text-xs font-bold ${budget > 0 ? "text-gray-900" : "text-gray-300"} whitespace-nowrap text-right min-w-[60px]">
-                            ${budgetInfo}
-                        </span>
-                        
-                        <button data-name="${cat.name}" class="remove-category-btn flex h-6 w-6 items-center justify-center rounded-full text-gray-300 opacity-0 transition-all hover:bg-red-50 hover:text-red-500 group-hover:opacity-100" title="Eliminar">
-                            <i class="fas fa-times text-xs"></i>
-                        </button>
-                    </div>
-                </div>`
+              <div class="flex items-center gap-1 shrink-0">
+                <button type="button" data-name="${cat.name}" class="edit-category-btn size-7 rounded-lg text-slate-400 hover:bg-indigo-50 hover:text-indigo-600 flex items-center justify-center transition-all opacity-0 group-hover:opacity-100" title="Editar">
+                  <i class="fas fa-pen text-[10px]"></i>
+                </button>
+                <button type="button" data-name="${cat.name}" class="remove-category-btn size-7 rounded-lg text-slate-400 hover:bg-rose-50 hover:text-rose-600 flex items-center justify-center transition-all opacity-0 group-hover:opacity-100" title="Eliminar">
+                  <i class="fas fa-trash-alt text-[10px]"></i>
+                </button>
+              </div>
+            </div>`
           );
 
-          // Actualizar selects antiguos
+          // Actualizar selects de gastos
           const optionHTML = `<div class="custom-select-option" data-value="${cat.name}">${cat.name}</div>`;
           if (optionsContainer) optionsContainer.insertAdjacentHTML("beforeend", optionHTML);
           if (editCategoryOptions) editCategoryOptions.insertAdjacentHTML("beforeend", optionHTML);
         });
 
-        // Listeners para eliminar
+        // Listeners para editar y eliminar
+        displayEl.querySelectorAll(".edit-category-btn").forEach((btn) => {
+          btn.addEventListener("click", (e) => {
+            e.stopPropagation();
+            loadCategoryForEdit(btn.dataset.name);
+          });
+        });
+
         displayEl.querySelectorAll(".remove-category-btn").forEach((btn) => {
           btn.addEventListener("click", (e) => {
-            if (confirm(`¿Eliminar la categoría "${e.currentTarget.dataset.name}"?`)) {
-              removeCategory(e.currentTarget.dataset.name);
+            e.stopPropagation();
+            const name = btn.dataset.name;
+            if (confirm(`¿Eliminar la categoría "${name}"?`)) {
+              removeCategory(name);
             }
           });
         });
       }
 
-      if (totalBudgetEl) totalBudgetEl.textContent = formatCurrency(totalBudget);
+      // Presupuesto total real de todas las categorías
+      const actualTotal = categories.reduce((sum, c) => sum + (parseFloat(c.budget) || 0), 0);
+      if (totalBudgetEl) totalBudgetEl.textContent = formatCurrency(actualTotal);
 
       if (typeof populateModalTags === "function") populateModalTags();
       if (typeof updateDynamicFilterTagOptions === "function") updateDynamicFilterTagOptions();
     }
 
-    // ================================================================
-    // LISTENERS DEL MODAL DE CATEGORÍAS
-    // ================================================================
+    function loadCategoryForEdit(name) {
+      const category = appState.categories.find(c => c.name.toLowerCase() === name.toLowerCase());
+      if (!category) return;
+
+      editingCategoryName = category.name;
+
+      const nameInput = document.getElementById("category-name");
+      const budgetInput = document.getElementById("category-budget");
+      const subInput = document.getElementById("subcategory-list");
+      const titleEl = document.getElementById("category-form-title");
+      const subtitleEl = document.getElementById("category-form-subtitle");
+      const submitTextEl = document.getElementById("btn-submit-category-text");
+      const modeIndicator = document.getElementById("form-mode-indicator");
+
+      if (nameInput) nameInput.value = category.name;
+      if (budgetInput) budgetInput.value = category.budget || "";
+      if (subInput) subInput.value = (category.subcategories || []).join(", ");
+
+      const nature = category.nature || (category.isFixed ? "fixed" : "variable");
+      const radio = document.querySelector(`input[name="category-nature"][value="${nature}"]`);
+      if (radio) radio.checked = true;
+
+      if (titleEl) titleEl.textContent = "Editar Categoría";
+      if (subtitleEl) subtitleEl.textContent = `Modificando "${category.name}"`;
+      if (submitTextEl) submitTextEl.textContent = "Actualizar Categoría";
+      if (modeIndicator) {
+        modeIndicator.className = "h-2.5 w-2.5 rounded-full bg-indigo-500 animate-pulse";
+      }
+
+      renderCategoriesModal(appState.categories);
+      if (nameInput) nameInput.focus();
+    }
+
+    function resetCategoryFormState() {
+      const form = document.getElementById("category-form");
+      if (form) form.reset();
+      editingCategoryName = null;
+
+      const titleEl = document.getElementById("category-form-title");
+      const subtitleEl = document.getElementById("category-form-subtitle");
+      const submitTextEl = document.getElementById("btn-submit-category-text");
+      const modeIndicator = document.getElementById("form-mode-indicator");
+
+      if (titleEl) titleEl.textContent = "Nueva Categoría";
+      if (subtitleEl) subtitleEl.textContent = "Asigna nombre, presupuesto mensual y tipo";
+      if (submitTextEl) submitTextEl.textContent = "Guardar Categoría";
+      if (modeIndicator) {
+        modeIndicator.className = "h-2.5 w-2.5 rounded-full bg-emerald-500 animate-pulse";
+      }
+
+      const defaultRadio = document.querySelector('input[name="category-nature"][value="variable"]');
+      if (defaultRadio) defaultRadio.checked = true;
+
+      renderCategoriesModal(appState.categories);
+    }
+
     function setupCategoryModalListeners() {
       const modal = document.getElementById("categories-modal");
       const form = document.getElementById("category-form");
       const openBtn = document.getElementById("open-categories-modal-btn");
       const closeBtn = document.getElementById("close-categories-modal-btn");
       const clearBtn = document.getElementById("btn-clear-category-form");
+      const searchInput = document.getElementById("search-category-input");
 
       if (openBtn) {
         openBtn.addEventListener("click", () => {
           modal.classList.remove("hidden");
           modal.classList.add("flex");
-          // Renderizar al abrir para asegurar datos frescos
+          resetCategoryFormState();
           renderCategoriesModal(appState.categories);
         });
       }
@@ -7414,11 +7602,17 @@
       const closeModal = () => {
         modal.classList.add("hidden");
         modal.classList.remove("flex");
-        form.reset();
+        resetCategoryFormState();
       };
 
       if (closeBtn) closeBtn.addEventListener("click", closeModal);
-      if (clearBtn) clearBtn.addEventListener("click", () => form.reset());
+      if (clearBtn) clearBtn.addEventListener("click", () => resetCategoryFormState());
+
+      if (searchInput) {
+        searchInput.addEventListener("input", () => {
+          renderCategoriesModal(appState.categories);
+        });
+      }
 
       if (form) {
         form.addEventListener("submit", (e) => {
@@ -7426,14 +7620,15 @@
           const nameInput = document.getElementById("category-name");
           const budgetInput = document.getElementById("category-budget");
           const subInput = document.getElementById("subcategory-list");
+          const natureRadio = document.querySelector('input[name="category-nature"]:checked');
 
-          const name = formatTitleCase(nameInput.value);
+          const name = formatTitleCase(nameInput.value.trim());
           const budget = parseFloat(budgetInput.value) || 0;
+          const nature = natureRadio ? natureRadio.value : "variable";
           const subcategoriesString = subInput.value.trim();
 
           if (!name) return;
 
-          // Procesar subcategorías
           const subcategories = subcategoriesString
             ? subcategoriesString
               .split(",")
@@ -7441,36 +7636,62 @@
               .filter((s) => s)
             : [];
 
-          const newCategories = [...appState.categories];
-          const existingIndex = newCategories.findIndex((c) => c.name.toLowerCase() === name.toLowerCase());
+          let newCategories = [...appState.categories];
 
-          if (existingIndex !== -1) {
+          if (editingCategoryName) {
             // Actualizar existente
-            newCategories[existingIndex].budget = budget;
-            // Unir subcategorías nuevas con las existentes sin duplicados
-            const currentSubs = newCategories[existingIndex].subcategories || [];
-            newCategories[existingIndex].subcategories = Array.from(new Set([...currentSubs, ...subcategories]));
-            showModal(`Categoría '${name}' actualizada.`);
+            const targetIdx = newCategories.findIndex(c => c.name.toLowerCase() === editingCategoryName.toLowerCase());
+            if (targetIdx !== -1) {
+              newCategories[targetIdx] = {
+                ...newCategories[targetIdx],
+                name: name,
+                budget: budget,
+                nature: nature,
+                isFixed: nature === "fixed",
+                subcategories: subcategories
+              };
+              showModal(`Categoría "${name}" actualizada correctamente.`, null, "Éxito");
+            }
           } else {
-            // Crear nueva
-            newCategories.push({ name, subcategories, budget });
-            showModal(`Categoría '${name}' creada.`);
+            // Crear nueva o actualizar si ya existía el mismo nombre
+            const existingIdx = newCategories.findIndex(c => c.name.toLowerCase() === name.toLowerCase());
+            if (existingIdx !== -1) {
+              newCategories[existingIdx].budget = budget;
+              newCategories[existingIdx].nature = nature;
+              newCategories[existingIdx].isFixed = nature === "fixed";
+              const currentSubs = newCategories[existingIdx].subcategories || [];
+              newCategories[existingIdx].subcategories = Array.from(new Set([...currentSubs, ...subcategories]));
+              showModal(`Categoría "${name}" actualizada.`);
+            } else {
+              newCategories.push({
+                name,
+                budget,
+                nature,
+                isFixed: nature === "fixed",
+                subcategories
+              });
+              showModal(`Categoría "${name}" creada correctamente.`, null, "Éxito");
+            }
           }
 
           saveState({ categories: newCategories });
-          form.reset();
-          renderCategoriesModal(newCategories); // Actualizar visualmente la lista izquierda
-          nameInput.focus(); // Volver al input para seguir añadiendo rápido
+          resetCategoryFormState();
+          nameInput.focus();
         });
       }
     }
 
     function removeCategory(nameToRemove) {
-      // NUEVO: Desactivar filtro si se elimina la categoría activa
       if (activeFilters.category === nameToRemove) {
         activeFilters.category = null;
       }
-      saveState({ categories: appState.categories.filter((c) => c.name !== nameToRemove) });
+      const newCategories = appState.categories.filter((c) => c.name !== nameToRemove);
+      saveState({ categories: newCategories });
+      if (editingCategoryName && editingCategoryName.toLowerCase() === nameToRemove.toLowerCase()) {
+        resetCategoryFormState();
+      } else {
+        renderCategoriesModal(newCategories);
+      }
     }
     // ================================================================
     // LOGICA UNIFICADA DEL MODAL DE GASTOS (CREAR Y EDITAR)

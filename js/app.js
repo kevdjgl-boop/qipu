@@ -3897,122 +3897,178 @@ function updateDynamicFilterTagOptions() {
 // RENDERIZADO DE CATEGORÍAS (BLOQUES SEPARADOS IZQ/DER)
 // ================================================================
 // ================================================================
-// RENDERIZADO DE CATEGORÍAS (AHORA CON BOTÃ“N EDITAR)
 // ================================================================
+// RENDERIZADO Y CONTROL DEL MODAL DE CATEGORÍAS (REDISEÑO MODERNO)
+// ================================================================
+let editingCategoryName = null;
+
 function renderCategoriesModal(categories) {
   const displayEl = document.getElementById("categories-display");
   const totalBudgetEl = document.getElementById("total-budget-display");
+  const countBadgeEl = document.getElementById("categories-count-badge");
+  const searchInput = document.getElementById("search-category-input");
 
-  // Elementos de selectores en el formulario de gastos (para actualizarlos en tiempo real)
   const optionsContainer = document.querySelector("#expense-category-button")?.nextElementSibling;
   const editOptionsContainer = document.querySelector("#edit-expense-category-button")?.nextElementSibling;
 
+  if (!displayEl) return;
   displayEl.innerHTML = "";
   if (optionsContainer) optionsContainer.innerHTML = "";
   if (editOptionsContainer) editOptionsContainer.innerHTML = "";
 
-  let totalBudget = 0;
+  const query = (searchInput?.value || "").toLowerCase().trim();
+  const filteredCategories = query
+    ? categories.filter(c => c.name.toLowerCase().includes(query) || (c.subcategories && c.subcategories.some(s => s.toLowerCase().includes(query))))
+    : categories;
 
-  if (categories.length === 0) {
+  let totalBudget = 0;
+  if (countBadgeEl) countBadgeEl.textContent = categories.length;
+
+  if (filteredCategories.length === 0) {
     displayEl.innerHTML = `
-      <div class="flex flex-col items-center justify-center py-10 text-gray-400 opacity-60">
-          <i class="fas fa-inbox text-3xl mb-2"></i>
-          <p class="text-xs text-center">Sin categorías.<br>Crea una a la derecha.</p>
+      <div class="flex flex-col items-center justify-center py-12 text-slate-400 text-center">
+        <div class="size-12 rounded-2xl bg-slate-100 text-slate-400 flex items-center justify-center mb-2">
+          <i class="fas fa-inbox text-xl"></i>
+        </div>
+        <p class="text-xs font-bold text-slate-600">${query ? 'Sin resultados' : 'Sin categorías'}</p>
+        <p class="text-[10px] text-slate-400 mt-0.5">${query ? 'Prueba con otro término' : 'Crea una nueva en el formulario'}</p>
       </div>`;
   } else {
-    categories.forEach((cat) => {
+    filteredCategories.forEach((cat) => {
       const budget = parseFloat(cat.budget) || 0;
       totalBudget += budget;
-      const budgetInfo = budget > 0 ? formatCurrency(budget) : "S/ --";
+      const budgetInfo = budget > 0 ? formatCurrency(budget) : "Sin límite";
+      const subCount = cat.subcategories ? cat.subcategories.length : 0;
+      const isEditingThis = editingCategoryName && editingCategoryName.toLowerCase() === cat.name.toLowerCase();
+
+      const nature = cat.nature || (cat.isFixed ? "fixed" : "variable");
+      let natureBadge = `<span class="px-2 py-0.5 rounded-lg text-[9px] font-black bg-indigo-50 text-indigo-600 border border-indigo-100 flex items-center gap-1"><i class="fas fa-shopping-bag text-[8px]"></i>Variable</span>`;
+      if (nature === "fixed") {
+        natureBadge = `<span class="px-2 py-0.5 rounded-lg text-[9px] font-black bg-emerald-50 text-emerald-600 border border-emerald-100 flex items-center gap-1"><i class="fas fa-home text-[8px]"></i>Fijo</span>`;
+      } else if (nature === "savings") {
+        natureBadge = `<span class="px-2 py-0.5 rounded-lg text-[9px] font-black bg-violet-50 text-violet-600 border border-violet-100 flex items-center gap-1"><i class="fas fa-piggy-bank text-[8px]"></i>Ahorro</span>`;
+      }
 
       displayEl.insertAdjacentHTML(
         "beforeend",
         `
-        <div class="group flex items-center justify-between rounded-xl bg-white p-3 shadow-sm ring-1 ring-gray-100 transition-all hover:shadow-md hover:ring-indigo-500/20">
-            
-            <div class="flex items-center gap-3 flex-1 min-w-0 mr-2">
-                <div class="h-1.5 w-1.5 flex-shrink-0 rounded-full bg-indigo-500"></div>
-                <span class="truncate text-sm font-bold text-gray-700" title="${cat.name}">${cat.name}</span>
+        <div class="group relative flex items-center justify-between rounded-2xl p-3.5 transition-all ${isEditingThis ? 'bg-indigo-50/80 border-2 border-indigo-500 shadow-sm' : 'bg-white border border-slate-100 shadow-2xs hover:shadow-md hover:border-indigo-200'}">
+          <div class="flex items-center gap-3 flex-1 min-w-0 mr-2">
+            <div class="size-9 rounded-xl bg-slate-100 text-slate-600 group-hover:bg-indigo-600 group-hover:text-white flex items-center justify-center font-bold text-xs shrink-0 transition-colors shadow-2xs">
+              ${cat.name.charAt(0).toUpperCase()}
             </div>
-
-            <div class="flex items-center justify-end gap-2 flex-shrink-0">
-                
-                <span class="text-xs font-bold ${budget > 0 ? "text-gray-900" : "text-gray-300"} whitespace-nowrap text-right min-w-[60px] mr-2">
-                    ${budgetInfo}
-                </span>
-                
-                <button data-name="${cat.name}" class="edit-category-btn flex h-7 w-7 items-center justify-center rounded-full text-gray-400 opacity-0 transition-all hover:bg-blue-50 hover:text-blue-600 group-hover:opacity-100" title="Editar">
-                    <i class="fas fa-pen text-xs"></i>
-                </button>
-
-                <button data-name="${cat.name}" class="remove-category-btn flex h-7 w-7 items-center justify-center rounded-full text-gray-300 opacity-0 transition-all hover:bg-red-50 hover:text-red-500 group-hover:opacity-100" title="Eliminar">
-                    <i class="fas fa-times text-xs"></i>
-                </button>
+            <div class="min-w-0 flex-1">
+              <div class="flex items-center gap-1.5 flex-wrap">
+                <span class="truncate text-xs font-black text-slate-800" title="${cat.name}">${cat.name}</span>
+                ${natureBadge}
+              </div>
+              <div class="flex items-center gap-2 mt-0.5">
+                <span class="text-[10px] font-bold ${budget > 0 ? 'text-indigo-600' : 'text-slate-400'}">${budgetInfo}</span>
+                ${subCount > 0 ? `<span class="text-[9px] text-slate-400">• ${subCount} subtag${subCount !== 1 ? 's' : ''}</span>` : ''}
+              </div>
             </div>
+          </div>
+
+          <div class="flex items-center gap-1 shrink-0">
+            <button type="button" data-name="${cat.name}" class="edit-category-btn size-7 rounded-lg text-slate-400 hover:bg-indigo-50 hover:text-indigo-600 flex items-center justify-center transition-all opacity-0 group-hover:opacity-100" title="Editar">
+              <i class="fas fa-pen text-[10px]"></i>
+            </button>
+            <button type="button" data-name="${cat.name}" class="remove-category-btn size-7 rounded-lg text-slate-400 hover:bg-rose-50 hover:text-rose-600 flex items-center justify-center transition-all opacity-0 group-hover:opacity-100" title="Eliminar">
+              <i class="fas fa-trash-alt text-[10px]"></i>
+            </button>
+          </div>
         </div>`
       );
 
-      // Actualizar selects de gastos en segundo plano
+      // Actualizar selects de gastos
       const optionHTML = `<div class="custom-select-option" data-value="${cat.name}">${cat.name}</div>`;
       if (optionsContainer) optionsContainer.insertAdjacentHTML("beforeend", optionHTML);
       if (editOptionsContainer) editOptionsContainer.insertAdjacentHTML("beforeend", optionHTML);
     });
 
-    // LISTENER PARA ELIMINAR
+    // Listeners para editar y eliminar
+    displayEl.querySelectorAll(".edit-category-btn").forEach((btn) => {
+      btn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        loadCategoryForEdit(btn.dataset.name);
+      });
+    });
+
     displayEl.querySelectorAll(".remove-category-btn").forEach((btn) => {
       btn.addEventListener("click", (e) => {
-        const name = e.currentTarget.dataset.name;
+        e.stopPropagation();
+        const name = btn.dataset.name;
         ui.confirm(
           "Borrar Categoría",
-          `Â¿Eliminar la categoría "<b>${name}</b>"?`,
+          `¿Eliminar la categoría "<b>${name}</b>"?`,
           () => removeCategory(name),
           "error"
         );
       });
     });
-
-    // LISTENER PARA EDITAR (El que faltaba)
-    displayEl.querySelectorAll(".edit-category-btn").forEach((btn) => {
-      btn.addEventListener("click", (e) => {
-        loadCategoryForEdit(e.currentTarget.dataset.name);
-      });
-    });
   }
 
-  if (totalBudgetEl) totalBudgetEl.textContent = formatCurrency(totalBudget);
+  const actualTotal = categories.reduce((sum, c) => sum + (parseFloat(c.budget) || 0), 0);
+  if (totalBudgetEl) totalBudgetEl.textContent = formatCurrency(actualTotal);
 
   if (typeof populateModalTags === "function") populateModalTags();
   if (typeof updateDynamicFilterTagOptions === "function") updateDynamicFilterTagOptions();
 }
 
-// ================================================================
-// LISTENERS DEL MODAL DE CATEGORÍAS
-// ================================================================
-// ================================================================
-// LÃ“GICA DE EDICIÃ“N Y GUARDADO DE CATEGORÍAS
-// ================================================================
-
-// Variable temporal para saber qué estamos editando
-let editingCategoryName = null;
-
 function loadCategoryForEdit(name) {
-  const category = appState.categories.find(c => c.name === name);
+  const category = appState.categories.find(c => c.name.toLowerCase() === name.toLowerCase());
   if (!category) return;
 
-  // 1. Llenar el formulario
-  document.getElementById("category-name").value = category.name;
-  document.getElementById("category-budget").value = category.budget || "";
+  editingCategoryName = category.name;
 
-  // 2. Marcar estado de edición
-  editingCategoryName = name; // Guardamos el nombre original
+  const nameInput = document.getElementById("category-name");
+  const budgetInput = document.getElementById("category-budget");
+  const subInput = document.getElementById("subcategory-list");
+  const titleEl = document.getElementById("category-form-title");
+  const subtitleEl = document.getElementById("category-form-subtitle");
+  const submitTextEl = document.getElementById("btn-submit-category-text");
+  const modeIndicator = document.getElementById("form-mode-indicator");
 
-  // 3. Cambiar visualmente el botón
-  const submitBtn = document.querySelector("button[form='category-form']");
-  if (submitBtn) {
-    submitBtn.textContent = "Actualizar Categoría";
-    submitBtn.classList.remove("bg-gray-900");
-    submitBtn.classList.add("bg-indigo-600");
+  if (nameInput) nameInput.value = category.name;
+  if (budgetInput) budgetInput.value = category.budget || "";
+  if (subInput) subInput.value = (category.subcategories || []).join(", ");
+
+  const nature = category.nature || (category.isFixed ? "fixed" : "variable");
+  const radio = document.querySelector(`input[name="category-nature"][value="${nature}"]`);
+  if (radio) radio.checked = true;
+
+  if (titleEl) titleEl.textContent = "Editar Categoría";
+  if (subtitleEl) subtitleEl.textContent = `Modificando "${category.name}"`;
+  if (submitTextEl) submitTextEl.textContent = "Actualizar Categoría";
+  if (modeIndicator) {
+    modeIndicator.className = "h-2.5 w-2.5 rounded-full bg-indigo-500 animate-pulse";
   }
+
+  renderCategoriesModal(appState.categories);
+  if (nameInput) nameInput.focus();
+}
+
+function resetCategoryFormState() {
+  const form = document.getElementById("category-form");
+  if (form) form.reset();
+  editingCategoryName = null;
+
+  const titleEl = document.getElementById("category-form-title");
+  const subtitleEl = document.getElementById("category-form-subtitle");
+  const submitTextEl = document.getElementById("btn-submit-category-text");
+  const modeIndicator = document.getElementById("form-mode-indicator");
+
+  if (titleEl) titleEl.textContent = "Nueva Categoría";
+  if (subtitleEl) subtitleEl.textContent = "Asigna nombre, presupuesto mensual y tipo";
+  if (submitTextEl) submitTextEl.textContent = "Guardar Categoría";
+  if (modeIndicator) {
+    modeIndicator.className = "h-2.5 w-2.5 rounded-full bg-emerald-500 animate-pulse";
+  }
+
+  const defaultRadio = document.querySelector('input[name="category-nature"][value="variable"]');
+  if (defaultRadio) defaultRadio.checked = true;
+
+  renderCategoriesModal(appState.categories);
 }
 
 function setupCategoryModalListeners() {
@@ -4021,101 +4077,119 @@ function setupCategoryModalListeners() {
   const openBtn = document.getElementById("open-categories-modal-btn");
   const closeBtn = document.getElementById("close-categories-modal-btn");
   const clearBtn = document.getElementById("btn-clear-category-form");
-
-  const resetFormState = () => {
-    form.reset();
-    editingCategoryName = null;
-    const submitBtn = document.querySelector("button[form='category-form']");
-    if (submitBtn) {
-      submitBtn.textContent = "Guardar Categoría";
-      submitBtn.classList.add("bg-gray-900");
-      submitBtn.classList.remove("bg-indigo-600");
-    }
-  };
+  const searchInput = document.getElementById("search-category-input");
 
   if (openBtn) {
     openBtn.addEventListener("click", () => {
       modal.classList.remove("hidden");
       modal.classList.add("flex");
+      resetCategoryFormState();
       renderCategoriesModal(appState.categories);
-      resetFormState(); // Limpiar al abrir
     });
   }
 
   const closeModal = () => {
     modal.classList.add("hidden");
     modal.classList.remove("flex");
-    resetFormState();
+    resetCategoryFormState();
   };
 
   if (closeBtn) closeBtn.addEventListener("click", closeModal);
-  if (clearBtn) clearBtn.addEventListener("click", resetFormState);
+  if (clearBtn) clearBtn.addEventListener("click", () => resetCategoryFormState());
+
+  if (searchInput) {
+    searchInput.addEventListener("input", () => {
+      renderCategoriesModal(appState.categories);
+    });
+  }
 
   if (form) {
     form.addEventListener("submit", async (e) => {
       e.preventDefault();
       const nameInput = document.getElementById("category-name");
       const budgetInput = document.getElementById("category-budget");
+      const subInput = document.getElementById("subcategory-list");
+      const natureRadio = document.querySelector('input[name="category-nature"]:checked');
 
-      const newName = formatTitleCase(nameInput.value);
+      const newName = formatTitleCase(nameInput.value.trim());
       const budget = parseFloat(budgetInput.value) || 0;
+      const nature = natureRadio ? natureRadio.value : "variable";
+      const subcategoriesString = subInput.value.trim();
 
       if (!newName) return;
 
-      // Copia profunda para manipular
+      const subcategories = subcategoriesString
+        ? subcategoriesString
+          .split(",")
+          .map((s) => formatTitleCase(s.trim()))
+          .filter((s) => s)
+        : [];
+
       let newCategories = JSON.parse(JSON.stringify(appState.categories));
       let updates = {};
 
       if (editingCategoryName) {
-        // --- MODO EDICIÃ“N ---
-        const index = newCategories.findIndex(c => c.name === editingCategoryName);
+        // --- MODO EDICIÓN ---
+        const index = newCategories.findIndex(c => c.name.toLowerCase() === editingCategoryName.toLowerCase());
         if (index !== -1) {
-          // Actualizar objeto
-          newCategories[index] = { name: newName, budget };
+          newCategories[index] = {
+            ...newCategories[index],
+            name: newName,
+            budget: budget,
+            nature: nature,
+            isFixed: nature === "fixed",
+            subcategories: subcategories
+          };
 
-          // Si el nombre cambió, debemos migrar los gastos
-          if (editingCategoryName !== newName) {
+          if (editingCategoryName.toLowerCase() !== newName.toLowerCase()) {
             const newExpenses = appState.expenses.map(exp => {
-              if (exp.category === editingCategoryName) {
+              if (exp.category && exp.category.toLowerCase() === editingCategoryName.toLowerCase()) {
                 return { ...exp, category: newName };
               }
               return exp;
             });
-            updates.expenses = newExpenses; // Preparamos la actualización de gastos
+            updates.expenses = newExpenses;
           }
-          showModal(`Categoría actualizada correctamente.`);
+          showModal(`Categoría "${newName}" actualizada correctamente.`, null, "Éxito");
         }
       } else {
-        // --- MODO CREACIÃ“N ---
-        // Verificar duplicados
+        // --- MODO CREACIÓN ---
         const exists = newCategories.some(c => c.name.toLowerCase() === newName.toLowerCase());
-        if (exists) return showModal("Ya existe una categoría con ese nombre.");
+        if (exists) {
+          return showModal("Ya existe una categoría con ese nombre.", null, "Aviso");
+        }
 
-        newCategories.push({ name: newName, budget });
-        showModal(`Categoría '${newName}' creada.`);
+        newCategories.push({
+          name: newName,
+          budget: budget,
+          nature: nature,
+          isFixed: nature === "fixed",
+          subcategories: subcategories
+        });
+        showModal(`Categoría "${newName}" creada correctamente.`, null, "Éxito");
       }
 
-      // Guardar todo junto
       updates.categories = newCategories;
       await saveState(updates);
 
-      // UI
-      resetFormState();
-      renderCategoriesModal(newCategories);
-
-      // Si estamos editando y cambiamos el nombre, hay que refrescar el dashboard también
+      resetCategoryFormState();
       if (updates.expenses) renderUI();
-      else nameInput.focus(); // Si es creación rápida, foco para seguir
+      else nameInput.focus();
     });
   }
 }
 
 function removeCategory(nameToRemove) {
-  // NUEVO: Desactivar filtro si se elimina la categoría activa
   if (activeFilters.category === nameToRemove) {
     activeFilters.category = null;
   }
-  saveState({ categories: appState.categories.filter((c) => c.name !== nameToRemove) });
+  const newCategories = appState.categories.filter((c) => c.name !== nameToRemove);
+  saveState({ categories: newCategories });
+  if (editingCategoryName && editingCategoryName.toLowerCase() === nameToRemove.toLowerCase()) {
+    resetCategoryFormState();
+  } else {
+    renderCategoriesModal(newCategories);
+  }
 }
 // ================================================================
 // LOGICA UNIFICADA DEL MODAL DE GASTOS (CREAR Y EDITAR)
