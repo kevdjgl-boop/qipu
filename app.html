@@ -9916,8 +9916,10 @@
 
             if (exp.items && exp.items.length > 0 && numPayees > 0) {
               let itemsTotalCost = 0;
-              let itemShares = {};
-              appState.participants.forEach(p => { itemShares[p.id] = 0; });
+              let participantShares = {};
+              appState.participants.forEach(p => { participantShares[p.id] = 0; });
+              let guestShares = {};
+              expGuests.forEach((gName, gIdx) => { guestShares[`guest_${gIdx}`] = 0; });
 
               exp.items.forEach(item => {
                 const qty = parseFloat(item.quantity) || 1;
@@ -9933,15 +9935,21 @@
                   if (assignedQty > 0) {
                     assignedUnitsSum += assignedQty;
                     const cost = assignedQty * unitPrice;
-                    if (itemShares[pId] !== undefined) {
-                      itemShares[pId] += cost;
+                    if (participantShares[pId] !== undefined) {
+                      participantShares[pId] += cost;
+                    } else if (pId.startsWith("guest_") || pId.startsWith("guest-")) {
+                      guestShares[pId] = (guestShares[pId] || 0) + cost;
                     }
                   }
                 });
 
-                if (assignedUnitsSum === 0 && item.assignedTo && itemShares[item.assignedTo] !== undefined) {
-                  itemShares[item.assignedTo] += itemTotal;
+                if (assignedUnitsSum === 0 && item.assignedTo) {
                   assignedUnitsSum = qty;
+                  if (participantShares[item.assignedTo] !== undefined) {
+                    participantShares[item.assignedTo] += itemTotal;
+                  } else if (item.assignedTo.startsWith("guest_") || item.assignedTo.startsWith("guest-")) {
+                    guestShares[item.assignedTo] = (guestShares[item.assignedTo] || 0) + itemTotal;
+                  }
                 }
 
                 const unassignedUnits = Math.max(0, qty - assignedUnitsSum);
@@ -9949,7 +9957,11 @@
                   const unassignedCost = unassignedUnits * unitPrice;
                   const sharePerPerson = unassignedCost / numPayees;
                   appState.participants.forEach(p => {
-                    itemShares[p.id] += sharePerPerson;
+                    participantShares[p.id] += sharePerPerson;
+                  });
+                  expGuests.forEach((gName, gIdx) => {
+                    const gKey = `guest_${gIdx}`;
+                    guestShares[gKey] = (guestShares[gKey] || 0) + sharePerPerson;
                   });
                 }
               });
@@ -9957,18 +9969,39 @@
               const remainingAmount = Math.max(0, exp.amount - itemsTotalCost);
               const remainingSharePerPerson = remainingAmount / numPayees;
 
+              // Deudas de participantes registrados hacia el pagador
               appState.participants.forEach(p => {
-                const totalPersonShare = (itemShares[p.id] || 0) + remainingSharePerPerson;
+                const totalPersonShare = (participantShares[p.id] || 0) + remainingSharePerPerson;
                 if (p.id !== currentFinancier && totalPersonShare > 0.01) {
                   group.debtors[p.name] = (group.debtors[p.name] || 0) + totalPersonShare;
                   group.totalReimburse += totalPersonShare;
                 }
               });
+
+              // Deudas de invitados hacia el pagador
+              expGuests.forEach((gName, gIdx) => {
+                const gKey = `guest_${gIdx}`;
+                const totalGuestShare = (guestShares[gKey] || 0) + remainingSharePerPerson;
+                if (gKey !== currentFinancier && totalGuestShare > 0.01) {
+                  const guestLabel = `${gName} (Invitado)`;
+                  group.debtors[guestLabel] = (group.debtors[guestLabel] || 0) + totalGuestShare;
+                  group.totalReimburse += totalGuestShare;
+                }
+              });
+
             } else if (numPayees > 0) {
               const split = exp.amount / numPayees;
               appState.participants.forEach((p) => {
                 if (p.id !== currentFinancier) {
                   group.debtors[p.name] = (group.debtors[p.name] || 0) + split;
+                  group.totalReimburse += split;
+                }
+              });
+              expGuests.forEach((gName, gIdx) => {
+                const gKey = `guest_${gIdx}`;
+                if (gKey !== currentFinancier) {
+                  const guestLabel = `${gName} (Invitado)`;
+                  group.debtors[guestLabel] = (group.debtors[guestLabel] || 0) + split;
                   group.totalReimburse += split;
                 }
               });
