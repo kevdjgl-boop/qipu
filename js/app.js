@@ -6679,25 +6679,143 @@ function calculateDetailedReimbursements(expenses, participants, paymentMethods)
 }
 
 // ================================================================
-// LIQUIDACIÃ“N (CORREGIDA: SIN ERRORES DE VARIABLE)
+// LIQUIDACIÓN Y CUENTAS CLARAS (NETO POR PERSONA + DETALLE POR MÉTODO)
 // ================================================================
+let currentSettlementTab = "net"; // 'net' o 'methods'
+
+window.switchSettlementTab = function(tab) {
+  currentSettlementTab = tab;
+  const netBtn = document.getElementById("tab-settle-net");
+  const methodsBtn = document.getElementById("tab-settle-methods");
+  const netView = document.getElementById("settle-view-net");
+  const methodsView = document.getElementById("settle-view-methods");
+
+  if (netBtn && methodsBtn && netView && methodsView) {
+    if (tab === "net") {
+      netBtn.className = "flex-1 py-2 text-xs font-black rounded-xl bg-white shadow-xs text-indigo-600 border border-slate-200/80 transition-all";
+      methodsBtn.className = "flex-1 py-2 text-xs font-bold rounded-xl text-slate-500 hover:text-slate-700 transition-all";
+      netView.classList.remove("hidden");
+      methodsView.classList.add("hidden");
+    } else {
+      methodsBtn.className = "flex-1 py-2 text-xs font-black rounded-xl bg-white shadow-xs text-indigo-600 border border-slate-200/80 transition-all";
+      netBtn.className = "flex-1 py-2 text-xs font-bold rounded-xl text-slate-500 hover:text-slate-700 transition-all";
+      methodsView.classList.remove("hidden");
+      netView.classList.add("hidden");
+    }
+  }
+};
+
 function renderSharedBalanceSummary(summary, expensesForMonth) {
   const settlementContentEl = document.getElementById("settlement-summary-content");
   if (!settlementContentEl) return;
 
+  const { participantData = [], guestList = [], guestBalanceNet = 0 } = summary;
   const participantsMap = new Map(appState.participants.map((p) => [p.id, p.name]));
   const allExpenses = appState.expenses || [];
   const today = new Date();
   today.setHours(0, 0, 0, 0);
 
-  // --- VARIABLES INICIALIZADAS CORRECTAMENTE ---
-  let html = "";
+  // 1. CÁLCULO NETO POR USUARIO (COMPENSACIÓN DE DEUDAS CRUZADAS)
+  const netSettlements = calculateSettlements(participantData, guestList);
+  const allAccountsForBars = [
+    ...participantData,
+    ...guestList.filter(g => Math.abs(g.balance) > 0.01 || g.spent > 0 || g.contributionPaid > 0)
+  ];
+  const maxBalance = Math.max(...allAccountsForBars.map(p => Math.abs(p.balance)), 0.01);
+  const totalNetToSettle = netSettlements.reduce((sum, tx) => sum + tx.amount, 0);
+
+  // --- Generar HTML de Vista Neta (Por Usuario) ---
+  let netBalancesBarsHtml = "";
+  allAccountsForBars.forEach((p) => {
+    const isPositive = p.balance > 0.01;
+    const isNegative = p.balance < -0.01;
+    const isZero = !isPositive && !isNegative;
+
+    const colorClass = isPositive ? "bg-emerald-500" : (isNegative ? "bg-rose-500" : "bg-slate-300");
+    const textClass = isPositive ? "text-emerald-600" : (isNegative ? "text-rose-600" : "text-slate-400");
+    const sign = isPositive ? "+" : "";
+
+    const widthPercent = (Math.abs(p.balance) / maxBalance) * 100;
+    const barWidth = Math.max(widthPercent, 2);
+
+    netBalancesBarsHtml += `
+      <div class="p-3 bg-slate-50 rounded-2xl border border-slate-100 space-y-1.5">
+        <div class="flex justify-between items-center text-xs">
+          <div>
+            <span class="font-bold text-slate-800">${p.name}</span>
+            <span class="text-[10px] text-slate-400 block">Consumo: ${formatCurrency(p.spent || 0)} ${p.contributionPaid > 0 ? `| Pagó: ${formatCurrency(p.contributionPaid)}` : ''}</span>
+          </div>
+          <div class="text-right">
+            ${!isZero ? `
+              <span class="text-xs font-black ${textClass}">${sign}${formatCurrency(p.balance)}</span>
+              <span class="text-[9px] text-slate-400 font-semibold block">${isPositive ? 'Le deben' : 'Debe pagar'}</span>
+            ` : `
+              <span class="text-xs font-bold text-slate-400">✓ Al día</span>
+            `}
+          </div>
+        </div>
+        <div class="w-full bg-slate-200/70 rounded-full h-2 overflow-hidden">
+          <div class="${colorClass} h-full rounded-full transition-all duration-500" style="width: ${barWidth}%"></div>
+        </div>
+      </div>
+    `;
+  });
+
+  let netTransactionsHtml = "";
+  if (netSettlements.length === 0) {
+    netTransactionsHtml = `
+      <div class="text-center py-8 bg-slate-50 rounded-2xl border border-dashed border-slate-200">
+        <div class="size-12 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center mx-auto mb-2 text-lg">
+          <i class="fas fa-check-double"></i>
+        </div>
+        <p class="text-xs font-bold text-slate-700">¡Cuentas Claras!</p>
+        <p class="text-[11px] text-slate-400 mt-0.5">No hay pagos ni deudas pendientes entre las personas.</p>
+      </div>
+    `;
+  } else {
+    netSettlements.forEach((tx) => {
+      netTransactionsHtml += `
+        <div class="p-4 bg-white rounded-2xl border border-indigo-100 shadow-xs space-y-3 relative overflow-hidden group hover:border-indigo-300 transition-all">
+          <div class="absolute left-0 top-0 bottom-0 w-1.5 bg-indigo-600"></div>
+          <div class="flex items-center justify-between gap-3">
+            <div class="flex items-center gap-2.5 flex-1 min-w-0">
+              <div class="size-9 rounded-xl bg-rose-50 text-rose-600 flex items-center justify-center font-black text-xs shrink-0 border border-rose-100">
+                ${tx.from.charAt(0)}
+              </div>
+              <div class="min-w-0 flex-1">
+                <span class="text-[9px] font-bold uppercase tracking-wider text-rose-500">Debe transferir</span>
+                <h5 class="text-xs font-black text-slate-800 truncate">${tx.from}</h5>
+              </div>
+            </div>
+
+            <div class="text-center shrink-0 px-2">
+              <span class="text-[10px] text-slate-400 block font-bold">Monto Neto</span>
+              <span class="text-sm font-black text-indigo-600">${formatCurrency(tx.amount)}</span>
+            </div>
+
+            <div class="flex items-center gap-2.5 flex-1 min-w-0 justify-end text-right">
+              <div class="min-w-0 flex-1">
+                <span class="text-[9px] font-bold uppercase tracking-wider text-emerald-500">Recibe</span>
+                <h5 class="text-xs font-black text-slate-800 truncate">${tx.to}</h5>
+              </div>
+              <div class="size-9 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center font-black text-xs shrink-0 border border-emerald-100">
+                ${tx.to.charAt(0)}
+              </div>
+            </div>
+          </div>
+          <div class="pt-2 border-t border-slate-100 flex items-center justify-between text-[10px] text-slate-400 font-medium">
+            <span><i class="fas fa-magic text-indigo-400 mr-1"></i>Deudas cruzadas compensadas automáticamente</span>
+            <span class="font-bold text-indigo-600">1 sola transferencia</span>
+          </div>
+        </div>
+      `;
+    });
+  }
+
+  // 2. CÁLCULO POR MÉTODO DE PAGO (DETALLADO)
   const aggregatedResults = [];
   let globalTotalToCollect = 0;
-  let cardsHtml = "";
-  // ---------------------------------------------
 
-  // 1. PROCESAR MÃ‰TODOS
   appState.paymentMethods.forEach((method) => {
     let range = {};
     let subtitle = "";
@@ -6713,7 +6831,7 @@ function renderSharedBalanceSummary(summary, expensesForMonth) {
         } else {
           range = cycleBase;
         }
-        subtitle = `Ciclo: ${formatShortDate(range.startDate)} - ${formatShortDate(range.closingDate)} `;
+        subtitle = `Ciclo: ${formatShortDate(range.startDate)} - ${formatShortDate(range.closingDate)}`;
       } else return;
     } else {
       const y = currentFilterDate.getFullYear();
@@ -6722,7 +6840,7 @@ function renderSharedBalanceSummary(summary, expensesForMonth) {
         startDate: new Date(Date.UTC(y, m, 1)).toISOString().split("T")[0],
         closingDate: new Date(Date.UTC(y, m + 1, 0)).toISOString().split("T")[0],
       };
-      subtitle = `Mes: ${MONTH_NAMES[m]} `;
+      subtitle = `Mes: ${MONTH_NAMES[m]}`;
     }
 
     const calc = renderExpenseListForRange(allExpenses, method.id, range, null, participantsMap);
@@ -6730,7 +6848,6 @@ function renderSharedBalanceSummary(summary, expensesForMonth) {
 
     if (expensesInCycle.length === 0) return;
 
-    // Agrupar gastos por pagador real dentro de este método (incluyendo invitados)
     const financierGroups = new Map();
 
     expensesInCycle.forEach((exp) => {
@@ -6860,7 +6977,6 @@ function renderSharedBalanceSummary(summary, expensesForMonth) {
           });
         }
       } else {
-        // Gasto personal
         if (exp.payerId !== currentFinancier) {
           const debtorName = participantsMap.get(exp.payerId) || "Invitado";
           group.debtors[debtorName] = (group.debtors[debtorName] || 0) + exp.amount;
@@ -6884,95 +7000,136 @@ function renderSharedBalanceSummary(summary, expensesForMonth) {
     });
   });
 
-  // 2. GENERAR HTML
   globalTotalToCollect = aggregatedResults.reduce((sum, card) => sum + card.totalReimburse, 0);
 
+  let methodsCardsHtml = "";
   if (aggregatedResults.length > 0) {
     aggregatedResults.forEach((card) => {
       const isCredit = card.methodType === "credit";
-      const headerBg = isCredit ? "bg-gray-900" : "bg-emerald-600";
-      const iconHtml = isCredit ? `<div class="w-8 h-5 rounded border border-gray-500 bg-gray-700/50 flex items-center justify-center"><div class="w-full h-[1px] bg-gray-500"></div></div>` : `<i class="fas fa-wallet text-white/80 text-lg"></i>`;
+      const headerBg = isCredit ? "bg-slate-900" : "bg-emerald-600";
+      const iconHtml = isCredit ? `<i class="fas fa-credit-card text-slate-300"></i>` : `<i class="fas fa-wallet text-white/80"></i>`;
 
       const debtorsHtml = Object.entries(card.debtors)
         .map(
           ([name, amount]) => `
-    <div class="flex justify-between items-center py-2 border-b border-gray-100 last:border-0 text-xs">
-                    <div class="flex items-center gap-2">
-                        <span class="w-2 h-2 rounded-full bg-rose-500"></span>
-                        <span class="font-bold text-gray-600">${name}</span>
-                    </div>
-                    <span class="font-black text-gray-800">${formatCurrency(amount)}</span>
+            <div class="flex justify-between items-center py-2 border-b border-slate-100 last:border-0 text-xs">
+                <div class="flex items-center gap-2">
+                    <span class="size-2 rounded-full bg-rose-500"></span>
+                    <span class="font-bold text-slate-700">${name}</span>
                 </div>
-    `
+                <span class="font-black text-slate-900">${formatCurrency(amount)}</span>
+            </div>
+        `
         )
         .join("");
 
-      cardsHtml += `
-    <div class="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden mb-3 group">
-                <button class="w-full text-left toggle-settle-btn focus:outline-none p-0" data-target="${card.cardId}">
-                    <div class="bg-gray-900 p-4 relative overflow-hidden">
-                        <div class="absolute right-0 top-0 h-full w-1/3 opacity-10 bg-white rotate-12 scale-150"></div>
-                        <div class="flex justify-between items-center relative z-10">
-                            <div class="flex items-center gap-3">
-                                ${iconHtml}
-                                <div>
-                                    <p class="text-[9px] text-white/60 font-bold uppercase tracking-wider">Recibe: ${card.ownerName}</p>
-                                    <p class="text-white font-bold text-sm tracking-wide">${card.methodName}</p>
-                                </div>
+      methodsCardsHtml += `
+        <div class="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden mb-3 group">
+            <button class="w-full text-left toggle-settle-btn focus:outline-none p-0" data-target="${card.cardId}">
+                <div class="${headerBg} p-4 relative overflow-hidden">
+                    <div class="flex justify-between items-center relative z-10">
+                        <div class="flex items-center gap-3">
+                            <div class="size-8 rounded-xl bg-white/10 flex items-center justify-center text-white text-sm">
+                              ${iconHtml}
                             </div>
-                            <div class="text-right">
-                                <p class="text-[9px] text-white/60 font-bold uppercase">Total</p>
-                                <p class="text-white font-black text-lg leading-none">${formatCurrency(card.totalReimburse)}</p>
+                            <div>
+                                <p class="text-[9px] text-white/70 font-bold uppercase tracking-wider">Recibe: ${card.ownerName}</p>
+                                <p class="text-white font-bold text-xs tracking-wide">${card.methodName}</p>
                             </div>
                         </div>
-                        <div class="absolute bottom-1 left-1/2 transform -translate-x-1/2 text-white/30 text-[10px]">
-                            <i class="fas fa-chevron-down transition-transform duration-300 chevron-icon"></i>
+                        <div class="text-right">
+                            <p class="text-[9px] text-white/70 font-bold uppercase">Total</p>
+                            <p class="text-white font-black text-sm leading-none">${formatCurrency(card.totalReimburse)}</p>
                         </div>
-                    </div>
-                </button>
-                <div id="${card.cardId}" class="hidden p-4 border-t border-gray-100 bg-gray-50">
-                    <div class="flex justify-between items-center mb-2">
-                         <p class="text-[10px] font-bold text-gray-400 uppercase tracking-wide">Desglose (${card.subtitle}):</p>
-                    </div>
-                    <div class="bg-white rounded-xl p-3 border border-gray-200 shadow-sm space-y-1">
-                        ${debtorsHtml}
                     </div>
                 </div>
+            </button>
+            <div id="${card.cardId}" class="p-3 border-t border-slate-100 bg-slate-50">
+                <div class="flex justify-between items-center mb-1.5 px-1">
+                     <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wide">Desglose (${card.subtitle}):</p>
+                </div>
+                <div class="bg-white rounded-xl p-3 border border-slate-200 shadow-xs space-y-1">
+                    ${debtorsHtml}
+                </div>
             </div>
- `;
+        </div>`;
     });
   } else {
-    cardsHtml = `
-    <div class="text-center py-12 opacity-50">
-             <i class="fas fa-check-circle text-4xl text-green-400 mb-2"></i>
-             <p class="text-sm font-bold text-gray-500">Todo saldado</p>
-        </div>
- `;
+    methodsCardsHtml = `
+      <div class="text-center py-8 bg-slate-50 rounded-2xl border border-dashed border-slate-200">
+        <p class="text-xs font-bold text-slate-400">Sin movimientos pendientes por método.</p>
+      </div>
+    `;
   }
 
-  html = `
-    <div class="bg-indigo-50 border border-indigo-200 p-4 rounded-xl mb-6 text-center">
-            <p class="text-xs font-bold text-indigo-800 uppercase">Total a Reembolsar</p>
-            <span class="text-3xl font-black text-indigo-900">${formatCurrency(globalTotalToCollect)}</span>
+  // 3. ESTRUCTURA COMPLETA DEL MODAL CON TABS
+  settlementContentEl.innerHTML = `
+    <div class="space-y-4">
+      <!-- Selector de Pestañas -->
+      <div class="flex bg-slate-100 p-1 rounded-2xl gap-1">
+        <button type="button" id="tab-settle-net" onclick="window.switchSettlementTab('net')" class="${currentSettlementTab === 'net' ? 'flex-1 py-2 text-xs font-black rounded-xl bg-white shadow-xs text-indigo-600 border border-slate-200/80 transition-all' : 'flex-1 py-2 text-xs font-bold rounded-xl text-slate-500 hover:text-slate-700 transition-all'}">
+          <i class="fas fa-users-cog mr-1.5"></i>Cuentas Claras (Por Persona)
+        </button>
+        <button type="button" id="tab-settle-methods" onclick="window.switchSettlementTab('methods')" class="${currentSettlementTab === 'methods' ? 'flex-1 py-2 text-xs font-black rounded-xl bg-white shadow-xs text-indigo-600 border border-slate-200/80 transition-all' : 'flex-1 py-2 text-xs font-bold rounded-xl text-slate-500 hover:text-slate-700 transition-all'}">
+          <i class="fas fa-credit-card mr-1.5"></i>Detalle por Método
+        </button>
+      </div>
+
+      <!-- VISTA 1: NETO POR PERSONA (COMPENSACIÓN AUTOMÁTICA) -->
+      <div id="settle-view-net" class="${currentSettlementTab === 'net' ? 'space-y-4' : 'hidden space-y-4'}">
+        <div class="bg-gradient-to-br from-indigo-500 to-violet-600 p-4 rounded-2xl text-white shadow-sm flex items-center justify-between">
+          <div>
+            <span class="text-[10px] font-bold uppercase tracking-wider text-indigo-200 block">Total a Transferir (Neto)</span>
+            <h3 class="text-2xl font-black">${formatCurrency(totalNetToSettle)}</h3>
+          </div>
+          <div class="size-10 rounded-xl bg-white/20 backdrop-blur-xs flex items-center justify-center text-lg">
+            <i class="fas fa-handshake"></i>
+          </div>
         </div>
-    <div class="space-y-1">
-      ${cardsHtml}
+
+        <!-- Plan de Transferencias Netas -->
+        <div class="space-y-2">
+          <div class="flex items-center justify-between px-1">
+            <h4 class="text-xs font-black text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
+              <i class="fas fa-exchange-alt text-indigo-500"></i>Plan de Pagos Simplificado
+            </h4>
+            <span class="text-[10px] text-slate-400 font-bold">${netSettlements.length} pago${netSettlements.length !== 1 ? 's' : ''} directo${netSettlements.length !== 1 ? 's' : ''}</span>
+          </div>
+          <div class="space-y-2.5">
+            ${netTransactionsHtml}
+          </div>
+        </div>
+
+        <!-- Balances Generales por Persona -->
+        <div class="space-y-2 pt-2 border-t border-slate-100">
+          <h4 class="text-xs font-black text-slate-700 uppercase tracking-wider flex items-center gap-1.5 px-1">
+            <i class="fas fa-chart-pie text-indigo-500"></i>Balance Neto de Cada Persona
+          </h4>
+          <div class="grid grid-cols-1 gap-2">
+            ${netBalancesBarsHtml}
+          </div>
+        </div>
+      </div>
+
+      <!-- VISTA 2: DETALLE POR MÉTODO DE PAGO -->
+      <div id="settle-view-methods" class="${currentSettlementTab === 'methods' ? 'space-y-4' : 'hidden space-y-4'}">
+        <div class="bg-slate-50 border border-slate-200 p-4 rounded-2xl text-center">
+          <p class="text-xs font-bold text-slate-500 uppercase">Total Bruto a Reembolsar</p>
+          <span class="text-2xl font-black text-slate-800">${formatCurrency(globalTotalToCollect)}</span>
+        </div>
+        <div class="space-y-2">
+          ${methodsCardsHtml}
+        </div>
+      </div>
     </div>
   `;
-
-  settlementContentEl.innerHTML = html;
 
   settlementContentEl.querySelectorAll(".toggle-settle-btn").forEach((btn) => {
     btn.addEventListener("click", (e) => {
       const targetId = btn.dataset.target;
       const content = document.getElementById(targetId);
-      const chevron = btn.querySelector(".chevron-icon");
-      if (content.classList.contains("hidden")) {
-        content.classList.remove("hidden");
-        if (chevron) chevron.classList.add("rotate-180");
-      } else {
-        content.classList.add("hidden");
-        if (chevron) chevron.classList.remove("rotate-180");
+      if (content) {
+        content.classList.toggle("hidden");
       }
     });
   });
