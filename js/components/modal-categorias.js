@@ -70,19 +70,6 @@ export class ModalCategorias extends HTMLElement {
                         class="w-full rounded-2xl border-none bg-gray-50 py-4 pl-12 pr-5 text-gray-900 font-bold text-xl placeholder-gray-400 ring-1 ring-inset ring-gray-200 focus:ring-2 focus:ring-indigo-600 transition-shadow" />
                     </div>
                 </div>
-                <div class="space-y-3">
-                    <label class="text-xs font-bold text-gray-500 uppercase tracking-wide">Subcategorías</label>
-                    <div class="rounded-3xl bg-gray-50 p-5 ring-1 ring-inset ring-gray-200">
-                    <div class="flex items-center gap-3 rounded-2xl bg-white p-3 shadow-sm ring-1 ring-gray-900/5">
-                        <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-indigo-50 text-indigo-600">
-                        <i class="fas fa-layer-group"></i>
-                        </div>
-                        <input type="text" id="subcategory-list" placeholder="Escribe separadas por coma (Ej: Frutas, Carnes)"
-                        class="w-full border-none bg-transparent p-0 text-sm font-medium text-gray-900 placeholder-gray-400 focus:ring-0" />
-                    </div>
-                    <p class="mt-4 text-[10px] font-bold text-gray-400 px-2 uppercase tracking-wide">Aparecerán como etiquetas en el registro.</p>
-                    </div>
-                </div>
                 </form>
 
                 <div class="flex items-center justify-end gap-4 border-t border-gray-100 px-8 py-5 bg-white">

@@ -1111,6 +1111,14 @@ function renderExpenseListForRange(allExpenses, methodId, range, containerId, pa
 
       // SECCIÃ“N FIJOS
       if (fixedList.length > 0) {
+        const today = new Date();
+        const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+        const displayedFixedList = fixedList.filter(e => {
+          if (e.isProjected) {
+            return e.date <= todayStr;
+          }
+          return true;
+        });
         const subTotalFixed = fixedList.reduce((sum, e) => sum + e.amount, 0);
         htmlContent += `
                 <div class="mb-6">
@@ -1121,7 +1129,7 @@ function renderExpenseListForRange(allExpenses, methodId, range, containerId, pa
                         <span class="text-[10px] font-bold bg-indigo-50 text-indigo-600 px-2 py-0.5 rounded-lg">${formatCurrency(subTotalFixed)}</span>
                     </div>
                     <div class="">
-                        ${fixedList.map(createDetailRow).join("")}
+                        ${displayedFixedList.map(createDetailRow).join("")}
                     </div>
                 </div>`;
       }
@@ -1750,7 +1758,6 @@ async function runDataMigration() {
     const newCategories = appState.categories.map((c) => ({
       ...c,
       name: formatTitleCase(c.name), // Limpia el nombre de la categoría
-      subcategories: c.subcategories.map((sub) => formatTitleCase(sub)), // Limpia cada subcategoría
     }));
 
     const newPaymentMethods = appState.paymentMethods.map((m) => ({
@@ -1761,7 +1768,6 @@ async function runDataMigration() {
     const newExpenses = appState.expenses.map((e) => ({
       ...e,
       description: formatTitleCase(e.description), // Limpia la descripción
-      subcategory: e.subcategory ? formatTitleCase(e.subcategory) : null, // Limpia la subcategoría
       payerNameGuest: e.payerNameGuest ? formatTitleCase(e.payerNameGuest) : null, // Limpia el nombre del invitado
     }));
 
@@ -2401,6 +2407,8 @@ function getExpensesForCurrentView() {
 
     const projStr = projectedDate.toISOString().split("T")[0];
     const projTime = projectedDate.getTime();
+    const today = new Date();
+    const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
 
     if (base.cancelledAt) {
         const cancelledMs = new Date(base.cancelledAt + "T00:00:00Z").getTime();
@@ -2842,9 +2850,8 @@ function setupExpenseModalListeners() {
     const id = document.getElementById("edit-expense-id").value;
     const newDescription = formatTitleCase(document.getElementById("edit-expense-description").value);
     const newAmount = parseFloat(document.getElementById("edit-expense-amount").value);
-    const newDate = document.getElementById("edit-expense-date").value; // <-- AÃ‘ADIDA
+    const newDate = document.getElementById("edit-expense-date").value;
     const newCategory = document.getElementById("edit-expense-category").value;
-    const newSubcategory = formatTitleCase(document.getElementById("edit-expense-subcategory").value);
     const newType = document.getElementById("edit-expense-type").value;
     const newPaymentMethodId = document.getElementById("edit-expense-payment-method-id").value;
     const newIsFixed = document.getElementById("edit-expense-is-fixed").checked;
@@ -2868,9 +2875,8 @@ function setupExpenseModalListeners() {
           ...exp,
           description: newDescription,
           amount: newAmount,
-          date: newDate, // <-- AÃ‘ADIDA
+          date: newDate,
           category: newCategory,
-          subcategory: newSubcategory,
           type: newType,
           isFixed: newIsFixed,
           paymentMethodId: newPaymentMethodId,
@@ -2950,17 +2956,72 @@ function calculateSummary(state, filteredExpenses) {
       else if (expense.guestName) guestsCount = 1;
 
       const numPayees = registeredCount + guestsCount;
-      const splitAmount = amount / numPayees;
 
-      // Repartir consumo entre participantes registrados
-      participantData.forEach((p) => {
-        p.spent += splitAmount;
-      });
+      // --- Asignación detallada por ítems y cantidades por usuario ---
+      const hasItems = expense.items && expense.items.length > 0;
 
-      // Registrar consumo de invitados
-      if (guestsCount > 0) guestSummary.spent += splitAmount * guestsCount;
+      if (hasItems) {
+        let totalItemsCost = 0;
 
-      expense.splitAmount = splitAmount; // Guardar para uso visual si se requiere
+        expense.items.forEach(item => {
+          const qty = parseFloat(item.quantity) || 1;
+          const unitPrice = parseFloat(item.amount) || 0;
+          const itemCost = qty * unitPrice;
+          totalItemsCost += itemCost;
+
+          const assignments = item.assignments || {};
+          let assignedQtySum = 0;
+
+          // Asignar consumo por cantidades individuales
+          Object.keys(assignments).forEach(pId => {
+            const pQty = parseFloat(assignments[pId]) || 0;
+            if (pQty > 0) {
+              assignedQtySum += pQty;
+              const cost = pQty * unitPrice;
+              const assignee = participantMap.get(pId);
+              if (assignee) {
+                assignee.spent += cost;
+              } else if (pId && pId.startsWith("guest_")) {
+                guestSummary.spent += cost;
+              }
+            }
+          });
+
+          // Compatibilidad con assignedTo simple previo
+          if (assignedQtySum === 0 && item.assignedTo) {
+            assignedQtySum = qty;
+            const assignee = participantMap.get(item.assignedTo);
+            if (assignee) {
+              assignee.spent += itemCost;
+            } else if (item.assignedTo && item.assignedTo.startsWith("guest_")) {
+              guestSummary.spent += itemCost;
+            }
+          }
+
+          // Unidades no asignadas de este ítem se dividen equitativamente
+          const unassignedQty = Math.max(0, qty - assignedQtySum);
+          if (unassignedQty > 0.0001 && numPayees > 0) {
+            const unassignedCost = unassignedQty * unitPrice;
+            const sharePerPerson = unassignedCost / numPayees;
+            participantData.forEach(p => { p.spent += sharePerPerson; });
+            if (guestsCount > 0) guestSummary.spent += sharePerPerson * guestsCount;
+          }
+        });
+
+        // Monto base adicional sobre los ítems se divide equitativamente
+        const remainingBase = amount - totalItemsCost;
+        if (remainingBase > 0.001 && numPayees > 0) {
+          const shareBase = remainingBase / numPayees;
+          participantData.forEach(p => { p.spent += shareBase; });
+          if (guestsCount > 0) guestSummary.spent += shareBase * guestsCount;
+        }
+      } else {
+        const splitAmount = amount / numPayees;
+        participantData.forEach((p) => { p.spent += splitAmount; });
+        if (guestsCount > 0) guestSummary.spent += splitAmount * guestsCount;
+        expense.splitAmount = splitAmount;
+      }
+
     } else {
       // Gasto Personal
       const consumer = participantMap.get(expense.payerId);
@@ -3809,7 +3870,6 @@ function renderCategoriesModal(categories) {
       const budget = parseFloat(cat.budget) || 0;
       totalBudget += budget;
       const budgetInfo = budget > 0 ? formatCurrency(budget) : "S/ --";
-      const subCount = cat.subcategories ? cat.subcategories.length : 0;
 
       displayEl.insertAdjacentHTML(
         "beforeend",
@@ -3822,8 +3882,6 @@ function renderCategoriesModal(categories) {
             </div>
 
             <div class="flex items-center justify-end gap-2 flex-shrink-0">
-                
-                ${subCount > 0 ? `<span class="hidden sm:inline-flex items-center justify-center rounded-md bg-gray-50 px-2 py-1 text-[10px] font-medium text-gray-400 border border-gray-100 whitespace-nowrap">${subCount} sub</span>` : ""}
                 
                 <span class="text-xs font-bold ${budget > 0 ? "text-gray-900" : "text-gray-300"} whitespace-nowrap text-right min-w-[60px] mr-2">
                     ${budgetInfo}
@@ -3890,7 +3948,6 @@ function loadCategoryForEdit(name) {
   // 1. Llenar el formulario
   document.getElementById("category-name").value = category.name;
   document.getElementById("category-budget").value = category.budget || "";
-  document.getElementById("subcategory-list").value = category.subcategories ? category.subcategories.join(", ") : "";
 
   // 2. Marcar estado de edición
   editingCategoryName = name; // Guardamos el nombre original
@@ -3945,17 +4002,11 @@ function setupCategoryModalListeners() {
       e.preventDefault();
       const nameInput = document.getElementById("category-name");
       const budgetInput = document.getElementById("category-budget");
-      const subInput = document.getElementById("subcategory-list");
 
       const newName = formatTitleCase(nameInput.value);
       const budget = parseFloat(budgetInput.value) || 0;
-      const subcategoriesString = subInput.value.trim();
 
       if (!newName) return;
-
-      const subcategories = subcategoriesString
-        ? subcategoriesString.split(",").map((s) => formatTitleCase(s.trim())).filter((s) => s)
-        : [];
 
       // Copia profunda para manipular
       let newCategories = JSON.parse(JSON.stringify(appState.categories));
@@ -3966,7 +4017,7 @@ function setupCategoryModalListeners() {
         const index = newCategories.findIndex(c => c.name === editingCategoryName);
         if (index !== -1) {
           // Actualizar objeto
-          newCategories[index] = { name: newName, budget, subcategories };
+          newCategories[index] = { name: newName, budget };
 
           // Si el nombre cambió, debemos migrar los gastos
           if (editingCategoryName !== newName) {
@@ -3986,7 +4037,7 @@ function setupCategoryModalListeners() {
         const exists = newCategories.some(c => c.name.toLowerCase() === newName.toLowerCase());
         if (exists) return showModal("Ya existe una categoría con ese nombre.");
 
-        newCategories.push({ name: newName, subcategories, budget });
+        newCategories.push({ name: newName, budget });
         showModal(`Categoría '${newName}' creada.`);
       }
 
@@ -4091,11 +4142,6 @@ function openUnifiedExpenseModal(expenseId = null) {
     setActiveTag("expense-payment-method", "modal-payment-method-tags", expense.paymentMethodId);
     setActiveTag("expense-category", "modal-category-tags", expense.category);
 
-    if (typeof updateModalSubcategoryTags === "function") updateModalSubcategoryTags();
-    setTimeout(() => {
-      setActiveTag("expense-subcategory", "modal-subcategory-tags", expense.subcategory);
-    }, 0);
-
     document.getElementById("expense-is-fixed").checked = expense.isFixed;
     document.getElementById("fixed-recurrence-container").classList.toggle("hidden", !expense.isFixed);
     if (expense.fixedRecurrenceMonths) document.getElementById("expense-recurrence-months").value = expense.fixedRecurrenceMonths;
@@ -4196,7 +4242,6 @@ function handleUnifiedSave(event) {
     const payerId = document.getElementById("expense-payer").value;
     const type = document.getElementById("expense-type").value;
     const category = document.getElementById("expense-category").value;
-    const subcategory = formatTitleCase(document.getElementById("expense-subcategory").value);
     const paymentMethodId = document.getElementById("expense-payment-method").value;
 
     const isFixed = document.getElementById("expense-is-fixed").checked;
@@ -4210,7 +4255,7 @@ function handleUnifiedSave(event) {
     if (!payerId) missing.push("Pagador");
     if (!category) missing.push("Categoría");
     if (!paymentMethodId) missing.push("Método de Pago");
-    if (isMultiItem && tempItemsList.length === 0) missing.push("Lista de productos vacía");
+    if (isMultiItem && (!window.tempItemsList || window.tempItemsList.length === 0)) missing.push("Lista de productos vacía");
 
     if (missing.length > 0) return showModal(`Faltan campos: ${missing.join(", ")}`);
 
@@ -4220,9 +4265,7 @@ function handleUnifiedSave(event) {
     const { startDate, paymentDate } = paymentMethod && paymentMethod.type === "credit" ? getCycleDates(paymentMethod, expenseDateObj) : {};
 
     // --- GUARDAR INVITADOS ---
-    // Si es compartido, guardamos el array temporal. Si no, array vacío.
-    const guestsToSave = type === "shared" ? tempItemsList : []; // OJO: Â¡ERROR! Aquí usé la lista equivocada en mi mente. CORRIGIENDO:
-    const realGuestsToSave = type === "shared" ? tempGuestList : []; // <--- ESTA ES LA CORRECTA
+    const realGuestsToSave = type === "shared" ? tempGuestList : [];
 
     const expenseData = {
       description,
@@ -4231,7 +4274,6 @@ function handleUnifiedSave(event) {
       payerId,
       type,
       category,
-      subcategory: subcategory || null,
       paymentMethodId,
       isFixed,
       fixedRecurrenceMonths: recurrence,
@@ -4305,7 +4347,7 @@ function populateModalTags() {
       // Users: Subtle blue theme
       colors = "bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 border-blue-100 dark:border-blue-800/30 hover:bg-blue-100 dark:hover:bg-blue-900/30";
       iconClass = "fas fa-user";
-    } else if (type === "method") {
+    if (type === "method") {
       // Methods: Subtle green theme
       colors = "bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400 border-emerald-100 dark:border-emerald-800/30 hover:bg-emerald-100 dark:hover:bg-emerald-900/30";
       iconClass = "fas fa-credit-card";
@@ -4347,75 +4389,99 @@ function populateModalTags() {
 
 window.renderGuestListInModal = renderGuestListInModal;
 
-function renderGuestListInModal() {
-  // Now delegates to the unified split preview which handles the improved design
-  if (typeof window.updateSplitPreview === 'function') {
-    window.updateSplitPreview();
-  }
-}
-
-window.removeGuestFromList = function (index) {
-  if (tempGuestList) {
-    tempGuestList.splice(index, 1);
-    // renderGuestListInModal(); // OLD RENDER
-    if (window.updateSplitPreview) window.updateSplitPreview(); // NEW RENDER
-  }
-};
-
-// ================================================================
-// NEW: SMART SPLIT & AUTO-BALANCING LOGIC
-// ================================================================
 window.updateSplitPreview = function () {
   const container = document.getElementById("split-breakdown-list");
   if (!container) return;
 
   const amount = parseFloat(document.getElementById("expense-amount").value) || 0;
-  const splitType = document.getElementById("split-type-select").value || "equal";
+  const splitType = document.getElementById("split-type-select")?.value || "equal";
+  const isMultiItem = document.getElementById("multi-item-toggle")?.checked;
 
-  // 1. Gather all participants (Users + Guests)
   let allParticipants = [];
 
-  // Add Registered Users (if Shared)
   if (appState.participants) {
     appState.participants.forEach(p => {
       allParticipants.push({ id: p.id, name: p.name, type: 'user' });
     });
   }
 
-  // Add Guests
   if (tempGuestList && tempGuestList.length > 0) {
     tempGuestList.forEach((gName, idx) => {
-      allParticipants.push({ id: `guest-${idx}`, name: gName, type: 'guest' });
+      allParticipants.push({ id: `guest_${idx}`, name: gName, type: 'guest' });
     });
   }
 
-  // If list is empty
   if (allParticipants.length === 0) {
     container.innerHTML = `<p class="col-span-full text-center text-[10px] text-slate-400">No hay participantes seleccionados.</p>`;
     return;
   }
 
-  // 2. Calculate Shares
   const count = allParticipants.length;
-  let share = 0;
-
-  if (splitType === 'equal') {
-    share = amount / count;
-  }
-
-  // 3. Render Grid
-  // Responsive Grid: 1 col mobile, up to 4 cols desktop
   container.className = "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2 mb-2";
+
+  const participantShares = {};
+  allParticipants.forEach(p => { participantShares[p.id] = 0; });
+
+  if (isMultiItem && window.tempItemsList && window.tempItemsList.length > 0) {
+    let itemsTotalCost = 0;
+    window.tempItemsList.forEach(item => {
+      const qty = parseFloat(item.quantity) || 1;
+      const unitPrice = parseFloat(item.amount) || 0;
+      const itemCost = qty * unitPrice;
+      itemsTotalCost += itemCost;
+
+      const assignments = item.assignments || {};
+      let assignedQtySum = 0;
+      Object.keys(assignments).forEach(pId => {
+        const pQty = parseFloat(assignments[pId]) || 0;
+        if (pQty > 0) {
+          assignedQtySum += pQty;
+          if (participantShares[pId] !== undefined) {
+            participantShares[pId] += pQty * unitPrice;
+          }
+        }
+      });
+
+      if (assignedQtySum === 0 && item.assignedTo) {
+        assignedQtySum = qty;
+        if (participantShares[item.assignedTo] !== undefined) {
+          participantShares[item.assignedTo] += itemCost;
+        }
+      }
+
+      const unassignedQty = Math.max(0, qty - assignedQtySum);
+      if (unassignedQty > 0 && count > 0) {
+        const unassignedCost = unassignedQty * unitPrice;
+        const sharePerPerson = unassignedCost / count;
+        allParticipants.forEach(p => {
+          participantShares[p.id] += sharePerPerson;
+        });
+      }
+    });
+
+    const remainingBase = amount - itemsTotalCost;
+    if (remainingBase > 0.001 && count > 0) {
+      const shareBase = remainingBase / count;
+      allParticipants.forEach(p => {
+        participantShares[p.id] += shareBase;
+      });
+    }
+  } else {
+    if (splitType === 'equal') {
+      const share = count > 0 ? amount / count : 0;
+      allParticipants.forEach(p => { participantShares[p.id] = share; });
+    }
+  }
 
   container.innerHTML = allParticipants.map(p => {
     let valDisplay = "";
     let inputHtml = "";
-
-    // Base input class for cleaner look
     const inputClass = "split-input w-12 bg-transparent border-none text-right font-black text-xs text-slate-700 dark:text-white p-0 focus:ring-0 placeholder-slate-300";
 
-    if (splitType === 'equal') {
-      valDisplay = `<span class="font-black text-slate-700 dark:text-white text-xs text-right">S/ ${share.toFixed(2)}</span>`;
+    if (isMultiItem && window.tempItemsList && window.tempItemsList.length > 0) {
+      valDisplay = `<span class="font-black text-slate-700 dark:text-white text-xs text-right">S/ ${formatCurrency(participantShares[p.id] || 0)}</span>`;
+    } else if (splitType === 'equal') {
+      valDisplay = `<span class="font-black text-slate-700 dark:text-white text-xs text-right">S/ ${formatCurrency(participantShares[p.id] || 0)}</span>`;
     } else if (splitType === 'percent') {
       const percentVal = (100 / count).toFixed(1);
       inputHtml = `<div class="flex items-center justify-end gap-0.5 border-b border-indigo-100 dark:border-indigo-800 focus-within:border-indigo-500 transition-colors"><input type="number" class="${inputClass}" value="${percentVal}" data-id="${p.id}" data-type="percent" /> <span class="text-[9px] font-bold text-slate-400">%</span></div>`;
@@ -4424,23 +4490,17 @@ window.updateSplitPreview = function () {
       inputHtml = `<div class="flex items-center justify-end gap-0.5 border-b border-indigo-100 dark:border-indigo-800 focus-within:border-indigo-500 transition-colors"><span class="text-[9px] font-bold text-slate-400">S/</span><input type="number" class="${inputClass}" value="${exactVal}" data-id="${p.id}" data-type="exact" /></div>`;
     }
 
-    // New Design: Name Left | Amount Right | Delete Integrated
-    // Registered Users: Locked (No delete button)
     const canDelete = p.type === 'guest';
     const deleteBtn = canDelete
-      ? `<button onclick="window.removeGuestFromList(${p.id.split('-')[1]})" class="text-slate-300 hover:text-rose-500 transition-colors p-1" title="Eliminar"><i class="fas fa-times-circle text-xs"></i></button>`
+      ? `<button type="button" onclick="window.removeParticipant('${p.id}')" class="text-slate-300 hover:text-rose-500 transition-colors p-1" title="Eliminar"><i class="fas fa-times-circle text-xs"></i></button>`
       : `<i class="fas fa-lock text-[8px] text-slate-300 p-1" title="Registrado"></i>`;
 
     return `
       <div class="flex items-center justify-between p-2 bg-white dark:bg-slate-800 rounded-lg border border-slate-100 dark:border-slate-700 shadow-sm group min-w-0">
-          
-          <!-- Left: Name & Icon -->
           <div class="flex items-center gap-1.5 overflow-hidden min-w-0 flex-1">
              ${deleteBtn}
              <span class="text-[10px] font-bold text-slate-700 dark:text-slate-200 truncate" title="${p.name}">${p.name}</span>
           </div>
-
-          <!-- Right: Amount/Input -->
           <div class="flex-shrink-0 ml-1.5 text-right flex items-center justify-end min-h-[20px]">
             ${valDisplay}
             ${inputHtml}
@@ -4448,8 +4508,7 @@ window.updateSplitPreview = function () {
       </div>`;
   }).join('');
 
-  // 4. Attach Listeners
-  if (splitType !== 'equal') {
+  if (splitType !== 'equal' && (!isMultiItem || !window.tempItemsList || window.tempItemsList.length === 0)) {
     container.querySelectorAll('.split-input').forEach(input => {
       input.addEventListener('change', (e) => handleSplitChange(e.target, amount, count));
     });
@@ -4477,47 +4536,84 @@ window.handleSplitChange = function (changedInput, totalAmount, count) {
 };
 
 window.removeParticipant = function (id) {
-  if (id.startsWith('guest-')) {
-    const idx = parseInt(id.split('-')[1]);
-    removeGuestFromList(idx);
+  if (id.startsWith('guest_') || id.startsWith('guest-')) {
+    const parts = id.split('_');
+    const idx = parts.length > 1 ? parseInt(parts[1]) : parseInt(id.split('-')[1]);
+    if (typeof removeGuestFromList === 'function') removeGuestFromList(idx);
+    else {
+      tempGuestList.splice(idx, 1);
+      window.updateSplitPreview();
+    }
   } else {
-    // Show alert for locked users
     showModal("No se puede eliminar", "Los usuarios registrados son participantes fijos en gastos compartidos.");
   }
 };
 
+window.selectedTempItemIds = new Set();
 
-window.updateModalSubcategoryTags = updateModalSubcategoryTags;
-
-function updateModalSubcategoryTags() {
-  const catInput = document.getElementById("expense-category");
-  const subSection = document.getElementById("modal-subcategory-section");
-  const subContainer = document.getElementById("modal-subcategory-tags");
-
-  if (!catInput || !subSection || !subContainer) return;
-
-  const categoryName = catInput.value;
-  const category = appState.categories.find(c => c.name === categoryName);
-
-  if (!category || !category.subcategories || category.subcategories.length === 0) {
-    subSection.classList.add("hidden");
-    return;
+window.toggleSelectItem = function (id, isChecked) {
+  if (!window.selectedTempItemIds) window.selectedTempItemIds = new Set();
+  if (isChecked) {
+    window.selectedTempItemIds.add(String(id));
+  } else {
+    window.selectedTempItemIds.delete(String(id));
   }
+  updateBulkBarState();
+};
 
-  subSection.classList.remove("hidden");
-  subContainer.innerHTML = category.subcategories.map(sub => `
-    <button type="button" data-value="${sub}" 
-      class="filter-tag px-3 py-1 rounded-lg border border-slate-100 dark:border-slate-800 text-[9px] font-bold uppercase tracking-tight transition-all hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-400">
-      ${sub}
-    </button>
-  `).join('');
+window.toggleSelectAllItems = function (isChecked) {
+  if (!window.selectedTempItemIds) window.selectedTempItemIds = new Set();
+  window.selectedTempItemIds.clear();
+  if (isChecked && window.tempItemsList) {
+    window.tempItemsList.forEach(item => window.selectedTempItemIds.add(String(item.id)));
+  }
+  renderTempItemsListInModal();
+};
+
+window.bulkAssignSelected = function (assigneeId) {
+  if (!window.selectedTempItemIds || window.selectedTempItemIds.size === 0 || !assigneeId) return;
+  if (!window.tempItemsList) return;
+
+  window.tempItemsList.forEach(item => {
+    if (window.selectedTempItemIds.has(String(item.id))) {
+      const totalQty = parseFloat(item.quantity) || 1;
+      if (assigneeId === 'equal') {
+        item.assignments = {};
+      } else {
+        item.assignments = { [assigneeId]: totalQty };
+      }
+    }
+  });
+
+  renderTempItemsListInModal();
+};
+
+window.deleteSelectedItems = function () {
+  if (!window.selectedTempItemIds || window.selectedTempItemIds.size === 0) return;
+  if (!window.tempItemsList) return;
+
+  window.tempItemsList = window.tempItemsList.filter(item => !window.selectedTempItemIds.has(String(item.id)));
+  window.selectedTempItemIds.clear();
+  renderTempItemsListInModal();
+};
+
+function updateBulkBarState() {
+  const bulkBar = document.getElementById("bulk-item-actions-bar");
+  const countDisplay = document.getElementById("selected-items-count-display");
+  const selectAllCheckbox = document.getElementById("select-all-items-checkbox");
+  const totalItems = window.tempItemsList ? window.tempItemsList.length : 0;
+  const selectedCount = window.selectedTempItemIds ? window.selectedTempItemIds.size : 0;
+
+  if (countDisplay) countDisplay.textContent = `${selectedCount} sel.`;
+  if (selectAllCheckbox) {
+    selectAllCheckbox.checked = totalItems > 0 && selectedCount === totalItems;
+    selectAllCheckbox.indeterminate = selectedCount > 0 && selectedCount < totalItems;
+  }
+  if (bulkBar) {
+    bulkBar.classList.toggle("hidden", selectedCount === 0);
+  }
 }
 
-// 4. SETUP SMART SPINNERS (DUMMY/HELPER) - Moved to bottom for enhanced logic
-
-
-// ================================================================
-// ================================================================
 // Helper required for ID generation
 window.generateUUID = function () {
   return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
@@ -4532,6 +4628,9 @@ function renderTempItemsListInModal() {
   const container = document.getElementById("expense-item-list-container");
   const amountInput = document.getElementById("expense-amount");
   const itemsCountSidebar = document.getElementById("items-count-display-sidebar");
+  const bulkAssignSelect = document.getElementById("bulk-assignee-select");
+  const expenseType = document.getElementById("expense-type")?.value || "personal";
+  const isShared = expenseType === "shared";
 
   if (!container) return;
 
@@ -4539,7 +4638,31 @@ function renderTempItemsListInModal() {
   let total = 0;
   let count = 0;
 
+  let allParticipants = [];
+  if (isShared) {
+    if (typeof appState !== 'undefined' && appState.participants) {
+      appState.participants.forEach(p => allParticipants.push({ id: p.id, name: p.name }));
+    }
+    if (typeof tempGuestList !== 'undefined') {
+      tempGuestList.forEach((g, gIdx) => {
+        allParticipants.push({ id: `guest_${gIdx}`, name: `${g} (Inv)` });
+      });
+    }
+  }
+
+  if (bulkAssignSelect && isShared) {
+    let opts = `
+      <option value="">Asignar a...</option>
+      <option value="equal">Equitativo (Todos)</option>
+    `;
+    allParticipants.forEach(p => {
+      opts += `<option value="${p.id}">${p.name} (100%)</option>`;
+    });
+    bulkAssignSelect.innerHTML = opts;
+  }
+
   if (!window.tempItemsList || window.tempItemsList.length === 0) {
+    if (window.selectedTempItemIds) window.selectedTempItemIds.clear();
     container.innerHTML = `
       <div class="p-8 text-center space-y-2">
         <div class="size-12 rounded-full bg-slate-50 dark:bg-slate-800 flex items-center justify-center mx-auto mb-2">
@@ -4549,48 +4672,93 @@ function renderTempItemsListInModal() {
       </div>
     `;
   } else {
-    window.tempItemsList.forEach((item, index) => {
-      const subtotal = (item.quantity || 1) * (item.amount || 0);
+    window.tempItemsList.forEach((item) => {
+      const qty = parseFloat(item.quantity) || 1;
+      const unitPrice = parseFloat(item.amount) || 0;
+      const subtotal = qty * unitPrice;
       total += subtotal;
       count++;
 
+      const isSelected = window.selectedTempItemIds && window.selectedTempItemIds.has(String(item.id));
+      const assignments = item.assignments || {};
+      const assignedUnits = Object.keys(assignments).reduce((sum, pId) => sum + (parseFloat(assignments[pId]) || 0), 0);
+      const unassignedUnits = Math.max(0, qty - assignedUnits);
+
+      let assignmentSectionHtml = "";
+      if (isShared && allParticipants.length > 0) {
+        const participantBadges = allParticipants.map(p => {
+          const currentQty = (assignments && parseFloat(assignments[p.id])) || 0;
+          return `
+            <div class="flex items-center justify-between bg-slate-50 dark:bg-slate-800/80 rounded-lg px-2 py-1 border border-slate-100 dark:border-slate-700">
+              <span class="text-[10px] font-semibold text-slate-700 dark:text-slate-200 truncate max-w-[90px]" title="${p.name}">${p.name}</span>
+              <div class="flex items-center gap-1">
+                <button type="button" class="size-5 flex items-center justify-center rounded bg-white dark:bg-slate-700 text-slate-600 dark:text-slate-200 hover:bg-slate-200 dark:hover:bg-slate-600 text-[10px] font-bold shadow-xs transition-colors" onclick="window.changeTempItemQty('${item.id}', '${p.id}', -1)">-</button>
+                <span class="text-[10px] font-black text-slate-800 dark:text-white w-4 text-center">${currentQty}</span>
+                <button type="button" class="size-5 flex items-center justify-center rounded bg-white dark:bg-slate-700 text-slate-600 dark:text-slate-200 hover:bg-slate-200 dark:hover:bg-slate-600 text-[10px] font-bold shadow-xs transition-colors" onclick="window.changeTempItemQty('${item.id}', '${p.id}', 1)">+</button>
+              </div>
+            </div>
+          `;
+        }).join("");
+
+        assignmentSectionHtml = `
+          <div class="pt-2 border-t border-slate-100 dark:border-slate-800/60 mt-1 pl-6">
+            <div class="flex items-center justify-between mb-1.5">
+              <span class="text-[9px] font-bold uppercase tracking-wider text-slate-400">Asignar cantidades:</span>
+              <span class="text-[9px] font-bold ${unassignedUnits > 0 ? 'text-amber-500' : 'text-emerald-500'}">
+                ${unassignedUnits > 0 ? `${unassignedUnits} compartida(s) equitativamente` : '✓ Todo asignado'}
+              </span>
+            </div>
+            <div class="grid grid-cols-2 sm:grid-cols-3 gap-1.5">
+              ${participantBadges}
+            </div>
+          </div>
+        `;
+      }
+
       container.insertAdjacentHTML("beforeend", `
-        <div class="grid grid-cols-12 gap-2 px-4 py-3 items-center hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors group">
-          <div class="col-span-6 pl-2">
-            <div class="text-xs font-bold text-slate-700 dark:text-white truncate" title="${item.desc}">${item.desc}</div>
+        <div class="p-3 bg-white dark:bg-slate-900 border-b border-slate-100 dark:border-slate-800 last:border-b-0 space-y-1.5 transition-colors group ${isSelected ? 'bg-indigo-50/40 dark:bg-indigo-950/20' : ''}">
+          <div class="flex items-center justify-between gap-2">
+            <div class="flex items-center gap-2.5 flex-1 min-w-0">
+              ${isShared ? `
+                <input type="checkbox" class="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 cursor-pointer size-4" ${isSelected ? 'checked' : ''} onchange="window.toggleSelectItem('${item.id}', this.checked)" />
+              ` : ''}
+              <div class="flex-1 min-w-0">
+                <div class="text-xs font-bold text-slate-700 dark:text-white truncate" title="${item.desc}">${item.desc}</div>
+                <div class="text-[10px] text-slate-400 font-medium">${qty} ud${qty > 1 ? 's' : ''} × S/ ${unitPrice.toFixed(2)}</div>
+              </div>
+            </div>
+            <div class="text-right flex-shrink-0">
+               <span class="text-xs font-black text-slate-800 dark:text-white">S/ ${subtotal.toFixed(2)}</span>
+            </div>
+            <div class="flex-shrink-0 flex justify-center">
+              <button type="button" class="text-slate-300 hover:text-rose-500 transition-colors p-1" 
+                 onclick="window.deleteTempItem('${item.id}')" title="Eliminar ítem">
+                 <i class="fas fa-trash-alt text-xs"></i>
+              </button>
+            </div>
           </div>
-          <div class="col-span-2 text-center text-xs font-semibold text-slate-500">${item.quantity || 1}</div>
-          <div class="col-span-3 text-right pr-2">
-             <span class="text-[10px] text-slate-400">S/</span>
-             <span class="text-xs font-bold text-slate-800 dark:text-white">${subtotal.toFixed(2)}</span>
-          </div>
-          <div class="col-span-1 text-center">
-            <button type="button" class="text-slate-300 hover:text-rose-500 transition-colors p-1" 
-               onclick="window.deleteTempItem('${item.id}')">
-               <i class="fas fa-times text-xs"></i>
-            </button>
-          </div>
+          ${assignmentSectionHtml}
         </div>
       `);
     });
   }
 
-  // Update Sidebar Count if exists
+  updateBulkBarState();
+
   if (itemsCountSidebar) itemsCountSidebar.textContent = `${count} ítem${count !== 1 ? "s" : ""}`;
 
   const toggle = document.getElementById("multi-item-toggle");
-  // CRITICAL: Update main amount ONLY if items exist, otherwise let user type
   if (toggle && toggle.checked && amountInput) {
     amountInput.value = total.toFixed(2);
-    // Dispatch input event to update other calculations
     amountInput.dispatchEvent(new Event("input"));
-    // Lock input to prevent discrepancies
     amountInput.readOnly = true;
     amountInput.classList.add("bg-slate-50", "text-slate-500");
   } else if (toggle && !toggle.checked && amountInput) {
     amountInput.readOnly = false;
     amountInput.classList.remove("bg-slate-50", "text-slate-500");
   }
+
+  if (window.updateSplitPreview) window.updateSplitPreview();
 }
 
 // Global delete handler
@@ -4798,8 +4966,6 @@ function setupUnifiedExpenseListeners() {
 
       if (!desc || price <= 0) return;
 
-      if (!desc || price <= 0) return;
-
       if (!window.tempItemsList) window.tempItemsList = [];
       window.tempItemsList.push({ id: generateUUID(), desc, quantity: qty, amount: price });
 
@@ -4825,7 +4991,6 @@ function setupUnifiedExpenseListeners() {
     if (container.id === "modal-type-tags") inputId = "expense-type";
     if (container.id === "modal-payment-method-tags") inputId = "expense-payment-method";
     if (container.id === "modal-category-tags-sidebar") inputId = "expense-category";
-    if (container.id === "modal-subcategory-tags-sidebar") inputId = "expense-subcategory";
 
     if (!inputId) return;
     const input = document.getElementById(inputId);
@@ -4847,16 +5012,8 @@ function setupUnifiedExpenseListeners() {
       btn.style.opacity = "1";
       btn.style.borderColor = "currentColor";
       input.value = btn.getAttribute("data-value");
-
-      if (inputId === "expense-category" && typeof updateModalSubcategoryTags === "function") {
-        updateModalSubcategoryTags();
-      }
     } else {
       input.value = "";
-      if (inputId === "expense-category") {
-        const subSection = document.getElementById("modal-subcategory-section-sidebar");
-        if (subSection) subSection.classList.add("hidden");
-      }
       // Reset all opacity
       container.querySelectorAll("button").forEach(t => t.style.opacity = "1");
     }
@@ -4868,7 +5025,7 @@ function setupUnifiedExpenseListeners() {
   };
 
   // Event Delegation for Tags
-  const tagContainers = ["modal-payer-tags", "modal-payment-method-tags", "modal-category-tags-sidebar", "modal-subcategory-tags-sidebar", "modal-type-tags"];
+  const tagContainers = ["modal-payer-tags", "modal-payment-method-tags", "modal-category-tags-sidebar", "modal-type-tags"];
   tagContainers.forEach(id => {
     const el = document.getElementById(id);
     if (el) {
@@ -5196,7 +5353,9 @@ function createExpenseCardHTML(expense, participantsMap, paymentMethodsMap) {
     </div>
   `;
 }
+
 // 1. Variable de estado para saber en qué pestaña estamos
+let currentHistoryTab = "expenses";
 
 // 2. Función para cambiar pestaña (conectada a los botones del HTML)
 window.switchHistoryTab = function (tab) {
@@ -5224,7 +5383,7 @@ function renderExpenseReportByCategory(allExpensesInMonth, summary) {
   reportEl.innerHTML = "";
 
   // ========================================================
-  // PARTE A: SI ESTAMOS EN LA PESTAÃ‘A "INGRESOS"
+  // PARTE A: SI ESTAMOS EN LA PESTAÑA "INGRESOS"
   // ========================================================
   // A. MODO INGRESOS
   if (typeof currentHistoryTab !== "undefined" && currentHistoryTab === "incomes") {
@@ -5320,7 +5479,17 @@ function renderExpenseReportByCategory(allExpensesInMonth, summary) {
   if (activeFilters.paymentMethod) filteredExpenses = filteredExpenses.filter((e) => e.paymentMethodId === activeFilters.paymentMethod);
   if (activeFilters.guestOnly) filteredExpenses = filteredExpenses.filter((e) => e.payerId.startsWith("guest_"));
 
-  document.getElementById("expense-diagnostic").textContent = `Mostrando ${filteredExpenses.length} movimientos.`;
+  // Filtramos visualmente para mostrar en la cantidad de transacciones
+  const today = new Date();
+  const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+  const displayedTotalExpenses = filteredExpenses.filter((e) => {
+    if (e.isProjected) {
+      return e.date <= todayStr;
+    }
+    return true;
+  });
+
+  document.getElementById("expense-diagnostic").textContent = `Mostrando ${displayedTotalExpenses.length} movimientos.`;
 
   if (filteredExpenses.length === 0) {
     reportEl.innerHTML = `<div class='flex flex-col items-center justify-center py-12 text-gray-300 opacity-60'><i class="fas fa-search text-4xl mb-2"></i><p class="text-sm font-medium">No hay gastos con estos filtros.</p></div>`;
@@ -5344,6 +5513,14 @@ function renderExpenseReportByCategory(allExpensesInMonth, summary) {
       const categoryTotal = expenses.reduce((sum, exp) => sum + exp.amount, 0);
       const categoryConfig = appState.categories.find((c) => c.name === categoryName);
       const budget = categoryConfig?.budget || 0;
+
+      // Filtrar gastos de visualización para esta categoría
+      const displayedExpenses = expenses.filter(exp => {
+        if (exp.isProjected) {
+          return exp.date <= todayStr;
+        }
+        return true;
+      });
 
       let progressBarHtml = "";
       let financialInfoHtml = "";
@@ -5412,7 +5589,7 @@ style="width: ${Math.min(100, percent)}%; z-index: 0;">
     </div>
     <div class="min-w-0">
       <h4 class="text-base font-extrabold text-gray-800 truncate leading-tight">${categoryName}</h4>
-      <p class="text-[10px] text-gray-500 font-medium truncate opacity-80">${expenses.length} transacciones</p>
+      <p class="text-[10px] text-gray-500 font-medium truncate opacity-80">${displayedExpenses.length} transacciones</p>
     </div>
   </div>
   <div class="flex items-center gap-4 flex-shrink-0">
@@ -5426,7 +5603,7 @@ style="width: ${Math.min(100, percent)}%; z-index: 0;">
 
   <div id="${contentId}" class="category-collapsible-content bg-white border-t border-gray-100 relative z-20">
     <div class="px-12 py-3 space-y-1">
-      ${expenses
+      ${displayedExpenses
           .sort((a, b) => {
             if (b.date !== a.date) return b.date > a.date ? 1 : -1;
             return new Date(b.dateCreated || b.date) - new Date(a.dateCreated || a.date);
@@ -5887,6 +6064,50 @@ function renderFixedExpensesSummary(expensesForMonth) {
     const sectionId = `fixed-group-${title.replace(/\s+/g, "-")}`;
     const subTotal = expenses.reduce((sum, e) => sum + e.amount, 0);
     const barColor = colorName === "orange" ? "bg-orange-400" : "bg-indigo-400";
+
+    // Separar gastos por tipo de método de pago
+    const cashExpenses = expenses.filter(e => {
+      const method = appState.paymentMethods.find(m => m.id === e.paymentMethodId);
+      return !method || method.type !== "credit";
+    });
+    const creditExpenses = expenses.filter(e => {
+      const method = appState.paymentMethods.find(m => m.id === e.paymentMethodId);
+      return method && method.type === "credit";
+    });
+
+    let itemsHtml = "";
+    if (cashExpenses.length > 0) {
+      const cashTotal = cashExpenses.reduce((sum, e) => sum + e.amount, 0);
+      itemsHtml += `
+        <div class="mt-1 mb-2">
+          <div class="flex items-center justify-between px-2 py-1 bg-emerald-50/50 rounded-md">
+            <span class="text-[9px] font-extrabold text-emerald-600 uppercase tracking-wider flex items-center gap-1">
+              <i class="fas fa-money-bill-wave text-[8px]"></i> Efectivo / Débito
+            </span>
+            <span class="text-[9px] font-black text-emerald-600">${formatCurrency(cashTotal)}</span>
+          </div>
+          <div class="space-y-1 mt-1">
+            ${cashExpenses.map(createCompactRow).join("")}
+          </div>
+        </div>
+      `;
+    }
+    if (creditExpenses.length > 0) {
+      const creditTotal = creditExpenses.reduce((sum, e) => sum + e.amount, 0);
+      itemsHtml += `
+        <div class="mt-1 mb-2">
+          <div class="flex items-center justify-between px-2 py-1 bg-indigo-50/50 rounded-md">
+            <span class="text-[9px] font-extrabold text-indigo-600 uppercase tracking-wider flex items-center gap-1">
+              <i class="fas fa-credit-card text-[8px]"></i> Tarjetas
+            </span>
+            <span class="text-[9px] font-black text-indigo-600">${formatCurrency(creditTotal)}</span>
+          </div>
+          <div class="space-y-1 mt-1">
+            ${creditExpenses.map(createCompactRow).join("")}
+          </div>
+        </div>
+      `;
+    }
 
     return `
       <div class="mb-3 group-section">
@@ -7583,12 +7804,15 @@ function getVisualExpenses(viewDate) {
     // Proyectar solo si toca en este mes calendario
     let targetDate = new Date(Date.UTC(viewYear, viewMonth, baseDate.getUTCDate()));
     if (targetDate.getUTCMonth() !== viewMonth) targetDate = new Date(Date.UTC(viewYear, viewMonth + 1, 0));
-
     const time = targetDate.getTime();
     const baseTime = baseDate.getTime();
 
     // Calcular diferencia meses
     const diff = (targetDate.getFullYear() - baseDate.getFullYear()) * 12 + (targetDate.getMonth() - baseDate.getMonth());
+
+    const dStr_temp = targetDate.toISOString().split("T")[0];
+    const today_temp = new Date();
+    const todayStr_temp = `${today_temp.getFullYear()}-${String(today_temp.getMonth() + 1).padStart(2, '0')}-${String(today_temp.getDate()).padStart(2, '0')}`;
 
     if (time >= startMs && time <= endMs && time >= baseTime && diff >= 0 && diff < recurrence) {
       const dStr = targetDate.toISOString().split("T")[0];
@@ -7672,6 +7896,10 @@ function getFinancialExpenses(viewDate) {
         }
 
         // Si "cae" en el mes que estamos viendo, lo agregamos
+        const today_temp = new Date();
+        const todayStr_temp = `${today_temp.getFullYear()}-${String(today_temp.getMonth() + 1).padStart(2, '0')}-${String(today_temp.getDate()).padStart(2, '0')}`;
+        const dStr_temp = date.toISOString().split("T")[0];
+
         if (finMonth === viewMonth && finYear === viewYear) {
           const dStr = date.toISOString().split("T")[0];
           const exists = allExpenses.some(e => !e.isFixed && e.date === dStr && e.description.toLowerCase().trim() === base.description.toLowerCase().trim());

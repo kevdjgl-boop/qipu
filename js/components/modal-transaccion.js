@@ -85,7 +85,6 @@ export class ModalTransaccion extends HTMLElement {
                     <input type="hidden" id="expense-payer" required />
                     <input type="hidden" id="expense-payment-method" required />
                     <input type="hidden" id="expense-category" required />
-                    <input type="hidden" id="expense-subcategory" />
 
                     <!-- LEFT SIDEBAR -->
                     <aside class="w-full lg:w-[340px] flex-shrink-0 bg-slate-50 dark:bg-[#1e293b]/50 border-b lg:border-r border-slate-100 dark:border-slate-800 flex flex-col z-20 relative">
@@ -114,9 +113,6 @@ export class ModalTransaccion extends HTMLElement {
                             <div class="space-y-2">
                                 <label class="text-[8px] font-bold text-slate-400 uppercase tracking-widest">Categoría</label>
                                 <div id="modal-category-tags-sidebar" class="flex flex-wrap gap-1.5"></div>
-                                <div id="modal-subcategory-section-sidebar" class="hidden animate-slideDown p-2 bg-slate-50 dark:bg-slate-800/50 rounded-lg border border-slate-100 dark:border-slate-800 mt-2">
-                                    <div id="modal-subcategory-tags-sidebar" class="flex flex-wrap gap-1"></div>
-                                </div>
                             </div>
                             <div class="py-3 space-y-2 border-t border-slate-100 dark:border-slate-700">
                                 <div class="flex justify-between text-[10px] font-medium text-slate-500">
@@ -221,25 +217,42 @@ export class ModalTransaccion extends HTMLElement {
                             <div id="multi-item-fields" class="hidden animate-slideUp">
                                 <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden shadow-sm">
                                     <div class="grid grid-cols-12 gap-2 text-slate-400 dark:text-slate-500 px-4 py-2 text-[10px] font-bold uppercase tracking-wider bg-slate-50 dark:bg-slate-800 border-b border-slate-100 dark:border-slate-700">
-                                        <div class="col-span-6 pl-2">Producto / Servicio</div>
-                                        <div class="col-span-2 text-center">Cant.</div>
-                                        <div class="col-span-3 text-right pr-2">Total</div>
+                                        <div class="col-span-5 pl-2">Producto / Servicio</div>
+                                        <div class="col-span-3 text-center">Cant.</div>
+                                        <div class="col-span-3 text-right pr-2">P. Unit (S/)</div>
                                         <div class="col-span-1 text-center"></div>
                                     </div>
                                     <div class="grid grid-cols-12 gap-2 px-4 py-2 items-center bg-white dark:bg-slate-900 border-b border-slate-100 dark:border-slate-800">
-                                        <div class="col-span-6">
-                                            <input name="new-item-desc-input" type="text" class="w-full bg-transparent border-none p-0 text-sm font-semibold text-slate-700 dark:text-slate-200 placeholder:text-slate-300 focus:ring-0" placeholder="Ej: Manzanas (Enter para añadir)" />
+                                        <div class="col-span-5">
+                                            <input name="new-item-desc-input" type="text" class="w-full bg-transparent border-none p-0 text-sm font-semibold text-slate-700 dark:text-slate-200 placeholder:text-slate-300 focus:ring-0" placeholder="Ej: Pizza Familiar..." />
                                         </div>
-                                        <div class="col-span-2">
-                                            <input name="new-item-quantity-input" type="number" value="1" min="1" class="w-full bg-transparent border-b border-slate-100 text-center p-0 text-sm font-bold text-slate-600 focus:border-indigo-500 focus:ring-0" />
+                                        <div class="col-span-3 flex items-center justify-center">
+                                            <input name="new-item-quantity-input" type="number" value="1" min="1" step="1" class="w-16 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded text-center p-1 text-xs font-bold text-slate-700 dark:text-white focus:border-indigo-500 focus:ring-0" />
                                         </div>
                                         <div class="col-span-3 relative">
-                                            <span class="absolute left-0 top-1/2 -translate-y-1/2 text-slate-400 text-xs">S/</span>
-                                            <input name="new-item-amount-input" type="number" step="0.01" placeholder="0.00" class="w-full bg-transparent border-b border-slate-100 p-0 pl-4 text-right text-sm font-bold text-slate-800 focus:border-indigo-500 focus:ring-0" />
+                                            <span class="absolute left-1 top-1/2 -translate-y-1/2 text-slate-400 text-xs font-bold">S/</span>
+                                            <input name="new-item-amount-input" type="number" step="0.01" min="0.01" placeholder="0.00" class="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded p-1 pl-6 text-right text-xs font-bold text-slate-800 dark:text-white focus:border-indigo-500 focus:ring-0" />
                                         </div>
                                         <div class="col-span-1 flex justify-center">
                                             <button type="button" id="add-item-to-list-btn" class="size-8 rounded-full bg-indigo-50 text-indigo-600 hover:bg-indigo-600 hover:text-white transition-all flex items-center justify-center shadow-sm">
                                                 <i class="fas fa-plus text-xs"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <div id="bulk-item-actions-bar" class="hidden flex flex-wrap items-center justify-between gap-2 p-2 bg-indigo-50/90 dark:bg-indigo-950/40 border-b border-indigo-100 dark:border-indigo-800 text-xs">
+                                        <div class="flex items-center gap-2">
+                                            <label class="flex items-center gap-1.5 cursor-pointer font-bold text-indigo-900 dark:text-indigo-200 text-[10px]">
+                                                <input type="checkbox" id="select-all-items-checkbox" class="rounded border-indigo-300 text-indigo-600 focus:ring-indigo-500 cursor-pointer" onchange="window.toggleSelectAllItems(this.checked)" />
+                                                <span id="selected-items-count-display">0 sel.</span>
+                                            </label>
+                                        </div>
+                                        <div class="flex items-center gap-1.5">
+                                            <select id="bulk-assignee-select" class="text-[10px] font-bold py-1 px-2 rounded bg-white dark:bg-slate-800 text-indigo-900 dark:text-indigo-200 border border-indigo-200 dark:border-indigo-700 focus:ring-indigo-500 shadow-xs cursor-pointer" onchange="window.bulkAssignSelected(this.value); this.value='';">
+                                                <option value="">Asignar a...</option>
+                                                <option value="equal">Equitativo (Todos)</option>
+                                            </select>
+                                            <button type="button" onclick="window.deleteSelectedItems()" class="px-2 py-1 text-[10px] font-bold text-rose-600 dark:text-rose-400 bg-rose-50 dark:bg-rose-950/40 hover:bg-rose-100 rounded transition-colors" title="Eliminar seleccionados">
+                                                <i class="fas fa-trash-alt mr-1"></i> Borrar
                                             </button>
                                         </div>
                                     </div>

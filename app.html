@@ -1917,18 +1917,6 @@
                 />
               </div>
             </div>
-            <div class="space-y-3">
-              <label class="text-xs font-bold text-gray-500 uppercase tracking-wide">Subcategorías</label>
-              <div class="rounded-3xl bg-gray-50 p-5 ring-1 ring-inset ring-gray-200">
-                <div class="flex items-center gap-3 rounded-2xl bg-white p-3 shadow-sm ring-1 ring-gray-900/5">
-                  <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-indigo-50 text-indigo-600">
-                    <i class="fas fa-layer-group"></i>
-                  </div>
-                  <input type="text" id="subcategory-list" placeholder="Escribe separadas por coma (Ej: Frutas, Carnes)" class="w-full border-none bg-transparent p-0 text-sm font-medium text-gray-900 placeholder-gray-400 focus:ring-0" />
-                </div>
-                <p class="mt-4 text-[10px] font-bold text-gray-400 px-2 uppercase tracking-wide">Aparecerán como etiquetas en el registro.</p>
-              </div>
-            </div>
           </form>
 
           <div class="flex items-center justify-end gap-4 border-t border-gray-100 px-8 py-5 bg-white">
@@ -2284,12 +2272,6 @@
             </div>
 
             <div class="w-full md:w-7/12 bg-white p-8 overflow-y-auto custom-scrollbar relative">
-              <div id="modal-subcategory-section" class="hidden mb-8">
-                <label class="block text-xs font-bold text-indigo-600 uppercase mb-3 border-b border-indigo-50 pb-2"> Subcategoría </label>
-                <div id="modal-subcategory-tags" class="flex flex-wrap gap-2"></div>
-                <input type="hidden" id="expense-subcategory" />
-              </div>
-
               <div class="bg-white rounded-2xl">
                 <div class="flex items-center justify-between mb-4">
                   <label class="text-xs font-bold text-gray-500 uppercase flex items-center gap-2"> <i class="fas fa-list-ul"></i> Detalle de Ítems </label>
@@ -2302,12 +2284,30 @@
                 </div>
 
                 <div id="multi-item-fields" class="hidden space-y-3 bg-gray-50 p-4 rounded-2xl border border-dashed border-gray-200">
-                  <div class="flex gap-3">
+                  <div class="flex gap-2">
                     <input type="text" name="new-item-desc-input" class="flex-1 rounded-xl border-gray-200 py-2 px-3 text-xs focus:ring-indigo-500" placeholder="Producto..." />
-                    <input type="number" name="new-item-amount-input" step="0.01" class="w-24 rounded-xl border-gray-200 py-2 px-3 text-xs focus:ring-indigo-500" placeholder="S/" />
+                    <input type="number" name="new-item-quantity-input" value="1" min="1" step="1" class="w-16 rounded-xl border-gray-200 py-2 px-2 text-xs text-center font-bold focus:ring-indigo-500" placeholder="Cant." />
+                    <input type="number" name="new-item-amount-input" step="0.01" min="0.01" class="w-24 rounded-xl border-gray-200 py-2 px-3 text-xs text-right font-bold focus:ring-indigo-500" placeholder="P. Unit" />
                     <button type="button" id="add-item-to-list-btn" class="rounded-xl bg-indigo-500 px-3 text-white hover:bg-indigo-600">
                       <i class="fas fa-plus text-xs"></i>
                     </button>
+                  </div>
+                  <div id="bulk-item-actions-bar" class="hidden flex flex-wrap items-center justify-between gap-2 p-2 bg-indigo-50/90 rounded-xl border border-indigo-100 text-xs">
+                    <div class="flex items-center gap-2">
+                      <label class="flex items-center gap-1.5 cursor-pointer font-bold text-indigo-900 text-[10px]">
+                        <input type="checkbox" id="select-all-items-checkbox" class="rounded border-indigo-300 text-indigo-600 focus:ring-indigo-500 cursor-pointer" onchange="window.toggleSelectAllItems(this.checked)" />
+                        <span id="selected-items-count-display">0 sel.</span>
+                      </label>
+                    </div>
+                    <div class="flex items-center gap-1.5">
+                      <select id="bulk-assignee-select" class="text-[10px] font-bold py-1 px-2 rounded-lg bg-white text-indigo-900 border border-indigo-200 focus:ring-indigo-500 shadow-xs cursor-pointer" onchange="window.bulkAssignSelected(this.value); this.value='';">
+                        <option value="">Asignar a...</option>
+                        <option value="equal">Equitativo (Todos)</option>
+                      </select>
+                      <button type="button" onclick="window.deleteSelectedItems()" class="px-2 py-1 text-[10px] font-bold text-rose-600 bg-rose-50 hover:bg-rose-100 rounded-lg transition-colors" title="Eliminar seleccionados">
+                        <i class="fas fa-trash-alt mr-1"></i> Borrar
+                      </button>
+                    </div>
                   </div>
                   <div id="expense-item-list-container" class="space-y-2 max-h-48 overflow-y-auto mt-2"></div>
                 </div>
@@ -3729,6 +3729,14 @@
 
             // SECCIÓN FIJOS
             if (fixedList.length > 0) {
+              const today = new Date();
+              const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+              const displayedFixedList = fixedList.filter(e => {
+                if (e.isProjected) {
+                  return e.date <= todayStr;
+                }
+                return true;
+              });
               const subTotalFixed = fixedList.reduce((sum, e) => sum + e.amount, 0);
               htmlContent += `
                 <div class="mb-6">
@@ -3739,7 +3747,7 @@
                         <span class="text-[10px] font-bold bg-indigo-50 text-indigo-600 px-2 py-0.5 rounded-lg">${formatCurrency(subTotalFixed)}</span>
                     </div>
                     <div class="">
-                        ${fixedList.map(createDetailRow).join("")}
+                        ${displayedFixedList.map(createDetailRow).join("")}
                     </div>
                 </div>`;
             }
@@ -3967,51 +3975,7 @@
         hiddenInput.dispatchEvent(new Event("change", { bubbles: true }));
       }
 
-      // Actualiza las etiquetas de subcategoría basadas en la categoría seleccionada
-      // ================================================================
-      // VERSIÓN SEGURA DE updateModalSubcategoryTags
-      // ================================================================
-      function updateModalSubcategoryTags() {
-        // 1. Intentamos obtener los elementos
-        const catInput = document.getElementById("expense-category");
-        const subInput = document.getElementById("expense-subcategory");
-        const container = document.getElementById("modal-subcategory-tags");
-        const section = document.getElementById("modal-subcategory-section");
 
-        // 2. Diagnóstico de errores (Si falta algo, avisa y detiene la función para no romper todo)
-        if (!catInput) {
-          console.warn("⚠️ ERROR CRÍTICO: Falta el <input id='expense-category'> en tu HTML.");
-          return;
-        }
-        if (!subInput) {
-          console.warn("⚠️ ERROR: Falta el <input id='expense-subcategory'> en tu HTML.");
-          return;
-        }
-        if (!container) {
-          console.warn("⚠️ ERROR: Falta el <div id='modal-subcategory-tags'> en tu HTML.");
-          return;
-        }
-        if (!section) {
-          console.warn("⚠️ ERROR: Falta el <div id='modal-subcategory-section'> en tu HTML.");
-          return;
-        }
-
-        // 3. Si todo existe, ejecutamos la lógica normal
-        const catName = catInput.value;
-
-        container.innerHTML = "";
-        subInput.value = "";
-
-        const category = appState.categories.find((c) => c.name === catName);
-        if (category && category.subcategories && category.subcategories.length > 0) {
-          section.classList.remove("hidden");
-          category.subcategories.forEach((sub) => {
-            container.insertAdjacentHTML("beforeend", `<button type="button" data-value="${sub}" class="filter-tag">${sub}</button>`);
-          });
-        } else {
-          section.classList.add("hidden");
-        }
-      }
 
       // --- Utilidades ---
       const generateUUID = () => crypto.randomUUID();
@@ -5719,17 +5683,79 @@
             else if (expense.guestName) guestsCount = 1;
 
             const numPayees = registeredCount + guestsCount;
-            const splitAmount = amount / numPayees;
 
-            // Repartir consumo entre participantes registrados
-            participantData.forEach((p) => {
-              p.spent += splitAmount;
-            });
+            if (expense.items && expense.items.length > 0 && numPayees > 0) {
+              let itemsTotalCost = 0;
+              let itemShares = {};
+              participantData.forEach(p => { itemShares[p.id] = 0; });
+              let guestItemShares = 0;
 
-            // Registrar consumo de invitados
-            if (guestsCount > 0) guestSummary.spent += splitAmount * guestsCount;
+              expense.items.forEach(item => {
+                const qty = parseFloat(item.quantity) || 1;
+                const unitPrice = parseFloat(item.amount) || 0;
+                const itemTotal = qty * unitPrice;
+                itemsTotalCost += itemTotal;
 
-            expense.splitAmount = splitAmount; // Guardar para uso visual si se requiere
+                const assignments = item.assignments || {};
+                let assignedUnitsSum = 0;
+
+                Object.keys(assignments).forEach(pId => {
+                  const assignedQty = parseFloat(assignments[pId]) || 0;
+                  if (assignedQty > 0) {
+                    assignedUnitsSum += assignedQty;
+                    const cost = assignedQty * unitPrice;
+                    if (itemShares[pId] !== undefined) {
+                      itemShares[pId] += cost;
+                    } else if (pId.startsWith("guest_") || pId.startsWith("guest-")) {
+                      guestItemShares += cost;
+                    }
+                  }
+                });
+
+                if (assignedUnitsSum === 0 && item.assignedTo) {
+                  assignedUnitsSum = qty;
+                  const cost = itemTotal;
+                  if (itemShares[item.assignedTo] !== undefined) {
+                    itemShares[item.assignedTo] += cost;
+                  } else if (item.assignedTo.startsWith("guest_") || item.assignedTo.startsWith("guest-")) {
+                    guestItemShares += cost;
+                  }
+                }
+
+                const unassignedUnits = Math.max(0, qty - assignedUnitsSum);
+                if (unassignedUnits > 0) {
+                  const unassignedCost = unassignedUnits * unitPrice;
+                  const sharePerPerson = unassignedCost / numPayees;
+                  participantData.forEach(p => {
+                    itemShares[p.id] += sharePerPerson;
+                  });
+                  guestItemShares += sharePerPerson * guestsCount;
+                }
+              });
+
+              const remainingAmount = Math.max(0, amount - itemsTotalCost);
+              const remainingSharePerPerson = remainingAmount / numPayees;
+
+              participantData.forEach(p => {
+                p.spent += (itemShares[p.id] || 0) + remainingSharePerPerson;
+              });
+              if (guestsCount > 0) {
+                guestSummary.spent += guestItemShares + (remainingSharePerPerson * guestsCount);
+              }
+              expense.splitAmount = numPayees > 0 ? amount / numPayees : 0;
+            } else {
+              const splitAmount = numPayees > 0 ? amount / numPayees : 0;
+
+              // Repartir consumo entre participantes registrados
+              participantData.forEach((p) => {
+                p.spent += splitAmount;
+              });
+
+              // Registrar consumo de invitados
+              if (guestsCount > 0) guestSummary.spent += splitAmount * guestsCount;
+
+              expense.splitAmount = splitAmount;
+            }
           } else {
             // Gasto Personal
             const consumer = participantMap.get(expense.payerId);
@@ -6753,11 +6779,6 @@
           setActiveTag("expense-payment-method", "modal-payment-method-tags", expense.paymentMethodId);
           setActiveTag("expense-category", "modal-category-tags", expense.category);
 
-          if (typeof updateModalSubcategoryTags === "function") updateModalSubcategoryTags();
-          setTimeout(() => {
-            setActiveTag("expense-subcategory", "modal-subcategory-tags", expense.subcategory);
-          }, 0);
-
           document.getElementById("expense-is-fixed").checked = expense.isFixed;
           document.getElementById("fixed-recurrence-container").classList.toggle("hidden", !expense.isFixed);
           if (expense.fixedRecurrenceMonths) document.getElementById("expense-recurrence-months").value = expense.fixedRecurrenceMonths;
@@ -6804,6 +6825,7 @@
           const toggle = document.getElementById("multi-item-toggle");
           if (toggle) {
             toggle.checked = false;
+            tempItemsList = [];
             toggle.dispatchEvent(new Event("change"));
           }
 
@@ -6855,7 +6877,6 @@
           const payerId = document.getElementById("expense-payer").value;
           const type = document.getElementById("expense-type").value;
           const category = document.getElementById("expense-category").value;
-          const subcategory = formatTitleCase(document.getElementById("expense-subcategory").value);
           const paymentMethodId = document.getElementById("expense-payment-method").value;
 
           const isFixed = document.getElementById("expense-is-fixed").checked;
@@ -6879,9 +6900,7 @@
           const { startDate, paymentDate } = paymentMethod && paymentMethod.type === "credit" ? getCycleDates(paymentMethod, expenseDateObj) : {};
 
           // --- GUARDAR INVITADOS ---
-          // Si es compartido, guardamos el array temporal. Si no, array vacío.
-          const guestsToSave = type === "shared" ? tempItemsList : []; // OJO: ¡ERROR! Aquí usé la lista equivocada en mi mente. CORRIGIENDO:
-          const realGuestsToSave = type === "shared" ? tempGuestList : []; // <--- ESTA ES LA CORRECTA
+          const realGuestsToSave = type === "shared" ? tempGuestList : [];
 
           const expenseData = {
             description,
@@ -6890,14 +6909,13 @@
             payerId,
             type,
             category,
-            subcategory: subcategory || null,
             paymentMethodId,
             isFixed,
             fixedRecurrenceMonths: recurrence,
             date,
             ccCycleStart: startDate || null,
             ccPaymentDate: paymentDate || null,
-            guests: realGuestsToSave, // Guardamos el array de invitados
+            guests: realGuestsToSave,
           };
 
           let newExpensesArray;
@@ -6905,8 +6923,6 @@
           if (id) {
             newExpensesArray = appState.expenses.map((e) => {
               if (e.id === id) {
-                // Mantener ID y fecha creación
-                // Ojo: Mantener guestName antiguo si existiera no es necesario porque migramos a 'guests'
                 return { ...e, ...expenseData };
               }
               return e;
@@ -6922,7 +6938,6 @@
 
           saveState({ expenses: newExpensesArray });
           closeUnifiedExpenseModal();
-          // showModal(id ? "Gasto actualizado correctamente." : "Gasto registrado exitosamente.", null, "Éxito");
         } catch (error) {
           console.error(error);
           showModal("Error al guardar el gasto.", error.message);
@@ -6932,50 +6947,210 @@
       // ================================================================
       // FUNCIÓN PARA PINTAR LA LISTA DE PRODUCTOS EN EL MODAL
       // ================================================================
-      // ================================================================
-      // FUNCIÓN DE RENDERIZADO DE LISTA (Solo una copia)
-      // ================================================================
       function renderTempItemsListInModal() {
         const container = document.getElementById("expense-item-list-container");
         const totalInput = document.getElementById("expense-amount");
+        const bulkAssignSelect = document.getElementById("bulk-assignee-select");
+        const expenseType = document.getElementById("expense-type")?.value || "personal";
+        const isShared = expenseType === "shared";
 
-        // Protección contra nulos
         if (!container || !totalInput) return;
 
         container.innerHTML = "";
-
         let total = 0;
 
-        // Si la lista está vacía
+        let allParticipants = [];
+        if (isShared) {
+          if (appState && appState.participants) {
+            appState.participants.forEach(p => allParticipants.push({ id: p.id, name: p.name }));
+          }
+          if (tempGuestList) {
+            tempGuestList.forEach((g, gIdx) => {
+              allParticipants.push({ id: `guest_${gIdx}`, name: `${g} (Inv)` });
+            });
+          }
+        }
+
+        if (bulkAssignSelect && isShared) {
+          let opts = `
+            <option value="">Asignar a...</option>
+            <option value="equal">Equitativo (Todos)</option>
+          `;
+          allParticipants.forEach(p => {
+            opts += `<option value="${p.id}">${p.name} (100%)</option>`;
+          });
+          bulkAssignSelect.innerHTML = opts;
+        }
+
         if (!tempItemsList || tempItemsList.length === 0) {
+          if (window.selectedTempItemIds) window.selectedTempItemIds.clear();
           container.innerHTML = '<p class="text-xs text-gray-500 italic text-center py-2">La lista está vacía.</p>';
         } else {
-          // Si hay elementos
           tempItemsList.forEach((item) => {
-            total += item.amount;
+            const qty = parseFloat(item.quantity) || 1;
+            const unitPrice = parseFloat(item.amount) || 0;
+            const subtotal = qty * unitPrice;
+            total += subtotal;
+
+            const isSelected = window.selectedTempItemIds && window.selectedTempItemIds.has(String(item.id));
+            const assignments = item.assignments || {};
+            const assignedUnits = Object.keys(assignments).reduce((sum, pId) => sum + (parseFloat(assignments[pId]) || 0), 0);
+            const unassignedUnits = Math.max(0, qty - assignedUnits);
+
+            let assignmentBadges = "";
+            if (isShared && allParticipants.length > 0) {
+              assignmentBadges = `
+                <div class="pt-1.5 border-t border-gray-100 mt-1 pl-6">
+                  <div class="flex items-center justify-between mb-1">
+                    <span class="text-[9px] font-bold text-gray-400">Asignar cantidades:</span>
+                    <span class="text-[9px] font-bold ${unassignedUnits > 0 ? 'text-amber-500' : 'text-emerald-500'}">
+                      ${unassignedUnits > 0 ? `${unassignedUnits} compartida(s)` : '✓ Todo asignado'}
+                    </span>
+                  </div>
+                  <div class="flex flex-wrap gap-1">
+                    ${allParticipants.map(p => {
+                      const curQty = (assignments && parseFloat(assignments[p.id])) || 0;
+                      return `
+                        <div class="flex items-center gap-1 bg-white px-1.5 py-0.5 rounded border border-gray-200 text-[10px]">
+                          <span class="font-medium text-gray-700">${p.name}:</span>
+                          <button type="button" class="w-4 h-4 bg-gray-100 rounded text-center font-bold text-gray-600 hover:bg-gray-200" onclick="window.changeAppTempItemQty('${item.id}', '${p.id}', -1)">-</button>
+                          <span class="font-bold text-gray-900">${curQty}</span>
+                          <button type="button" class="w-4 h-4 bg-gray-100 rounded text-center font-bold text-gray-600 hover:bg-gray-200" onclick="window.changeAppTempItemQty('${item.id}', '${p.id}', 1)">+</button>
+                        </div>
+                      `;
+                    }).join('')}
+                  </div>
+                </div>
+              `;
+            }
+
             container.insertAdjacentHTML(
               "beforeend",
               `
-                <div class="flex justify-between items-center bg-gray-50 p-2 rounded border text-sm mb-1">
-                    <span class="font-medium text-gray-700">${item.desc}</span>
-                    <div class="flex items-center gap-3">
-                        <span class="font-bold text-indigo-600">${formatCurrency(item.amount)}</span>
-                        <button type="button" data-id="${item.id}" class="remove-item-btn text-red-400 hover:text-red-600 transition">
-                            <i class="fas fa-times"></i>
-                        </button>
+                <div class="flex flex-col bg-gray-50 p-2.5 rounded-xl border border-gray-100 text-sm mb-1.5 ${isSelected ? 'bg-indigo-50/60 ring-1 ring-indigo-200' : ''}">
+                    <div class="flex items-center justify-between gap-2">
+                        <div class="flex items-center gap-2 flex-1 min-w-0">
+                          ${isShared ? `
+                            <input type="checkbox" class="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 cursor-pointer size-4" ${isSelected ? 'checked' : ''} onchange="window.toggleSelectItem('${item.id}', this.checked)" />
+                          ` : ''}
+                          <div class="flex-1 min-w-0">
+                            <span class="font-bold text-gray-700 text-xs block truncate">${item.desc}</span>
+                            <span class="text-[10px] text-gray-400 block">${qty} ud × S/ ${unitPrice.toFixed(2)}</span>
+                          </div>
+                        </div>
+                        <div class="flex items-center gap-3">
+                            <span class="font-bold text-indigo-600 text-xs">S/ ${subtotal.toFixed(2)}</span>
+                            <button type="button" data-id="${item.id}" class="remove-item-btn text-red-400 hover:text-red-600 transition">
+                                <i class="fas fa-times text-xs"></i>
+                            </button>
+                        </div>
                     </div>
+                    ${assignmentBadges}
                 </div>
             `
             );
           });
         }
 
-        // Si el switch de lista está activado, actualizamos el input de Total
+        updateBulkBarState();
+
         const toggle = document.getElementById("multi-item-toggle");
         if (toggle && toggle.checked) {
           totalInput.value = total.toFixed(2);
         }
       }
+
+      window.selectedTempItemIds = new Set();
+
+      window.toggleSelectItem = function (id, isChecked) {
+        if (!window.selectedTempItemIds) window.selectedTempItemIds = new Set();
+        if (isChecked) {
+          window.selectedTempItemIds.add(String(id));
+        } else {
+          window.selectedTempItemIds.delete(String(id));
+        }
+        updateBulkBarState();
+      };
+
+      window.toggleSelectAllItems = function (isChecked) {
+        if (!window.selectedTempItemIds) window.selectedTempItemIds = new Set();
+        window.selectedTempItemIds.clear();
+        if (isChecked && tempItemsList) {
+          tempItemsList.forEach(item => window.selectedTempItemIds.add(String(item.id)));
+        }
+        renderTempItemsListInModal();
+      };
+
+      window.bulkAssignSelected = function (assigneeId) {
+        if (!window.selectedTempItemIds || window.selectedTempItemIds.size === 0 || !assigneeId) return;
+        if (!tempItemsList) return;
+
+        tempItemsList.forEach(item => {
+          if (window.selectedTempItemIds.has(String(item.id))) {
+            const totalQty = parseFloat(item.quantity) || 1;
+            if (assigneeId === 'equal') {
+              item.assignments = {};
+            } else {
+              item.assignments = { [assigneeId]: totalQty };
+            }
+          }
+        });
+
+        renderTempItemsListInModal();
+      };
+
+      window.deleteSelectedItems = function () {
+        if (!window.selectedTempItemIds || window.selectedTempItemIds.size === 0) return;
+        if (!tempItemsList) return;
+
+        tempItemsList = tempItemsList.filter(item => !window.selectedTempItemIds.has(String(item.id)));
+        window.selectedTempItemIds.clear();
+        renderTempItemsListInModal();
+      };
+
+      function updateBulkBarState() {
+        const bulkBar = document.getElementById("bulk-item-actions-bar");
+        const countDisplay = document.getElementById("selected-items-count-display");
+        const selectAllCheckbox = document.getElementById("select-all-items-checkbox");
+        const totalItems = tempItemsList ? tempItemsList.length : 0;
+        const selectedCount = window.selectedTempItemIds ? window.selectedTempItemIds.size : 0;
+
+        if (countDisplay) countDisplay.textContent = `${selectedCount} sel.`;
+        if (selectAllCheckbox) {
+          selectAllCheckbox.checked = totalItems > 0 && selectedCount === totalItems;
+          selectAllCheckbox.indeterminate = selectedCount > 0 && selectedCount < totalItems;
+        }
+        if (bulkBar) {
+          bulkBar.classList.toggle("hidden", selectedCount === 0);
+        }
+      }
+
+      window.changeAppTempItemQty = function (itemId, participantId, delta) {
+        if (!tempItemsList) return;
+        const item = tempItemsList.find(i => String(i.id) === String(itemId));
+        if (!item) return;
+        if (!item.assignments) item.assignments = {};
+
+        const currentAssigned = parseFloat(item.assignments[participantId]) || 0;
+        const totalItemQty = parseFloat(item.quantity) || 1;
+        const totalAssignedOther = Object.keys(item.assignments).reduce((s, pId) => {
+          return pId === participantId ? s : s + (parseFloat(item.assignments[pId]) || 0);
+        }, 0);
+
+        let newQty = currentAssigned + delta;
+        if (newQty < 0) newQty = 0;
+        if (newQty + totalAssignedOther > totalItemQty) {
+          newQty = totalItemQty - totalAssignedOther;
+        }
+
+        if (newQty > 0) {
+          item.assignments[participantId] = newQty;
+        } else {
+          delete item.assignments[participantId];
+        }
+
+        renderTempItemsListInModal();
+      };
 
       // ================================================================
       // CONFIGURACIÓN DE LISTENERS (ACTUALIZADA CON INVITADOS)
@@ -7004,7 +7179,7 @@
           });
         }
 
-        // 4. LÓGICA DE ETIQUETAS (TAGS) - CON MOSTRAR/OCULTAR INVITADOS
+        // 4. LÓGICA DE ETIQUETAS (TAGS)
         const handleTagClick = (e) => {
           const btn = e.target.closest(".filter-tag");
           if (!btn) return;
@@ -7016,36 +7191,25 @@
           if (container.id === "modal-type-tags") inputId = "expense-type";
           if (container.id === "modal-payment-method-tags") inputId = "expense-payment-method";
           if (container.id === "modal-category-tags") inputId = "expense-category";
-          if (container.id === "modal-subcategory-tags") inputId = "expense-subcategory";
 
           const input = document.getElementById(inputId);
           if (!input) return;
 
-          // Actualizar visualmente
           container.querySelectorAll(".filter-tag").forEach((t) => t.classList.remove("active"));
           btn.classList.add("active");
           input.value = btn.dataset.value;
 
-          // --- LÓGICA DE TIPO (Personal vs Compartido) ---
           if (inputId === "expense-type") {
             const guestSection = document.getElementById("guest-management-section");
             if (btn.dataset.value === "shared") {
               guestSection.classList.remove("hidden");
             } else {
               guestSection.classList.add("hidden");
-              // Opcional: Limpiar invitados al volver a personal
-              // tempGuestList = []; renderGuestListInModal();
             }
-          }
-
-          // Si es categoría, actualizar subcategorías
-          if (inputId === "expense-category") {
-            updateModalSubcategoryTags();
           }
         };
 
-        // Asignar listeners a los contenedores de etiquetas
-        ["modal-payer-tags", "modal-type-tags", "modal-payment-method-tags", "modal-category-tags", "modal-subcategory-tags"].forEach((id) => {
+        ["modal-payer-tags", "modal-type-tags", "modal-payment-method-tags", "modal-category-tags"].forEach((id) => {
           const el = document.getElementById(id);
           if (el) el.addEventListener("click", handleTagClick);
         });
@@ -7061,7 +7225,7 @@
               tempGuestList.push(name);
               inputGuest.value = "";
               inputGuest.focus();
-              renderGuestListInModal(); // Asegúrate de tener esta función copiada del paso 3
+              renderGuestListInModal();
             }
           };
 
@@ -7122,7 +7286,7 @@
           });
         }
 
-        // Listener para borrar items de lista productos
+        // Listener para borrar items de lista productos y asignar items
         if (listContainer) {
           listContainer.addEventListener("click", (e) => {
             const btn = e.target.closest(".remove-item-btn");
@@ -7130,6 +7294,17 @@
               const idToRemove = btn.dataset.id;
               tempItemsList = tempItemsList.filter((i) => i.id !== idToRemove);
               renderTempItemsListInModal();
+            }
+          });
+          
+          listContainer.addEventListener("change", (e) => {
+            if (e.target.classList.contains("assign-item-select")) {
+              const idToUpdate = e.target.dataset.id;
+              const newAssignee = e.target.value;
+              const item = tempItemsList.find((i) => i.id === idToUpdate);
+              if (item) {
+                item.assignedTo = newAssignee === "all" ? null : newAssignee;
+              }
             }
           });
         }
@@ -7681,7 +7856,16 @@
         if (activeFilters.paymentMethod) filteredExpenses = filteredExpenses.filter((e) => e.paymentMethodId === activeFilters.paymentMethod);
         if (activeFilters.guestOnly) filteredExpenses = filteredExpenses.filter((e) => e.payerId.startsWith("guest_"));
 
-        document.getElementById("expense-diagnostic").textContent = `Mostrando ${filteredExpenses.length} movimientos.`;
+        const today = new Date();
+        const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+        const displayedTotalExpenses = filteredExpenses.filter((e) => {
+          if (e.isProjected) {
+            return e.date <= todayStr;
+          }
+          return true;
+        });
+
+        document.getElementById("expense-diagnostic").textContent = `Mostrando ${displayedTotalExpenses.length} movimientos.`;
 
         if (filteredExpenses.length === 0) {
           reportEl.innerHTML = pillsHtml + `<div class='flex flex-col items-center justify-center py-12 text-gray-300 opacity-60'><i class="fas fa-search text-4xl mb-2"></i><p class="text-sm font-medium">No hay gastos con estos filtros.</p></div>`;
@@ -7692,7 +7876,7 @@
         const paymentMethodsMap = new Map(appState.paymentMethods.map((m) => [m.id, m]));
 
         // 2. Ordenamiento cronológico robusto
-        const sortedExpenses = filteredExpenses.sort((a, b) => {
+        const sortedExpenses = displayedTotalExpenses.sort((a, b) => {
           // Prioridad 1: Fecha del gasto (descendente)
           if (b.date !== a.date) return b.date > a.date ? 1 : -1;
           // Prioridad 2: Momento de registro (descendente)
@@ -8160,6 +8344,56 @@ function handleExpenseReportClick(e) {
           const opClass = isOpen ? "" : "opacity-0";
           const rotClass = isOpen ? "" : "-rotate-90";
 
+          // Separar gastos por tipo de método de pago
+          const cashExpenses = expenses.filter(e => {
+            const method = appState.paymentMethods.find(m => m.id === e.paymentMethodId);
+            return !method || method.type !== "credit";
+          });
+          const creditExpenses = expenses.filter(e => {
+            const method = appState.paymentMethods.find(m => m.id === e.paymentMethodId);
+            return method && method.type === "credit";
+          });
+
+          let itemsHtml = "";
+          if (cashExpenses.length > 0) {
+            const cashTotal = cashExpenses.reduce((sum, e) => sum + e.amount, 0);
+            itemsHtml += `
+              <div class="mt-1 mb-2">
+                <div class="flex items-center justify-between px-2 py-1 bg-emerald-50/50 rounded-md">
+                  <span class="text-[9px] font-extrabold text-emerald-600 uppercase tracking-wider flex items-center gap-1">
+                    <i class="fas fa-money-bill-wave text-[8px]"></i> Efectivo / Débito
+                  </span>
+                  <span class="text-[9px] font-black text-emerald-600">${formatCurrency(cashTotal)}</span>
+                </div>
+                <div class="space-y-1 mt-1">
+                  ${cashExpenses
+                    .sort((a, b) => new Date(a.date) - new Date(b.date))
+                    .map(createCompactRow)
+                    .join("")}
+                </div>
+              </div>
+            `;
+          }
+          if (creditExpenses.length > 0) {
+            const creditTotal = creditExpenses.reduce((sum, e) => sum + e.amount, 0);
+            itemsHtml += `
+              <div class="mt-1 mb-2">
+                <div class="flex items-center justify-between px-2 py-1 bg-indigo-50/50 rounded-md">
+                  <span class="text-[9px] font-extrabold text-indigo-600 uppercase tracking-wider flex items-center gap-1">
+                    <i class="fas fa-credit-card text-[8px]"></i> Tarjetas
+                  </span>
+                  <span class="text-[9px] font-black text-indigo-600">${formatCurrency(creditTotal)}</span>
+                </div>
+                <div class="space-y-1 mt-1">
+                  ${creditExpenses
+                    .sort((a, b) => new Date(a.date) - new Date(b.date))
+                    .map(createCompactRow)
+                    .join("")}
+                </div>
+              </div>
+            `;
+          }
+
           return `
         <div class="mb-3 group-section">
             <button onclick="toggleFixedSection(this)" class="w-full flex items-center justify-between py-2 px-1 hover:bg-gray-50 rounded-lg group transition-colors toggle-fixed-btn" data-target="${sectionId}">
@@ -8178,10 +8412,7 @@ function handleExpenseReportClick(e) {
             </button>
 
             <div id="${sectionId}" class="pl-2 transition-all duration-300 overflow-hidden ${opClass}" style="max-height: ${maxH};">
-                ${expenses
-                  .sort((a, b) => new Date(a.date) - new Date(b.date))
-                  .map(createCompactRow)
-                  .join("")}
+                ${itemsHtml}
             </div>
         </div>
         `;
@@ -9248,6 +9479,9 @@ function handleExpenseReportClick(e) {
             // 5. Verificar si un gasto *similar* (mismo nombre) ya fue registrado manualmente este mes
             // (Para evitar duplicados si el usuario lo pagó y registró)
             const alreadyExists = allExpenses.some((e) => e.date.startsWith(filterMonthString) && e.description.toLowerCase() === baseExpense.description.toLowerCase());
+
+            const today = new Date();
+            const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
 
             if (!alreadyExists) {
               // 6. Añadir el gasto proyectado a la lista

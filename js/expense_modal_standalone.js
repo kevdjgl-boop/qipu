@@ -8,15 +8,15 @@ const appState = {
         { id: 'u2', name: 'Ana', email: 'ana@example.com' },
         { id: 'u3', name: 'Yo', email: 'yo@example.com' }
     ],
-    // CategorÃ­as estÃ¡ndar
+    // Categorías estándar (Sin subcategorías)
     categories: [
-        { id: 'c1', name: 'Comida', subcategories: ['Almuerzo', 'Cena', 'Snacks', 'Bebidas'] },
-        { id: 'c2', name: 'Transporte', subcategories: ['Taxi', 'Bus', 'Gasolina', 'Mantenimiento'] },
-        { id: 'c3', name: 'Hogar', subcategories: ['Limpieza', 'Mantenimiento', 'DecoraciÃ³n'] },
-        { id: 'c4', name: 'Ocio', subcategories: ['Cine', 'Juegos', 'Salidas'] },
-        { id: 'c5', name: 'Salud', subcategories: ['Farmacia', 'Consulta', 'Seguro'] },
-        { id: 'c6', name: 'Servicios', subcategories: ['Luz', 'Agua', 'Internet'] },
-        { id: 'c7', name: 'Supermercado', subcategories: [] }
+        { id: 'c1', name: 'Comida' },
+        { id: 'c2', name: 'Transporte' },
+        { id: 'c3', name: 'Hogar' },
+        { id: 'c4', name: 'Ocio' },
+        { id: 'c5', name: 'Salud' },
+        { id: 'c6', name: 'Servicios' },
+        { id: 'c7', name: 'Supermercado' }
     ],
     // MÃ©todos de pago
     paymentMethods: [
@@ -152,11 +152,6 @@ window.openUnifiedExpenseModal = function (expenseId = null) {
         setActiveTag("expense-payment-method", "modal-payment-method-tags", expense.paymentMethodId);
         setActiveTag("expense-category", "modal-category-tags", expense.category);
 
-        if (typeof updateModalSubcategoryTags === "function") updateModalSubcategoryTags();
-        setTimeout(() => {
-            setActiveTag("expense-subcategory", "modal-subcategory-tags", expense.subcategory);
-        }, 0);
-
         document.getElementById("expense-is-fixed").checked = expense.isFixed;
         document.getElementById("fixed-recurrence-container").classList.toggle("hidden", !expense.isFixed);
         if (expense.fixedRecurrenceMonths) document.getElementById("expense-recurrence-months").value = expense.fixedRecurrenceMonths;
@@ -223,7 +218,6 @@ function setActiveTag(inputId, containerId, value) {
 
     const container = document.getElementById(containerId);
     if (container) {
-        // Note: In standalone we use ID as value, check logic in populate
         const tag = container.querySelector(`button[data-value="${value}"]`);
         if (tag) tag.classList.add("active");
     }
@@ -250,7 +244,6 @@ window.handleUnifiedSave = function (event) {
         const payerId = document.getElementById("expense-payer").value;
         const type = document.getElementById("expense-type").value;
         const category = document.getElementById("expense-category").value;
-        const subcategory = formatTitleCase(document.getElementById("expense-subcategory").value);
         const paymentMethodId = document.getElementById("expense-payment-method").value;
 
         const isFixed = document.getElementById("expense-is-fixed").checked;
@@ -258,14 +251,10 @@ window.handleUnifiedSave = function (event) {
 
         // Validaciones
         let missing = [];
-        if (!description) missing.push("DescripciÃ³n");
-        if (!amount || amount <= 0) missing.push("Monto vÃ¡lido");
+        if (!description) missing.push("Descripción");
+        if (!amount || amount <= 0) missing.push("Monto válido");
         if (!date) missing.push("Fecha");
-        // Relaxed for demo
-        // if (!payerId) missing.push("Pagador");
-        // if (!category) missing.push("CategorÃ­a");
-        // if (!paymentMethodId) missing.push("MÃ©todo de Pago");
-        if (isMultiItem && window.tempItemsList.length === 0) missing.push("Lista de productos vacÃ­a");
+        if (isMultiItem && window.tempItemsList.length === 0) missing.push("Lista de productos vacía");
 
         if (missing.length > 0) return showModal(`Faltan campos: ${missing.join(", ")}`);
 
@@ -282,7 +271,6 @@ window.handleUnifiedSave = function (event) {
             payerId,
             type,
             category,
-            subcategory: subcategory || null,
             paymentMethodId,
             isFixed,
             fixedRecurrenceMonths: recurrence,
@@ -396,19 +384,16 @@ window.updateSplitPreview = function () {
     if (!container) return;
 
     const amount = parseFloat(document.getElementById("expense-amount").value) || 0;
-    const splitType = document.getElementById("split-type-select").value || "equal";
+    const splitType = document.getElementById("split-type-select")?.value || "equal";
+    const isMultiItem = document.getElementById("multi-item-toggle")?.checked;
 
     let allParticipants = [];
-
-    // Registered
     appState.participants.forEach(p => {
         allParticipants.push({ id: p.id, name: p.name, type: 'user' });
     });
-
-    // Guests
     if (tempGuestList && tempGuestList.length > 0) {
         tempGuestList.forEach((gName, idx) => {
-            allParticipants.push({ id: `guest-${idx}`, name: gName, type: 'guest' });
+            allParticipants.push({ id: `guest_${idx}`, name: gName, type: 'guest' });
         });
     }
 
@@ -418,23 +403,71 @@ window.updateSplitPreview = function () {
     }
 
     const count = allParticipants.length;
-    let share = 0;
-    if (splitType === 'equal') {
-        share = amount / count;
-    }
-
-    // Responsive Grid: 1 col mobile, up to 4 cols desktop
     container.className = "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2 mb-2";
+
+    const participantShares = {};
+    allParticipants.forEach(p => { participantShares[p.id] = 0; });
+
+    if (isMultiItem && window.tempItemsList && window.tempItemsList.length > 0) {
+        let itemsTotalCost = 0;
+        window.tempItemsList.forEach(item => {
+            const qty = parseFloat(item.quantity) || 1;
+            const unitPrice = parseFloat(item.amount) || 0;
+            const itemCost = qty * unitPrice;
+            itemsTotalCost += itemCost;
+
+            const assignments = item.assignments || {};
+            let assignedQtySum = 0;
+            Object.keys(assignments).forEach(pId => {
+                const pQty = parseFloat(assignments[pId]) || 0;
+                if (pQty > 0) {
+                    assignedQtySum += pQty;
+                    if (participantShares[pId] !== undefined) {
+                        participantShares[pId] += pQty * unitPrice;
+                    }
+                }
+            });
+
+            if (assignedQtySum === 0 && item.assignedTo) {
+                assignedQtySum = qty;
+                if (participantShares[item.assignedTo] !== undefined) {
+                    participantShares[item.assignedTo] += itemCost;
+                }
+            }
+
+            const unassignedQty = Math.max(0, qty - assignedQtySum);
+            if (unassignedQty > 0 && count > 0) {
+                const unassignedCost = unassignedQty * unitPrice;
+                const sharePerPerson = unassignedCost / count;
+                allParticipants.forEach(p => {
+                    participantShares[p.id] += sharePerPerson;
+                });
+            }
+        });
+
+        const remainingBase = amount - itemsTotalCost;
+        if (remainingBase > 0.001 && count > 0) {
+            const shareBase = remainingBase / count;
+            allParticipants.forEach(p => {
+                participantShares[p.id] += shareBase;
+            });
+        }
+    } else {
+        if (splitType === 'equal') {
+            const share = count > 0 ? amount / count : 0;
+            allParticipants.forEach(p => { participantShares[p.id] = share; });
+        }
+    }
 
     container.innerHTML = allParticipants.map(p => {
         let valDisplay = "";
         let inputHtml = "";
-
-        // Base input class for cleaner look
         const inputClass = "split-input w-12 bg-transparent border-none text-right font-black text-xs text-slate-700 dark:text-white p-0 focus:ring-0 placeholder-slate-300";
 
-        if (splitType === 'equal') {
-            valDisplay = `<span class="font-black text-slate-700 dark:text-white text-xs text-right">S/ ${formatCurrencySimple(share)}</span>`;
+        if (isMultiItem && window.tempItemsList && window.tempItemsList.length > 0) {
+            valDisplay = `<span class="font-black text-slate-700 dark:text-white text-xs text-right">S/ ${formatCurrencySimple(participantShares[p.id] || 0)}</span>`;
+        } else if (splitType === 'equal') {
+            valDisplay = `<span class="font-black text-slate-700 dark:text-white text-xs text-right">S/ ${formatCurrencySimple(participantShares[p.id] || 0)}</span>`;
         } else if (splitType === 'percent') {
             const percentVal = (100 / count).toFixed(1);
             inputHtml = `<div class="flex items-center justify-end gap-0.5 border-b border-indigo-100 dark:border-indigo-800 focus-within:border-indigo-500 transition-colors"><input type="number" class="${inputClass}" value="${percentVal}" data-id="${p.id}" data-type="percent" /> <span class="text-[9px] font-bold text-slate-400">%</span></div>`;
@@ -444,21 +477,16 @@ window.updateSplitPreview = function () {
         }
 
         const canDelete = p.type === 'guest';
-        // Delete button inside the flex flow, not absolute
         const deleteBtn = canDelete
             ? `<button onclick="window.removeParticipant('${p.id}')" class="text-slate-300 hover:text-rose-500 transition-colors p-1" title="Eliminar"><i class="fas fa-times-circle text-xs"></i></button>`
             : `<i class="fas fa-lock text-[8px] text-slate-300 p-1" title="Registrado"></i>`;
 
         return `
       <div class="flex items-center justify-between p-2 bg-white dark:bg-slate-800 rounded-lg border border-slate-100 dark:border-slate-700 shadow-sm group min-w-0">
-          
-          <!-- Left: Name & Icon -->
           <div class="flex items-center gap-1.5 overflow-hidden min-w-0 flex-1">
              ${deleteBtn}
              <span class="text-[10px] font-bold text-slate-700 dark:text-slate-200 truncate" title="${p.name}">${p.name}</span>
           </div>
-
-          <!-- Right: Amount/Input -->
           <div class="flex-shrink-0 ml-1.5 text-right">
             ${valDisplay}
             ${inputHtml}
@@ -488,47 +516,87 @@ window.handleSplitChange = function (changedInput, totalAmount, count) {
 };
 
 window.removeParticipant = function (id) {
-    if (id.startsWith('guest-')) {
-        const idx = parseInt(id.split('-')[1]);
+    if (id.startsWith('guest_') || id.startsWith('guest-')) {
+        const parts = id.split('_');
+        const idx = parts.length > 1 ? parseInt(parts[1]) : parseInt(id.split('-')[1]);
         window.removeGuestFromList(idx);
     } else {
         showModal("No se puede eliminar", "Los usuarios registrados son fijos en esta demo.");
     }
-}
-
-window.updateModalSubcategoryTags = function () {
-    const catInput = document.getElementById("expense-category");
-    const subSection = document.getElementById("modal-subcategory-section-sidebar");
-    const subContainer = document.getElementById("modal-subcategory-tags-sidebar");
-
-    if (!catInput || !subSection || !subContainer) return;
-
-    const categoryName = catInput.value; // Name in value
-    const category = appState.categories.find(c => c.name === categoryName);
-
-    if (!category || !category.subcategories || category.subcategories.length === 0) {
-        subSection.classList.add("hidden");
-        return;
-    }
-
-    subSection.classList.remove("hidden");
-    subContainer.innerHTML = category.subcategories.map(sub => `
-    <button type="button" data-value="${sub}" 
-      class="filter-tag px-3 py-1 rounded-lg border border-slate-100 dark:border-slate-800 text-[9px] font-bold uppercase tracking-tight transition-all hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-400">
-      ${sub}
-    </button>
-  `).join('');
-
-    // Re-attach listeners manually since they are dynamic
-    subContainer.querySelectorAll("button").forEach(btn => {
-        btn.addEventListener("click", handleTagSelection);
-    });
 };
+
+window.selectedTempItemIds = new Set();
+
+window.toggleSelectItem = function (id, isChecked) {
+    if (!window.selectedTempItemIds) window.selectedTempItemIds = new Set();
+    if (isChecked) {
+        window.selectedTempItemIds.add(String(id));
+    } else {
+        window.selectedTempItemIds.delete(String(id));
+    }
+    updateBulkBarState();
+};
+
+window.toggleSelectAllItems = function (isChecked) {
+    if (!window.selectedTempItemIds) window.selectedTempItemIds = new Set();
+    window.selectedTempItemIds.clear();
+    if (isChecked && window.tempItemsList) {
+        window.tempItemsList.forEach(item => window.selectedTempItemIds.add(String(item.id)));
+    }
+    window.renderTempItemsListInModal();
+};
+
+window.bulkAssignSelected = function (assigneeId) {
+    if (!window.selectedTempItemIds || window.selectedTempItemIds.size === 0 || !assigneeId) return;
+    if (!window.tempItemsList) return;
+
+    window.tempItemsList.forEach(item => {
+        if (window.selectedTempItemIds.has(String(item.id))) {
+            const totalQty = parseFloat(item.quantity) || 1;
+            if (assigneeId === 'equal') {
+                item.assignments = {};
+            } else {
+                item.assignments = { [assigneeId]: totalQty };
+            }
+        }
+    });
+
+    window.renderTempItemsListInModal();
+};
+
+window.deleteSelectedItems = function () {
+    if (!window.selectedTempItemIds || window.selectedTempItemIds.size === 0) return;
+    if (!window.tempItemsList) return;
+
+    window.tempItemsList = window.tempItemsList.filter(item => !window.selectedTempItemIds.has(String(item.id)));
+    window.selectedTempItemIds.clear();
+    window.renderTempItemsListInModal();
+};
+
+function updateBulkBarState() {
+    const bulkBar = document.getElementById("bulk-item-actions-bar");
+    const countDisplay = document.getElementById("selected-items-count-display");
+    const selectAllCheckbox = document.getElementById("select-all-items-checkbox");
+    const totalItems = window.tempItemsList ? window.tempItemsList.length : 0;
+    const selectedCount = window.selectedTempItemIds ? window.selectedTempItemIds.size : 0;
+
+    if (countDisplay) countDisplay.textContent = `${selectedCount} sel.`;
+    if (selectAllCheckbox) {
+        selectAllCheckbox.checked = totalItems > 0 && selectedCount === totalItems;
+        selectAllCheckbox.indeterminate = selectedCount > 0 && selectedCount < totalItems;
+    }
+    if (bulkBar) {
+        bulkBar.classList.toggle("hidden", selectedCount === 0);
+    }
+}
 
 window.renderTempItemsListInModal = function () {
     const container = document.getElementById("expense-item-list-container");
     const amountInput = document.getElementById("expense-amount");
     const itemsCountSidebar = document.getElementById("items-count-display-sidebar");
+    const bulkAssignSelect = document.getElementById("bulk-assignee-select");
+    const expenseType = document.getElementById("expense-type")?.value || "personal";
+    const isShared = expenseType === "shared";
 
     if (!container) return;
 
@@ -536,64 +604,160 @@ window.renderTempItemsListInModal = function () {
     let total = 0;
     let count = 0;
 
+    let allParticipants = [];
+    if (isShared) {
+        if (typeof appState !== 'undefined' && appState.participants) {
+            appState.participants.forEach(p => allParticipants.push({ id: p.id, name: p.name }));
+        }
+        if (typeof tempGuestList !== 'undefined') {
+            tempGuestList.forEach((g, gIdx) => {
+                allParticipants.push({ id: `guest_${gIdx}`, name: `${g} (Inv)` });
+            });
+        }
+    }
+
+    if (bulkAssignSelect && isShared) {
+        let opts = `
+            <option value="">Asignar a...</option>
+            <option value="equal">Equitativo (Todos)</option>
+        `;
+        allParticipants.forEach(p => {
+            opts += `<option value="${p.id}">${p.name} (100%)</option>`;
+        });
+        bulkAssignSelect.innerHTML = opts;
+    }
+
     if (!window.tempItemsList || window.tempItemsList.length === 0) {
+        if (window.selectedTempItemIds) window.selectedTempItemIds.clear();
         container.innerHTML = `
       <div class="p-8 text-center space-y-2">
         <div class="size-12 rounded-full bg-slate-50 dark:bg-slate-800 flex items-center justify-center mx-auto mb-2">
           <i class="fas fa-shopping-basket text-slate-200 text-lg"></i>
         </div>
-        <p class="text-xs font-bold text-slate-400">Lista vacÃ­a</p>
+        <p class="text-xs font-bold text-slate-400">Lista vacía</p>
       </div>
     `;
     } else {
-        window.tempItemsList.forEach((item, index) => {
-            const subtotal = (item.quantity || 1) * (item.amount || 0);
+        window.tempItemsList.forEach((item) => {
+            const qty = parseFloat(item.quantity) || 1;
+            const unitPrice = parseFloat(item.amount) || 0;
+            const subtotal = qty * unitPrice;
             total += subtotal;
             count++;
 
+            const isSelected = window.selectedTempItemIds && window.selectedTempItemIds.has(String(item.id));
+            const assignments = item.assignments || {};
+            const assignedUnits = Object.keys(assignments).reduce((sum, pId) => sum + (parseFloat(assignments[pId]) || 0), 0);
+            const unassignedUnits = Math.max(0, qty - assignedUnits);
+
+            let assignmentSectionHtml = "";
+            if (isShared && allParticipants.length > 0) {
+                const participantBadges = allParticipants.map(p => {
+                    const currentQty = (assignments && parseFloat(assignments[p.id])) || 0;
+                    return `
+                      <div class="flex items-center justify-between bg-slate-50 dark:bg-slate-800/80 rounded-lg px-2 py-1 border border-slate-100 dark:border-slate-700">
+                        <span class="text-[10px] font-semibold text-slate-700 dark:text-slate-200 truncate max-w-[90px]" title="${p.name}">${p.name}</span>
+                        <div class="flex items-center gap-1">
+                          <button type="button" class="size-5 flex items-center justify-center rounded bg-white dark:bg-slate-700 text-slate-600 dark:text-slate-200 hover:bg-slate-200 dark:hover:bg-slate-600 text-[10px] font-bold shadow-xs transition-colors" onclick="window.changeTempItemQty('${item.id}', '${p.id}', -1)">-</button>
+                          <span class="text-[10px] font-black text-slate-800 dark:text-white w-4 text-center">${currentQty}</span>
+                          <button type="button" class="size-5 flex items-center justify-center rounded bg-white dark:bg-slate-700 text-slate-600 dark:text-slate-200 hover:bg-slate-200 dark:hover:bg-slate-600 text-[10px] font-bold shadow-xs transition-colors" onclick="window.changeTempItemQty('${item.id}', '${p.id}', 1)">+</button>
+                        </div>
+                      </div>
+                    `;
+                }).join("");
+
+                assignmentSectionHtml = `
+                  <div class="pt-2 border-t border-slate-100 dark:border-slate-800/60 mt-1 pl-6">
+                    <div class="flex items-center justify-between mb-1.5">
+                      <span class="text-[9px] font-bold uppercase tracking-wider text-slate-400">Asignar cantidades:</span>
+                      <span class="text-[9px] font-bold ${unassignedUnits > 0 ? 'text-amber-500' : 'text-emerald-500'}">
+                        ${unassignedUnits > 0 ? `${unassignedUnits} compartida(s) equitativamente` : '✓ Todo asignado'}
+                      </span>
+                    </div>
+                    <div class="grid grid-cols-2 sm:grid-cols-3 gap-1.5">
+                      ${participantBadges}
+                    </div>
+                  </div>
+                `;
+            }
+
             container.insertAdjacentHTML("beforeend", `
-        <div class="grid grid-cols-12 gap-2 px-4 py-3 items-center hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors group">
-          <div class="col-span-6 pl-2">
-            <div class="text-xs font-bold text-slate-700 dark:text-white truncate" title="${item.desc}">${item.desc}</div>
-          </div>
-          <div class="col-span-2 text-center text-xs font-semibold text-slate-500">${item.quantity || 1}</div>
-          <div class="col-span-3 text-right pr-2">
-             <span class="text-[10px] text-slate-400">S/</span>
-             <span class="text-xs font-bold text-slate-800 dark:text-white">${subtotal.toFixed(2)}</span>
-          </div>
-          <div class="col-span-1 text-center">
-            <button type="button" class="text-slate-300 hover:text-rose-500 transition-colors p-1" 
-               onclick="window.deleteTempItem('${item.id}')">
-               <i class="fas fa-times text-xs"></i>
-            </button>
-          </div>
-        </div>
-      `);
+                <div class="p-3 bg-white dark:bg-slate-900 border-b border-slate-100 dark:border-slate-800 last:border-b-0 space-y-1.5 transition-colors group ${isSelected ? 'bg-indigo-50/40 dark:bg-indigo-950/20' : ''}">
+                  <div class="flex items-center justify-between gap-2">
+                    <div class="flex items-center gap-2.5 flex-1 min-w-0">
+                      ${isShared ? `
+                        <input type="checkbox" class="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 cursor-pointer size-4" ${isSelected ? 'checked' : ''} onchange="window.toggleSelectItem('${item.id}', this.checked)" />
+                      ` : ''}
+                      <div class="flex-1 min-w-0">
+                        <div class="text-xs font-bold text-slate-700 dark:text-white truncate" title="${item.desc}">${item.desc}</div>
+                        <div class="text-[10px] text-slate-400 font-medium">${qty} ud${qty > 1 ? 's' : ''} × S/ ${unitPrice.toFixed(2)}</div>
+                      </div>
+                    </div>
+                    <div class="text-right flex-shrink-0">
+                       <span class="text-xs font-black text-slate-800 dark:text-white">S/ ${subtotal.toFixed(2)}</span>
+                    </div>
+                    <div class="flex-shrink-0 flex justify-center">
+                      <button type="button" class="text-slate-300 hover:text-rose-500 transition-colors p-1" 
+                         onclick="window.deleteTempItem('${item.id}')" title="Eliminar ítem">
+                         <i class="fas fa-trash-alt text-xs"></i>
+                      </button>
+                    </div>
+                  </div>
+                  ${assignmentSectionHtml}
+                </div>
+            `);
         });
     }
 
-    // Update Sidebar Count if exists
-    if (itemsCountSidebar) itemsCountSidebar.textContent = `${count} Ã­tem${count !== 1 ? "s" : ""}`;
+    updateBulkBarState();
+
+    if (itemsCountSidebar) itemsCountSidebar.textContent = `${count} ítem${count !== 1 ? "s" : ""}`;
 
     const toggle = document.getElementById("multi-item-toggle");
-    // CRITICAL: Update main amount ONLY if items exist, otherwise let user type
     if (toggle && toggle.checked && amountInput) {
         amountInput.value = total.toFixed(2);
-        // Dispatch input event to update other calculations
         amountInput.dispatchEvent(new Event("input"));
-        // Lock input to prevent discrepancies
         amountInput.readOnly = true;
         amountInput.classList.add("bg-slate-50", "text-slate-500");
     } else if (toggle && !toggle.checked && amountInput) {
         amountInput.readOnly = false;
         amountInput.classList.remove("bg-slate-50", "text-slate-500");
     }
+
+    if (window.updateSplitPreview) window.updateSplitPreview();
 };
 
 window.deleteTempItem = function (id) {
     if (!window.tempItemsList) return;
-    // Ensure we compare strings properly
     window.tempItemsList = window.tempItemsList.filter(i => String(i.id) !== String(id));
+    if (window.selectedTempItemIds) window.selectedTempItemIds.delete(String(id));
+    window.renderTempItemsListInModal();
+};
+
+window.changeTempItemQty = function (itemId, participantId, delta) {
+    if (!window.tempItemsList) return;
+    const item = window.tempItemsList.find(i => String(i.id) === String(itemId));
+    if (!item) return;
+    if (!item.assignments) item.assignments = {};
+
+    const currentAssigned = parseFloat(item.assignments[participantId]) || 0;
+    const totalItemQty = parseFloat(item.quantity) || 1;
+    const totalAssignedOther = Object.keys(item.assignments).reduce((s, pId) => {
+        return pId === participantId ? s : s + (parseFloat(item.assignments[pId]) || 0);
+    }, 0);
+
+    let newQty = currentAssigned + delta;
+    if (newQty < 0) newQty = 0;
+    if (newQty + totalAssignedOther > totalItemQty) {
+        newQty = totalItemQty - totalAssignedOther;
+    }
+
+    if (newQty > 0) {
+        item.assignments[participantId] = newQty;
+    } else {
+        delete item.assignments[participantId];
+    }
+
     window.renderTempItemsListInModal();
 };
 
@@ -608,25 +772,15 @@ function handleTagSelection(e) {
     if (container.id === "modal-type-tags") inputId = "expense-type";
     if (container.id === "modal-payment-method-tags") inputId = "expense-payment-method";
     if (container.id === "modal-category-tags-sidebar") inputId = "expense-category";
-    if (container.id === "modal-subcategory-tags-sidebar") inputId = "expense-subcategory";
 
     if (!inputId) return;
     const input = document.getElementById(inputId);
     if (!input) return;
 
-    // Toggle logic
     const isAlreadyActive = btn.classList.contains("active");
 
-    // Reset siblings
     container.querySelectorAll("button").forEach(t => {
-        // Remove all specific color classes from siblings
-        t.classList.remove("active", "bg-blue-100", "text-blue-700", "bg-emerald-100", "text-emerald-700", "bg-orange-100", "text-orange-700");
-        // Note: We don't need to add text-slate-500 because the base classes handle it via text-color classes in renderTags 
-        // Actually, my renderTags logic hardcodes text colors in "colors" variable.
-        // So to "reset", we must effectively lower opacity or style? 
-        // The current logic in app.js re-renders or toggles specific classes.
-        // In standalone, let's keep it simple: "Active" adds a ring or darker shade.
-        // For improved design: I already set hover/base colors. Active should be distinct.
+        t.classList.remove("active");
         t.style.opacity = "0.6";
         t.style.borderColor = "transparent";
     });
@@ -634,18 +788,10 @@ function handleTagSelection(e) {
     if (!isAlreadyActive) {
         btn.classList.add("active");
         btn.style.opacity = "1";
-        btn.style.borderColor = "currentColor"; // Use text color as border
+        btn.style.borderColor = "currentColor";
         input.value = btn.getAttribute("data-value");
-
-        if (inputId === "expense-category") {
-            window.updateModalSubcategoryTags();
-        }
     } else {
         input.value = "";
-        if (inputId === "expense-category") {
-            document.getElementById("modal-subcategory-section-sidebar").classList.add("hidden");
-        }
-        // Reset all opacity
         container.querySelectorAll("button").forEach(t => t.style.opacity = "1");
     }
 }

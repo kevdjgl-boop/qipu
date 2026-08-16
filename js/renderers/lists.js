@@ -52,7 +52,6 @@ export function renderCategoryItem(category) {
                 </div>
                 <div>
                     <h5 class="font-bold text-gray-800 text-sm">${category.name || 'Categoría'}</h5>
-                    <p class="text-[10px] text-gray-400 mt-0.5">${category.subcategories ? category.subcategories.join(', ') : 'Sin subcategorías'}</p>
                 </div>
             </div>
             <div class="text-right">
