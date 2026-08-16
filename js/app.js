@@ -2945,6 +2945,8 @@ function calculateSummary(state, filteredExpenses) {
       realPayer.contributionPaid += amount;
       const methodId = expense.paymentMethodId || "unknown";
       realPayer.contributionByMethod[methodId] = (realPayer.contributionByMethod[methodId] || 0) + amount;
+    } else if (realPayerId && (realPayerId.startsWith("guest_") || realPayerId.startsWith("guest-"))) {
+      guestSummary.contributionPaid = (guestSummary.contributionPaid || 0) + amount;
     }
 
     // --- B. REGISTRAR CONSUMO (Quién gastó presupuesto) ---
@@ -3049,7 +3051,7 @@ function calculateSummary(state, filteredExpenses) {
     globalSharedSavingsGoal += p.sharedSavingsGoal;
   });
 
-  guestSummary.balance = 0 - guestSummary.spent;
+  guestSummary.balance = (guestSummary.contributionPaid || 0) - guestSummary.spent;
 
   return {
     globalTotalRemainingBudget, // Este es el valor que alimenta la tarjeta principal
@@ -4360,9 +4362,23 @@ function populateModalTags() {
   if (payerSelect && appState.participants) {
     const curVal = payerSelect.value;
     let html = '<option value="">Seleccionar pagador...</option>';
-    appState.participants.forEach(p => {
-      html += `<option value="${p.id}">${p.name}</option>`;
-    });
+    
+    if (appState.participants.length > 0) {
+      html += '<optgroup label="Participantes">';
+      appState.participants.forEach(p => {
+        html += `<option value="${p.id}">${p.name}</option>`;
+      });
+      html += '</optgroup>';
+    }
+
+    if (typeof tempGuestList !== "undefined" && tempGuestList && tempGuestList.length > 0) {
+      html += '<optgroup label="Invitados">';
+      tempGuestList.forEach((g, gIdx) => {
+        html += `<option value="guest_${gIdx}">${g} (Invitado)</option>`;
+      });
+      html += '</optgroup>';
+    }
+
     payerSelect.innerHTML = html;
     if (curVal) payerSelect.value = curVal;
     else if (appState.participants.length > 0) payerSelect.value = appState.participants[0].id;
@@ -4412,6 +4428,7 @@ function renderGuestListInModal() {
       `).join('');
     }
   }
+  if (typeof populateModalTags === "function") populateModalTags();
   if (window.updateSplitPreview) window.updateSplitPreview();
   if (window.renderTempItemsListInModal) window.renderTempItemsListInModal();
 }

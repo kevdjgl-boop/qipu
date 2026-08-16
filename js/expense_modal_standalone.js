@@ -349,9 +349,23 @@ window.populateModalTags = function () {
     if (payerSelect && appState.participants) {
         const curVal = payerSelect.value;
         let html = '<option value="">Seleccionar pagador...</option>';
-        appState.participants.forEach(p => {
-            html += `<option value="${p.id}">${p.name}</option>`;
-        });
+        
+        if (appState.participants.length > 0) {
+            html += '<optgroup label="Participantes">';
+            appState.participants.forEach(p => {
+                html += `<option value="${p.id}">${p.name}</option>`;
+            });
+            html += '</optgroup>';
+        }
+
+        if (typeof tempGuestList !== "undefined" && tempGuestList && tempGuestList.length > 0) {
+            html += '<optgroup label="Invitados">';
+            tempGuestList.forEach((g, gIdx) => {
+                html += `<option value="guest_${gIdx}">${g} (Invitado)</option>`;
+            });
+            html += '</optgroup>';
+        }
+
         payerSelect.innerHTML = html;
         if (curVal) payerSelect.value = curVal;
         else if (appState.participants.length > 0) payerSelect.value = appState.participants[0].id;
@@ -399,6 +413,7 @@ window.renderGuestListInModal = function () {
             `).join('');
         }
     }
+    if (window.populateModalTags) window.populateModalTags();
     if (window.updateSplitPreview) window.updateSplitPreview();
     if (window.renderTempItemsListInModal) window.renderTempItemsListInModal();
 };
