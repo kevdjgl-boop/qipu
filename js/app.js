@@ -2935,8 +2935,8 @@ function calculateSummary(state, filteredExpenses) {
     let realPayerId = expense.payerId;
     const method = paymentMethodsMap.get(expense.paymentMethodId);
 
-    // Si es tarjeta de crédito con dueño, el dueño es quien paga
-    if (method && method.type === "credit" && method.ownerId) {
+    // Si es tarjeta de crédito con dueño, el dueño es quien paga (a menos que el pagador sea un invitado)
+    if (method && method.type === "credit" && method.ownerId && !(realPayerId && (realPayerId.startsWith("guest_") || realPayerId.startsWith("guest-")))) {
       realPayerId = method.ownerId;
     }
 
@@ -4170,16 +4170,28 @@ function openUnifiedExpenseModal(expenseId = null) {
     if (expenseDatepicker) expenseDatepicker.setDate(expense.date || new Date());
     else dateInput.value = expense.date;
 
+    // 1. Cargar Invitados primero
+    if (expense.guests && Array.isArray(expense.guests)) {
+      tempGuestList = [...expense.guests];
+    } else if (expense.guestName) {
+      tempGuestList = [expense.guestName];
+    } else {
+      tempGuestList = [];
+    }
+    if (typeof renderGuestListInModal === "function") renderGuestListInModal();
+
+    // 2. Poblar y fijar selects y tipo de gasto
+    if (typeof window.toggleExpenseType === "function") window.toggleExpenseType(expense.type || "personal");
     if (document.getElementById("expense-payer")) document.getElementById("expense-payer").value = expense.payerId || "";
     if (document.getElementById("expense-payment-method")) document.getElementById("expense-payment-method").value = expense.paymentMethodId || "";
     if (document.getElementById("expense-category")) document.getElementById("expense-category").value = expense.category || "";
     if (document.getElementById("expense-type")) document.getElementById("expense-type").value = expense.type || "personal";
-    if (typeof window.toggleExpenseType === "function") window.toggleExpenseType(expense.type || "personal");
 
     document.getElementById("expense-is-fixed").checked = expense.isFixed;
     document.getElementById("fixed-recurrence-container").classList.toggle("hidden", !expense.isFixed);
     if (expense.fixedRecurrenceMonths) document.getElementById("expense-recurrence-months").value = expense.fixedRecurrenceMonths;
 
+    // 3. Cargar Ítems
     const toggle = document.getElementById("multi-item-toggle");
     if (toggle) {
       if (expense.items && expense.items.length > 0) {
@@ -4187,23 +4199,11 @@ function openUnifiedExpenseModal(expenseId = null) {
         window.tempItemsList = [...expense.items];
       } else {
         toggle.checked = false;
+        window.tempItemsList = [];
       }
       toggle.dispatchEvent(new Event("change"));
     }
     if (typeof renderTempItemsListInModal === "function") renderTempItemsListInModal();
-
-    // Invitados
-    if (expense.type === "shared") {
-      if (guestSection) guestSection.classList.remove("hidden");
-      if (expense.guests && Array.isArray(expense.guests)) {
-        tempGuestList = [...expense.guests];
-      } else if (expense.guestName) {
-        tempGuestList = [expense.guestName];
-      }
-      if (typeof renderGuestListInModal === "function") renderGuestListInModal();
-    } else {
-      if (guestSection) guestSection.classList.add("hidden");
-    }
   }
   // ==========================
   // MODO: CREAR
