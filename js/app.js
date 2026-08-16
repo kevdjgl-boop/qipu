@@ -1016,10 +1016,10 @@ function renderExpenseListForRange(allExpenses, methodId, range, containerId, pa
       const projTime = projectedDate.getTime();
 
       if (base.cancelledAt) {
-          const cancelledMs = new Date(base.cancelledAt + "T00:00:00Z").getTime();
-          if (projTime >= cancelledMs) {
-              break;
-          }
+        const cancelledMs = new Date(base.cancelledAt + "T00:00:00Z").getTime();
+        if (projTime >= cancelledMs) {
+          break;
+        }
       }
 
       const isInsideCycle = projTime >= startMs && projTime <= endMs;
@@ -2411,10 +2411,10 @@ function getExpensesForCurrentView() {
     const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
 
     if (base.cancelledAt) {
-        const cancelledMs = new Date(base.cancelledAt + "T00:00:00Z").getTime();
-        if (projTime >= cancelledMs) {
-            return;
-        }
+      const cancelledMs = new Date(base.cancelledAt + "T00:00:00Z").getTime();
+      if (projTime >= cancelledMs) {
+        return;
+      }
     }
 
     // Validaciones
@@ -4842,6 +4842,44 @@ function setupUnifiedExpenseListeners() {
   if (closeBtn) closeBtn.onclick = closeUnifiedExpenseModal;
   if (cancelBtn) cancelBtn.onclick = closeUnifiedExpenseModal;
 
+  // --- HELPERS GLOBALES ---
+  window.toggleExpenseType = (type) => {
+    document.getElementById("expense-type").value = type;
+
+    // Visual State
+    // Visual State
+    const pBtn = document.getElementById("type-btn-personal");
+    const sBtn = document.getElementById("type-btn-shared");
+    const guestSection = document.getElementById("guest-management-section");
+    const sharedBadge = document.getElementById("shared-badge");
+
+    if (type === "shared") {
+      pBtn.className = "px-6 py-2 rounded-lg text-[11px] font-black uppercase tracking-wide transition-all text-slate-400 hover:text-slate-600 dark:text-slate-500";
+      sBtn.className = "px-6 py-2 rounded-lg text-[11px] font-black uppercase tracking-wide transition-all bg-white dark:bg-slate-700 text-slate-800 dark:text-white shadow-sm";
+
+      if (guestSection) guestSection.classList.remove("hidden");
+      if (sharedBadge) {
+        sharedBadge.classList.add("inline-flex");
+        sharedBadge.classList.remove("hidden");
+      }
+
+      // SMART LOGIC: Auto-fetch all registered users if list is empty
+      // We don't modify "tempGuestList" (guests) but "updateSplitPreview" will pull appState.participants
+      // Trigger render
+      window.updateSplitPreview();
+
+    } else {
+      pBtn.className = "px-6 py-2 rounded-lg text-[11px] font-black uppercase tracking-wide transition-all bg-white dark:bg-slate-700 text-slate-800 dark:text-white shadow-sm";
+      sBtn.className = "px-6 py-2 rounded-lg text-[11px] font-black uppercase tracking-wide transition-all text-slate-400 hover:text-slate-600 dark:text-slate-500";
+
+      if (guestSection) guestSection.classList.add("hidden");
+      if (sharedBadge) {
+        sharedBadge.classList.remove("inline-flex");
+        sharedBadge.classList.add("hidden");
+      }
+    }
+  };
+
   window.closeUnifiedExpenseModal = closeUnifiedExpenseModal;
 
   // Listeners for Split Type
@@ -5351,7 +5389,7 @@ function createExpenseCardHTML(expense, participantsMap, paymentMethodsMap) {
 }
 
 // 1. Variable de estado para saber en qué pestaña estamos
-let currentHistoryTab = "expenses";
+currentHistoryTab = "expenses";
 
 // 2. Función para cambiar pestaña (conectada a los botones del HTML)
 window.switchHistoryTab = function (tab) {
@@ -6218,12 +6256,12 @@ window.stopFixedExpense = async (projId, dateStr) => {
 
   const modal = document.getElementById('fixed-expense-action-modal');
   if (!modal) {
-     console.error("No se encontró fixed-expense-action-modal");
-     return;
+    console.error("No se encontró fixed-expense-action-modal");
+    return;
   }
-  
+
   document.getElementById('fea-modal-title').textContent = expense.description;
-  
+
   // Show main options, hide forms
   document.getElementById('fea-main-options').classList.remove('hidden');
   document.getElementById('fea-advance-form').classList.add('hidden');
@@ -6240,184 +6278,184 @@ window.stopFixedExpense = async (projId, dateStr) => {
 // LISTENERS DE MODAL FEA
 // ===================================
 document.addEventListener("DOMContentLoaded", () => {
-    const closeFeaModal = () => {
-        const modal = document.getElementById('fixed-expense-action-modal');
-        if (modal) {
-            modal.classList.add('hidden');
-            modal.classList.remove('flex');
-            document.body.classList.remove('no-scroll');
-        }
-        window.activeFEA = null;
+  const closeFeaModal = () => {
+    const modal = document.getElementById('fixed-expense-action-modal');
+    if (modal) {
+      modal.classList.add('hidden');
+      modal.classList.remove('flex');
+      document.body.classList.remove('no-scroll');
+    }
+    window.activeFEA = null;
+  };
+
+  document.getElementById('close-fea-modal-btn')?.addEventListener('click', closeFeaModal);
+
+  // Navigation inside FEA
+  const showAdvance = () => {
+    document.getElementById('fea-main-options').classList.add('hidden');
+    const advForm = document.getElementById('fea-advance-form');
+    advForm.classList.remove('hidden');
+    advForm.classList.add('flex');
+
+    const context = window.activeFEA;
+    if (!context) return;
+    const left = context.expense.fixedRecurrenceMonths ? context.expense.fixedRecurrenceMonths - context.diff : 999;
+    const max = Math.max(1, left);
+
+    const inp = document.getElementById('fea-advance-input');
+    inp.max = max;
+    inp.value = 1;
+    document.getElementById('fea-max-quotas-msg').textContent = max === 999 ? "Ilimitadas" : `Quedan ${max} cuotas.`;
+    updateAdvanceTotal();
+  };
+
+  const showModify = () => {
+    document.getElementById('fea-main-options').classList.add('hidden');
+    const modForm = document.getElementById('fea-modify-form');
+    modForm.classList.remove('hidden');
+    modForm.classList.add('flex');
+
+    const context = window.activeFEA;
+    if (!context) return;
+    document.getElementById('fea-modify-input').value = (context.expense.amount || 0).toFixed(2);
+  };
+
+  const backToOptions = () => {
+    document.getElementById('fea-advance-form').classList.add('hidden');
+    document.getElementById('fea-advance-form').classList.remove('flex');
+    document.getElementById('fea-modify-form').classList.add('hidden');
+    document.getElementById('fea-modify-form').classList.remove('flex');
+    document.getElementById('fea-main-options').classList.remove('hidden');
+  };
+
+  document.getElementById('fea-btn-advance')?.addEventListener('click', showAdvance);
+  document.getElementById('fea-btn-modify')?.addEventListener('click', showModify);
+  document.getElementById('fea-back-advance')?.addEventListener('click', backToOptions);
+  document.getElementById('fea-back-modify')?.addEventListener('click', backToOptions);
+
+  // Cancel action
+  document.getElementById('fea-btn-cancel')?.addEventListener('click', async () => {
+    const context = window.activeFEA;
+    if (!context) return;
+    closeFeaModal();
+    ui.confirm("Cancelar Suscripción", "¿Eliminar defintivamente a partir de esta fecha?", async () => {
+      const newAppState = JSON.parse(JSON.stringify(appState));
+      newAppState.expenses[context.expenseIndex].fixedRecurrenceMonths = context.diff;
+      await saveState(newAppState);
+      showModal("Suscripción cancelada correctamente.", null, "Éxito");
+      renderUI();
+    }, "error", "Sí, Eliminar");
+  });
+
+  // Advance Logic UI
+  const updateAdvanceTotal = () => {
+    const context = window.activeFEA;
+    if (!context) return;
+    const n = parseInt(document.getElementById('fea-advance-input').value) || 1;
+    document.getElementById('fea-advance-total').textContent = `S/ ${(context.expense.amount * n).toFixed(2)}`;
+  };
+
+  document.getElementById('fea-adv-minus')?.addEventListener('click', () => {
+    const inp = document.getElementById('fea-advance-input');
+    let val = parseInt(inp.value) || 1;
+    if (val > 1) { inp.value = val - 1; updateAdvanceTotal(); }
+  });
+  document.getElementById('fea-adv-plus')?.addEventListener('click', () => {
+    const inp = document.getElementById('fea-advance-input');
+    let val = parseInt(inp.value) || 1;
+    let max = parseInt(inp.max) || 999;
+    if (val < max) { inp.value = val + 1; updateAdvanceTotal(); }
+  });
+
+  // Submit Advance
+  document.getElementById('fea-submit-advance')?.addEventListener('click', async () => {
+    const context = window.activeFEA;
+    if (!context) return;
+    const n = parseInt(document.getElementById('fea-advance-input').value) || 1;
+    closeFeaModal();
+
+    const newAppState = JSON.parse(JSON.stringify(appState));
+    const exp = newAppState.expenses[context.expenseIndex];
+
+    // Reducir la vida útil
+    if (exp.fixedRecurrenceMonths) {
+      exp.fixedRecurrenceMonths = Math.max(0, exp.fixedRecurrenceMonths - n);
+    }
+
+    const todayStr = new Date().toISOString().split("T")[0];
+    const advancedAmount = exp.amount * n;
+
+    const advancedExpense = {
+      ...exp,
+      id: generateUUID(),
+      date: todayStr,
+      amount: advancedAmount,
+      isFixed: false,
+      isProjected: false,
+      description: `[Adelanto ${n} cuotas] ${exp.description}`
     };
-    
-    document.getElementById('close-fea-modal-btn')?.addEventListener('click', closeFeaModal);
-    
-    // Navigation inside FEA
-    const showAdvance = () => {
-       document.getElementById('fea-main-options').classList.add('hidden');
-       const advForm = document.getElementById('fea-advance-form');
-       advForm.classList.remove('hidden');
-       advForm.classList.add('flex');
-       
-       const context = window.activeFEA;
-       if(!context) return;
-       const left = context.expense.fixedRecurrenceMonths ? context.expense.fixedRecurrenceMonths - context.diff : 999;
-       const max = Math.max(1, left);
-       
-       const inp = document.getElementById('fea-advance-input');
-       inp.max = max;
-       inp.value = 1;
-       document.getElementById('fea-max-quotas-msg').textContent = max === 999 ? "Ilimitadas" : `Quedan ${max} cuotas.`;
-       updateAdvanceTotal();
-    };
-    
-    const showModify = () => {
-       document.getElementById('fea-main-options').classList.add('hidden');
-       const modForm = document.getElementById('fea-modify-form');
-       modForm.classList.remove('hidden');
-       modForm.classList.add('flex');
-       
-       const context = window.activeFEA;
-       if(!context) return;
-       document.getElementById('fea-modify-input').value = (context.expense.amount || 0).toFixed(2);
-    };
-    
-    const backToOptions = () => {
-       document.getElementById('fea-advance-form').classList.add('hidden');
-       document.getElementById('fea-advance-form').classList.remove('flex');
-       document.getElementById('fea-modify-form').classList.add('hidden');
-       document.getElementById('fea-modify-form').classList.remove('flex');
-       document.getElementById('fea-main-options').classList.remove('hidden');
-    };
-    
-    document.getElementById('fea-btn-advance')?.addEventListener('click', showAdvance);
-    document.getElementById('fea-btn-modify')?.addEventListener('click', showModify);
-    document.getElementById('fea-back-advance')?.addEventListener('click', backToOptions);
-    document.getElementById('fea-back-modify')?.addEventListener('click', backToOptions);
 
-    // Cancel action
-    document.getElementById('fea-btn-cancel')?.addEventListener('click', async () => {
-        const context = window.activeFEA;
-        if (!context) return;
-        closeFeaModal();
-        ui.confirm("Cancelar Suscripción", "¿Eliminar defintivamente a partir de esta fecha?", async () => {
-            const newAppState = JSON.parse(JSON.stringify(appState));
-            newAppState.expenses[context.expenseIndex].fixedRecurrenceMonths = context.diff;
-            await saveState(newAppState);
-            showModal("Suscripción cancelada correctamente.", null, "Éxito");
-            renderUI();
-        }, "error", "Sí, Eliminar");
-    });
+    if (advancedExpense.type === 'shared' && advancedExpense.guests) {
+      advancedExpense.guests = advancedExpense.guests.map(g => ({
+        ...g,
+        amount: (g.amount / exp.amount) * advancedAmount
+      }));
+    }
+    delete advancedExpense.fixedRecurrenceMonths;
+    delete advancedExpense.dateCreated;
 
-    // Advance Logic UI
-    const updateAdvanceTotal = () => {
-       const context = window.activeFEA;
-       if(!context) return;
-       const n = parseInt(document.getElementById('fea-advance-input').value) || 1;
-       document.getElementById('fea-advance-total').textContent = `S/ ${(context.expense.amount * n).toFixed(2)}`;
-    };
+    newAppState.expenses.push(advancedExpense);
+    await saveState(newAppState);
+    showModal("Adelanto Registrado", `Has pagado S/ ${advancedAmount.toFixed(2)} por adelantado.`, "Éxito");
+    renderUI();
+  });
 
-    document.getElementById('fea-adv-minus')?.addEventListener('click', () => {
-       const inp = document.getElementById('fea-advance-input');
-       let val = parseInt(inp.value)||1;
-       if(val > 1) { inp.value = val - 1; updateAdvanceTotal(); }
-    });
-    document.getElementById('fea-adv-plus')?.addEventListener('click', () => {
-       const inp = document.getElementById('fea-advance-input');
-       let val = parseInt(inp.value)||1;
-       let max = parseInt(inp.max)||999;
-       if(val < max) { inp.value = val + 1; updateAdvanceTotal(); }
-    });
+  // Submit Modify
+  document.getElementById('fea-submit-modify')?.addEventListener('click', async () => {
+    const context = window.activeFEA;
+    if (!context) return;
 
-    // Submit Advance
-    document.getElementById('fea-submit-advance')?.addEventListener('click', async () => {
-        const context = window.activeFEA;
-        if (!context) return;
-        const n = parseInt(document.getElementById('fea-advance-input').value) || 1;
-        closeFeaModal();
-        
-        const newAppState = JSON.parse(JSON.stringify(appState));
-        const exp = newAppState.expenses[context.expenseIndex];
-        
-        // Reducir la vida útil
-        if(exp.fixedRecurrenceMonths) {
-           exp.fixedRecurrenceMonths = Math.max(0, exp.fixedRecurrenceMonths - n);
-        }
+    const newAmt = parseFloat(document.getElementById('fea-modify-input').value);
+    if (isNaN(newAmt) || newAmt <= 0) {
+      showModal("Error", "Ingresa un monto válido");
+      return;
+    }
+    closeFeaModal();
 
-        const todayStr = new Date().toISOString().split("T")[0];
-        const advancedAmount = exp.amount * n;
-        
-        const advancedExpense = {
-            ...exp,
-            id: generateUUID(),
-            date: todayStr,
-            amount: advancedAmount,
-            isFixed: false,
-            isProjected: false,
-            description: `[Adelanto ${n} cuotas] ${exp.description}`
-        };
-        
-        if (advancedExpense.type === 'shared' && advancedExpense.guests) {
-            advancedExpense.guests = advancedExpense.guests.map(g => ({
-                ...g,
-                amount: (g.amount / exp.amount) * advancedAmount
-            }));
-        }
-        delete advancedExpense.fixedRecurrenceMonths;
-        delete advancedExpense.dateCreated;
+    const newAppState = JSON.parse(JSON.stringify(appState));
+    const oldExp = newAppState.expenses[context.expenseIndex];
 
-        newAppState.expenses.push(advancedExpense);
-        await saveState(newAppState);
-        showModal("Adelanto Registrado", `Has pagado S/ ${advancedAmount.toFixed(2)} por adelantado.`, "Éxito");
-        renderUI();
-    });
+    // 1. Clonar EXACTAMENTE como estaba ANTES de mutar
+    const newExp = JSON.parse(JSON.stringify(oldExp));
 
-    // Submit Modify
-    document.getElementById('fea-submit-modify')?.addEventListener('click', async () => {
-        const context = window.activeFEA;
-        if (!context) return;
-        
-        const newAmt = parseFloat(document.getElementById('fea-modify-input').value);
-        if (isNaN(newAmt) || newAmt <= 0) {
-            showModal("Error", "Ingresa un monto válido");
-            return;
-        }
-        closeFeaModal();
+    // 2. Limitar el gasto anterior
+    oldExp.fixedRecurrenceMonths = context.diff;
 
-        const newAppState = JSON.parse(JSON.stringify(appState));
-        const oldExp = newAppState.expenses[context.expenseIndex];
-        
-        // 1. Clonar EXACTAMENTE como estaba ANTES de mutar
-        const newExp = JSON.parse(JSON.stringify(oldExp));
-        
-        // 2. Limitar el gasto anterior
-        oldExp.fixedRecurrenceMonths = context.diff; 
+    // 3. Preparar el nuevo gasto a partir de la fecha
+    newExp.id = generateUUID();
+    newExp.date = context.dateStr;
+    newExp.dateCreated = context.dateStr;
 
-        // 3. Preparar el nuevo gasto a partir de la fecha
-        newExp.id = generateUUID();
-        newExp.date = context.dateStr; 
-        newExp.dateCreated = context.dateStr;
-        
-        const oldAmount = oldExp.amount || 1;
-        newExp.amount = newAmt;
+    const oldAmount = oldExp.amount || 1;
+    newExp.amount = newAmt;
 
-        if (newExp.type === 'shared' && newExp.guests) {
-            newExp.guests = newExp.guests.map(g => ({
-                ...g,
-                amount: typeof g.amount === "number" ? ((g.amount / oldAmount) * newAmt) : g.amount
-            }));
-        }
+    if (newExp.type === 'shared' && newExp.guests) {
+      newExp.guests = newExp.guests.map(g => ({
+        ...g,
+        amount: typeof g.amount === "number" ? ((g.amount / oldAmount) * newAmt) : g.amount
+      }));
+    }
 
-        if (newExp.fixedRecurrenceMonths) {
-            // El original menos los meses que ya pasaron
-            newExp.fixedRecurrenceMonths = Math.max(1, newExp.fixedRecurrenceMonths - context.diff);
-        }
+    if (newExp.fixedRecurrenceMonths) {
+      // El original menos los meses que ya pasaron
+      newExp.fixedRecurrenceMonths = Math.max(1, newExp.fixedRecurrenceMonths - context.diff);
+    }
 
-        newAppState.expenses.push(newExp);
-        await saveState(newAppState);
-        showModal("Monto Ajustado", "El cobro continuará con el nuevo valor.", "Éxito");
-        renderUI();
-    });
+    newAppState.expenses.push(newExp);
+    await saveState(newAppState);
+    showModal("Monto Ajustado", "El cobro continuará con el nuevo valor.", "Éxito");
+    renderUI();
+  });
 });
 // ================================================================
 // HELPER: CALCULAR DEUDAS POR TARJETA DE CRÃ‰DITO
@@ -7966,38 +8004,38 @@ window.handleManualCloseCycle = async (methodId) => {
 };
 
 // Función para cancelar gastos fijos proyectados
-window.cancelFixedExpense = function(baseId, cancelDateStr) {
-    if(confirm('¿Seguro que deseas detener este pago fijo a partir de esta fecha? Ya no aparecerá en los meses posteriores.')) {
-        const expenseIndex = appState.expenses.findIndex(e => e.id === baseId);
-        if(expenseIndex !== -1) {
-            appState.expenses[expenseIndex].cancelledAt = cancelDateStr;
-            saveState({ expenses: appState.expenses });
-            
-            // Re-render si estamos en la vista de tarjetas
-            const modal = document.getElementById("payment-method-detail-modal");
-            if(modal && !modal.classList.contains("hidden")) {
-                // To safely get the current methodId without querying hidden DOM elements unnecessarily:
-                const paymentMethodInput = document.getElementById("payment-method-id");
-                if (paymentMethodInput && paymentMethodInput.value) {
-                    openPaymentMethodDetailModal(paymentMethodInput.value);
-                } else {
-                    // Try to infer it or just close and refresh
-                    modal.classList.add("hidden");
-                    modal.classList.remove("flex");
-                    if(typeof renderDashboard === 'function') renderDashboard();
-                }
-            } else {
-                // Re-render si estamos en el dashboard principal
-                const dashboardWrapper = document.getElementById("dashboard-blocks-wrapper");
-                if (dashboardWrapper && !dashboardWrapper.classList.contains("hidden")) {
-                    if(typeof renderDashboard === 'function') renderDashboard();
-                }
-            }
-            
-            // Re-render historial general si existe
-            if(typeof renderGeneralHistoryList === 'function') {
-                renderGeneralHistoryList();
-            }
+window.cancelFixedExpense = function (baseId, cancelDateStr) {
+  if (confirm('¿Seguro que deseas detener este pago fijo a partir de esta fecha? Ya no aparecerá en los meses posteriores.')) {
+    const expenseIndex = appState.expenses.findIndex(e => e.id === baseId);
+    if (expenseIndex !== -1) {
+      appState.expenses[expenseIndex].cancelledAt = cancelDateStr;
+      saveState({ expenses: appState.expenses });
+
+      // Re-render si estamos en la vista de tarjetas
+      const modal = document.getElementById("payment-method-detail-modal");
+      if (modal && !modal.classList.contains("hidden")) {
+        // To safely get the current methodId without querying hidden DOM elements unnecessarily:
+        const paymentMethodInput = document.getElementById("payment-method-id");
+        if (paymentMethodInput && paymentMethodInput.value) {
+          openPaymentMethodDetailModal(paymentMethodInput.value);
+        } else {
+          // Try to infer it or just close and refresh
+          modal.classList.add("hidden");
+          modal.classList.remove("flex");
+          if (typeof renderDashboard === 'function') renderDashboard();
         }
+      } else {
+        // Re-render si estamos en el dashboard principal
+        const dashboardWrapper = document.getElementById("dashboard-blocks-wrapper");
+        if (dashboardWrapper && !dashboardWrapper.classList.contains("hidden")) {
+          if (typeof renderDashboard === 'function') renderDashboard();
+        }
+      }
+
+      // Re-render historial general si existe
+      if (typeof renderGeneralHistoryList === 'function') {
+        renderGeneralHistoryList();
+      }
     }
+  }
 };

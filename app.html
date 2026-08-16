@@ -19,7 +19,7 @@
       font-family: "Inter", sans-serif;
       background-color: #f6f6f6;
       overflow-x: hidden;
-      //padding-bottom: 4rem;
+      /* padding-bottom: 4rem; */
       width: 100vw;
       /* 4. Haz que el body ocupe el 100vw */
       height: 100vh;
@@ -249,8 +249,8 @@
       /* Apila la barra y el contenido verticalmente */
       flex-grow: 1;
       /* Ocupa el resto del ancho */
-      //height: 100vh;        /* Ocupa toda la altura */
-      //overflow: hidden;       /* Evita que esta columna tenga scroll */
+      /* height: 100vh; */        /* Ocupa toda la altura */
+      /* overflow: hidden; */       /* Evita que esta columna tenga scroll */
       position: relative;
     }
 
@@ -339,8 +339,8 @@
       /* Lo pone por encima de todo */
 
       /* Centra el contenido (ya lo tenías con Tailwind) */
-      //display: flex;
-      //justify-content: center;
+      /* display: flex; */
+      /* justify-content: center; */
       align-items: center;
 
       /* Ignora las clases de espaciado/tamaño de Tailwind */
@@ -795,7 +795,7 @@
     #sidebar-expanded-content {
       width: 400px;
       box-sizing: border-box;
-      //overflow-y: auto;
+      /* overflow-y: auto; */
       position: absolute;
       top: 0;
       left: 0;
@@ -807,7 +807,7 @@
       /* Habilita Flexbox */
       flex-direction: column;
       /* Coloca los elementos en columna */
-      //justify-content: space-between; /* Distribuye el espacio entre los elementos */
+      /* justify-content: space-between; */ /* Distribuye el espacio entre los elementos */
       /* Puedes añadir padding-bottom aquí si es necesario para el scroll */
       padding-bottom: 2rem;
     }
@@ -1717,6 +1717,7 @@
     /* Firefox */
     input[type="number"] {
       -moz-appearance: textfield;
+      appearance: textfield;
     }
 
     /* Estilo para evitar selección de texto en los botones de +/- */
