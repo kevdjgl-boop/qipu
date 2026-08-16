@@ -2156,180 +2156,215 @@
         </div>
       </div>
     </div>
-    <div id="expense-modal" class="fixed inset-0 z-50 hidden items-center justify-center bg-gray-600 bg-opacity-70 backdrop-blur-sm p-4 transition-opacity">
-      <div class="flex flex-col w-full max-w-5xl bg-white rounded-3xl shadow-2xl overflow-hidden h-[85vh]">
-        <div class="flex items-center justify-between px-8 py-5 border-b border-gray-100 bg-white shrink-0">
-          <div class="flex items-center gap-4">
-            <div class="flex h-12 w-12 items-center justify-center rounded-2xl bg-white shadow-sm ring-1 ring-gray-900/5">
-              <i class="fas fa-receipt text-xl text-indigo-600"></i>
+    <div id="expense-modal" class="fixed inset-0 z-50 hidden items-center justify-center bg-gray-900/60 backdrop-blur-sm p-2 sm:p-4 transition-all duration-300">
+      <div class="flex flex-col w-full max-w-5xl bg-white rounded-3xl shadow-2xl overflow-hidden h-[90vh] ring-1 ring-gray-100">
+        <!-- Header -->
+        <div class="flex items-center justify-between px-6 py-3.5 border-b border-gray-100 bg-white shrink-0">
+          <div class="flex items-center gap-3">
+            <div class="flex h-9 w-9 items-center justify-center rounded-xl bg-indigo-50 text-indigo-600">
+              <i class="fas fa-receipt text-sm"></i>
             </div>
             <div>
-              <h3 class="text-xl font-bold text-gray-800 leading-tight" id="expense-modal-title">Registrar Movimiento</h3>
-              <p class="text-xs text-gray-400 font-medium mt-0.5">Detalles de la operación</p>
+              <h3 class="text-base font-bold text-gray-800 leading-tight" id="expense-modal-title">Registrar Gasto</h3>
+              <p class="text-[10px] text-gray-400">Detalles de la transacción</p>
             </div>
           </div>
-          <button id="close-expense-modal-btn" class="text-gray-300 hover:text-gray-600 transition-colors p-2 rounded-full hover:bg-gray-50">
-            <i class="fas fa-times text-xl"></i>
+          
+          <div class="flex items-center bg-gray-100 p-1 rounded-xl">
+            <button type="button" id="type-btn-personal" onclick="toggleExpenseType('personal')" class="px-3.5 py-1 rounded-lg text-xs font-bold transition-all bg-white text-gray-800 shadow-xs">Personal</button>
+            <button type="button" id="type-btn-shared" onclick="toggleExpenseType('shared')" class="px-3.5 py-1 rounded-lg text-xs font-bold transition-all text-gray-400 hover:text-gray-600">Compartido</button>
+          </div>
+
+          <button type="button" id="close-expense-modal-btn" class="text-gray-400 hover:text-gray-600 p-2 rounded-lg hover:bg-gray-50 transition-colors">
+            <i class="fas fa-times text-lg"></i>
           </button>
         </div>
 
-        <form id="unified-expense-form" class="flex flex-col flex-grow overflow-hidden">
+        <form id="unified-expense-form" class="flex flex-col lg:flex-row flex-grow overflow-hidden relative">
           <input type="hidden" id="expense-id-hidden" />
+          <input type="hidden" id="expense-type" value="personal" />
 
-          <div class="px-8 py-6 bg-white border-b border-gray-100 shrink-0 grid grid-cols-12 gap-6 items-end">
-            <div class="col-span-12 md:col-span-3">
-              <label class="block text-[10px] font-bold text-gray-400 uppercase mb-2 tracking-wider">Fecha</label>
-              <div class="relative">
-                <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
-                  <i class="fas fa-calendar-day text-indigo-400"></i>
+          <!-- Left Column (General Data / Selects) -->
+          <aside class="w-full lg:w-[320px] bg-gray-50/70 border-b lg:border-b-0 lg:border-r border-gray-100 flex flex-col shrink-0 overflow-y-auto custom-scrollbar">
+            <div class="p-5 space-y-3.5 flex-1">
+              <!-- Hero Amount Box -->
+              <div class="bg-white p-4 rounded-2xl border border-gray-200/70 shadow-xs flex flex-col items-center justify-center text-center">
+                <span class="text-[9px] font-bold text-gray-400 uppercase tracking-widest mb-1">Monto Total</span>
+                <div class="flex items-baseline gap-1">
+                  <span class="text-xs font-bold text-gray-400">S/</span>
+                  <span class="text-3xl font-black text-gray-800 tracking-tight" id="display-expense-amount">0.00</span>
                 </div>
-                <input type="text" id="expense-date" required datepicker datepicker-autohide datepicker-format="yyyy-mm-dd" class="w-full rounded-xl border-gray-200 bg-gray-50 py-2.5 pl-10 text-sm font-bold text-gray-700 focus:ring-indigo-500 focus:border-indigo-500 transition-shadow" />
+              </div>
+
+              <!-- Description -->
+              <div class="space-y-1">
+                <label class="text-[9px] font-bold text-gray-400 uppercase tracking-wider pl-0.5">Descripción</label>
+                <input type="text" id="expense-description" required class="w-full bg-white border border-gray-200 rounded-xl px-3 py-2 text-xs font-bold text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all shadow-xs" placeholder="¿Qué estás pagando?" autocomplete="off" />
+              </div>
+
+              <!-- Date & Amount Grid -->
+              <div class="grid grid-cols-2 gap-2">
+                <div class="space-y-1">
+                  <label class="text-[9px] font-bold text-gray-400 uppercase tracking-wider pl-0.5">Fecha</label>
+                  <input id="expense-date" type="text" datepicker datepicker-autohide datepicker-format="yyyy-mm-dd" required class="w-full bg-white border border-gray-200 rounded-xl px-2.5 py-2 text-xs font-bold text-gray-700 outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 cursor-pointer transition-all shadow-xs" placeholder="YYYY-MM-DD" autocomplete="off" />
+                </div>
+                <div class="space-y-1">
+                  <label class="text-[9px] font-bold text-gray-400 uppercase tracking-wider pl-0.5">Monto (S/)</label>
+                  <input id="expense-amount" type="number" step="0.01" min="0.01" placeholder="0.00" required class="w-full bg-white border border-gray-200 rounded-xl px-3 py-2 text-xs font-black text-gray-800 outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all font-mono shadow-xs text-right" />
+                </div>
+              </div>
+
+              <!-- Selects -->
+              <div class="space-y-2.5 pt-1">
+                <div class="space-y-1">
+                  <label class="text-[9px] font-bold text-gray-400 uppercase tracking-wider pl-0.5">Pagado por</label>
+                  <select id="expense-payer" required class="w-full bg-white border border-gray-200 rounded-xl px-3 py-2 text-xs font-bold text-gray-700 outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all cursor-pointer shadow-xs">
+                    <option value="">Seleccionar pagador...</option>
+                  </select>
+                </div>
+
+                <div class="space-y-1">
+                  <label class="text-[9px] font-bold text-gray-400 uppercase tracking-wider pl-0.5">Método de Pago</label>
+                  <select id="expense-payment-method" required class="w-full bg-white border border-gray-200 rounded-xl px-3 py-2 text-xs font-bold text-gray-700 outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all cursor-pointer shadow-xs">
+                    <option value="">Seleccionar método...</option>
+                  </select>
+                </div>
+
+                <div class="space-y-1">
+                  <label class="text-[9px] font-bold text-gray-400 uppercase tracking-wider pl-0.5">Categoría</label>
+                  <select id="expense-category" required class="w-full bg-white border border-gray-200 rounded-xl px-3 py-2 text-xs font-bold text-gray-700 outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all cursor-pointer shadow-xs">
+                    <option value="">Seleccionar categoría...</option>
+                  </select>
+                </div>
+              </div>
+
+              <!-- Fixed Option -->
+              <div class="flex items-center justify-between pt-2 border-t border-gray-200/60">
+                <label class="flex items-center gap-2 cursor-pointer">
+                  <input id="expense-is-fixed" type="checkbox" class="rounded border-gray-300 text-purple-600 focus:ring-purple-500">
+                  <span class="text-[10px] font-bold text-gray-500 uppercase tracking-tight">Gasto Fijo Mensual</span>
+                </label>
+                <div id="fixed-recurrence-container" class="hidden flex items-center bg-purple-50 px-2 py-0.5 rounded-lg text-xs gap-1 border border-purple-100">
+                  <span class="text-[9px] text-purple-700 font-bold">MESES:</span>
+                  <input id="expense-recurrence-months" type="number" value="12" min="1" max="60" class="w-7 bg-transparent border-none p-0 text-center font-bold text-purple-700 text-xs focus:ring-0" />
+                </div>
               </div>
             </div>
 
-            <div class="col-span-12 md:col-span-6">
-              <label class="block text-[10px] font-bold text-gray-400 uppercase mb-2 tracking-wider">Descripción</label>
-              <input type="text" id="expense-description" placeholder="Ej: Supermercado..." required class="w-full rounded-xl border-gray-200 bg-white py-2.5 px-4 text-base font-medium text-gray-800 placeholder-gray-300 focus:ring-indigo-500 focus:border-indigo-500 transition-shadow" />
+            <!-- Footer in Sidebar -->
+            <div class="p-4 border-t border-gray-100 bg-white">
+              <button type="submit" id="btn-save-expense" class="w-full py-3 bg-gray-900 hover:bg-gray-800 text-white rounded-xl font-bold text-xs shadow-md transition-all active:scale-[0.98]">
+                CONFIRMAR GASTO
+              </button>
+              <button type="button" id="cancel-expense-modal-btn" class="w-full mt-2 py-1 text-[10px] font-bold text-gray-400 hover:text-gray-600 uppercase tracking-wider transition-colors text-center">
+                Cancelar
+              </button>
             </div>
+          </aside>
 
-            <div class="col-span-12 md:col-span-3">
-              <label class="block text-[10px] font-bold text-gray-400 uppercase mb-2 tracking-wider">Monto Total</label>
-
-              <div class="relative flex items-stretch rounded-xl border border-gray-200 bg-indigo-50 overflow-hidden transition-shadow focus-within:ring-2 focus-within:ring-indigo-500 focus-within:border-indigo-500">
-                <div class="flex items-center justify-center pl-3 pr-1 pointer-events-none">
-                  <span class="text-gray-400 font-bold text-lg">S/</span>
-                </div>
-
-                <input type="number" id="expense-amount" placeholder="0.00" min="0.01" step="0.01" required class="w-full border-none bg-transparent py-2.5 px-1 text-center text-xl font-black text-indigo-700 focus:ring-0 placeholder-indigo-200" />
-
-                <div class="flex flex-col border-l border-indigo-100">
-                  <button type="button" id="btn-amount-plus" class="no-select flex-1 px-3 bg-white hover:bg-indigo-100 text-indigo-600 transition-colors flex items-center justify-center active:bg-indigo-200 border-b border-indigo-50">
-                    <i class="fas fa-chevron-up text-[10px]"></i>
-                  </button>
-                  <button type="button" id="btn-amount-minus" class="no-select flex-1 px-3 bg-white hover:bg-indigo-100 text-indigo-600 transition-colors flex items-center justify-center active:bg-indigo-200">
-                    <i class="fas fa-chevron-down text-[10px]"></i>
-                  </button>
-                </div>
-              </div>
-            </div>
-
-            <div class="col-span-12 flex flex-wrap items-center justify-between mt-2 pt-4 border-t border-dashed border-gray-100 gap-4">
-              <div class="flex items-center bg-gray-100 p-1 rounded-xl">
-                <div id="modal-type-tags" class="flex">
-                  <button type="button" data-value="personal" class="filter-tag active rounded-lg px-5 py-1.5 text-xs font-bold transition-all">Personal</button>
-                  <button type="button" data-value="shared" class="filter-tag rounded-lg px-5 py-1.5 text-xs font-bold transition-all">Compartido</button>
-                </div>
-                <input type="hidden" id="expense-type" value="personal" />
-              </div>
-
+          <!-- Right Column (Shopping List & Items Breakdown) -->
+          <section class="flex-1 overflow-y-auto bg-white custom-scrollbar p-4 lg:p-6 space-y-4">
+            <!-- Header Toolbar -->
+            <div class="flex items-center justify-between pb-3 border-b border-gray-100 gap-3">
               <div class="flex items-center gap-3">
-                <div class="flex items-center h-5">
-                  <input id="expense-is-fixed" type="checkbox" class="w-5 h-5 text-purple-600 bg-gray-100 border-gray-300 rounded-md focus:ring-purple-500" />
+                <label class="relative inline-flex items-center cursor-pointer">
+                  <input id="multi-item-toggle" type="checkbox" class="peer sr-only">
+                  <div class="w-9 h-5 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-indigo-600"></div>
+                </label>
+                <div>
+                  <span class="text-xs font-bold text-gray-800 uppercase tracking-tight">Detallar Lista de Ítems</span>
+                  <p class="text-[10px] text-gray-400">Asigna productos y cantidades por comensal</p>
                 </div>
-                <label for="expense-is-fixed" class="text-sm font-medium text-gray-700 select-none">Es un gasto fijo mensual</label>
-                <div id="fixed-recurrence-container" class="hidden ml-2 flex items-center bg-purple-50 px-3 py-1 rounded-lg border border-purple-100">
-                  <span class="text-[10px] text-purple-700 mr-1 font-bold">MESES:</span>
-                  <input type="number" id="expense-recurrence-months" min="1" max="60" value="12" class="w-10 bg-white text-center text-xs border-none p-0 h-5 rounded focus:ring-0 font-bold text-purple-700" />
-                </div>
+              </div>
+              <div class="flex items-center gap-3 text-xs font-bold text-gray-500">
+                <span id="items-count-display-sidebar" class="px-2 py-0.5 rounded-md bg-gray-100 text-[10px] font-bold text-gray-600">0 ítems</span>
               </div>
             </div>
 
-            <div id="guest-management-section" class="col-span-12 hidden mt-2 bg-orange-50 p-4 rounded-2xl border border-orange-100 animate-fade-in-down">
-              <div class="flex items-center gap-3 mb-2">
-                <span class="text-xs font-bold text-orange-700 uppercase tracking-wide">Invitados Externos:</span>
-                <div id="guest-list-display" class="flex flex-wrap gap-2 empty:hidden"></div>
-              </div>
-              <div class="flex gap-3">
-                <input type="text" id="new-guest-name" placeholder="Nombre..." class="flex-grow h-10 rounded-xl border-orange-200 text-sm px-3 focus:ring-orange-500 focus:border-orange-500" />
-                <button type="button" id="btn-add-guest" class="bg-orange-500 text-white px-4 h-10 rounded-xl text-sm font-bold hover:bg-orange-600 transition-colors">
-                  <i class="fas fa-plus"></i>
-                </button>
-              </div>
-            </div>
-          </div>
-
-          <div class="flex flex-col md:flex-row flex-grow overflow-hidden">
-            <div class="w-full md:w-5/12 bg-gray-50/50 border-r border-gray-100 p-8 overflow-y-auto custom-scrollbar">
-              <div class="space-y-6">
-                <div>
-                  <label class="block text-[10px] font-extrabold text-gray-400 uppercase mb-3 tracking-wider"> <i class="fas fa-user-circle mr-1"></i> Pagado por </label>
-                  <div id="modal-payer-tags" class="flex flex-wrap gap-2"></div>
-                  <input type="hidden" id="expense-payer" required />
-                </div>
-
-                <div>
-                  <label class="block text-[10px] font-extrabold text-gray-400 uppercase mb-3 tracking-wider"> <i class="fas fa-wallet mr-1"></i> Método </label>
-                  <div id="modal-payment-method-tags" class="flex flex-wrap gap-2"></div>
-                  <input type="hidden" id="expense-payment-method" required />
-                </div>
-
-                <div>
-                  <label class="block text-[10px] font-extrabold text-gray-400 uppercase mb-3 tracking-wider"> <i class="fas fa-tags mr-1"></i> Categoría </label>
-                  <div id="modal-category-tags" class="flex flex-wrap gap-2"></div>
-                  <input type="hidden" id="expense-category" required />
+            <!-- Inline Guests (Shared Mode) -->
+            <div id="guest-management-section" class="hidden bg-indigo-50/60 rounded-xl p-3 border border-indigo-100 space-y-2">
+              <div class="flex items-center justify-between flex-wrap gap-2">
+                <span class="text-[9px] font-bold text-indigo-900 uppercase tracking-wider">Invitados al gasto:</span>
+                <div class="flex items-center gap-1.5">
+                  <input id="new-guest-name" type="text" class="w-36 px-2.5 py-1 text-xs bg-white border border-indigo-200 rounded-lg font-bold text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-indigo-500 shadow-xs" placeholder="Nombre invitado..." />
+                  <button type="button" id="btn-add-guest" class="px-2.5 py-1 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-[10px] font-bold transition-all shadow-xs flex items-center gap-1">
+                    <i class="fas fa-plus text-[9px]"></i> Añadir
+                  </button>
                 </div>
               </div>
+              <div id="guest-list-chips" class="flex flex-wrap gap-1.5 empty:hidden"></div>
             </div>
 
-            <div class="w-full md:w-7/12 bg-white p-8 overflow-y-auto custom-scrollbar relative">
-              <div class="bg-white rounded-2xl">
-                <div class="flex items-center justify-between mb-4">
-                  <label class="text-xs font-bold text-gray-500 uppercase flex items-center gap-2"> <i class="fas fa-list-ul"></i> Detalle de Ítems </label>
-                  <label class="relative inline-flex items-center cursor-pointer scale-90">
-                    <input type="checkbox" id="multi-item-toggle" class="sr-only peer" />
-                    <div
-                      class="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600"
-                    ></div>
-                  </label>
+            <!-- Multi-Item Container -->
+            <div id="multi-item-fields" class="hidden space-y-3 animate-slideUp">
+              <div class="bg-white border border-gray-200 rounded-2xl overflow-hidden shadow-xs">
+                <!-- Table header -->
+                <div class="grid grid-cols-12 gap-2 text-gray-400 px-4 py-2 text-[9px] font-bold uppercase tracking-wider bg-gray-50 border-b border-gray-100">
+                  <div class="col-span-6 pl-1">Producto / Servicio</div>
+                  <div class="col-span-2 text-center">Cant.</div>
+                  <div class="col-span-3 text-right pr-2">P. Unit (S/)</div>
+                  <div class="col-span-1 text-center"></div>
                 </div>
 
-                <div id="multi-item-fields" class="hidden space-y-3 bg-gray-50 p-4 rounded-2xl border border-dashed border-gray-200">
-                  <div class="flex gap-2">
-                    <input type="text" name="new-item-desc-input" class="flex-1 rounded-xl border-gray-200 py-2 px-3 text-xs focus:ring-indigo-500" placeholder="Producto..." />
-                    <input type="number" name="new-item-quantity-input" value="1" min="1" step="1" class="w-16 rounded-xl border-gray-200 py-2 px-2 text-xs text-center font-bold focus:ring-indigo-500" placeholder="Cant." />
-                    <input type="number" name="new-item-amount-input" step="0.01" min="0.01" class="w-24 rounded-xl border-gray-200 py-2 px-3 text-xs text-right font-bold focus:ring-indigo-500" placeholder="P. Unit" />
-                    <button type="button" id="add-item-to-list-btn" class="rounded-xl bg-indigo-500 px-3 text-white hover:bg-indigo-600">
+                <!-- Add item row -->
+                <div class="grid grid-cols-12 gap-2 px-3 py-2.5 items-center bg-white border-b border-gray-100">
+                  <div class="col-span-6">
+                    <input name="new-item-desc-input" type="text" class="w-full bg-gray-50 border border-gray-200 rounded-lg px-2.5 py-1.5 text-xs font-bold text-gray-700 placeholder-gray-400 focus:ring-1 focus:ring-indigo-500" placeholder="Ej: Pizza, Bebida..." />
+                  </div>
+                  <div class="col-span-2 flex items-center justify-center">
+                    <input name="new-item-quantity-input" type="number" value="1" min="1" step="1" class="w-full bg-gray-50 border border-gray-200 rounded-lg text-center py-1.5 text-xs font-bold text-gray-700 focus:ring-1 focus:ring-indigo-500" />
+                  </div>
+                  <div class="col-span-3 relative">
+                    <input name="new-item-amount-input" type="number" step="0.01" min="0.01" placeholder="0.00" class="w-full bg-gray-50 border border-gray-200 rounded-lg py-1.5 px-2 text-right text-xs font-bold text-gray-800 focus:ring-1 focus:ring-indigo-500" />
+                  </div>
+                  <div class="col-span-1 flex justify-center">
+                    <button type="button" id="add-item-to-list-btn" class="w-7 h-7 rounded-lg bg-indigo-600 text-white hover:bg-indigo-700 transition-all flex items-center justify-center shadow-xs">
                       <i class="fas fa-plus text-xs"></i>
                     </button>
                   </div>
-                  <div id="bulk-item-actions-bar" class="hidden flex flex-wrap items-center justify-between gap-2 p-2 bg-indigo-50/90 rounded-xl border border-indigo-100 text-xs">
-                    <div class="flex items-center gap-2">
-                      <label class="flex items-center gap-1.5 cursor-pointer font-bold text-indigo-900 text-[10px]">
-                        <input type="checkbox" id="select-all-items-checkbox" class="rounded border-indigo-300 text-indigo-600 focus:ring-indigo-500 cursor-pointer" onchange="window.toggleSelectAllItems(this.checked)" />
-                        <span id="selected-items-count-display">0 sel.</span>
-                      </label>
-                    </div>
-                    <div class="flex items-center gap-1.5">
-                      <select id="bulk-assignee-select" class="text-[10px] font-bold py-1 px-2 rounded-lg bg-white text-indigo-900 border border-indigo-200 focus:ring-indigo-500 shadow-xs cursor-pointer" onchange="window.bulkAssignSelected(this.value); this.value='';">
-                        <option value="">Asignar a...</option>
-                        <option value="equal">Equitativo (Todos)</option>
-                      </select>
-                      <button type="button" onclick="window.deleteSelectedItems()" class="px-2 py-1 text-[10px] font-bold text-rose-600 bg-rose-50 hover:bg-rose-100 rounded-lg transition-colors" title="Eliminar seleccionados">
-                        <i class="fas fa-trash-alt mr-1"></i> Borrar
-                      </button>
-                    </div>
-                  </div>
-                  <div id="expense-item-list-container" class="space-y-2 max-h-48 overflow-y-auto mt-2"></div>
                 </div>
 
-                <div id="empty-detail-state" class="text-center py-12 opacity-40">
-                  <div class="bg-gray-50 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-3">
-                    <i class="fas fa-mouse-pointer text-gray-300 text-xl"></i>
+                <!-- Bulk Toolbar -->
+                <div id="bulk-item-actions-bar" class="hidden flex flex-wrap items-center justify-between gap-2 p-2 bg-indigo-50/90 border-b border-indigo-100 text-xs">
+                  <div class="flex items-center gap-2">
+                    <label class="flex items-center gap-1.5 cursor-pointer font-bold text-indigo-900 text-[10px]">
+                      <input type="checkbox" id="select-all-items-checkbox" class="rounded border-indigo-300 text-indigo-600 focus:ring-indigo-500 cursor-pointer" onchange="window.toggleSelectAllItems(this.checked)" />
+                      <span id="selected-items-count-display">0 sel.</span>
+                    </label>
                   </div>
-                  <p class="text-xs font-medium text-gray-400">Selecciona opciones a la izquierda<br />para ver más detalles aquí.</p>
+                  <div class="flex items-center gap-1.5">
+                    <select id="bulk-assignee-select" class="text-[10px] font-bold py-1 px-2 rounded-lg bg-white text-indigo-900 border border-indigo-200 focus:ring-indigo-500 shadow-xs cursor-pointer" onchange="window.bulkAssignSelected(this.value); this.value='';">
+                      <option value="">Asignar a...</option>
+                      <option value="equal">Equitativo (Todos)</option>
+                    </select>
+                    <button type="button" onclick="window.deleteSelectedItems()" class="px-2 py-1 text-[10px] font-bold text-rose-600 bg-rose-50 hover:bg-rose-100 rounded-lg transition-colors" title="Eliminar seleccionados">
+                      <i class="fas fa-trash-alt mr-1"></i> Borrar
+                    </button>
+                  </div>
+                </div>
+
+                <!-- Items list -->
+                <div id="expense-item-list-container" class="max-h-72 overflow-y-auto custom-scrollbar divide-y divide-gray-100 bg-white">
                 </div>
               </div>
             </div>
-          </div>
-        </form>
 
-        <div class="px-8 py-5 bg-white border-t border-gray-100 flex justify-between items-center shrink-0">
-          <span class="text-xs text-gray-400 italic hidden sm:block font-medium">* Campos obligatorios marcados</span>
-          <div class="flex gap-4 w-full sm:w-auto justify-end">
-            <button type="button" id="cancel-expense-modal-btn" class="px-6 py-2.5 text-sm font-bold text-gray-500 bg-white border border-gray-200 rounded-xl hover:bg-gray-50 hover:text-gray-800 transition-colors shadow-sm">Cancelar</button>
-            <button type="submit" form="unified-expense-form" id="btn-save-expense" class="px-8 py-2.5 text-sm font-bold text-white bg-gray-900 rounded-xl hover:bg-gray-800 shadow-lg transition-all transform active:scale-95">Registrar</button>
-          </div>
-        </div>
+            <!-- Split Preview in Shared Mode -->
+            <div id="shared-split-preview-section" class="space-y-2 pt-2 border-t border-gray-100">
+              <div class="flex items-center justify-between">
+                <span class="text-[9px] font-bold text-gray-400 uppercase tracking-wider">Desglose de Repartición:</span>
+                <div class="flex items-center gap-1 bg-gray-100 p-0.5 rounded-md">
+                  <button type="button" data-val="equal" class="split-tag px-2 py-0.5 rounded text-[8px] font-bold uppercase transition-all bg-indigo-600 text-white shadow-xs">Equitativo</button>
+                  <button type="button" data-val="percent" class="split-tag px-2 py-0.5 rounded text-[8px] font-bold uppercase text-gray-400 hover:text-gray-600">%</button>
+                  <button type="button" data-val="exact" class="split-tag px-2 py-0.5 rounded text-[8px] font-bold uppercase text-gray-400 hover:text-gray-600">Exacto</button>
+                </div>
+                <input type="hidden" id="split-type-select" value="equal">
+              </div>
+              <div id="split-breakdown-list" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2"></div>
+            </div>
+
+          </section>
+        </form>
       </div>
     </div>
 
@@ -3049,21 +3084,21 @@
       // RENDERIZAR LISTA DE INVITADOS EN EL MODAL
       // ================================================================
       function renderGuestListInModal() {
-        const container = document.getElementById("guest-list-display");
+        const container = document.getElementById("guest-list-chips") || document.getElementById("guest-list-display");
         if (!container) return;
 
         container.innerHTML = "";
 
-        if (tempGuestList.length > 0) {
+        if (tempGuestList && tempGuestList.length > 0) {
           container.classList.remove("hidden");
           tempGuestList.forEach((guest, index) => {
             container.insertAdjacentHTML(
               "beforeend",
               `
-                <span class="inline-flex items-center gap-1 px-2 py-1 rounded-md text-xs font-bold bg-white text-indigo-700 border border-indigo-200 shadow-sm">
-                    <i class="fas fa-user text-[10px]"></i> ${guest}
-                    <button type="button" onclick="removeGuestFromList(${index})" class="ml-1 text-red-400 hover:text-red-600 focus:outline-none">
-                        &times;
+                <span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md text-[10px] font-bold bg-indigo-50 text-indigo-700 border border-indigo-100 animate-fadeIn">
+                    ${guest}
+                    <button type="button" onclick="removeGuestFromList(${index})" class="text-indigo-400 hover:text-rose-500 transition-colors focus:outline-none">
+                        <i class="fas fa-times text-[9px]"></i>
                     </button>
                 </span>
             `
@@ -3072,12 +3107,17 @@
         } else {
           container.classList.add("hidden");
         }
+
+        if (typeof updateSplitPreview === "function") updateSplitPreview();
+        if (typeof renderTempItemsListInModal === "function") renderTempItemsListInModal();
       }
 
       // Función global para eliminar invitado (llamada desde el HTML onclick)
       window.removeGuestFromList = function (index) {
-        tempGuestList.splice(index, 1);
-        renderGuestListInModal();
+        if (tempGuestList) {
+          tempGuestList.splice(index, 1);
+          renderGuestListInModal();
+        }
       };
 
       // ================================================================
@@ -3909,36 +3949,43 @@
       // FUNCIÓN SEGURA PARA POBLAR ETIQUETAS (TAGS)
       // ================================================================
       function populateModalTags() {
-        // 1. Obtener referencias
-        const payerContainer = document.getElementById("modal-payer-tags");
-        const methodContainer = document.getElementById("modal-payment-method-tags");
-        const categoryContainer = document.getElementById("modal-category-tags");
-        const subContainer = document.getElementById("modal-subcategory-tags");
-        const subSection = document.getElementById("modal-subcategory-section");
+        const payerSelect = document.getElementById("expense-payer");
+        const methodSelect = document.getElementById("expense-payment-method");
+        const categorySelect = document.getElementById("expense-category");
 
-        // 2. Validar y Poblar (Solo si el contenedor existe)
-
-        // Pagadores
-        if (payerContainer) {
-          payerContainer.innerHTML = appState.participants.length > 0 ? appState.participants.map((p) => `<button type="button" data-value="${p.id}" class="filter-tag participant-tag">${p.name}</button>`).join("") : '<span class="text-xs text-gray-400 italic">Sin participantes.</span>';
+        if (payerSelect && appState.participants) {
+          const curVal = payerSelect.value;
+          let html = '<option value="">Seleccionar pagador...</option>';
+          appState.participants.forEach((p) => {
+            html += `<option value="${p.id}">${p.name}</option>`;
+          });
+          payerSelect.innerHTML = html;
+          if (curVal) payerSelect.value = curVal;
+          else if (appState.participants.length > 0) payerSelect.value = appState.participants[0].id;
         }
 
-        // Métodos de Pago
-        if (methodContainer) {
-          methodContainer.innerHTML = appState.paymentMethods.length > 0 ? appState.paymentMethods.map((m) => `<button type="button" data-value="${m.id}" class="filter-tag payment-method-tag">${m.name}</button>`).join("") : '<span class="text-xs text-gray-400 italic">Sin métodos.</span>';
+        if (methodSelect && appState.paymentMethods) {
+          const curVal = methodSelect.value;
+          let html = '<option value="">Seleccionar método...</option>';
+          appState.paymentMethods.forEach((m) => {
+            const typeLabel = m.type === 'credit' ? 'Crédito' : (m.type === 'debit' ? 'Débito' : 'Efectivo');
+            html += `<option value="${m.id}">${m.name} (${typeLabel})</option>`;
+          });
+          methodSelect.innerHTML = html;
+          if (curVal) methodSelect.value = curVal;
+          else if (appState.paymentMethods.length > 0) methodSelect.value = appState.paymentMethods[0].id;
         }
 
-        // Categorías
-        if (categoryContainer) {
-          categoryContainer.innerHTML = appState.categories.length > 0 ? appState.categories.map((c) => `<button type="button" data-value="${c.name}" class="filter-tag category-tag">${c.name}</button>`).join("") : '<span class="text-xs text-gray-400 italic">Sin categorías.</span>';
-        }
-
-        // Subcategorías (Limpieza inicial)
-        if (subContainer) {
-          subContainer.innerHTML = "";
-        }
-        if (subSection) {
-          subSection.classList.add("hidden");
+        if (categorySelect && appState.categories) {
+          const curVal = categorySelect.value;
+          let html = '<option value="">Seleccionar categoría...</option>';
+          appState.categories.forEach((c) => {
+            const cName = c.name || c;
+            html += `<option value="${cName}">${cName}</option>`;
+          });
+          categorySelect.innerHTML = html;
+          if (curVal) categorySelect.value = curVal;
+          else if (appState.categories.length > 0) categorySelect.value = appState.categories[0].name || appState.categories[0];
         }
       }
 
@@ -6720,6 +6767,37 @@
 
       let expenseDatepicker = null;
 
+      window.toggleExpenseType = function (type) {
+        const expenseTypeInput = document.getElementById("expense-type");
+        if (expenseTypeInput) expenseTypeInput.value = type;
+
+        const pBtn = document.getElementById("type-btn-personal");
+        const sBtn = document.getElementById("type-btn-shared");
+        const guestSection = document.getElementById("guest-management-section");
+        const sharedBadge = document.getElementById("shared-badge");
+        const splitSection = document.getElementById("shared-split-preview-section");
+
+        if (type === "shared") {
+          if (pBtn) pBtn.className = "px-3.5 py-1 rounded-lg text-xs font-bold transition-all text-gray-400 hover:text-gray-600";
+          if (sBtn) sBtn.className = "px-3.5 py-1 rounded-lg text-xs font-bold transition-all bg-white text-gray-800 shadow-xs";
+          if (guestSection) guestSection.classList.remove("hidden");
+          if (sharedBadge) {
+            sharedBadge.classList.remove("hidden");
+            sharedBadge.classList.add("inline-flex");
+          }
+          if (splitSection) splitSection.classList.remove("hidden");
+        } else {
+          if (pBtn) pBtn.className = "px-3.5 py-1 rounded-lg text-xs font-bold transition-all bg-white text-gray-800 shadow-xs";
+          if (sBtn) sBtn.className = "px-3.5 py-1 rounded-lg text-xs font-bold transition-all text-gray-400 hover:text-gray-600";
+          if (guestSection) guestSection.classList.add("hidden");
+          if (sharedBadge) sharedBadge.classList.add("hidden");
+          if (splitSection) splitSection.classList.add("hidden");
+        }
+
+        if (typeof renderTempItemsListInModal === "function") renderTempItemsListInModal();
+        if (typeof updateSplitPreview === "function") updateSplitPreview();
+      };
+
       // ================================================================
       // VERSIÓN FINAL: ABRIR MODAL DE GASTO
       // ================================================================
@@ -6774,10 +6852,11 @@
           if (expenseDatepicker) expenseDatepicker.setDate(expense.date || new Date());
           else dateInput.value = expense.date;
 
-          setActiveTag("expense-payer", "modal-payer-tags", expense.payerId);
-          setActiveTag("expense-type", "modal-type-tags", expense.type);
-          setActiveTag("expense-payment-method", "modal-payment-method-tags", expense.paymentMethodId);
-          setActiveTag("expense-category", "modal-category-tags", expense.category);
+          if (document.getElementById("expense-payer")) document.getElementById("expense-payer").value = expense.payerId || "";
+          if (document.getElementById("expense-payment-method")) document.getElementById("expense-payment-method").value = expense.paymentMethodId || "";
+          if (document.getElementById("expense-category")) document.getElementById("expense-category").value = expense.category || "";
+          if (document.getElementById("expense-type")) document.getElementById("expense-type").value = expense.type || "personal";
+          if (typeof toggleExpenseType === "function") toggleExpenseType(expense.type || "personal");
 
           document.getElementById("expense-is-fixed").checked = expense.isFixed;
           document.getElementById("fixed-recurrence-container").classList.toggle("hidden", !expense.isFixed);

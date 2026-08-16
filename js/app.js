@@ -4069,8 +4069,39 @@ function removeCategory(nameToRemove) {
 
 let expenseDatepicker = null;
 
+window.toggleExpenseType = function (type) {
+  const expenseTypeInput = document.getElementById("expense-type");
+  if (expenseTypeInput) expenseTypeInput.value = type;
+
+  const pBtn = document.getElementById("type-btn-personal");
+  const sBtn = document.getElementById("type-btn-shared");
+  const guestSection = document.getElementById("guest-management-section");
+  const sharedBadge = document.getElementById("shared-badge");
+  const splitSection = document.getElementById("shared-split-preview-section");
+
+  if (type === "shared") {
+    if (pBtn) pBtn.className = "px-3.5 py-1 rounded-lg text-xs font-bold uppercase tracking-tight transition-all text-slate-400 hover:text-slate-600 dark:text-slate-500";
+    if (sBtn) sBtn.className = "px-3.5 py-1 rounded-lg text-xs font-bold uppercase tracking-tight transition-all bg-white dark:bg-slate-700 text-slate-800 dark:text-white shadow-xs";
+    if (guestSection) guestSection.classList.remove("hidden");
+    if (sharedBadge) {
+      sharedBadge.classList.remove("hidden");
+      sharedBadge.classList.add("inline-flex");
+    }
+    if (splitSection) splitSection.classList.remove("hidden");
+  } else {
+    if (pBtn) pBtn.className = "px-3.5 py-1 rounded-lg text-xs font-bold uppercase tracking-tight transition-all bg-white dark:bg-slate-700 text-slate-800 dark:text-white shadow-xs";
+    if (sBtn) sBtn.className = "px-3.5 py-1 rounded-lg text-xs font-bold uppercase tracking-tight transition-all text-slate-400 hover:text-slate-600 dark:text-slate-500";
+    if (guestSection) guestSection.classList.add("hidden");
+    if (sharedBadge) sharedBadge.classList.add("hidden");
+    if (splitSection) splitSection.classList.add("hidden");
+  }
+
+  if (typeof renderTempItemsListInModal === "function") renderTempItemsListInModal();
+  if (typeof updateSplitPreview === "function") updateSplitPreview();
+};
+
 // ================================================================
-// VERSIÃ“N FINAL: ABRIR MODAL DE GASTO
+// VERSIÓN FINAL: ABRIR MODAL DE GASTO
 // ================================================================
 function openUnifiedExpenseModal(expenseId = null) {
   const modal = document.getElementById("expense-modal");
@@ -4137,10 +4168,11 @@ function openUnifiedExpenseModal(expenseId = null) {
     if (expenseDatepicker) expenseDatepicker.setDate(expense.date || new Date());
     else dateInput.value = expense.date;
 
-    setActiveTag("expense-payer", "modal-payer-tags", expense.payerId);
-    setActiveTag("expense-type", "modal-type-tags", expense.type);
-    setActiveTag("expense-payment-method", "modal-payment-method-tags", expense.paymentMethodId);
-    setActiveTag("expense-category", "modal-category-tags", expense.category);
+    if (document.getElementById("expense-payer")) document.getElementById("expense-payer").value = expense.payerId || "";
+    if (document.getElementById("expense-payment-method")) document.getElementById("expense-payment-method").value = expense.paymentMethodId || "";
+    if (document.getElementById("expense-category")) document.getElementById("expense-category").value = expense.category || "";
+    if (document.getElementById("expense-type")) document.getElementById("expense-type").value = expense.type || "personal";
+    if (typeof window.toggleExpenseType === "function") window.toggleExpenseType(expense.type || "personal");
 
     document.getElementById("expense-is-fixed").checked = expense.isFixed;
     document.getElementById("fixed-recurrence-container").classList.toggle("hidden", !expense.isFixed);
@@ -4321,73 +4353,75 @@ window.populateModalTags = populateModalTags;
 function populateModalTags() {
   const expenses = appState.expenses || [];
   const categories = [...new Set(expenses.map((e) => e.category))];
-  const payerContainer = document.getElementById("modal-payer-tags");
-  const methodContainer = document.getElementById("modal-payment-method-tags");
-  const catContainerSidebar = document.getElementById("modal-category-tags-sidebar");
+  const payerSelect = document.getElementById("expense-payer");
+  const methodSelect = document.getElementById("expense-payment-method");
+  const catSelect = document.getElementById("expense-category");
 
-  // Icons mapping for categories
-  const catIcons = {
-    "Comida": "utensils", "Hogar": "home", "Salud": "heartbeat", "Transporte": "bus",
-    "Educación": "graduation-cap", "Ocio": "gamepad", "Regalos": "gift", "Servicios": "bolt",
-    "Suscripciones": "mobile-alt", "Mascotas": "paw", "Supermercado": "shopping-cart",
-    "Café": "coffee", "Alcohol": "glass-martini-alt", "Ahorro": "piggy-bank"
-  };
-
-  // Helper for rendering tags with specific styles
-  const renderTags = (container, list, type) => {
-    if (!container) return;
-
-    // More compact styling to match reference
-    const baseClass = "filter-tag px-2 py-1 rounded-md text-[9px] font-bold uppercase tracking-wide transition-all flex items-center gap-1.5 border";
-
-    let colors = "";
-    let iconClass = "";
-
-    if (type === "payer") {
-      // Users: Subtle blue theme
-      colors = "bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 border-blue-100 dark:border-blue-800/30 hover:bg-blue-100 dark:hover:bg-blue-900/30";
-      iconClass = "fas fa-user";
-    if (type === "method") {
-      // Methods: Subtle green theme
-      colors = "bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400 border-emerald-100 dark:border-emerald-800/30 hover:bg-emerald-100 dark:hover:bg-emerald-900/30";
-      iconClass = "fas fa-credit-card";
-    } else if (type === "cat") {
-      // Categories: Subtle orange theme
-      colors = "bg-orange-50 dark:bg-orange-900/20 text-orange-600 dark:text-orange-400 border-orange-100 dark:border-orange-800/30 hover:bg-orange-100 dark:hover:bg-orange-900/30";
-    }
-
-    container.innerHTML = list.map(item => {
-      const icon = type === "cat" ? (catIcons[item] || "folder") : "";
-      const iconHtml = icon ? `<i class="fas fa-${icon} text-[10px] opacity-80"></i>` : (iconClass ? `<i class="${iconClass} text-[10px] opacity-80"></i>` : ``);
-
-      return `<button type="button" data-value="${item}" 
-        class="${baseClass} ${colors}">
-        ${iconHtml}
-        ${item}
-      </button>`;
-    }).join('');
-  };
-
-  if (payerContainer) {
-    const participants = appState.participants || [];
-    const names = participants.map(u => u.name);
-    renderTags(payerContainer, names, "payer");
+  if (payerSelect && appState.participants) {
+    const curVal = payerSelect.value;
+    let html = '<option value="">Seleccionar pagador...</option>';
+    appState.participants.forEach(p => {
+      html += `<option value="${p.id}">${p.name}</option>`;
+    });
+    payerSelect.innerHTML = html;
+    if (curVal) payerSelect.value = curVal;
+    else if (appState.participants.length > 0) payerSelect.value = appState.participants[0].id;
   }
 
-  if (methodContainer) {
-    const methods = (appState.paymentMethods || []).map(m => m.name);
-    renderTags(methodContainer, methods, "method");
+  if (methodSelect && appState.paymentMethods) {
+    const curVal = methodSelect.value;
+    let html = '<option value="">Seleccionar método...</option>';
+    appState.paymentMethods.forEach(m => {
+      const typeLabel = m.type === 'credit' ? 'Crédito' : (m.type === 'debit' ? 'Débito' : 'Efectivo');
+      html += `<option value="${m.id}">${m.name} (${typeLabel})</option>`;
+    });
+    methodSelect.innerHTML = html;
+    if (curVal) methodSelect.value = curVal;
+    else if (appState.paymentMethods.length > 0) methodSelect.value = appState.paymentMethods[0].id;
   }
 
-  // Populate categories in SIDEBAR instead of right column
-  if (catContainerSidebar) {
-    const standardCats = ["Comida", "Hogar", "Servicios", "Supermercado", "Ocio", "Suscripciones", "Transporte"];
+  if (catSelect) {
+    const curVal = catSelect.value;
+    const standardCats = ["Comida", "Hogar", "Servicios", "Supermercado", "Ocio", "Suscripciones", "Transporte", "Salud", "Educación", "Regalos", "Café", "Alcohol", "Ahorro"];
     const allCats = [...new Set([...standardCats, ...categories].filter(Boolean))];
-    renderTags(catContainerSidebar, allCats, "cat");
+    let html = '<option value="">Seleccionar categoría...</option>';
+    allCats.forEach(c => {
+      html += `<option value="${c}">${c}</option>`;
+    });
+    catSelect.innerHTML = html;
+    if (curVal) catSelect.value = curVal;
+    else catSelect.value = "Comida";
   }
 }
 
 window.renderGuestListInModal = renderGuestListInModal;
+
+function renderGuestListInModal() {
+  const chipsContainer = document.getElementById("guest-list-chips");
+  if (chipsContainer) {
+    if (!tempGuestList || tempGuestList.length === 0) {
+      chipsContainer.innerHTML = "";
+    } else {
+      chipsContainer.innerHTML = tempGuestList.map((g, idx) => `
+        <span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md text-[10px] font-bold bg-indigo-50 dark:bg-indigo-900/40 text-indigo-700 dark:text-indigo-300 border border-indigo-100 dark:border-indigo-800/50 animate-fadeIn">
+          ${g}
+          <button type="button" onclick="window.removeGuestFromList(${idx})" class="text-indigo-400 hover:text-rose-500 transition-colors">
+            <i class="fas fa-times text-[9px]"></i>
+          </button>
+        </span>
+      `).join('');
+    }
+  }
+  if (window.updateSplitPreview) window.updateSplitPreview();
+  if (window.renderTempItemsListInModal) window.renderTempItemsListInModal();
+}
+
+window.removeGuestFromList = function (index) {
+  if (tempGuestList) {
+    tempGuestList.splice(index, 1);
+    renderGuestListInModal();
+  }
+};
 
 window.updateSplitPreview = function () {
   const container = document.getElementById("split-breakdown-list");
@@ -4807,44 +4841,6 @@ function setupUnifiedExpenseListeners() {
   if (openBtn) openBtn.onclick = () => openUnifiedExpenseModal(null);
   if (closeBtn) closeBtn.onclick = closeUnifiedExpenseModal;
   if (cancelBtn) cancelBtn.onclick = closeUnifiedExpenseModal;
-
-  // --- HELPERS GLOBALES ---
-  window.toggleExpenseType = (type) => {
-    document.getElementById("expense-type").value = type;
-
-    // Visual State
-    // Visual State
-    const pBtn = document.getElementById("type-btn-personal");
-    const sBtn = document.getElementById("type-btn-shared");
-    const guestSection = document.getElementById("guest-management-section");
-    const sharedBadge = document.getElementById("shared-badge");
-
-    if (type === "shared") {
-      pBtn.className = "px-6 py-2 rounded-lg text-[11px] font-black uppercase tracking-wide transition-all text-slate-400 hover:text-slate-600 dark:text-slate-500";
-      sBtn.className = "px-6 py-2 rounded-lg text-[11px] font-black uppercase tracking-wide transition-all bg-white dark:bg-slate-700 text-slate-800 dark:text-white shadow-sm";
-
-      if (guestSection) guestSection.classList.remove("hidden");
-      if (sharedBadge) {
-        sharedBadge.classList.add("inline-flex");
-        sharedBadge.classList.remove("hidden");
-      }
-
-      // SMART LOGIC: Auto-fetch all registered users if list is empty
-      // We don't modify "tempGuestList" (guests) but "updateSplitPreview" will pull appState.participants
-      // Trigger render
-      window.updateSplitPreview();
-
-    } else {
-      pBtn.className = "px-6 py-2 rounded-lg text-[11px] font-black uppercase tracking-wide transition-all bg-white dark:bg-slate-700 text-slate-800 dark:text-white shadow-sm";
-      sBtn.className = "px-6 py-2 rounded-lg text-[11px] font-black uppercase tracking-wide transition-all text-slate-400 hover:text-slate-600 dark:text-slate-500";
-
-      if (guestSection) guestSection.classList.add("hidden");
-      if (sharedBadge) {
-        sharedBadge.classList.remove("inline-flex");
-        sharedBadge.classList.add("hidden");
-      }
-    }
-  };
 
   window.closeUnifiedExpenseModal = closeUnifiedExpenseModal;
 
