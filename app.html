@@ -7673,11 +7673,13 @@
       const bulkAssignSelect = document.getElementById("bulk-assignee-select");
       const expenseType = document.getElementById("expense-type")?.value || "personal";
       const isShared = expenseType === "shared";
+      const itemsCountSidebar = document.getElementById("items-count-display-sidebar");
 
       if (!container || !totalInput) return;
 
       container.innerHTML = "";
       let total = 0;
+      let count = 0;
 
       let allParticipants = [];
       if (isShared) {
@@ -7704,13 +7706,14 @@
 
       if (!tempItemsList || tempItemsList.length === 0) {
         if (window.selectedTempItemIds) window.selectedTempItemIds.clear();
-        container.innerHTML = '<p class="text-xs text-gray-500 italic text-center py-2">La lista está vacía.</p>';
+        container.innerHTML = '<p class="text-xs text-gray-400 italic text-center py-4">La lista está vacía. Añade productos arriba.</p>';
       } else {
         tempItemsList.forEach((item) => {
           const qty = parseFloat(item.quantity) || 1;
           const unitPrice = parseFloat(item.amount) || 0;
           const subtotal = qty * unitPrice;
           total += subtotal;
+          count++;
 
           const isSelected = window.selectedTempItemIds && window.selectedTempItemIds.has(String(item.id));
           const assignments = item.assignments || {};
@@ -7720,25 +7723,27 @@
           let assignmentBadges = "";
           if (isShared && allParticipants.length > 0) {
             assignmentBadges = `
-                <div class="pt-1.5 border-t border-gray-100 mt-1 pl-6">
-                  <div class="flex items-center justify-between mb-1">
-                    <span class="text-[9px] font-bold text-gray-400">Asignar cantidades:</span>
+                <div class="pt-2 border-t border-gray-100 mt-1 pl-6">
+                  <div class="flex items-center justify-between mb-1.5">
+                    <span class="text-[9px] font-bold uppercase tracking-wider text-gray-400">Asignar cantidades:</span>
                     <span class="text-[9px] font-bold ${unassignedUnits > 0 ? 'text-amber-500' : 'text-emerald-500'}">
-                      ${unassignedUnits > 0 ? `${unassignedUnits} compartida(s)` : '✓ Todo asignado'}
+                      ${unassignedUnits > 0 ? `${unassignedUnits} compartida(s) equitativamente` : '✓ 100% asignado'}
                     </span>
                   </div>
-                  <div class="flex flex-wrap gap-1">
+                  <div class="grid grid-cols-2 sm:grid-cols-3 gap-1.5">
                     ${allParticipants.map(p => {
-              const curQty = (assignments && parseFloat(assignments[p.id])) || 0;
-              return `
-                        <div class="flex items-center gap-1 bg-white px-1.5 py-0.5 rounded border border-gray-200 text-[10px]">
-                          <span class="font-medium text-gray-700">${p.name}:</span>
-                          <button type="button" class="w-4 h-4 bg-gray-100 rounded text-center font-bold text-gray-600 hover:bg-gray-200" onclick="window.changeAppTempItemQty('${item.id}', '${p.id}', -1)">-</button>
-                          <span class="font-bold text-gray-900">${curQty}</span>
-                          <button type="button" class="w-4 h-4 bg-gray-100 rounded text-center font-bold text-gray-600 hover:bg-gray-200" onclick="window.changeAppTempItemQty('${item.id}', '${p.id}', 1)">+</button>
+                      const curQty = (assignments && parseFloat(assignments[p.id])) || 0;
+                      return `
+                        <div class="flex items-center justify-between bg-white px-2 py-1 rounded-lg border border-gray-200 shadow-2xs text-[10px]">
+                          <span class="font-bold text-gray-700 truncate max-w-[85px]" title="${p.name}">${p.name}</span>
+                          <div class="flex items-center gap-1">
+                            <button type="button" class="w-4 h-4 bg-gray-100 rounded text-center font-bold text-gray-600 hover:bg-gray-200 transition-colors flex items-center justify-center" onclick="window.changeTempItemQty('${item.id}', '${p.id}', -1)">-</button>
+                            <span class="font-black text-gray-900 w-3.5 text-center">${curQty}</span>
+                            <button type="button" class="w-4 h-4 bg-gray-100 rounded text-center font-bold text-gray-600 hover:bg-gray-200 transition-colors flex items-center justify-center" onclick="window.changeTempItemQty('${item.id}', '${p.id}', 1)">+</button>
+                          </div>
                         </div>
                       `;
-            }).join('')}
+                    }).join('')}
                   </div>
                 </div>
               `;
@@ -7747,23 +7752,39 @@
           container.insertAdjacentHTML(
             "beforeend",
             `
-                <div class="flex flex-col bg-gray-50 p-2.5 rounded-xl border border-gray-100 text-sm mb-1.5 ${isSelected ? 'bg-indigo-50/60 ring-1 ring-indigo-200' : ''}">
+                <div class="p-2.5 bg-gray-50/70 hover:bg-gray-50 rounded-xl border border-gray-100 transition-all ${isSelected ? 'bg-indigo-50/60 ring-1 ring-indigo-200' : ''}">
                     <div class="flex items-center justify-between gap-2">
                         <div class="flex items-center gap-2 flex-1 min-w-0">
                           ${isShared ? `
                             <input type="checkbox" class="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 cursor-pointer size-4" ${isSelected ? 'checked' : ''} onchange="window.toggleSelectItem('${item.id}', this.checked)" />
                           ` : ''}
                           <div class="flex-1 min-w-0">
-                            <span class="font-bold text-gray-700 text-xs block truncate">${item.desc}</span>
-                            <span class="text-[10px] text-gray-400 block">${qty} ud × S/ ${unitPrice.toFixed(2)}</span>
+                            <input type="text" class="w-full text-xs font-bold text-gray-800 bg-transparent border-0 border-b border-transparent hover:border-gray-300 focus:border-indigo-500 focus:bg-white focus:ring-0 px-1 py-0.5 rounded transition-all" value="${item.desc || ''}" onchange="window.updateTempItemProp('${item.id}', 'desc', this.value)" placeholder="Descripción..." />
                           </div>
                         </div>
-                        <div class="flex items-center gap-3">
-                            <span class="font-bold text-indigo-600 text-xs">S/ ${subtotal.toFixed(2)}</span>
-                            <button type="button" data-id="${item.id}" class="remove-item-btn text-red-400 hover:text-red-600 transition">
-                                <i class="fas fa-times text-xs"></i>
-                            </button>
+                        
+                        <!-- Cantidad Editable -->
+                        <div class="flex items-center gap-0.5 bg-white border border-gray-200 rounded-lg p-0.5">
+                          <button type="button" class="w-4 h-4 rounded text-gray-500 hover:bg-gray-100 font-bold text-[10px] flex items-center justify-center" onclick="window.updateItemTotalQty('${item.id}', -1)">-</button>
+                          <input type="number" min="1" step="1" class="w-8 text-center font-bold text-xs text-gray-800 border-none p-0 focus:ring-0" value="${qty}" onchange="window.updateTempItemProp('${item.id}', 'quantity', this.value)" />
+                          <button type="button" class="w-4 h-4 rounded text-gray-500 hover:bg-gray-100 font-bold text-[10px] flex items-center justify-center" onclick="window.updateItemTotalQty('${item.id}', 1)">+</button>
                         </div>
+
+                        <!-- Precio Unitario Editable -->
+                        <div class="flex items-center bg-white border border-gray-200 rounded-lg px-1.5 py-0.5">
+                          <span class="text-[10px] font-bold text-gray-400 mr-0.5">S/</span>
+                          <input type="number" min="0.01" step="0.01" class="w-14 text-right font-bold text-xs text-gray-800 border-none p-0 focus:ring-0" value="${unitPrice.toFixed(2)}" onchange="window.updateTempItemProp('${item.id}', 'amount', this.value)" />
+                        </div>
+
+                        <!-- Subtotal -->
+                        <div class="text-right min-w-[60px]">
+                            <span class="font-black text-indigo-600 text-xs">S/ ${subtotal.toFixed(2)}</span>
+                        </div>
+
+                        <!-- Botón Borrar -->
+                        <button type="button" onclick="window.deleteTempItem('${item.id}')" class="text-gray-300 hover:text-rose-500 transition-colors p-1" title="Eliminar producto">
+                            <i class="fas fa-trash-alt text-xs"></i>
+                        </button>
                     </div>
                     ${assignmentBadges}
                 </div>
@@ -7772,13 +7793,74 @@
         });
       }
 
+      if (itemsCountSidebar) itemsCountSidebar.textContent = `${count} ítem${count !== 1 ? 's' : ''}`;
       updateBulkBarState();
 
       const toggle = document.getElementById("multi-item-toggle");
       if (toggle && toggle.checked) {
         totalInput.value = total.toFixed(2);
+        const displayAmount = document.getElementById("display-expense-amount");
+        if (displayAmount) displayAmount.textContent = total.toFixed(2);
       }
+
+      if (typeof updateSplitPreview === "function") updateSplitPreview();
     }
+
+    window.updateTempItemProp = function (itemId, prop, value) {
+      if (!tempItemsList && window.tempItemsList) tempItemsList = window.tempItemsList;
+      if (!tempItemsList) return;
+
+      const item = tempItemsList.find(i => String(i.id) === String(itemId));
+      if (!item) return;
+
+      if (prop === 'desc') {
+        item.desc = value.trim() || item.desc;
+      } else if (prop === 'quantity') {
+        const newQty = Math.max(1, parseFloat(value) || 1);
+        item.quantity = newQty;
+        if (item.assignments) {
+          let assignedSum = 0;
+          Object.keys(item.assignments).forEach(pId => {
+            const pQty = parseFloat(item.assignments[pId]) || 0;
+            if (assignedSum + pQty > newQty) {
+              const allowed = Math.max(0, newQty - assignedSum);
+              if (allowed > 0) item.assignments[pId] = allowed;
+              else delete item.assignments[pId];
+              assignedSum += allowed;
+            } else {
+              assignedSum += pQty;
+            }
+          });
+        }
+      } else if (prop === 'amount') {
+        item.amount = Math.max(0, parseFloat(value) || 0);
+      }
+
+      renderTempItemsListInModal();
+    };
+
+    window.updateItemTotalQty = function (itemId, delta) {
+      if (!tempItemsList && window.tempItemsList) tempItemsList = window.tempItemsList;
+      if (!tempItemsList) return;
+
+      const item = tempItemsList.find(i => String(i.id) === String(itemId));
+      if (!item) return;
+
+      const curQty = parseFloat(item.quantity) || 1;
+      const newQty = Math.max(1, curQty + delta);
+      window.updateTempItemProp(itemId, 'quantity', newQty);
+    };
+
+    window.deleteTempItem = function (itemId) {
+      if (!tempItemsList && window.tempItemsList) tempItemsList = window.tempItemsList;
+      if (!tempItemsList) return;
+
+      tempItemsList = tempItemsList.filter(i => String(i.id) !== String(itemId));
+      window.tempItemsList = tempItemsList;
+      if (window.selectedTempItemIds) window.selectedTempItemIds.delete(String(itemId));
+
+      renderTempItemsListInModal();
+    };
 
     window.selectedTempItemIds = new Set();
 
@@ -7845,7 +7927,8 @@
       }
     }
 
-    window.changeAppTempItemQty = function (itemId, participantId, delta) {
+    window.changeTempItemQty = function (itemId, participantId, delta) {
+      if (!tempItemsList && window.tempItemsList) tempItemsList = window.tempItemsList;
       if (!tempItemsList) return;
       const item = tempItemsList.find(i => String(i.id) === String(itemId));
       if (!item) return;
@@ -7860,7 +7943,7 @@
       let newQty = currentAssigned + delta;
       if (newQty < 0) newQty = 0;
       if (newQty + totalAssignedOther > totalItemQty) {
-        newQty = totalItemQty - totalAssignedOther;
+        newQty = Math.max(0, totalItemQty - totalAssignedOther);
       }
 
       if (newQty > 0) {
@@ -7870,6 +7953,89 @@
       }
 
       renderTempItemsListInModal();
+    };
+
+    window.changeAppTempItemQty = window.changeTempItemQty;
+
+    window.updateSplitPreview = function () {
+      const container = document.getElementById("split-breakdown-list");
+      if (!container) return;
+
+      const amount = parseFloat(document.getElementById("expense-amount").value) || 0;
+      const splitType = document.getElementById("split-type-select")?.value || "equal";
+      const isMultiItem = document.getElementById("multi-item-toggle")?.checked;
+
+      let allParticipants = [];
+      if (appState && appState.participants) {
+        appState.participants.forEach(p => {
+          allParticipants.push({ id: p.id, name: p.name });
+        });
+      }
+      if (tempGuestList && tempGuestList.length > 0) {
+        tempGuestList.forEach((gName, idx) => {
+          allParticipants.push({ id: `guest_${idx}`, name: `${gName} (Inv)` });
+        });
+      }
+
+      if (allParticipants.length === 0) {
+        container.innerHTML = `<p class="col-span-full text-center text-[10px] text-gray-400">No hay participantes seleccionados.</p>`;
+        return;
+      }
+
+      const count = allParticipants.length;
+      const participantShares = {};
+      allParticipants.forEach(p => { participantShares[p.id] = 0; });
+
+      if (isMultiItem && tempItemsList && tempItemsList.length > 0) {
+        let itemsTotalCost = 0;
+        tempItemsList.forEach(item => {
+          const qty = parseFloat(item.quantity) || 1;
+          const unitPrice = parseFloat(item.amount) || 0;
+          const itemCost = qty * unitPrice;
+          itemsTotalCost += itemCost;
+
+          const assignments = item.assignments || {};
+          let assignedQtySum = 0;
+          Object.keys(assignments).forEach(pId => {
+            const pQty = parseFloat(assignments[pId]) || 0;
+            if (pQty > 0) {
+              assignedQtySum += pQty;
+              if (participantShares[pId] !== undefined) {
+                participantShares[pId] += pQty * unitPrice;
+              }
+            }
+          });
+
+          const unassignedQty = Math.max(0, qty - assignedQtySum);
+          if (unassignedQty > 0 && count > 0) {
+            const unassignedCost = unassignedQty * unitPrice;
+            const sharePerPerson = unassignedCost / count;
+            allParticipants.forEach(p => {
+              participantShares[p.id] += sharePerPerson;
+            });
+          }
+        });
+
+        const remainingBase = amount - itemsTotalCost;
+        if (remainingBase > 0.001 && count > 0) {
+          const shareBase = remainingBase / count;
+          allParticipants.forEach(p => {
+            participantShares[p.id] += shareBase;
+          });
+        }
+      } else {
+        if (count > 0) {
+          const share = amount / count;
+          allParticipants.forEach(p => { participantShares[p.id] = share; });
+        }
+      }
+
+      container.innerHTML = allParticipants.map(p => `
+        <div class="bg-gray-50 rounded-xl p-2 border border-gray-100 flex items-center justify-between">
+          <span class="text-[10px] font-bold text-gray-700 truncate max-w-[90px]" title="${p.name}">${p.name}</span>
+          <span class="text-xs font-black text-indigo-700">S/ ${(participantShares[p.id] || 0).toFixed(2)}</span>
+        </div>
+      `).join('');
     };
 
     // ================================================================
@@ -7993,16 +8159,32 @@
       if (addItemBtn) {
         addItemBtn.addEventListener("click", () => {
           const descInput = document.querySelector('input[name="new-item-desc-input"]');
+          const qtyInput = document.querySelector('input[name="new-item-quantity-input"]');
           const priceInput = document.querySelector('input[name="new-item-amount-input"]');
           if (!descInput || !priceInput) return;
           const desc = descInput.value.trim();
+          const quantity = qtyInput ? (parseFloat(qtyInput.value) || 1) : 1;
           const price = parseFloat(priceInput.value);
-          if (!desc || isNaN(price) || price <= 0) return showModal("Datos inválidos.");
-          tempItemsList.push({ id: generateUUID(), desc, amount: price });
+          if (!desc || isNaN(price) || price <= 0 || quantity <= 0) return showModal("Datos inválidos para el producto.");
+          if (!tempItemsList) tempItemsList = [];
+          tempItemsList.push({ id: generateUUID(), desc, quantity, amount: price, assignments: {} });
           descInput.value = "";
+          if (qtyInput) qtyInput.value = "1";
           priceInput.value = "";
           descInput.focus();
           renderTempItemsListInModal();
+        });
+
+        ['input[name="new-item-desc-input"]', 'input[name="new-item-quantity-input"]', 'input[name="new-item-amount-input"]'].forEach(selector => {
+          const inputEl = document.querySelector(selector);
+          if (inputEl) {
+            inputEl.addEventListener("keypress", (e) => {
+              if (e.key === "Enter") {
+                e.preventDefault();
+                addItemBtn.click();
+              }
+            });
+          }
         });
       }
 

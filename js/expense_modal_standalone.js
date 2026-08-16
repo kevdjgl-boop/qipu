@@ -713,20 +713,36 @@ window.renderTempItemsListInModal = function () {
             }
 
             container.insertAdjacentHTML("beforeend", `
-                <div class="p-3 bg-white dark:bg-slate-900 border-b border-slate-100 dark:border-slate-800 last:border-b-0 space-y-1.5 transition-colors group ${isSelected ? 'bg-indigo-50/40 dark:bg-indigo-950/20' : ''}">
+                <div class="p-2.5 bg-white dark:bg-slate-900 rounded-xl border border-slate-100 dark:border-slate-800 transition-all ${isSelected ? 'bg-indigo-50/40 dark:bg-indigo-950/20 ring-1 ring-indigo-200' : ''}">
                   <div class="flex items-center justify-between gap-2">
-                    <div class="flex items-center gap-2.5 flex-1 min-w-0">
+                    <div class="flex items-center gap-2 flex-1 min-w-0">
                       ${isShared ? `
                         <input type="checkbox" class="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 cursor-pointer size-4" ${isSelected ? 'checked' : ''} onchange="window.toggleSelectItem('${item.id}', this.checked)" />
                       ` : ''}
                       <div class="flex-1 min-w-0">
-                        <div class="text-xs font-bold text-slate-700 dark:text-white truncate" title="${item.desc}">${item.desc}</div>
-                        <div class="text-[10px] text-slate-400 font-medium">${qty} ud${qty > 1 ? 's' : ''} × S/ ${unitPrice.toFixed(2)}</div>
+                        <input type="text" class="w-full text-xs font-bold text-slate-800 dark:text-white bg-transparent border-0 border-b border-transparent hover:border-slate-300 focus:border-indigo-500 focus:bg-slate-50 dark:focus:bg-slate-800 focus:ring-0 px-1 py-0.5 rounded transition-all" value="${item.desc || ''}" onchange="window.updateTempItemProp('${item.id}', 'desc', this.value)" placeholder="Descripción..." />
                       </div>
                     </div>
-                    <div class="text-right flex-shrink-0">
-                       <span class="text-xs font-black text-slate-800 dark:text-white">S/ ${subtotal.toFixed(2)}</span>
+                    
+                    <!-- Cantidad Editable -->
+                    <div class="flex items-center gap-0.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg p-0.5">
+                      <button type="button" class="size-4 rounded text-slate-500 hover:bg-slate-200 dark:hover:bg-slate-700 font-bold text-[10px] flex items-center justify-center" onclick="window.updateItemTotalQty('${item.id}', -1)">-</button>
+                      <input type="number" min="1" step="1" class="w-8 text-center font-bold text-xs text-slate-800 dark:text-white bg-transparent border-none p-0 focus:ring-0" value="${qty}" onchange="window.updateTempItemProp('${item.id}', 'quantity', this.value)" />
+                      <button type="button" class="size-4 rounded text-slate-500 hover:bg-slate-200 dark:hover:bg-slate-700 font-bold text-[10px] flex items-center justify-center" onclick="window.updateItemTotalQty('${item.id}', 1)">+</button>
                     </div>
+
+                    <!-- Precio Unitario Editable -->
+                    <div class="flex items-center bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-1.5 py-0.5">
+                      <span class="text-[10px] font-bold text-slate-400 mr-0.5">S/</span>
+                      <input type="number" min="0.01" step="0.01" class="w-14 text-right font-bold text-xs text-slate-800 dark:text-white bg-transparent border-none p-0 focus:ring-0" value="${unitPrice.toFixed(2)}" onchange="window.updateTempItemProp('${item.id}', 'amount', this.value)" />
+                    </div>
+
+                    <!-- Subtotal -->
+                    <div class="text-right min-w-[60px]">
+                       <span class="text-xs font-black text-indigo-600 dark:text-indigo-400">S/ ${subtotal.toFixed(2)}</span>
+                    </div>
+
+                    <!-- Botón Borrar -->
                     <div class="flex-shrink-0 flex justify-center">
                       <button type="button" class="text-slate-300 hover:text-rose-500 transition-colors p-1" 
                          onclick="window.deleteTempItem('${item.id}')" title="Eliminar ítem">
@@ -756,6 +772,49 @@ window.renderTempItemsListInModal = function () {
     }
 
     if (window.updateSplitPreview) window.updateSplitPreview();
+};
+
+window.updateTempItemProp = function (itemId, prop, value) {
+    if (!window.tempItemsList) return;
+
+    const item = window.tempItemsList.find(i => String(i.id) === String(itemId));
+    if (!item) return;
+
+    if (prop === 'desc') {
+        item.desc = value.trim() || item.desc;
+    } else if (prop === 'quantity') {
+        const newQty = Math.max(1, parseFloat(value) || 1);
+        item.quantity = newQty;
+        if (item.assignments) {
+            let assignedSum = 0;
+            Object.keys(item.assignments).forEach(pId => {
+                const pQty = parseFloat(item.assignments[pId]) || 0;
+                if (assignedSum + pQty > newQty) {
+                    const allowed = Math.max(0, newQty - assignedSum);
+                    if (allowed > 0) item.assignments[pId] = allowed;
+                    else delete item.assignments[pId];
+                    assignedSum += allowed;
+                } else {
+                    assignedSum += pQty;
+                }
+            });
+        }
+    } else if (prop === 'amount') {
+        item.amount = Math.max(0, parseFloat(value) || 0);
+    }
+
+    window.renderTempItemsListInModal();
+};
+
+window.updateItemTotalQty = function (itemId, delta) {
+    if (!window.tempItemsList) return;
+
+    const item = window.tempItemsList.find(i => String(i.id) === String(itemId));
+    if (!item) return;
+
+    const curQty = parseFloat(item.quantity) || 1;
+    const newQty = Math.max(1, curQty + delta);
+    window.updateTempItemProp(itemId, 'quantity', newQty);
 };
 
 window.deleteTempItem = function (id) {
