@@ -4313,6 +4313,10 @@ function openUnifiedExpenseModal(expenseId = null) {
     if (document.getElementById("expense-category")) document.getElementById("expense-category").value = expense.category || "";
     if (document.getElementById("expense-type")) document.getElementById("expense-type").value = expense.type || "personal";
 
+    ["expense-payer", "expense-payment-method", "expense-category"].forEach(id => {
+      if (typeof refreshCustomSelect === "function") refreshCustomSelect(id);
+    });
+
     document.getElementById("expense-is-fixed").checked = expense.isFixed;
     document.getElementById("fixed-recurrence-container").classList.toggle("hidden", !expense.isFixed);
     if (expense.fixedRecurrenceMonths) document.getElementById("expense-recurrence-months").value = expense.fixedRecurrenceMonths;
@@ -4345,6 +4349,10 @@ function openUnifiedExpenseModal(expenseId = null) {
     else dateInput.value = todayStr;
 
     setActiveTag("expense-type", "modal-type-tags", "personal");
+
+    ["expense-payer", "expense-payment-method", "expense-category"].forEach(id => {
+      if (typeof refreshCustomSelect === "function") refreshCustomSelect(id);
+    });
 
     const toggle = document.getElementById("multi-item-toggle");
     if (toggle) {
@@ -4478,9 +4486,185 @@ function handleUnifiedSave(event) {
 
 window.populateModalTags = populateModalTags;
 
+// ================================================================
+// SISTEMA DE SELECTS PERSONALIZADOS (ROUNDED CORNERS + ICONOS)
+// ================================================================
+function setupCustomSelect(selectId, defaultIcon = "fa-circle") {
+  const selectEl = document.getElementById(selectId);
+  if (!selectEl) return;
+
+  selectEl.style.display = "none";
+
+  let wrapper = selectEl.parentElement.querySelector(`.custom-select-wrapper[data-for="${selectId}"]`);
+  if (!wrapper) {
+    wrapper = document.createElement("div");
+    wrapper.className = "custom-select-wrapper relative w-full";
+    wrapper.dataset.for = selectId;
+    wrapper.innerHTML = `
+      <button type="button" class="custom-select-trigger w-full bg-slate-50/90 hover:bg-white border border-slate-200 hover:border-indigo-400 rounded-2xl px-3.5 py-2.5 text-xs font-bold text-slate-800 flex items-center justify-between shadow-2xs transition-all focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-600 cursor-pointer group">
+        <div class="flex items-center gap-2.5 min-w-0 flex-1">
+          <div class="custom-select-icon-box size-5 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center text-[10px] shrink-0 border border-indigo-100/60">
+            <i class="fas ${defaultIcon}"></i>
+          </div>
+          <span class="custom-select-label truncate text-xs text-slate-800 font-bold">Seleccionar...</span>
+        </div>
+        <i class="fas fa-chevron-down text-[10px] text-slate-400 group-hover:text-slate-600 transition-transform duration-200 chevron-icon shrink-0 ml-1.5"></i>
+      </button>
+
+      <div class="custom-select-dropdown hidden absolute left-0 right-0 top-full mt-1.5 z-[100] bg-white/95 backdrop-blur-md border border-slate-200/90 rounded-2xl shadow-2xl overflow-hidden max-h-60 overflow-y-auto custom-scrollbar p-1.5 space-y-1 animate-pop">
+      </div>
+    `;
+    selectEl.parentNode.insertBefore(wrapper, selectEl.nextSibling);
+
+    const trigger = wrapper.querySelector(".custom-select-trigger");
+    const dropdown = wrapper.querySelector(".custom-select-dropdown");
+    const chevron = trigger.querySelector(".chevron-icon");
+
+    trigger.addEventListener("click", (e) => {
+      e.stopPropagation();
+      document.querySelectorAll(".custom-select-dropdown").forEach(d => {
+        if (d !== dropdown) {
+          d.classList.add("hidden");
+          const otherChevron = d.parentElement?.querySelector(".chevron-icon");
+          if (otherChevron) otherChevron.classList.remove("rotate-180");
+        }
+      });
+
+      const isOpen = !dropdown.classList.contains("hidden");
+      if (isOpen) {
+        dropdown.classList.add("hidden");
+        chevron.classList.remove("rotate-180");
+      } else {
+        refreshCustomSelect(selectId);
+        dropdown.classList.remove("hidden");
+        chevron.classList.add("rotate-180");
+      }
+    });
+
+    selectEl.addEventListener("change", () => {
+      refreshCustomSelect(selectId);
+    });
+  }
+
+  refreshCustomSelect(selectId);
+}
+
+function refreshCustomSelect(selectId) {
+  const selectEl = document.getElementById(selectId);
+  if (!selectEl) return;
+  const wrapper = selectEl.parentElement?.querySelector(`.custom-select-wrapper[data-for="${selectId}"]`);
+  if (!wrapper) return;
+
+  const triggerLabel = wrapper.querySelector(".custom-select-label");
+  const dropdown = wrapper.querySelector(".custom-select-dropdown");
+  const iconBox = wrapper.querySelector(".custom-select-icon-box");
+
+  const currentVal = selectEl.value;
+  let selectedText = "Seleccionar...";
+  let selectedIcon = "fa-circle";
+
+  const getIconForOption = (val, text) => {
+    const t = (text || "").toLowerCase();
+    if (selectId === "expense-payer" || selectId === "quick-income-user") {
+      if (val.startsWith("guest_") || val.startsWith("guest-")) return "fa-user-tag text-purple-600";
+      return "fa-user text-indigo-600";
+    }
+    if (selectId === "expense-payment-method") {
+      if (t.includes("crédito") || t.includes("credito")) return "fa-credit-card text-slate-700";
+      if (t.includes("débito") || t.includes("debito")) return "fa-money-check text-blue-600";
+      if (t.includes("efectivo")) return "fa-money-bill-wave text-emerald-600";
+      return "fa-wallet text-indigo-600";
+    }
+    if (selectId === "expense-category") {
+      return "fa-tag text-indigo-600";
+    }
+    return "fa-circle text-slate-400";
+  };
+
+  let optionsHtml = "";
+
+  Array.from(selectEl.children).forEach(child => {
+    if (child.tagName === "OPTGROUP") {
+      optionsHtml += `
+        <div class="text-[9px] font-black uppercase tracking-wider text-slate-400 px-3 pt-2 pb-1 border-b border-slate-100/80 mb-1 flex items-center gap-1.5">
+          <i class="fas fa-layer-group text-[8px] text-slate-300"></i>${child.label}
+        </div>
+      `;
+      Array.from(child.children).forEach(opt => {
+        const isSelected = opt.value === currentVal;
+        const icon = getIconForOption(opt.value, opt.textContent);
+        if (isSelected) {
+          selectedText = opt.textContent;
+          selectedIcon = icon;
+        }
+        optionsHtml += `
+          <div data-value="${opt.value}" class="custom-select-item flex items-center justify-between px-3 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${isSelected ? 'bg-indigo-50 text-indigo-700 font-black shadow-2xs' : 'text-slate-700 hover:bg-slate-50 hover:text-indigo-600'}">
+            <div class="flex items-center gap-2.5 truncate">
+              <i class="fas ${icon} text-[10px] shrink-0"></i>
+              <span class="truncate">${opt.textContent}</span>
+            </div>
+            ${isSelected ? '<i class="fas fa-check text-indigo-600 text-[10px]"></i>' : ''}
+          </div>
+        `;
+      });
+    } else if (child.tagName === "OPTION") {
+      if (!child.value && child.textContent.includes("Seleccionar")) {
+        if (currentVal === "") selectedText = child.textContent;
+        return;
+      }
+      const isSelected = child.value === currentVal;
+      const icon = getIconForOption(child.value, child.textContent);
+      if (isSelected) {
+        selectedText = child.textContent;
+        selectedIcon = icon;
+      }
+      optionsHtml += `
+        <div data-value="${child.value}" class="custom-select-item flex items-center justify-between px-3 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${isSelected ? 'bg-indigo-50 text-indigo-700 font-black shadow-2xs' : 'text-slate-700 hover:bg-slate-50 hover:text-indigo-600'}">
+          <div class="flex items-center gap-2.5 truncate">
+            <i class="fas ${icon} text-[10px] shrink-0"></i>
+            <span class="truncate">${child.textContent}</span>
+          </div>
+          ${isSelected ? '<i class="fas fa-check text-indigo-600 text-[10px]"></i>' : ''}
+        </div>
+      `;
+    }
+  });
+
+  if (!optionsHtml) {
+    optionsHtml = `<div class="p-3 text-center text-xs text-slate-400 font-medium italic">Sin opciones</div>`;
+  }
+
+  dropdown.innerHTML = optionsHtml;
+  if (triggerLabel) triggerLabel.textContent = selectedText;
+  if (iconBox) iconBox.innerHTML = `<i class="fas ${selectedIcon}"></i>`;
+
+  dropdown.querySelectorAll(".custom-select-item").forEach(item => {
+    item.addEventListener("click", (e) => {
+      e.stopPropagation();
+      const val = item.dataset.value;
+      selectEl.value = val;
+      selectEl.dispatchEvent(new Event("change", { bubbles: true }));
+      dropdown.classList.add("hidden");
+      const chevron = wrapper.querySelector(".chevron-icon");
+      if (chevron) chevron.classList.remove("rotate-180");
+      refreshCustomSelect(selectId);
+    });
+  });
+}
+
+document.addEventListener("click", (e) => {
+  if (!e.target.closest(".custom-select-wrapper")) {
+    document.querySelectorAll(".custom-select-dropdown").forEach(d => {
+      d.classList.add("hidden");
+      const chevron = d.parentElement?.querySelector(".chevron-icon");
+      if (chevron) chevron.classList.remove("rotate-180");
+    });
+  }
+});
+
 function populateModalTags() {
   const expenses = appState.expenses || [];
-  const categories = [...new Set(expenses.map((e) => e.category))];
+  const categories = appState.categories || [];
   const payerSelect = document.getElementById("expense-payer");
   const methodSelect = document.getElementById("expense-payment-method");
   const catSelect = document.getElementById("expense-category");
@@ -4508,6 +4692,7 @@ function populateModalTags() {
     payerSelect.innerHTML = html;
     if (curVal) payerSelect.value = curVal;
     else if (appState.participants.length > 0) payerSelect.value = appState.participants[0].id;
+    setupCustomSelect("expense-payer", "fa-user");
   }
 
   if (methodSelect && appState.paymentMethods) {
@@ -4520,19 +4705,20 @@ function populateModalTags() {
     methodSelect.innerHTML = html;
     if (curVal) methodSelect.value = curVal;
     else if (appState.paymentMethods.length > 0) methodSelect.value = appState.paymentMethods[0].id;
+    setupCustomSelect("expense-payment-method", "fa-wallet");
   }
 
   if (catSelect) {
     const curVal = catSelect.value;
-    const standardCats = ["Comida", "Hogar", "Servicios", "Supermercado", "Ocio", "Suscripciones", "Transporte", "Salud", "Educación", "Regalos", "Café", "Alcohol", "Ahorro"];
-    const allCats = [...new Set([...standardCats, ...categories].filter(Boolean))];
     let html = '<option value="">Seleccionar categoría...</option>';
-    allCats.forEach(c => {
-      html += `<option value="${c}">${c}</option>`;
+    categories.forEach(c => {
+      const cName = c.name || c;
+      html += `<option value="${cName}">${cName}</option>`;
     });
     catSelect.innerHTML = html;
     if (curVal) catSelect.value = curVal;
-    else catSelect.value = "Comida";
+    else if (categories.length > 0) catSelect.value = categories[0].name || categories[0];
+    setupCustomSelect("expense-category", "fa-tag");
   }
 }
 
