@@ -39,13 +39,43 @@
       -ms-overflow-style: none;
       scrollbar-width: none;
     }
-    /* Animación de apertura suave de bottom sheet */
-    @keyframes slideUp {
-      from { transform: translateY(100%); }
-      to { transform: translateY(0); }
+
+    /* ============================================================ */
+    /* MATERIAL DESIGN 3 MOTION SPECIFICATIONS (EASING & DURATION)   */
+    /* https://m3.material.io/styles/motion/easing-and-duration     */
+    /* ============================================================ */
+    :root {
+      /* M3 Easing Tokens */
+      --md-sys-motion-easing-emphasized-decelerate: cubic-bezier(0.05, 0.7, 0.1, 1.0);
+      --md-sys-motion-easing-emphasized-accelerate: cubic-bezier(0.3, 0.0, 0.8, 0.15);
+      --md-sys-motion-easing-standard-decelerate: cubic-bezier(0.0, 0.0, 0.2, 1.0);
+      --md-sys-motion-easing-standard: cubic-bezier(0.2, 0.0, 0.0, 1.0);
+
+      /* M3 Duration Tokens */
+      --md-sys-motion-duration-short3: 250ms;
+      --md-sys-motion-duration-medium2: 300ms;
+      --md-sys-motion-duration-extra-long4: 500ms;
     }
-    .animate-slide-up {
-      animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+
+    /* Backdrop Scrim con M3 Transition */
+    .m3-bottom-sheet-backdrop {
+      opacity: 0;
+      transition: opacity var(--md-sys-motion-duration-medium2) var(--md-sys-motion-easing-standard);
+    }
+    .m3-bottom-sheet-backdrop.m3-visible {
+      opacity: 1;
+      transition: opacity var(--md-sys-motion-duration-extra-long4) var(--md-sys-motion-easing-standard-decelerate);
+    }
+
+    /* Bottom Sheet Surface con M3 Emphasized Decelerate / Accelerate */
+    .m3-bottom-sheet-surface {
+      transform: translateY(100%);
+      will-change: transform;
+      transition: transform var(--md-sys-motion-duration-short3) var(--md-sys-motion-easing-emphasized-accelerate);
+    }
+    .m3-bottom-sheet-backdrop.m3-visible .m3-bottom-sheet-surface {
+      transform: translateY(0%);
+      transition: transform var(--md-sys-motion-duration-extra-long4) var(--md-sys-motion-easing-emphasized-decelerate);
     }
   </style>
 </head>
@@ -284,9 +314,9 @@
   <!-- MODALES TIPO BOTTOM-SHEET PARA MOBILE -->
   <!-- ========================================== -->
 
-  <!-- 1. Modal Añadir Gasto (True Native Bottom Sheet) -->
-  <div id="modal-expense" class="fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-sm hidden items-end justify-center p-0">
-    <div class="w-full max-w-lg bg-white rounded-t-[32px] max-h-[92vh] flex flex-col shadow-2xl overflow-hidden transition-transform duration-300">
+  <!-- 1. Modal Añadir Gasto (True Native M3 Bottom Sheet) -->
+  <div id="modal-expense" class="fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-sm hidden items-end justify-center p-0 m3-bottom-sheet-backdrop">
+    <div class="w-full max-w-lg bg-white rounded-t-[32px] max-h-[92vh] flex flex-col shadow-2xl overflow-hidden m3-bottom-sheet-surface">
       
       <!-- Drag Handle Indicator -->
       <div class="w-12 h-1.5 bg-slate-300 rounded-full mx-auto mt-3 mb-1 shrink-0"></div>
@@ -468,9 +498,9 @@
     </div>
   </div>
 
-  <!-- 2. Modal Ingreso Rápido (Bottom Sheet) -->
-  <div id="modal-income" class="fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-sm hidden items-end justify-center p-0">
-    <div class="w-full max-w-lg bg-white rounded-t-[32px] max-h-[92vh] flex flex-col shadow-2xl overflow-hidden transition-transform duration-300">
+  <!-- 2. Modal Ingreso Rápido (True Native M3 Bottom Sheet) -->
+  <div id="modal-income" class="fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-sm hidden items-end justify-center p-0 m3-bottom-sheet-backdrop">
+    <div class="w-full max-w-lg bg-white rounded-t-[32px] max-h-[92vh] flex flex-col shadow-2xl overflow-hidden m3-bottom-sheet-surface">
       
       <!-- Drag Handle Indicator -->
       <div class="w-12 h-1.5 bg-slate-300 rounded-full mx-auto mt-3 mb-1 shrink-0"></div>
@@ -530,12 +560,16 @@
     </div>
   </div>
 
-  <!-- 3. Drawer / Modal de Ajustes -->
-  <div id="modal-settings" class="fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-sm hidden items-end sm:items-center justify-center p-0 sm:p-4">
-    <div class="w-full max-w-lg bg-white rounded-t-3xl sm:rounded-3xl max-h-[92vh] flex flex-col shadow-2xl animate-slide-up overflow-hidden">
-      <div class="px-5 py-4 border-b border-slate-100 flex items-center justify-between">
+  <!-- 3. Drawer / Modal de Ajustes (True Native M3 Bottom Sheet) -->
+  <div id="modal-settings" class="fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-sm hidden items-end justify-center p-0 m3-bottom-sheet-backdrop">
+    <div class="w-full max-w-lg bg-white rounded-t-[32px] max-h-[92vh] flex flex-col shadow-2xl overflow-hidden m3-bottom-sheet-surface">
+      
+      <!-- Drag Handle Indicator -->
+      <div class="w-12 h-1.5 bg-slate-300 rounded-full mx-auto mt-3 mb-1 shrink-0"></div>
+
+      <div class="px-5 py-3 border-b border-slate-100 flex items-center justify-between shrink-0">
         <h3 class="font-extrabold text-sm text-slate-900">Ajustes & Opciones</h3>
-        <button id="close-modal-settings" class="w-8 h-8 rounded-full bg-slate-100 text-slate-400 hover:text-slate-600 flex items-center justify-center text-xs">
+        <button id="close-modal-settings" class="w-8 h-8 rounded-full bg-slate-100 text-slate-400 hover:text-slate-600 flex items-center justify-center text-xs active:scale-90 transition-transform">
           <i class="fas fa-times"></i>
         </button>
       </div>
@@ -1659,24 +1693,61 @@
     });
 
     // Control de Modales
+    // ================================================================
+    // SISTEMA DE MODALES MATERIAL DESIGN 3 MOTION
+    // ================================================================
     const openModal = (id) => {
       const m = document.getElementById(id);
+      if (!m) return;
       m.classList.remove('hidden');
       m.classList.add('flex');
+      // Forzar reflujo del navegador para iniciar animación M3
+      void m.offsetWidth;
+      m.classList.add('m3-visible');
+      document.body.classList.add('overflow-hidden');
     };
+
     const closeModal = (id) => {
       const m = document.getElementById(id);
-      m.classList.add('hidden');
-      m.classList.remove('flex');
+      if (!m) return;
+      m.classList.remove('m3-visible');
+      document.body.classList.remove('overflow-hidden');
+      // Esperar duración de salida M3 (short3 = 250ms)
+      setTimeout(() => {
+        if (!m.classList.contains('m3-visible')) {
+          m.classList.add('hidden');
+          m.classList.remove('flex');
+        }
+      }, 260);
     };
+
+    // Cerrar al tocar fuera (Backdrop scrim touch)
+    ['modal-expense', 'modal-income', 'modal-settings'].forEach(modalId => {
+      const modalEl = document.getElementById(modalId);
+      if (modalEl) {
+        modalEl.addEventListener('click', (e) => {
+          if (e.target === modalEl) {
+            closeModal(modalId);
+          }
+        });
+      }
+    });
 
     // Botones de Apertura
     document.getElementById('mobile-btn-add-expense').addEventListener('click', () => {
       document.getElementById('exp-date').value = new Date().toISOString().split('T')[0];
+      editingExpenseId = null;
+      document.getElementById('btn-delete-expense').classList.add('hidden');
+      document.querySelector('#modal-expense h3').textContent = 'Registrar Nuevo Gasto';
+      document.getElementById('label-submit-expense').textContent = 'Confirmar y Guardar Gasto';
       openModal('modal-expense');
     });
     document.getElementById('mobile-btn-add-income').addEventListener('click', () => {
       document.getElementById('inc-date').value = new Date().toISOString().split('T')[0];
+      editingIncomeId = null;
+      document.getElementById('btn-delete-income').classList.add('hidden');
+      document.getElementById('modal-income-title').textContent = 'Registrar Nuevo Ingreso';
+      document.getElementById('label-submit-income').textContent = 'Añadir Ingreso al Presupuesto';
       openModal('modal-income');
     });
     document.getElementById('mobile-btn-settings-nav').addEventListener('click', () => openModal('modal-settings'));
