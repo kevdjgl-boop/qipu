@@ -99,6 +99,22 @@ export class SidebarPrincipal extends HTMLElement {
                                         </button>
                                     </div>
                                 </div>
+
+                                <!-- Botón Bot de Telegram -->
+                                <div class="bg-gradient-to-br from-sky-50 to-blue-50 border border-sky-100 rounded-3xl p-5 space-y-3">
+                                    <div class="flex items-center gap-3">
+                                        <div class="w-10 h-10 rounded-2xl bg-sky-500 text-white flex items-center justify-center text-lg shadow-sm">
+                                            <i class="fab fa-telegram-plane"></i>
+                                        </div>
+                                        <div>
+                                            <h4 class="font-bold text-slate-800 text-sm">Bot de Telegram</h4>
+                                            <p class="text-[10px] text-slate-500">Registra gastos al instante por chat</p>
+                                        </div>
+                                    </div>
+                                    <button id="open-telegram-modal-sidebar-btn" type="button" class="w-full py-2.5 bg-sky-500 hover:bg-sky-600 active:scale-95 text-white rounded-xl text-xs font-bold transition-all shadow-xs flex items-center justify-center gap-2">
+                                        <i class="fab fa-telegram-plane"></i> Conectar Telegram
+                                    </button>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -224,6 +240,24 @@ export class SidebarPrincipal extends HTMLElement {
         // Evento global para escuchar apertura desde fuera del componente (ej: Header botón Ajustes)
         document.addEventListener('openSidebar', () => {
             if (!isOpen) toggleSidebar();
+        });
+
+        // Apertura del modal de Telegram
+        const btnOpenTelegram = this.querySelector('#open-telegram-modal-sidebar-btn');
+        btnOpenTelegram?.addEventListener('click', () => {
+            const modal = document.querySelector('#telegram-modal');
+            const cmdDisplay = document.querySelector('#telegram-link-command-display');
+            const walletIdInput = document.querySelector('#share-wallet-id');
+            const walletId = walletIdInput ? walletIdInput.value.trim() : (window.currentWalletId || '');
+
+            if (cmdDisplay) {
+                cmdDisplay.textContent = `/vincular ${walletId || 'TU_ID_MONEDERO'}`;
+            }
+
+            if (modal) {
+                modal.classList.remove('hidden');
+                modal.classList.add('flex');
+            }
         });
     }
 }

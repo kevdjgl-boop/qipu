@@ -4,13 +4,25 @@
  * Registra y carga los Web Components creados.
  */
 
-// Importar los Web Components nativos
+// Importar TODOS los Web Components nativos
 import { LayoutPrincipal } from './components/layout-principal.js';
 import { SidebarPrincipal } from './components/sidebar-principal.js';
 import { VistaDashboard } from './components/vista-dashboard.js';
 import { VistaHistorial } from './components/vista-historial.js';
 import { ModalBilletera } from './components/modal-billetera.js';
 import { ModalTransaccion } from './components/modal-transaccion.js';
+import { ModalTelegram } from './components/modal-telegram.js';
+import { ModalParticipante } from './components/modal-participante.js';
+import { ModalRepartir } from './components/modal-repartir.js';
+import { ModalAhorros } from './components/modal-ahorros.js';
+import { ModalImportacion } from './components/modal-importacion.js';
+import { ModalCategorias } from './components/modal-categorias.js';
+import { ModalMetodosPago } from './components/modal-metodos-pago.js';
+import { ModalMetodoDetalle } from './components/modal-metodo-detalle.js';
+import { ModalPerfil } from './components/modal-perfil.js';
+import { ModalIngresoRapido } from './components/modal-ingreso-rapido.js';
+import { ModalGlobal } from './components/modal-global.js';
+
 console.log("Qipu 3.0 Web Components Inicializados correctamente.");
 
 const loader = document.getElementById('initial-loading-screen');
@@ -29,6 +41,19 @@ if (mainSlot) {
     mainSlot.innerHTML = `
         <vista-dashboard id="view-dashboard"></vista-dashboard>
         <vista-historial id="view-history" class="hidden"></vista-historial>
+        <modal-transaccion></modal-transaccion>
+        <modal-categorias></modal-categorias>
+        <modal-metodos-pago></modal-metodos-pago>
+        <modal-metodo-detalle></modal-metodo-detalle>
+        <modal-participante></modal-participante>
+        <modal-perfil></modal-perfil>
+        <modal-billetera></modal-billetera>
+        <modal-ahorros></modal-ahorros>
+        <modal-repartir></modal-repartir>
+        <modal-importacion></modal-importacion>
+        <modal-ingreso-rapido></modal-ingreso-rapido>
+        <modal-telegram></modal-telegram>
+        <modal-global></modal-global>
     `;
 }
 
@@ -49,6 +74,7 @@ Promise.all([
     customElements.whenDefined('modal-metodo-detalle'),
     customElements.whenDefined('modal-perfil'),
     customElements.whenDefined('modal-ingreso-rapido'),
+    customElements.whenDefined('modal-telegram'),
     customElements.whenDefined('modal-global')
 ]).then(() => {
     console.log("Todos los Web Components están listos en el DOM. Inicializando lógica core (App.js y Flowbite)...");

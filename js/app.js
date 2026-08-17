@@ -3679,7 +3679,7 @@ function renderDashboard(summary, currentFinancialList = []) {
       const variableExpenses = Math.max(0, p.spent - totalFixedForParticipant);
 
       cardsHTML += `
-                <div id="${triggerId}" class="bg-white rounded-3xl p-4 border border-gray-200 shadow-sm flex flex-col justify-between h-auto relative overflow-hidden group transition-all w-full">
+                <div id="${triggerId}" class="bg-white rounded-3xl p-4 border border-gray-200 shadow-sm flex flex-col justify-between h-auto relative overflow-hidden group transition-all w-[240px] md:w-full shrink-0 snap-start">
                     <div class="absolute right-0 bottom-0 w-24 h-24 bg-${colorClass}-50 rounded-tl-full -mr-4 -mb-4 transition-transform group-hover:scale-110"></div>
                     <div class="relative z-10 flex justify-between items-start">
                         <div>
@@ -3728,14 +3728,16 @@ function renderDashboard(summary, currentFinancialList = []) {
                 </div>`;
     });
 
-    // D. INYECCIÃ“N TOTAL (Header Nuevo + Grid)
-    // Aquí es donde el JS sobrescribe cualquier título viejo del HTML
+    // D. INYECCIÓN TOTAL (Header Nuevo + Grid/Carrusel)
     participantsCard.innerHTML = `
-            <div class="flex items-center gap-2 mt-3 shrink-0">
-                <div class="w-2 h-2 rounded-full bg-indigo-500"></div>
-                <p class="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Saldos Individuales</p>
+            <div class="flex items-center justify-between mt-3 mb-1 shrink-0">
+                <div class="flex items-center gap-2">
+                    <div class="w-2 h-2 rounded-full bg-indigo-500"></div>
+                    <p class="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Saldos Individuales</p>
+                </div>
+                <span class="md:hidden text-[10px] font-bold text-indigo-500">Desliza ➔</span>
             </div>
-            <div id="participant-summary-cards" class="grid grid-cols-1 gap-3 w-full flex-grow">
+            <div id="participant-summary-cards" class="flex md:grid md:grid-cols-1 overflow-x-auto md:overflow-visible snap-x md:snap-none scrollbar-none gap-3 w-full pb-2 md:pb-0 flex-grow">
                 ${cardsHTML}
             </div>
         `;
@@ -7610,27 +7612,89 @@ function renderCreditCardSummary(expensesForMonth, allExpenses) {
     const bottomColor = cardColors[index % cardColors.length];
     const popoverId = `card-popover-${method.id}`;
 
-    // 4. CALCULAR DESGLOSE DE DEUDA (Quién debe qué dentro de este ciclo)
+    // 4. CALCULAR DESGLOSE DE DEUDA (Quién debe qué dentro de este ciclo, respetando ítems)
     const debtMap = new Map();
     participants.forEach((p) => debtMap.set(p.id, { name: p.name, total: 0 }));
     let debtGuest = 0;
 
     expensesToConsider.forEach((e) => {
-      if (e.type === "shared") {
-        let guestCount = 0;
-        if (e.guests && Array.isArray(e.guests)) guestCount = e.guests.length;
-        else if (e.guestName) guestCount = 1;
+      const amount = parseFloat(e.amount) || 0;
+      const expenseGuests = (e.guests && Array.isArray(e.guests) && e.guests.length > 0)
+        ? e.guests
+        : (e.guestName ? [e.guestName] : []);
+      const registeredCount = participants.length;
+      const guestsCount = expenseGuests.length;
+      const totalPayees = registeredCount + guestsCount;
 
-        const totalPayees = participants.length + guestCount;
-        const splitAmount = e.amount / totalPayees;
+      if (e.type === "shared" || !e.type) {
+        if (e.items && e.items.length > 0 && totalPayees > 0) {
+          let itemsTotalCost = 0;
+          let itemShares = {};
+          participants.forEach((p) => { itemShares[p.id] = 0; });
+          let guestItemShares = 0;
 
-        debtMap.forEach((d) => (d.total += splitAmount)); // Todos suman deuda
-        if (guestCount > 0) debtGuest += splitAmount * guestCount;
+          e.items.forEach((item) => {
+            const qty = parseFloat(item.quantity) || 1;
+            const unitPrice = parseFloat(item.amount) || 0;
+            const itemTotal = qty * unitPrice;
+            itemsTotalCost += itemTotal;
+
+            const assignments = item.assignments || {};
+            let assignedUnitsSum = 0;
+
+            Object.keys(assignments).forEach((pId) => {
+              const assignedQty = parseFloat(assignments[pId]) || 0;
+              if (assignedQty > 0) {
+                assignedUnitsSum += assignedQty;
+                const cost = assignedQty * unitPrice;
+                if (itemShares[pId] !== undefined) {
+                  itemShares[pId] += cost;
+                } else if (pId.startsWith("guest_") || pId.startsWith("guest-")) {
+                  guestItemShares += cost;
+                }
+              }
+            });
+
+            if (assignedUnitsSum === 0 && item.assignedTo) {
+              assignedUnitsSum = qty;
+              const cost = itemTotal;
+              if (itemShares[item.assignedTo] !== undefined) {
+                itemShares[item.assignedTo] += cost;
+              } else if (item.assignedTo.startsWith("guest_") || item.assignedTo.startsWith("guest-")) {
+                guestItemShares += cost;
+              }
+            }
+
+            const unassignedUnits = Math.max(0, qty - assignedUnitsSum);
+            if (unassignedUnits > 0) {
+              const unassignedCost = unassignedUnits * unitPrice;
+              const sharePerPerson = unassignedCost / totalPayees;
+              participants.forEach((p) => {
+                itemShares[p.id] += sharePerPerson;
+              });
+              guestItemShares += sharePerPerson * guestsCount;
+            }
+          });
+
+          const remainingAmount = Math.max(0, amount - itemsTotalCost);
+          const remainingSharePerPerson = totalPayees > 0 ? remainingAmount / totalPayees : 0;
+
+          participants.forEach((p) => {
+            if (debtMap.has(p.id)) {
+              debtMap.get(p.id).total += (itemShares[p.id] || 0) + remainingSharePerPerson;
+            }
+          });
+          debtGuest += guestItemShares + (remainingSharePerPerson * guestsCount);
+        } else {
+          const splitAmount = totalPayees > 0 ? amount / totalPayees : 0;
+          debtMap.forEach((d) => (d.total += splitAmount));
+          if (guestsCount > 0) debtGuest += splitAmount * guestsCount;
+        }
       } else {
         // Gasto personal
         const pd = debtMap.get(e.payerId);
-        if (pd) pd.total += e.amount;
-        else if (e.payerId && e.payerId.startsWith("guest")) debtGuest += e.amount;
+        if (pd) pd.total += amount;
+        else if (e.payerId && (e.payerId.startsWith("guest_") || e.payerId.startsWith("guest-") || e.payerId.startsWith("guest"))) debtGuest += amount;
       }
     });
 

@@ -1,0 +1,21 @@
+{
+  "name": "qipu-3.0",
+  "version": "3.0.0",
+  "description": "Qipu 3.0 - Monedero y Gestor Financiero Compartido",
+  "main": "telegram-bot/server.js",
+  "type": "module",
+  "scripts": {
+    "start": "node --env-file=telegram-bot/.env telegram-bot/server.js",
+    "bot": "node --env-file=telegram-bot/.env telegram-bot/server.js",
+    "bot:dev": "node --env-file=telegram-bot/.env telegram-bot/server.js",
+    "test:bot": "node telegram-bot/test-parser.js"
+  },
+  "keywords": [
+    "qipu",
+    "finance",
+    "budget",
+    "telegram-bot"
+  ],
+  "author": "Qipu Team",
+  "license": "MIT"
+}

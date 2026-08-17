@@ -10,22 +10,22 @@ export class VistaDashboard extends HTMLElement {
         this.innerHTML = `
         <section id="dashboard-container" class="section-card">
             <!-- Barra superior de acciones rápidas -->
-            <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-2 gap-1">
-                <div class="inline-flex flex-wrap items-center gap-1 rounded-3xl shadow-sm bg-white p-3 border border-gray-200" role="group">
-                    <button id="open-expense-modal-btn" type="button" class="px-6 py-2.5 text-base font-extrabold text-white bg-gray-900 rounded-2xl rounded-r-md hover:bg-gray-800 focus:z-10 transition-all shadow-lg transform active:scale-95 flex items-center">
-                        <i class="fas fa-plus-circle mr-2 text-lg"></i> Añadir Gasto
+            <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-2 gap-2">
+                <div class="flex items-center gap-1 rounded-3xl shadow-sm bg-white p-2 md:p-3 border border-gray-200 overflow-x-auto scrollbar-none w-full md:w-auto shrink-0" role="group">
+                    <button id="open-expense-modal-btn" type="button" class="px-5 md:px-6 py-2.5 text-xs md:text-base font-extrabold text-white bg-gray-900 rounded-2xl rounded-r-md hover:bg-gray-800 focus:z-10 transition-all shadow-lg transform active:scale-95 flex items-center shrink-0">
+                        <i class="fas fa-plus-circle mr-1.5 md:mr-2 text-sm md:text-lg"></i> Añadir Gasto
                     </button>
-                    <button id="quick-add-income-btn" type="button" class="px-5 py-2.5 text-base font-extrabold text-white bg-emerald-600 rounded-r-2xl rounded-md hover:bg-emerald-700 focus:z-10 transition-all shadow-lg transform active:scale-95 flex items-center">
-                        <i class="fas fa-plus-circle mr-2 text-lg"></i> Ingreso
+                    <button id="quick-add-income-btn" type="button" class="px-4 md:px-5 py-2.5 text-xs md:text-base font-extrabold text-white bg-emerald-600 rounded-r-2xl rounded-md hover:bg-emerald-700 focus:z-10 transition-all shadow-lg transform active:scale-95 flex items-center shrink-0">
+                        <i class="fas fa-plus-circle mr-1.5 md:mr-2 text-sm md:text-lg"></i> Ingreso
                     </button>
-                    <button id="open-categories-modal-btn" type="button" class="px-4 py-2 text-sm font-medium text-gray-600 bg-transparent rounded-2xl hover:bg-gray-100 hover:text-indigo-600 ml-1">Categorías</button>
-                    <button id="open-payment-methods-modal-btn" type="button" class="px-4 py-2 text-sm font-medium text-gray-600 bg-transparent rounded-2xl hover:bg-gray-100 hover:text-indigo-600">Métodos</button>
-                    <div class="w-px h-6 bg-gray-200 mx-1 self-center"></div>
-                    <button id="open-settlement-modal-btn" type="button" class="px-4 py-2 text-sm font-bold text-rose-600 bg-rose-50 rounded-2xl hover:bg-rose-100">Liquidar</button>
+                    <button id="open-categories-modal-btn" type="button" class="px-3.5 md:px-4 py-2 text-xs md:text-sm font-medium text-gray-600 bg-transparent rounded-2xl hover:bg-gray-100 hover:text-indigo-600 ml-1 shrink-0">Categorías</button>
+                    <button id="open-payment-methods-modal-btn" type="button" class="px-3.5 md:px-4 py-2 text-xs md:text-sm font-medium text-gray-600 bg-transparent rounded-2xl hover:bg-gray-100 hover:text-indigo-600 shrink-0">Métodos</button>
+                    <div class="w-px h-6 bg-gray-200 mx-1 self-center shrink-0"></div>
+                    <button id="open-settlement-modal-btn" type="button" class="px-3.5 md:px-4 py-2 text-xs md:text-sm font-bold text-rose-600 bg-rose-50 rounded-2xl hover:bg-rose-100 shrink-0">Liquidar</button>
                 </div>
 
                 <!-- Perfil y Notificaciones -->
-                <div class="flex items-center gap-3">
+                <div class="flex items-center gap-3 self-end md:self-auto">
                     <button id="open-participants-sidebar-btn" class="bg-white text-gray-700 border border-gray-200 hover:bg-gray-50 shadow-sm px-3 py-2.5 rounded-xl flex items-center gap-2 font-bold text-sm transition-colors" title="Configuración">
                         <i class="fas fa-cog text-gray-400 text-lg"></i>
                         <span class="hidden xl:inline">Ajustes</span>
@@ -41,7 +41,7 @@ export class VistaDashboard extends HTMLElement {
             </div>
 
             <!-- Dashboard Layout: Tarjetas (Glassmorphisim) -->
-            <div id="dashboard-blocks-wrapper" class="mt-4">
+            <div id="dashboard-blocks-wrapper" class="mt-2 md:mt-4">
                 <div id="dashboard-top-block" class="flex flex-col md:flex-row gap-2">
                     
                     <div class="balance-glass-card saldo-glow w-full md:w-[280px]">
@@ -93,10 +93,13 @@ export class VistaDashboard extends HTMLElement {
                         </div>
                     </div>
 
-                    <!-- Saldos Individuales (Placeholder para listas de cards) -->
+                    <!-- Saldos Individuales (Placeholder para listas de cards / carrusel) -->
                     <div id="saldos-individuales-card" class="section-card flex-grow shadow-none border border-gray-200">
-                        <h3 class="text-2xl font-extrabold text-gray-800 mb-2">Saldos Individuales</h3>
-                        <div id="participant-summary-cards" class="grid grid-cols-1 gap-1">
+                        <div class="flex items-center justify-between mb-2">
+                            <h3 class="text-xl font-extrabold text-gray-800">Saldos Individuales</h3>
+                            <span class="md:hidden text-[10px] font-bold text-indigo-500">Desliza ➔</span>
+                        </div>
+                        <div id="participant-summary-cards" class="flex md:grid md:grid-cols-1 overflow-x-auto md:overflow-visible snap-x md:snap-none scrollbar-none gap-3 pb-2 md:pb-0">
                              <p class="text-gray-400 text-sm italic">Sin participantes</p>
                         </div>
                     </div>
@@ -116,6 +119,27 @@ export class VistaDashboard extends HTMLElement {
                         <p id="chart-no-data" class="absolute inset-0 flex items-center justify-center text-gray-500 italic">No hay datos para mostrar.</p>
                     </div>
                 </div>
+            </div>
+
+            <!-- Barra Flotante Fija Inferior (Exclusiva Mobile) -->
+            <div id="mobile-sticky-action-bar-dashboard" class="md:hidden fixed bottom-3 left-3 right-3 z-40 bg-slate-900/95 backdrop-blur-xl border border-white/10 rounded-2xl p-2 px-3 flex items-center justify-between shadow-2xl text-white">
+                <button type="button" id="mobile-bottom-btn-expense" class="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-500 active:scale-95 text-white font-extrabold text-xs px-4 py-2.5 rounded-xl shadow-md transition-all">
+                    <i class="fas fa-plus-circle text-sm"></i>
+                    <span>+ Gasto</span>
+                </button>
+
+                <button type="button" id="mobile-bottom-btn-income" class="flex items-center gap-1.5 bg-emerald-600 hover:bg-emerald-500 active:scale-95 text-white font-bold text-xs px-3.5 py-2.5 rounded-xl shadow-md transition-all">
+                    <i class="fas fa-coins text-xs"></i>
+                    <span>+ Ingreso</span>
+                </button>
+
+                <button type="button" id="mobile-bottom-btn-categories" class="p-2.5 text-slate-300 hover:text-white rounded-xl hover:bg-white/10 transition-colors" title="Categorías">
+                    <i class="fas fa-tags text-base"></i>
+                </button>
+
+                <button type="button" id="mobile-bottom-btn-sidebar" class="p-2.5 text-slate-300 hover:text-white rounded-xl hover:bg-white/10 transition-colors" title="Ajustes">
+                    <i class="fas fa-bars text-base"></i>
+                </button>
             </div>
         </section>
         `;
@@ -164,6 +188,24 @@ export class VistaDashboard extends HTMLElement {
                 modal.classList.remove('hidden');
                 modal.classList.add('flex');
             }
+        });
+
+        // Conexiones de la barra flotante inferior mobile
+        const btnMobExpense = this.querySelector('#mobile-bottom-btn-expense');
+        btnMobExpense?.addEventListener('click', () => btnExpense?.click());
+
+        const btnMobIncome = this.querySelector('#mobile-bottom-btn-income');
+        btnMobIncome?.addEventListener('click', () => btnIncome?.click());
+
+        const btnMobCategories = this.querySelector('#mobile-bottom-btn-categories');
+        btnMobCategories?.addEventListener('click', () => {
+            const btnCat = this.querySelector('#open-categories-modal-btn');
+            btnCat?.click();
+        });
+
+        const btnMobSidebar = this.querySelector('#mobile-bottom-btn-sidebar');
+        btnMobSidebar?.addEventListener('click', () => {
+            document.dispatchEvent(new CustomEvent('openSidebar'));
         });
 
         // Acordeón de Gráfica

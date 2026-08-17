@@ -1,0 +1,19 @@
+{
+  "name": "qipu-telegram-bot",
+  "version": "3.0.0",
+  "description": "Bot de Telegram para registro de gastos en tiempo real en Qipu 3.0",
+  "main": "server.js",
+  "type": "module",
+  "scripts": {
+    "start": "node --env-file=.env server.js",
+    "dev": "node --env-file=.env server.js"
+  },
+  "keywords": [
+    "qipu",
+    "telegram-bot",
+    "finance",
+    "expenses"
+  ],
+  "author": "Qipu Team",
+  "license": "MIT"
+}

@@ -1,0 +1,15 @@
+# Environment files (Tokens y llaves privadas)
+.env
+telegram-bot/.env
+
+# Node modules
+node_modules/
+npm-debug.log*
+
+# Backups locales
+_backup_pre_componentes/
+
+# Logs y caches del sistema
+.DS_Store
+Thumbs.db
+*.log

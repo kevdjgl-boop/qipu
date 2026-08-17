@@ -2051,6 +2051,13 @@
           </div>
 
           <div class="flex items-center gap-3">
+            <a href="mobile.html"
+              class="bg-indigo-50 text-indigo-700 border border-indigo-100 hover:bg-indigo-100 shadow-sm px-3 py-2.5 rounded-xl flex items-center gap-2 font-bold text-xs transition-colors"
+              title="Abrir Vista Móvil">
+              <i class="fas fa-mobile-alt text-indigo-500 text-base"></i>
+              <span class="hidden sm:inline">Vista Móvil</span>
+            </a>
+
             <button id="open-participants-sidebar-btn"
               class="bg-white text-gray-700 border border-gray-200 hover:bg-gray-50 shadow-sm px-3 py-2.5 rounded-xl flex items-center gap-2 font-bold text-sm transition-colors"
               title="Configuración">
@@ -10933,24 +10940,88 @@
         const bottomColor = cardColors[index % cardColors.length];
         const popoverId = `card-popover-${method.id}`;
 
-        // Cálculo de Deuda (Popover)
+        // Cálculo de Deuda (Popover con desglose exacto de ítems)
         const map = new Map();
         participants.forEach((p) => map.set(p.id, { name: p.name, total: 0 }));
         let dGuest = 0;
 
         expensesToConsider.forEach((e) => {
-          if (e.type === "shared") {
-            let gc = 0;
-            if (e.guests && Array.isArray(e.guests)) gc = e.guests.length;
-            else if (e.guestName) gc = 1;
-            const totalP = participants.length + gc;
-            const split = e.amount / totalP;
-            map.forEach((d) => (d.total += split));
-            if (gc > 0) dGuest += split * gc;
+          const amount = parseFloat(e.amount) || 0;
+          const expenseGuests = (e.guests && Array.isArray(e.guests) && e.guests.length > 0)
+            ? e.guests
+            : (e.guestName ? [e.guestName] : []);
+          const registeredCount = participants.length;
+          const guestsCount = expenseGuests.length;
+          const numPayees = registeredCount + guestsCount;
+
+          if (e.type === "shared" || !e.type) {
+            if (e.items && e.items.length > 0 && numPayees > 0) {
+              let itemsTotalCost = 0;
+              let itemShares = {};
+              participants.forEach((p) => { itemShares[p.id] = 0; });
+              let guestItemShares = 0;
+
+              e.items.forEach((item) => {
+                const qty = parseFloat(item.quantity) || 1;
+                const unitPrice = parseFloat(item.amount) || 0;
+                const itemTotal = qty * unitPrice;
+                itemsTotalCost += itemTotal;
+
+                const assignments = item.assignments || {};
+                let assignedUnitsSum = 0;
+
+                Object.keys(assignments).forEach((pId) => {
+                  const assignedQty = parseFloat(assignments[pId]) || 0;
+                  if (assignedQty > 0) {
+                    assignedUnitsSum += assignedQty;
+                    const cost = assignedQty * unitPrice;
+                    if (itemShares[pId] !== undefined) {
+                      itemShares[pId] += cost;
+                    } else if (pId.startsWith("guest_") || pId.startsWith("guest-")) {
+                      guestItemShares += cost;
+                    }
+                  }
+                });
+
+                if (assignedUnitsSum === 0 && item.assignedTo) {
+                  assignedUnitsSum = qty;
+                  const cost = itemTotal;
+                  if (itemShares[item.assignedTo] !== undefined) {
+                    itemShares[item.assignedTo] += cost;
+                  } else if (item.assignedTo.startsWith("guest_") || item.assignedTo.startsWith("guest-")) {
+                    guestItemShares += cost;
+                  }
+                }
+
+                const unassignedUnits = Math.max(0, qty - assignedUnitsSum);
+                if (unassignedUnits > 0) {
+                  const unassignedCost = unassignedUnits * unitPrice;
+                  const sharePerPerson = unassignedCost / numPayees;
+                  participants.forEach((p) => {
+                    itemShares[p.id] += sharePerPerson;
+                  });
+                  guestItemShares += sharePerPerson * guestsCount;
+                }
+              });
+
+              const remainingAmount = Math.max(0, amount - itemsTotalCost);
+              const remainingSharePerPerson = numPayees > 0 ? remainingAmount / numPayees : 0;
+
+              participants.forEach((p) => {
+                if (map.has(p.id)) {
+                  map.get(p.id).total += (itemShares[p.id] || 0) + remainingSharePerPerson;
+                }
+              });
+              dGuest += guestItemShares + (remainingSharePerPerson * guestsCount);
+            } else {
+              const split = numPayees > 0 ? amount / numPayees : 0;
+              map.forEach((d) => (d.total += split));
+              if (guestsCount > 0) dGuest += split * guestsCount;
+            }
           } else {
             const pd = map.get(e.payerId);
-            if (pd) pd.total += e.amount;
-            else if (e.payerId.startsWith("guest")) dGuest += e.amount;
+            if (pd) pd.total += amount;
+            else if (e.payerId && (e.payerId.startsWith("guest_") || e.payerId.startsWith("guest-") || e.payerId.startsWith("guest"))) dGuest += amount;
           }
         });
 
