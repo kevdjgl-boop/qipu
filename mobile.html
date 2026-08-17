@@ -453,11 +453,15 @@
           <input type="checkbox" id="exp-is-fixed" class="w-4 h-4 text-purple-600 rounded focus:ring-purple-500" />
         </div>
 
-        <!-- Botón Fijo Inferior de Confirmación -->
-        <div class="pt-2 sticky bottom-0 bg-white pb-2">
+        <!-- Botón Fijo Inferior de Confirmación & Eliminar -->
+        <div class="pt-2 sticky bottom-0 bg-white pb-2 space-y-2">
           <button type="submit" id="btn-submit-expense" class="w-full py-3.5 bg-indigo-600 hover:bg-indigo-700 active:scale-98 text-white font-extrabold text-xs rounded-2xl shadow-lg shadow-indigo-500/25 transition-all flex items-center justify-center gap-2">
             <i class="fas fa-check-circle text-sm"></i>
-            <span>Confirmar y Guardar Gasto</span>
+            <span id="label-submit-expense">Confirmar y Guardar Gasto</span>
+          </button>
+          <button type="button" id="btn-delete-expense" class="w-full py-2.5 bg-rose-50 hover:bg-rose-100 text-rose-600 rounded-2xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 hidden active:scale-98">
+            <i class="fas fa-trash-alt text-xs"></i>
+            <span>Eliminar Este Gasto</span>
           </button>
         </div>
       </form>
@@ -477,7 +481,7 @@
             <i class="fas fa-coins"></i>
           </div>
           <div>
-            <h3 class="font-extrabold text-sm text-slate-900 leading-tight">Registrar Nuevo Ingreso</h3>
+            <h3 id="modal-income-title" class="font-extrabold text-sm text-slate-900 leading-tight">Registrar Nuevo Ingreso</h3>
             <p class="text-[10px] text-slate-400 font-medium">Incrementa el presupuesto mensual</p>
           </div>
         </div>
@@ -512,10 +516,14 @@
           <input type="date" id="inc-date" class="w-full bg-slate-50 border border-slate-200 rounded-2xl py-2.5 px-3 text-xs font-bold text-slate-800 focus:bg-white transition-all" />
         </div>
 
-        <div class="pt-2 sticky bottom-0 bg-white pb-2">
+        <div class="pt-2 sticky bottom-0 bg-white pb-2 space-y-2">
           <button type="submit" id="btn-submit-income" class="w-full py-3.5 bg-emerald-600 hover:bg-emerald-700 active:scale-98 text-white font-extrabold text-xs rounded-2xl shadow-lg shadow-emerald-500/25 transition-all flex items-center justify-center gap-2">
             <i class="fas fa-check-circle text-sm"></i>
-            <span>Añadir Ingreso al Presupuesto</span>
+            <span id="label-submit-income">Añadir Ingreso al Presupuesto</span>
+          </button>
+          <button type="button" id="btn-delete-income" class="w-full py-2.5 bg-rose-50 hover:bg-rose-100 text-rose-600 rounded-2xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 hidden active:scale-98">
+            <i class="fas fa-trash-alt text-xs"></i>
+            <span>Eliminar Este Ingreso</span>
           </button>
         </div>
       </form>
@@ -1082,8 +1090,12 @@
           typeBadge = `<span class="ml-1.5 inline-flex items-center justify-center w-4 h-4 rounded-full bg-orange-100 text-orange-600 text-[8px]" title="Compartido"><i class="fas fa-users"></i></span>`;
         }
 
+        const clickHandler = isExpense 
+          ? `onclick="openEditExpenseModal('${item.id}')"` 
+          : `onclick="openEditIncomeModal('${item.id}')"`;
+
         return `
-          <div class="bg-white p-3.5 rounded-2xl border border-slate-100 shadow-sm flex items-center justify-between gap-3 hover:border-slate-200 transition-all">
+          <div ${clickHandler} class="bg-white p-3.5 rounded-2xl border border-slate-100 shadow-sm flex items-center justify-between gap-3 hover:border-slate-200 active:scale-98 transition-all cursor-pointer select-none">
             <!-- Bloque de Fecha Tipo Desktop -->
             <div class="flex items-center gap-3 min-w-0 flex-1">
               <div class="shrink-0">
@@ -1118,11 +1130,13 @@
     }
 
     // ================================================================
-    // ESTADO LOCAL PARA EL MODAL DE GASTOS (MODO LISTA & INVITADOS)
+    // ESTADO LOCAL PARA EL MODAL DE GASTOS (MODO LISTA & INVITADOS & EDICIÓN)
     // ================================================================
     let mobileExpenseMode = 'simple'; // 'simple' | 'list'
     let mobileExpenseGuests = []; // array de nombres ['Carlos', 'Ana']
     let mobileExpenseItems = []; // [{ id, desc, quantity, amount, assignedTo }]
+    let editingExpenseId = null; // null si es nuevo
+    let editingIncomeId = null; // null si es nuevo
 
     // 6. Control de Modo Simple vs Modo Lista
     const btnModeSimple = document.getElementById('btn-mode-simple');
@@ -1153,6 +1167,125 @@
       
       if (mobileExpenseItems.length === 0) {
         addMobileItemRow();
+      }
+    });
+
+    // Abrir Modal para Editar Gasto Existente
+    function openEditExpenseModal(expenseId) {
+      const exp = appState.expenses.find(e => e.id === expenseId);
+      if (!exp) return;
+
+      editingExpenseId = expenseId;
+      document.querySelector('#modal-expense h3').textContent = 'Editar Gasto';
+      document.getElementById('label-submit-expense').textContent = 'Guardar Cambios';
+      document.getElementById('btn-delete-expense').classList.remove('hidden');
+
+      // Cargar Valores
+      document.getElementById('exp-amount').value = exp.amount || '';
+      document.getElementById('exp-description').value = exp.description || '';
+      document.getElementById('exp-date').value = exp.date || new Date().toISOString().split('T')[0];
+      document.getElementById('exp-is-fixed').checked = !!exp.isFixed;
+      
+      if (exp.category) document.getElementById('exp-category').value = exp.category;
+      if (exp.payerId) document.getElementById('exp-payer').value = exp.payerId;
+      if (exp.paymentMethod) document.getElementById('exp-payment-method').value = exp.paymentMethod;
+
+      // Tipo
+      const typeRadio = document.querySelector(`input[name="exp-type"][value="${exp.type || 'shared'}"]`);
+      if (typeRadio) typeRadio.checked = true;
+
+      // Invitados
+      mobileExpenseGuests = (exp.guests && Array.isArray(exp.guests)) ? [...exp.guests] : (exp.guestName ? [exp.guestName] : []);
+      renderGuestsChips();
+
+      // Ítems
+      if (exp.items && exp.items.length > 0) {
+        mobileExpenseItems = exp.items.map(it => ({
+          id: 'item_' + Date.now() + '_' + Math.random().toString(36).substring(2, 6),
+          desc: it.desc || '',
+          quantity: it.quantity || 1,
+          amount: it.amount || '',
+          assignedTo: it.assignedTo || (it.assignments ? Object.keys(it.assignments)[0] : 'all') || 'all'
+        }));
+        btnModeList.click();
+        renderMobileItemsList();
+      } else {
+        mobileExpenseItems = [];
+        btnModeSimple.click();
+      }
+
+      openModal('modal-expense');
+    }
+    window.openEditExpenseModal = openEditExpenseModal;
+
+    // Abrir Modal para Editar Ingreso Existente
+    function openEditIncomeModal(incomeId) {
+      let targetIncome = null;
+      let targetParticipant = null;
+
+      appState.participants.forEach(p => {
+        (p.incomes || []).forEach(inc => {
+          if (inc.id === incomeId) {
+            targetIncome = inc;
+            targetParticipant = p;
+          }
+        });
+      });
+
+      if (!targetIncome) return;
+
+      editingIncomeId = incomeId;
+      document.getElementById('modal-income-title').textContent = 'Editar Ingreso';
+      document.getElementById('label-submit-income').textContent = 'Guardar Cambios';
+      document.getElementById('btn-delete-income').classList.remove('hidden');
+
+      document.getElementById('inc-amount').value = targetIncome.amount || '';
+      document.getElementById('inc-description').value = targetIncome.name || targetIncome.description || '';
+      document.getElementById('inc-date').value = targetIncome.date || new Date().toISOString().split('T')[0];
+      if (targetParticipant) {
+        document.getElementById('inc-participant').value = targetParticipant.id;
+      }
+
+      openModal('modal-income');
+    }
+    window.openEditIncomeModal = openEditIncomeModal;
+
+    // Eliminar Gasto
+    document.getElementById('btn-delete-expense').addEventListener('click', async () => {
+      if (!editingExpenseId) return;
+      if (!confirm('¿Estás seguro de eliminar este gasto definitivamente?')) return;
+
+      try {
+        const updatedExpenses = appState.expenses.filter(e => e.id !== editingExpenseId);
+        const walletRef = doc(db, "artifacts", appId, "public/data/wallets", currentWalletId);
+        await updateDoc(walletRef, { expenses: updatedExpenses });
+        closeModal('modal-expense');
+      } catch (err) {
+        console.error('Error al eliminar gasto:', err);
+        alert('Error al eliminar el gasto.');
+      }
+    });
+
+    // Eliminar Ingreso
+    document.getElementById('btn-delete-income').addEventListener('click', async () => {
+      if (!editingIncomeId) return;
+      if (!confirm('¿Estás seguro de eliminar este ingreso definitivamente?')) return;
+
+      try {
+        const updatedParticipants = JSON.parse(JSON.stringify(appState.participants));
+        updatedParticipants.forEach(p => {
+          if (p.incomes) {
+            p.incomes = p.incomes.filter(inc => inc.id !== editingIncomeId);
+            p.budget = p.incomes.reduce((s, inc) => s + (parseFloat(inc.amount) || 0), 0);
+          }
+        });
+
+        const walletRef = doc(db, "artifacts", appId, "public/data/wallets", currentWalletId);
+        await updateDoc(walletRef, { participants: updatedParticipants });
+        closeModal('modal-income');
+      } catch (err) {
+        console.error('Error al eliminar ingreso:', err);
+        alert('Error al eliminar el ingreso.');
       }
     });
 
@@ -1327,7 +1460,7 @@
         : `<option value="Efectivo">Efectivo</option><option value="Tarjeta">Tarjeta</option><option value="Transferencia">Transferencia</option>`;
     }
 
-    // 10. Guardar Gasto (Simple o Modo Lista)
+    // 10. Guardar Gasto (Crear o Actualizar)
     document.getElementById('form-mobile-expense').addEventListener('submit', async (e) => {
       e.preventDefault();
       
@@ -1381,8 +1514,8 @@
         finalDescription = `Lista de ${finalItems.length} ítems (${finalItems[0]?.desc || 'Compra'})`;
       }
 
-      const newExpense = {
-        id: 'exp_' + Date.now() + '_' + Math.random().toString(36).substring(2, 7),
+      const expenseData = {
+        id: editingExpenseId || ('exp_' + Date.now() + '_' + Math.random().toString(36).substring(2, 7)),
         amount: finalAmount,
         description: finalDescription,
         type,
@@ -1396,21 +1529,31 @@
       };
 
       if (mobileExpenseGuests.length > 0) {
-        newExpense.guests = [...mobileExpenseGuests];
+        expenseData.guests = [...mobileExpenseGuests];
       }
 
       if (finalItems.length > 0) {
-        newExpense.items = finalItems;
+        expenseData.items = finalItems;
       }
 
       try {
-        const updatedExpenses = [...appState.expenses, newExpense];
+        let updatedExpenses = [];
+        if (editingExpenseId) {
+          updatedExpenses = appState.expenses.map(e => e.id === editingExpenseId ? expenseData : e);
+        } else {
+          updatedExpenses = [...appState.expenses, expenseData];
+        }
+
         const walletRef = doc(db, "artifacts", appId, "public/data/wallets", currentWalletId);
         await updateDoc(walletRef, { expenses: updatedExpenses });
 
         // Cerrar modal y reiniciar estado
         closeModal('modal-expense');
         document.getElementById('form-mobile-expense').reset();
+        editingExpenseId = null;
+        document.getElementById('btn-delete-expense').classList.add('hidden');
+        document.querySelector('#modal-expense h3').textContent = 'Registrar Nuevo Gasto';
+        document.getElementById('label-submit-expense').textContent = 'Confirmar y Guardar Gasto';
         mobileExpenseItems = [];
         mobileExpenseGuests = [];
         renderGuestsChips();
@@ -1421,7 +1564,7 @@
       }
     });
 
-    // 8. Guardar Ingreso Rápido
+    // 11. Guardar Ingreso Rápido (Crear o Actualizar)
     document.getElementById('form-mobile-income').addEventListener('submit', async (e) => {
       e.preventDefault();
       const amount = parseFloat(document.getElementById('inc-amount').value) || 0;
@@ -1431,29 +1574,52 @@
 
       if (amount <= 0) return;
 
-      const newIncome = {
-        id: 'inc_' + Date.now(),
+      const incomeData = {
+        id: editingIncomeId || ('inc_' + Date.now()),
         amount,
+        name: description,
         description,
         date,
         createdAt: new Date().toISOString()
       };
 
-      const updatedParticipants = JSON.parse(JSON.stringify(appState.participants));
-      const pIdx = updatedParticipants.findIndex(p => p.id === participantId);
-      if (pIdx !== -1) {
-        if (!updatedParticipants[pIdx].incomes) updatedParticipants[pIdx].incomes = [];
-        updatedParticipants[pIdx].incomes.push(newIncome);
-        // Recalcular presupuesto total del participante
-        updatedParticipants[pIdx].budget = updatedParticipants[pIdx].incomes.reduce((s, inc) => s + (parseFloat(inc.amount) || 0), 0);
+      try {
+        const updatedParticipants = JSON.parse(JSON.stringify(appState.participants));
+        
+        if (editingIncomeId) {
+          // Remover ingreso de cualquier participante anterior
+          updatedParticipants.forEach(p => {
+            if (p.incomes) {
+              p.incomes = p.incomes.filter(inc => inc.id !== editingIncomeId);
+            }
+          });
+        }
+
+        // Agregar al participante asignado
+        const targetP = updatedParticipants.find(p => p.id === participantId);
+        if (targetP) {
+          if (!targetP.incomes) targetP.incomes = [];
+          targetP.incomes.push(incomeData);
+        }
+
+        // Recalcular presupuestos base
+        updatedParticipants.forEach(p => {
+          p.budget = (p.incomes || []).reduce((s, inc) => s + (parseFloat(inc.amount) || 0), 0);
+        });
 
         const walletRef = doc(db, "artifacts", appId, "public/data/wallets", currentWalletId);
         await updateDoc(walletRef, { participants: updatedParticipants });
-      }
 
-      document.getElementById('modal-income').classList.add('hidden');
-      document.getElementById('modal-income').classList.remove('flex');
-      document.getElementById('form-mobile-income').reset();
+        closeModal('modal-income');
+        document.getElementById('form-mobile-income').reset();
+        editingIncomeId = null;
+        document.getElementById('btn-delete-income').classList.add('hidden');
+        document.getElementById('modal-income-title').textContent = 'Registrar Nuevo Ingreso';
+        document.getElementById('label-submit-income').textContent = 'Añadir Ingreso al Presupuesto';
+      } catch (err) {
+        console.error('Error al guardar ingreso:', err);
+        alert('Ocurrió un error al guardar el ingreso.');
+      }
     });
 
     // 9. Control de Pestañas de Historial
