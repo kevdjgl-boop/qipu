@@ -161,55 +161,57 @@
         </div>
       </div>
 
-      <!-- Cuadrícula 2x2 de Mini Métricas -->
-      <div class="grid grid-cols-2 gap-2.5">
-        <!-- Gastado -->
-        <div class="bg-white rounded-2xl p-3.5 border border-slate-100 shadow-sm flex flex-col justify-between">
-          <div class="flex items-center justify-between mb-1">
-            <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Gastado Total</span>
-            <div class="w-7 h-7 rounded-lg bg-orange-50 text-orange-500 flex items-center justify-center text-xs">
-              <i class="fas fa-chart-line"></i>
-            </div>
-          </div>
-          <span id="display-total-spent" class="text-lg font-black text-slate-900 tracking-tight">S/ 0.00</span>
-          <span id="display-total-fixed" class="text-[10px] text-slate-400 mt-1 font-medium">Fijos: S/ 0.00</span>
+      <!-- Carrusel Horizontal Táctil de Métricas Globales -->
+      <div class="space-y-1.5 pt-1">
+        <div class="flex items-center justify-between px-1">
+          <span class="text-[10px] font-extrabold uppercase tracking-wider text-slate-400">Resumen Financiero</span>
+          <span class="text-[10px] font-bold text-slate-400 flex items-center gap-1">
+            Desliza <i class="fas fa-arrow-right text-[8px]"></i>
+          </span>
         </div>
 
-        <!-- Ahorro Global -->
-        <div class="bg-white rounded-2xl p-3.5 border border-slate-100 shadow-sm flex flex-col justify-between">
-          <div class="flex items-center justify-between mb-1">
-            <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Fondo Ahorro</span>
-            <div class="w-7 h-7 rounded-lg bg-purple-50 text-purple-500 flex items-center justify-center text-xs">
-              <i class="fas fa-piggy-bank"></i>
+        <div class="flex overflow-x-auto snap-x scrollbar-none gap-3 pb-1 -mx-4 px-4">
+          <!-- 1. Gastado Total -->
+          <div class="w-[190px] shrink-0 snap-start bg-white rounded-2xl p-4 border border-slate-100 shadow-sm flex flex-col justify-between">
+            <div class="flex items-center justify-between mb-2">
+              <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Gastado Total</span>
+              <div class="w-7 h-7 rounded-xl bg-orange-50 text-orange-500 flex items-center justify-center text-xs shadow-2xs">
+                <i class="fas fa-chart-line"></i>
+              </div>
+            </div>
+            <div>
+              <span id="display-total-spent" class="text-xl font-black text-slate-900 tracking-tight block">S/ 0.00</span>
+              <span id="display-total-fixed" class="text-[10px] text-slate-400 font-medium block mt-0.5">Fijos: S/ 0.00</span>
             </div>
           </div>
-          <span id="display-global-savings" class="text-lg font-black text-purple-600 tracking-tight">S/ 0.00</span>
-          <span id="display-shared-savings" class="text-[10px] text-slate-400 mt-1 font-medium">Mutuo: S/ 0.00</span>
-        </div>
 
-        <!-- Máximo Diario -->
-        <div class="bg-white rounded-2xl p-3.5 border border-slate-100 shadow-sm flex flex-col justify-between">
-          <div class="flex items-center justify-between mb-1">
-            <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Máx. Diario</span>
-            <div class="w-7 h-7 rounded-lg bg-indigo-50 text-indigo-500 flex items-center justify-center text-xs">
-              <i class="fas fa-calendar-day"></i>
+          <!-- 2. Fondo Ahorro -->
+          <div class="w-[190px] shrink-0 snap-start bg-white rounded-2xl p-4 border border-slate-100 shadow-sm flex flex-col justify-between">
+            <div class="flex items-center justify-between mb-2">
+              <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Fondo Ahorro</span>
+              <div class="w-7 h-7 rounded-xl bg-purple-50 text-purple-500 flex items-center justify-center text-xs shadow-2xs">
+                <i class="fas fa-piggy-bank"></i>
+              </div>
+            </div>
+            <div>
+              <span id="display-global-savings" class="text-xl font-black text-purple-600 tracking-tight block">S/ 0.00</span>
+              <span id="display-shared-savings" class="text-[10px] text-slate-400 font-medium block mt-0.5">Mutuo: S/ 0.00</span>
             </div>
           </div>
-          <span id="display-daily-budget" class="text-lg font-black text-indigo-600 tracking-tight">S/ 0.00</span>
-          <span id="display-days-remaining" class="text-[10px] text-slate-400 mt-1 font-medium">-- días rest.</span>
-        </div>
 
-        <!-- Acciones Rápidas -->
-        <div class="bg-white rounded-2xl p-3.5 border border-slate-100 shadow-sm flex flex-col justify-between">
-          <div class="flex items-center justify-between mb-1">
-            <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Categorías</span>
-            <div class="w-7 h-7 rounded-lg bg-emerald-50 text-emerald-500 flex items-center justify-center text-xs">
-              <i class="fas fa-tags"></i>
+          <!-- 3. Máximo Diario -->
+          <div class="w-[190px] shrink-0 snap-start bg-white rounded-2xl p-4 border border-slate-100 shadow-sm flex flex-col justify-between">
+            <div class="flex items-center justify-between mb-2">
+              <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Máx. Diario</span>
+              <div class="w-7 h-7 rounded-xl bg-indigo-50 text-indigo-500 flex items-center justify-center text-xs shadow-2xs">
+                <i class="fas fa-calendar-day"></i>
+              </div>
+            </div>
+            <div>
+              <span id="display-daily-budget" class="text-xl font-black text-indigo-600 tracking-tight block">S/ 0.00</span>
+              <span id="display-days-remaining" class="text-[10px] text-slate-400 font-medium block mt-0.5">-- días rest.</span>
             </div>
           </div>
-          <button id="btn-quick-categories" class="w-full py-1.5 px-2 bg-slate-900 hover:bg-slate-800 active:scale-95 text-white rounded-xl text-xs font-bold transition-transform shadow-sm">
-            Ver Metas
-          </button>
         </div>
       </div>
     </section>
