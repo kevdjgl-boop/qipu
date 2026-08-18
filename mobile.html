@@ -99,35 +99,35 @@
       visibility: visible;
     }
 
-    /* Animación de deslizamiento M3 desde atrás del bloque principal */
+    /* Animación de deslizamiento M3 ultra suave desde atrás del bloque principal */
     .m3-slide-sheet-block {
-      transition: max-height 450ms var(--md-sys-motion-easing-emphasized-decelerate),
-                  opacity 350ms var(--md-sys-motion-easing-emphasized-decelerate),
-                  transform 450ms var(--md-sys-motion-easing-emphasized-decelerate),
-                  margin 350ms var(--md-sys-motion-easing-emphasized-decelerate),
-                  padding 350ms var(--md-sys-motion-easing-emphasized-decelerate);
+      transition: max-height 500ms cubic-bezier(0.16, 1, 0.3, 1),
+                  opacity 400ms cubic-bezier(0.16, 1, 0.3, 1),
+                  transform 500ms cubic-bezier(0.16, 1, 0.3, 1),
+                  margin 500ms cubic-bezier(0.16, 1, 0.3, 1),
+                  padding 500ms cubic-bezier(0.16, 1, 0.3, 1);
       transform-origin: top center;
     }
     .m3-slide-sheet-block.m3-block-closed {
       max-height: 0px !important;
       opacity: 0 !important;
-      transform: translateY(-28px) scale(0.98) !important;
+      transform: translateY(-36px) scale(0.98) !important;
       pointer-events: none !important;
       overflow: hidden !important;
-      margin-top: -20px !important;
+      margin-top: -30px !important;
       padding-top: 0px !important;
       padding-bottom: 0px !important;
       border-width: 0px !important;
     }
     .m3-slide-sheet-block.m3-block-open {
-      max-height: 1400px !important;
+      max-height: 1600px !important;
       opacity: 1 !important;
       transform: translateY(0px) scale(1) !important;
       pointer-events: auto !important;
       overflow: visible !important;
-      margin-top: -12px !important;
-      padding-top: 20px !important;
-      padding-bottom: 14px !important;
+      margin-top: -24px !important;
+      padding-top: 36px !important;
+      padding-bottom: 16px !important;
     }
   </style>
 </head>
@@ -612,31 +612,32 @@
           </p>
         </div>
 
-        <!-- BLOQUE LISTA DE PRODUCTOS (Color verde suave distintivo, border-radius 16px, animado M3) -->
+        <!-- BLOQUE LISTA DE PRODUCTOS (Fondo verde distintivo, parte superior plana y solapada, border-radius inferior 20px) -->
         <div id="section-list-items"
-          class="w-full max-w-[372px] mx-auto bg-[#c6f6b5] rounded-[16px] p-3.5 space-y-2.5 shadow-sm relative -mt-3 pt-5 z-0 transition-all duration-400 ease-[cubic-bezier(0.2,0,0,1)] origin-top m3-slide-sheet-block m3-block-closed">
+          class="w-full max-w-[372px] mx-auto bg-[#c6f6b5] rounded-b-[20px] rounded-t-none p-4 space-y-3 shadow-sm relative -mt-6 pt-9 z-0 m3-slide-sheet-block m3-block-closed">
           <!-- Cabecera de la Tabla (Píldoras Blancas) -->
-          <div class="grid grid-cols-12 gap-2 text-xs font-black text-slate-800">
-            <div class="col-span-6 bg-white rounded-xl py-1.5 px-3 text-left shadow-2xs">Producto</div>
-            <div class="col-span-3 bg-white rounded-xl py-1.5 text-center shadow-2xs">Cant.</div>
-            <div class="col-span-3 bg-white rounded-xl py-1.5 text-center shadow-2xs">Total</div>
+          <div class="flex items-center gap-2 text-xs font-black text-slate-800">
+            <div class="flex-1 bg-white rounded-xl py-2 px-3.5 text-left shadow-2xs">Producto</div>
+            <div class="w-12 bg-white rounded-xl py-2 text-center shadow-2xs">Cant.</div>
+            <div class="w-20 bg-white rounded-xl py-2 text-center shadow-2xs">Total</div>
           </div>
 
-          <!-- Filas de Productos Dinámicas -->
-          <div id="mobile-items-container" class="space-y-2">
+          <!-- Filas de Productos Dinámicas con Swipe-to-Delete -->
+          <div id="mobile-items-container" class="space-y-2.5">
             <!-- Inyectado por JS -->
           </div>
 
-          <!-- Pie del Bloque: Botón Agregar Producto + Total -->
+          <!-- Pie del Bloque: Solo Botón Agregar Producto e Indicadores sutiles -->
           <div class="pt-1 flex items-center justify-between">
             <button type="button" id="btn-add-item-row"
               class="text-xs font-black text-slate-900 flex items-center gap-1.5 hover:opacity-80 active:scale-95 py-1 px-1">
               <i class="fas fa-plus"></i>
               <span>Agregar producto</span>
             </button>
-            <span id="list-items-total-badge" class="text-xs font-black text-slate-900 bg-white/80 px-2.5 py-1 rounded-xl shadow-2xs">
-              Total: S/ 0.00
-            </span>
+            <div class="flex items-center gap-1.5 opacity-60">
+              <span class="w-8 h-1.5 rounded-full bg-emerald-700/40"></span>
+              <span class="w-8 h-1.5 rounded-full bg-emerald-700/40"></span>
+            </div>
           </div>
         </div>
 
@@ -1084,7 +1085,31 @@
     </div>
   </div>
 
-  <!-- 8. Modal de Repartición de Gasto (M3 Bottom Sheet: Equitativo | Porcentaje | Detallado) -->
+  <!-- Modal Confirmación Eliminar Ítem -->
+  <div id="modal-confirm-delete-item"
+    class="fixed inset-0 z-[85] bg-slate-950/70 backdrop-blur-sm hidden items-center justify-center p-4">
+    <div class="w-full max-w-xs bg-white rounded-3xl p-5 text-center space-y-4 shadow-2xl animate-in fade-in zoom-in-95 duration-200">
+      <div class="w-12 h-12 rounded-2xl bg-rose-100 text-rose-600 flex items-center justify-center text-xl font-black mx-auto shadow-2xs">
+        <i class="fas fa-trash-alt"></i>
+      </div>
+      <div>
+        <h4 class="font-extrabold text-sm text-slate-900">¿Eliminar producto?</h4>
+        <p id="confirm-delete-item-desc" class="text-xs text-slate-500 mt-1 font-medium truncate max-w-[200px] mx-auto">Producto</p>
+      </div>
+      <div class="flex items-center gap-2 pt-1">
+        <button type="button" onclick="closeModal('modal-confirm-delete-item')"
+          class="flex-1 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-extrabold text-xs rounded-xl active:scale-95 transition-all">
+          Cancelar
+        </button>
+        <button type="button" id="btn-execute-delete-item"
+          class="flex-1 py-2.5 bg-rose-600 hover:bg-rose-700 text-white font-extrabold text-xs rounded-xl shadow-xs active:scale-95 transition-all">
+          Eliminar
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 8. Modal Repartición y Desglose Completo (Equitativo, Porcentaje, Detallado - M3 Bottom Sheet) -->
   <div id="modal-split-breakdown"
     class="fixed inset-0 z-[65] bg-slate-950/70 backdrop-blur-sm hidden items-end justify-center p-0 m3-bottom-sheet-backdrop">
     <div
@@ -3109,15 +3134,79 @@
       return 'Para todos por igual';
     }
 
+    let itemPendingDeleteId = null;
+
+    function confirmDeleteMobileItem(itemId, desc) {
+      itemPendingDeleteId = itemId;
+      const descEl = document.getElementById('confirm-delete-item-desc');
+      if (descEl) descEl.textContent = desc || 'Producto';
+      openModal('modal-confirm-delete-item');
+    }
+    window.confirmDeleteMobileItem = confirmDeleteMobileItem;
+
+    document.getElementById('btn-execute-delete-item')?.addEventListener('click', () => {
+      if (itemPendingDeleteId) {
+        removeMobileItemRow(itemPendingDeleteId);
+        itemPendingDeleteId = null;
+      }
+      closeModal('modal-confirm-delete-item');
+    });
+
+    // Swipe to delete táctil
+    let swipeTouchStartX = 0;
+    let swipeActiveItemId = null;
+
+    function handleItemTouchStart(e, itemId) {
+      swipeTouchStartX = e.touches[0].clientX;
+      swipeActiveItemId = itemId;
+    }
+    window.handleItemTouchStart = handleItemTouchStart;
+
+    function handleItemTouchMove(e, itemId) {
+      if (swipeActiveItemId !== itemId) return;
+      const currentX = e.touches[0].clientX;
+      const diff = currentX - swipeTouchStartX;
+      const el = document.getElementById(`item-swipe-${itemId}`);
+      if (!el) return;
+
+      if (diff < 0) {
+        const transX = Math.max(-70, diff);
+        el.style.transform = `translateX(${transX}px)`;
+      } else {
+        el.style.transform = 'translateX(0px)';
+      }
+    }
+    window.handleItemTouchMove = handleItemTouchMove;
+
+    function handleItemTouchEnd(e, itemId) {
+      if (swipeActiveItemId !== itemId) return;
+      const el = document.getElementById(`item-swipe-${itemId}`);
+      if (!el) return;
+
+      const currentTransform = el.style.transform || '';
+      const match = currentTransform.match(/translateX\(([-0-9.]+)px\)/);
+      const currentX = match ? parseFloat(match[1]) : 0;
+
+      if (currentX < -45) {
+        el.style.transform = 'translateX(-64px)';
+        const it = mobileExpenseItems.find(i => i.id === itemId);
+        confirmDeleteMobileItem(itemId, it ? it.desc : 'este producto');
+      } else {
+        el.style.transform = 'translateX(0px)';
+      }
+      swipeActiveItemId = null;
+    }
+    window.handleItemTouchEnd = handleItemTouchEnd;
+
     function renderMobileItemsList() {
       const container = document.getElementById('mobile-items-container');
       if (!container) return;
 
       if (mobileExpenseItems.length === 0) {
         container.innerHTML = `
-          <div class="text-center py-3 bg-white/70 rounded-xl">
-            <p class="text-xs text-slate-700 font-bold">No hay productos en la lista.</p>
-            <p class="text-[10px] text-slate-500">Toca "+ Agregar producto" para empezar.</p>
+          <div class="text-center py-4 bg-white/80 rounded-2xl shadow-2xs">
+            <p class="text-xs text-slate-800 font-extrabold">No hay productos en la lista.</p>
+            <p class="text-[10px] text-slate-500 mt-0.5">Toca "+ Agregar producto" para empezar.</p>
           </div>
         `;
         renderListTotalBadge();
@@ -3129,48 +3218,52 @@
         const unitPrice = parseFloat(item.amount) || 0;
         const totalCost = (qty * unitPrice).toFixed(2);
         const assignLabel = getAssignmentSummaryLabel(item, mobileExpenseGuests);
-        const hasCustom = Object.keys(item.assignments || {}).length > 0 || (item.assignedTo && item.assignedTo !== 'all');
 
         return `
-          <div class="space-y-1">
-            <div class="grid grid-cols-12 gap-2 items-center">
-              <!-- Nombre del Producto (Píldora Blanca) -->
-              <div class="col-span-6">
-                <input type="text" placeholder="Producto" value="${item.desc || ''}"
-                  oninput="updateMobileItemField('${item.id}', 'desc', this.value)"
-                  class="w-full h-10 bg-white border-0 rounded-xl px-3 text-xs font-extrabold text-slate-900 placeholder:text-slate-400 focus:ring-2 focus:ring-emerald-700 outline-none shadow-2xs" />
-              </div>
-
-              <!-- Cantidad (Píldora Blanca) -->
-              <div class="col-span-3">
-                <input type="number" min="0.1" step="any" value="${item.quantity || 1}"
-                  oninput="updateMobileItemField('${item.id}', 'quantity', this.value)"
-                  class="w-full h-10 bg-white border-0 rounded-xl text-xs font-black text-slate-900 text-center focus:ring-2 focus:ring-emerald-700 outline-none shadow-2xs" />
-              </div>
-
-              <!-- Total / Monto (Píldora Blanca) + Botón Eliminar -->
-              <div class="col-span-3 flex items-center gap-1">
-                <input type="number" min="0.01" step="0.01" placeholder="0.00" value="${unitPrice > 0 ? unitPrice : ''}"
-                  oninput="updateMobileItemField('${item.id}', 'amount', this.value)"
-                  class="w-full h-10 bg-white border-0 rounded-xl text-xs font-black text-slate-900 text-center focus:ring-2 focus:ring-emerald-700 outline-none shadow-2xs" />
-                <button type="button" onclick="removeMobileItemRow('${item.id}')"
-                  class="w-5 h-5 text-slate-500 hover:text-rose-600 flex items-center justify-center text-xs shrink-0 active:scale-90" title="Eliminar ítem">
-                  <i class="fas fa-times"></i>
-                </button>
-              </div>
+          <div class="relative overflow-hidden rounded-2xl bg-rose-500 shadow-2xs select-none">
+            <!-- Botón de fondo para eliminar revelado con swipe -->
+            <div class="absolute inset-y-0 right-0 w-16 bg-rose-500 text-white flex items-center justify-center font-black text-sm cursor-pointer active:opacity-80"
+              onclick="confirmDeleteMobileItem('${item.id}', '${(item.desc || 'este producto').replace(/'/g, "\\'")}')">
+              <i class="fas fa-trash-alt"></i>
             </div>
 
-            <!-- Botón Asignación Miembros del Ítem (sutil si existe) -->
-            ${hasCustom ? `
-              <div class="pl-1 flex items-center justify-between">
+            <!-- Contenedor frontal deslizable -->
+            <div id="item-swipe-${item.id}"
+              class="relative bg-[#c6f6b5] space-y-1.5 transition-transform duration-200"
+              ontouchstart="handleItemTouchStart(event, '${item.id}')"
+              ontouchmove="handleItemTouchMove(event, '${item.id}')"
+              ontouchend="handleItemTouchEnd(event, '${item.id}')">
+
+              <div class="flex items-center gap-2">
+                <!-- Nombre del Producto (Píldora Blanca) -->
+                <input type="text" placeholder="Producto" value="${item.desc || ''}"
+                  oninput="updateMobileItemField('${item.id}', 'desc', this.value)"
+                  class="flex-1 h-11 bg-white border-0 rounded-xl px-3.5 text-xs font-extrabold text-slate-900 placeholder:text-slate-400 focus:ring-2 focus:ring-emerald-700 outline-none shadow-2xs" />
+
+                <!-- Cantidad (Píldora Blanca, w-12, max 99) -->
+                <input type="number" min="1" max="99" step="1" value="${qty}"
+                  oninput="updateMobileItemField('${item.id}', 'quantity', this.value)"
+                  class="w-12 h-11 bg-white border-0 rounded-xl text-xs font-black text-slate-900 text-center focus:ring-2 focus:ring-emerald-700 outline-none shadow-2xs" />
+
+                <!-- Total / Monto (Píldora Blanca, w-20) -->
+                <input type="number" min="0.01" step="0.01" placeholder="0.00" value="${unitPrice > 0 ? unitPrice : ''}"
+                  oninput="updateMobileItemField('${item.id}', 'amount', this.value)"
+                  class="w-20 h-11 bg-white border-0 rounded-xl text-xs font-black text-slate-900 text-center focus:ring-2 focus:ring-emerald-700 outline-none shadow-2xs" />
+              </div>
+
+              <!-- Fila inferior: Chip de Miembros y Monto Subtotal en la MISMA fila -->
+              <div class="flex items-center justify-between px-1 text-[10px] text-slate-800 font-bold">
                 <button type="button" onclick="openItemAssignmentModal('${item.id}')"
-                  class="px-2 py-0.5 rounded-lg text-[9px] font-extrabold bg-white text-emerald-950 shadow-2xs flex items-center gap-1">
-                  <span>${assignLabel}</span>
+                  class="px-2.5 py-1 rounded-lg text-[10px] font-extrabold bg-white/90 text-emerald-950 shadow-2xs flex items-center gap-1.5 active:scale-95 transition-all">
+                  <i class="fas fa-user-friends text-[9px] text-emerald-700"></i>
+                  <span class="truncate max-w-[190px]">${assignLabel}</span>
                   <i class="fas fa-chevron-right text-[7px] opacity-60"></i>
                 </button>
-                <span class="text-[10px] font-black text-slate-900">S/ ${totalCost}</span>
+                <span class="font-black text-slate-900 bg-white/60 px-2 py-0.5 rounded-lg shadow-2xs">
+                  Subtotal: S/ ${totalCost}
+                </span>
               </div>
-            ` : ''}
+            </div>
           </div>
         `;
       }).join('');
