@@ -95,9 +95,39 @@
     .m3-accordion-collapse.m3-open {
       max-height: 1200px;
       opacity: 1;
-      transform: scaleY(1) translateY(0);
       pointer-events: auto;
       visibility: visible;
+    }
+
+    /* Animación de deslizamiento M3 desde atrás del bloque principal */
+    .m3-slide-sheet-block {
+      transition: max-height 450ms var(--md-sys-motion-easing-emphasized-decelerate),
+                  opacity 350ms var(--md-sys-motion-easing-emphasized-decelerate),
+                  transform 450ms var(--md-sys-motion-easing-emphasized-decelerate),
+                  margin 350ms var(--md-sys-motion-easing-emphasized-decelerate),
+                  padding 350ms var(--md-sys-motion-easing-emphasized-decelerate);
+      transform-origin: top center;
+    }
+    .m3-slide-sheet-block.m3-block-closed {
+      max-height: 0px !important;
+      opacity: 0 !important;
+      transform: translateY(-28px) scale(0.98) !important;
+      pointer-events: none !important;
+      overflow: hidden !important;
+      margin-top: -20px !important;
+      padding-top: 0px !important;
+      padding-bottom: 0px !important;
+      border-width: 0px !important;
+    }
+    .m3-slide-sheet-block.m3-block-open {
+      max-height: 1400px !important;
+      opacity: 1 !important;
+      transform: translateY(0px) scale(1) !important;
+      pointer-events: auto !important;
+      overflow: visible !important;
+      margin-top: -12px !important;
+      padding-top: 20px !important;
+      padding-bottom: 14px !important;
     }
   </style>
 </head>
@@ -486,8 +516,47 @@
             </div>
           </div>
 
+          <!-- SECCIÓN MIEMBROS (Dentro del Bloque Principal) -->
+          <div id="section-shared-members" class="w-full space-y-2 pt-0.5 border-t border-slate-100">
+            <div class="flex items-center justify-between pt-1">
+              <h4 class="font-black text-xs text-slate-900">Miembros</h4>
+              
+              <!-- Dropdown de Modo de División (Abre Bottom Sheet M3 de Repartición) -->
+              <button type="button" onclick="openSplitBreakdownModal()"
+                class="flex items-center gap-1.5 bg-[#dcfce7] hover:bg-[#bbf7d0] px-2.5 py-1 rounded-xl text-xs font-black text-emerald-950 active:scale-95 transition-all shadow-2xs">
+                <i class="fas fa-balance-scale text-xs text-emerald-800"></i>
+                <span id="chip-split-mode-label">Equitativo</span>
+                <i class="fas fa-chevron-down text-[8px] text-emerald-800/70"></i>
+                <input type="hidden" id="exp-split-mode-select" value="equitativo" />
+              </button>
+            </div>
+
+            <!-- Fila de Avatares Rápidos + Botón Añadir Invitado -->
+            <div class="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none">
+              <div id="shared-members-avatars-row" class="flex items-center gap-2">
+                <!-- Inyectado por JS -->
+              </div>
+
+              <!-- Botón (+) para Añadir Invitado -->
+              <button type="button" id="btn-toggle-add-guest"
+                class="w-10 h-10 rounded-2xl border-2 border-dashed border-slate-300 hover:border-emerald-500 hover:bg-emerald-50 text-slate-600 hover:text-emerald-700 flex items-center justify-center text-base font-black transition-all shrink-0 active:scale-95">
+                +
+              </button>
+            </div>
+
+            <!-- Mini Input Añadir Invitado -->
+            <div id="box-add-guest" class="hidden flex gap-2 pt-1">
+              <input type="text" id="input-guest-name" placeholder="Nombre del invitado..."
+                class="flex-1 bg-slate-50 border border-slate-200 rounded-xl px-3 py-1.5 text-xs font-bold text-slate-800 focus:outline-none focus:border-emerald-500" />
+              <button type="button" id="btn-confirm-add-guest"
+                class="px-3 py-1.5 bg-slate-900 text-white rounded-xl text-xs font-black active:scale-95">
+                Agregar
+              </button>
+            </div>
+          </div>
+
           <!-- BOTONERA MATERIAL DESIGN 3 SEGMENTED BUTTON: [ 🔁 Fijo ] | [ ☷ Lista ] (240px de ancho) -->
-          <div class="w-full max-w-[240px] mx-auto pt-0.5">
+          <div class="w-full max-w-[240px] mx-auto pt-1">
             <div class="w-full h-[24px] rounded-full border border-slate-300 overflow-hidden flex divide-x divide-slate-300 bg-transparent">
               <!-- Segmento 1: Fijo -->
               <button type="button" id="btn-toggle-fixed" onclick="toggleFixedExpenseSection()"
@@ -513,45 +582,6 @@
           <select id="exp-payer">
             <!-- Dinámico -->
           </select>
-        </div>
-
-        <!-- SECCIÓN MIEMBROS (Visible en Modo Compartido) -->
-        <div id="section-shared-members" class="w-full max-w-[372px] mx-auto space-y-2 pt-1">
-          <div class="flex items-center justify-between">
-            <h4 class="font-black text-sm text-slate-900">Miembros</h4>
-            
-            <!-- Dropdown de Modo de División (Abre Bottom Sheet M3 de Repartición) -->
-            <button type="button" onclick="openSplitBreakdownModal()"
-              class="flex items-center gap-1.5 bg-[#dcfce7] hover:bg-[#bbf7d0] px-3 py-1.5 rounded-xl text-xs font-black text-emerald-950 active:scale-95 transition-all shadow-2xs">
-              <i class="fas fa-balance-scale text-xs text-emerald-800"></i>
-              <span id="chip-split-mode-label">Equitativo</span>
-              <i class="fas fa-chevron-down text-[8px] text-emerald-800/70"></i>
-              <input type="hidden" id="exp-split-mode-select" value="equitativo" />
-            </button>
-          </div>
-
-          <!-- Fila de Avatares Rápidos + Botón Añadir Invitado -->
-          <div class="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none">
-            <div id="shared-members-avatars-row" class="flex items-center gap-2">
-              <!-- Inyectado por JS -->
-            </div>
-
-            <!-- Botón (+) para Añadir Invitado -->
-            <button type="button" id="btn-toggle-add-guest"
-              class="w-11 h-11 rounded-2xl border-2 border-dashed border-slate-300 hover:border-indigo-500 hover:bg-indigo-50 text-slate-600 hover:text-indigo-600 flex items-center justify-center text-lg font-black transition-all shrink-0 active:scale-95">
-              +
-            </button>
-          </div>
-
-          <!-- Mini Input Añadir Invitado -->
-          <div id="box-add-guest" class="hidden flex gap-2 pt-1">
-            <input type="text" id="input-guest-name" placeholder="Nombre del invitado..."
-              class="flex-1 bg-slate-50 border border-slate-200 rounded-xl px-3 py-1.5 text-xs font-bold text-slate-800 focus:outline-none focus:border-indigo-500" />
-            <button type="button" id="btn-confirm-add-guest"
-              class="px-3 py-1.5 bg-slate-900 text-white rounded-xl text-xs font-black active:scale-95">
-              Agregar
-            </button>
-          </div>
         </div>
 
         <!-- SECCIÓN CONDICIONAL: Gasto Fijo Recurrente (372px de ancho, separación 10px) -->
@@ -582,9 +612,9 @@
           </p>
         </div>
 
-        <!-- BLOQUE LISTA DE PRODUCTOS (Color verde suave distintivo, border-radius 16px, animado) -->
+        <!-- BLOQUE LISTA DE PRODUCTOS (Color verde suave distintivo, border-radius 16px, animado M3) -->
         <div id="section-list-items"
-          class="w-full max-w-[372px] mx-auto bg-[#c6f6b5] rounded-[16px] p-3.5 space-y-2.5 shadow-sm relative -mt-2 pt-4 z-0 transition-all duration-300 ease-out origin-top hidden">
+          class="w-full max-w-[372px] mx-auto bg-[#c6f6b5] rounded-[16px] p-3.5 space-y-2.5 shadow-sm relative -mt-3 pt-5 z-0 transition-all duration-400 ease-[cubic-bezier(0.2,0,0,1)] origin-top m3-slide-sheet-block m3-block-closed">
           <!-- Cabecera de la Tabla (Píldoras Blancas) -->
           <div class="grid grid-cols-12 gap-2 text-xs font-black text-slate-800">
             <div class="col-span-6 bg-white rounded-xl py-1.5 px-3 text-left shadow-2xs">Producto</div>
@@ -2478,12 +2508,18 @@
           btnList.className = 'flex-1 h-full px-2 flex items-center justify-center gap-1.5 text-[11px] font-black text-slate-950 bg-[#c6f6b5] transition-all select-none active:scale-[0.98]';
           if (listCheck) listCheck.classList.remove('hidden');
           if (listSymbol) listSymbol.classList.add('hidden');
-          if (secList) secList.classList.remove('hidden');
+          if (secList) {
+            secList.classList.remove('m3-block-closed', 'hidden');
+            secList.classList.add('m3-block-open');
+          }
         } else {
           btnList.className = 'flex-1 h-full px-2 flex items-center justify-center gap-1.5 text-[11px] font-bold text-slate-600 hover:bg-slate-50 transition-all select-none active:scale-[0.98]';
           if (listCheck) listCheck.classList.add('hidden');
           if (listSymbol) listSymbol.classList.remove('hidden');
-          if (secList) secList.classList.add('hidden');
+          if (secList) {
+            secList.classList.remove('m3-block-open');
+            secList.classList.add('m3-block-closed');
+          }
         }
       }
     }
