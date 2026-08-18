@@ -328,7 +328,7 @@
             <p class="text-[10px] text-slate-400 font-medium">Completa los detalles o desglosa ítems</p>
           </div>
         </div>
-        <button id="close-modal-expense" class="w-8 h-8 rounded-full bg-slate-100 text-slate-400 hover:text-slate-600 flex items-center justify-center text-xs active:scale-90 transition-transform">
+        <button id="close-modal-expense" onclick="closeModal('modal-expense'); resetExpenseForm();" type="button" class="w-8 h-8 rounded-full bg-slate-100 text-slate-400 hover:text-slate-600 flex items-center justify-center text-xs active:scale-90 transition-transform cursor-pointer">
           <i class="fas fa-times"></i>
         </button>
       </div>
@@ -511,7 +511,7 @@
             <p class="text-[10px] text-slate-400 font-medium">Incrementa el presupuesto mensual</p>
           </div>
         </div>
-        <button id="close-modal-income" class="w-8 h-8 rounded-full bg-slate-100 text-slate-400 hover:text-slate-600 flex items-center justify-center text-xs active:scale-90 transition-transform">
+        <button id="close-modal-income" onclick="closeModal('modal-income'); resetIncomeForm();" type="button" class="w-8 h-8 rounded-full bg-slate-100 text-slate-400 hover:text-slate-600 flex items-center justify-center text-xs active:scale-90 transition-transform cursor-pointer">
           <i class="fas fa-times"></i>
         </button>
       </div>
@@ -581,7 +581,7 @@
             <i class="fas fa-pencil-alt text-xs"></i>
           </button>
           <!-- Botón Cerrar -->
-          <button id="close-modal-detail" type="button" class="w-9 h-9 rounded-2xl bg-slate-100 text-slate-400 hover:text-slate-600 flex items-center justify-center text-xs active:scale-90 transition-transform">
+          <button id="close-modal-detail" onclick="closeModal('modal-transaction-detail');" type="button" class="w-9 h-9 rounded-2xl bg-slate-100 text-slate-400 hover:text-slate-600 flex items-center justify-center text-xs active:scale-90 transition-transform cursor-pointer">
             <i class="fas fa-times"></i>
           </button>
         </div>
@@ -644,7 +644,7 @@
 
       <div class="px-5 py-3 border-b border-slate-100 flex items-center justify-between shrink-0">
         <h3 class="font-extrabold text-sm text-slate-900">Ajustes & Opciones</h3>
-        <button id="close-modal-settings" class="w-8 h-8 rounded-full bg-slate-100 text-slate-400 hover:text-slate-600 flex items-center justify-center text-xs active:scale-90 transition-transform">
+        <button id="close-modal-settings" onclick="closeModal('modal-settings');" type="button" class="w-8 h-8 rounded-full bg-slate-100 text-slate-400 hover:text-slate-600 flex items-center justify-center text-xs active:scale-90 transition-transform cursor-pointer">
           <i class="fas fa-times"></i>
         </button>
       </div>
@@ -1436,6 +1436,8 @@
       document.getElementById('label-submit-income').textContent = 'Añadir Ingreso al Presupuesto';
       document.getElementById('btn-delete-income').classList.add('hidden');
     }
+    window.resetExpenseForm = resetExpenseForm;
+    window.resetIncomeForm = resetIncomeForm;
 
     // Abrir Modal para Editar Gasto Existente
     function openEditExpenseModal(expenseId) {
@@ -1969,33 +1971,30 @@
     });
 
     // Botones de Apertura Limpia (Nuevos Registros sin residuos anteriores)
-    document.getElementById('mobile-btn-add-expense').addEventListener('click', () => {
+    document.getElementById('mobile-btn-add-expense')?.addEventListener('click', () => {
       resetExpenseForm();
       openModal('modal-expense');
     });
-    document.getElementById('mobile-btn-add-income').addEventListener('click', () => {
+    document.getElementById('mobile-btn-add-income')?.addEventListener('click', () => {
       resetIncomeForm();
       openModal('modal-income');
     });
-    document.getElementById('mobile-btn-settings-nav').addEventListener('click', () => openModal('modal-settings'));
-    document.getElementById('btn-open-profile').addEventListener('click', () => openModal('modal-settings'));
-    document.getElementById('btn-quick-categories').addEventListener('click', () => {
-      window.location.href = "app.html";
-    });
-    document.getElementById('mobile-btn-categories-nav').addEventListener('click', () => {
+    document.getElementById('mobile-btn-settings-nav')?.addEventListener('click', () => openModal('modal-settings'));
+    document.getElementById('mobile-btn-categories-nav')?.addEventListener('click', () => {
       window.location.href = "app.html";
     });
 
-    // Botones de Cierre
-    document.getElementById('close-modal-expense').addEventListener('click', () => {
+    // Botones de Cierre (con respaldo adicional a onclick inline)
+    document.getElementById('close-modal-expense')?.addEventListener('click', () => {
       closeModal('modal-expense');
       resetExpenseForm();
     });
-    document.getElementById('close-modal-income').addEventListener('click', () => {
+    document.getElementById('close-modal-income')?.addEventListener('click', () => {
       closeModal('modal-income');
       resetIncomeForm();
     });
-    document.getElementById('close-modal-settings').addEventListener('click', () => closeModal('modal-settings'));
+    document.getElementById('close-modal-detail')?.addEventListener('click', () => closeModal('modal-transaction-detail'));
+    document.getElementById('close-modal-settings')?.addEventListener('click', () => closeModal('modal-settings'));
 
     // Sincronizar / Cerrar sesión
     document.getElementById('btn-mobile-sync-refresh').addEventListener('click', () => renderMobileUI());
