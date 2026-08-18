@@ -939,7 +939,7 @@
     </div>
   </div>
 
-  <!-- 7. Modal Asignación de Ítem (True Native M3 Bottom Sheet) -->
+  <!-- 7. Modal Asignación y Desglose de Ítem (True Native M3 Bottom Sheet - Diseño Pantalla 4) -->
   <div id="modal-item-assignment"
     class="fixed inset-0 z-[60] bg-slate-950/70 backdrop-blur-sm hidden items-end justify-center p-0 m3-bottom-sheet-backdrop">
     <div
@@ -948,60 +948,59 @@
       <!-- Drag Handle Indicator -->
       <div class="w-12 h-1.5 bg-slate-300 rounded-full mx-auto mt-3 mb-1 shrink-0"></div>
 
-      <!-- Header del Bottom Sheet -->
-      <div class="px-5 py-3.5 border-b border-slate-100 flex items-center justify-between shrink-0">
-        <div class="flex items-center gap-2.5">
-          <div
-            class="w-9 h-9 rounded-2xl bg-indigo-50 text-indigo-600 flex items-center justify-center text-base font-bold shadow-xs">
-            <i class="fas fa-users-cog"></i>
-          </div>
-          <div>
-            <h3 id="assign-modal-item-title" class="font-extrabold text-sm text-slate-900 leading-tight">Asignar Ítem</h3>
-            <p id="assign-modal-item-subtitle" class="text-[10px] text-slate-400 font-medium">Define quién consume este ítem</p>
-          </div>
+      <!-- Header del Bottom Sheet (Nombre | Cantidad | Monto | X) -->
+      <div class="px-5 py-3 border-b border-slate-100 flex items-center justify-between shrink-0">
+        <div class="flex items-center gap-2 min-w-0 flex-1">
+          <h3 id="assign-modal-item-title" class="font-black text-base text-slate-900 truncate">Producto</h3>
+          <span id="assign-modal-total-qty-badge" class="text-xs font-black text-emerald-800 bg-emerald-100 px-2.5 py-0.5 rounded-lg shrink-0">2 und</span>
+          <span id="assign-modal-total-cost-badge" class="text-xs font-black text-emerald-800 bg-emerald-100 px-2.5 py-0.5 rounded-lg shrink-0">S/ 60.00</span>
         </div>
         <button id="close-modal-item-assignment" onclick="closeModal('modal-item-assignment');" type="button"
-          class="w-8 h-8 rounded-full bg-slate-100 text-slate-400 hover:text-slate-600 flex items-center justify-center text-xs active:scale-90 transition-transform cursor-pointer">
+          class="w-8 h-8 rounded-full bg-rose-500 hover:bg-rose-600 active:scale-90 text-white flex items-center justify-center text-xs transition-transform cursor-pointer shrink-0 shadow-xs">
           <i class="fas fa-times"></i>
         </button>
       </div>
 
-      <!-- Switcher: Para Todos vs Por Persona -->
-      <div class="px-5 pt-3 pb-1 shrink-0">
-        <div class="bg-slate-100 p-1 rounded-2xl flex items-center gap-1 text-xs font-bold">
-          <button type="button" id="btn-assign-mode-all"
-            class="flex-1 py-2 rounded-xl bg-white text-slate-900 shadow-xs flex items-center justify-center gap-1.5 transition-all">
-            <i class="fas fa-users text-indigo-600 text-xs"></i>
-            <span>Para todos por igual</span>
-          </button>
-          <button type="button" id="btn-assign-mode-custom"
-            class="flex-1 py-2 rounded-xl text-slate-500 hover:text-slate-900 flex items-center justify-center gap-1.5 transition-all">
-            <i class="fas fa-user-check text-xs"></i>
-            <span>Por persona / unidades</span>
-          </button>
-        </div>
-      </div>
+      <!-- Contenido Scrollable -->
+      <div class="p-5 pt-3 overflow-y-auto space-y-4 flex-1 custom-scrollbar">
 
-      <!-- Contenido: Lista de Participantes e Invitados con Steppers -->
-      <div class="p-5 pt-2 overflow-y-auto space-y-3 flex-1 custom-scrollbar">
-        <!-- Indicador de Unidades Asignadas vs Totales -->
-        <div id="assign-units-status-bar" class="bg-indigo-50 border border-indigo-100 rounded-2xl p-3 flex items-center justify-between">
-          <span class="text-xs font-bold text-indigo-950">Unidades asignadas:</span>
+        <!-- Selector Rápido de Avatares con Checkmark (Horizontal) -->
+        <div class="space-y-1.5">
+          <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-400">Participantes del Ítem (Toca para activar/desactivar):</label>
+          <div id="assign-avatar-chips-row" class="flex items-center gap-2.5 overflow-x-auto pb-1 scrollbar-none">
+            <!-- Avatares inyectados dinámicamente por JS -->
+          </div>
+        </div>
+
+        <!-- Tabla de Asignación por Miembro -->
+        <div class="space-y-2">
+          <!-- Cabecera de Columnas: Miembro | Und. | Monto -->
+          <div class="grid grid-cols-12 gap-2 px-2 text-[11px] font-black text-slate-800 uppercase tracking-wider border-b border-slate-100 pb-1.5">
+            <span class="col-span-6">Miembro</span>
+            <span class="col-span-3 text-center">Und.</span>
+            <span class="col-span-3 text-right">Monto</span>
+          </div>
+
+          <!-- Filas de Miembros con Steppers -->
+          <div id="assign-members-list" class="space-y-1.5">
+            <!-- Inyectado por JS -->
+          </div>
+        </div>
+
+        <!-- Barra de Estado de Unidades Asignadas vs Totales -->
+        <div id="assign-units-status-bar" class="bg-slate-50 border border-slate-200/80 rounded-2xl p-3 flex items-center justify-between">
+          <span class="text-xs font-bold text-slate-700">Estado de asignación:</span>
           <span id="assign-units-badge" class="text-xs font-black text-indigo-700 bg-white px-2.5 py-1 rounded-xl shadow-2xs border border-indigo-100">
             0 / 1 unidades
           </span>
         </div>
 
-        <div id="assign-members-list" class="space-y-2">
-          <!-- Filas con foto, nombre y steppers inyectadas por JS -->
-        </div>
-
-        <!-- Botón Guardar Asignación -->
-        <div class="pt-2 sticky bottom-0 bg-white pb-1">
+        <!-- Botón Guardar / Cerrar Asignación -->
+        <div class="pt-1 sticky bottom-0 bg-white pb-1">
           <button type="button" id="btn-confirm-item-assignment"
-            class="w-full py-3.5 bg-indigo-600 hover:bg-indigo-700 active:scale-98 text-white font-extrabold text-xs rounded-2xl shadow-lg shadow-indigo-500/25 transition-all flex items-center justify-center gap-2">
-            <i class="fas fa-check-circle text-sm"></i>
-            <span>Confirmar Asignación de Ítem</span>
+            class="w-full py-3.5 bg-slate-900 hover:bg-slate-800 active:scale-98 text-white font-extrabold text-xs rounded-2xl shadow-lg transition-all flex items-center justify-center gap-2">
+            <i class="fas fa-check-circle text-sm text-emerald-400"></i>
+            <span>Confirmar Asignación</span>
           </button>
         </div>
       </div>
@@ -1147,6 +1146,31 @@
           }
         });
 
+        // Helper para resolver clave canónica y nombre de invitado
+        function getGuestKeyAndName(rawKey) {
+          const numMatch = String(rawKey).match(/\d+/);
+          if (numMatch && expenseGuests[parseInt(numMatch[0])]) {
+            const name = expenseGuests[parseInt(numMatch[0])].trim();
+            return { key: `guest_${name.toLowerCase().replace(/\s+/g, '_')}`, name, isGuest: true };
+          }
+          if (expenseGuests[parseInt(rawKey)]) {
+            const name = expenseGuests[parseInt(rawKey)].trim();
+            return { key: `guest_${name.toLowerCase().replace(/\s+/g, '_')}`, name, isGuest: true };
+          }
+          if (String(rawKey).startsWith('guest_') || String(rawKey).startsWith('guest-')) {
+            const rawName = String(rawKey).replace('guest_', '').replace('guest-', '').replace(/_/g, ' ').trim();
+            const matched = expenseGuests.find(g => g.toLowerCase() === rawName.toLowerCase());
+            const name = matched || rawName;
+            return { key: `guest_${name.toLowerCase().replace(/\s+/g, '_')}`, name, isGuest: true };
+          }
+          if (expenseGuests.length === 1) {
+            const name = expenseGuests[0].trim();
+            return { key: `guest_${name.toLowerCase().replace(/\s+/g, '_')}`, name, isGuest: true };
+          }
+          const name = String(rawKey).trim();
+          return { key: `guest_${name.toLowerCase().replace(/\s+/g, '_')}`, name, isGuest: true };
+        }
+
         // A. Registrar Pago
         let realPayerId = expense.payerId;
         const method = paymentMethodsMap.get(expense.paymentMethodId);
@@ -1159,13 +1183,13 @@
           realPayer.contributionPaid += amount;
           const methodId = expense.paymentMethodId || "unknown";
           realPayer.contributionByMethod[methodId] = (realPayer.contributionByMethod[methodId] || 0) + amount;
-        } else if (realPayerId && (realPayerId.startsWith("guest_") || realPayerId.startsWith("guest-"))) {
+        } else if (realPayerId && (realPayerId.startsWith("guest_") || realPayerId.startsWith("guest-") || !participantMap.has(realPayerId))) {
           guestSummary.contributionPaid = (guestSummary.contributionPaid || 0) + amount;
-          if (guestMap.has(realPayerId)) {
-            guestMap.get(realPayerId).contributionPaid += amount;
+          const { key: gKey, name: gName } = getGuestKeyAndName(realPayerId);
+          if (guestMap.has(gKey)) {
+            guestMap.get(gKey).contributionPaid += amount;
           } else {
-            const fallbackName = (expenseGuests.length > 0 ? expenseGuests[0] : "Invitado") + " (Invitado)";
-            guestMap.set(realPayerId, { id: realPayerId, name: fallbackName, spent: 0, contributionPaid: amount, balance: 0, isGuest: true });
+            guestMap.set(gKey, { id: gKey, name: `${gName} (Invitado)`, spent: 0, contributionPaid: amount, balance: 0, isGuest: true });
           }
         }
 
@@ -1197,34 +1221,26 @@
                   if (participantMap.has(pId)) {
                     itemShares[pId] = (itemShares[pId] || 0) + cost;
                   } else {
-                    let gKey = pId;
-                    if (!gKey.startsWith('guest_')) {
-                      gKey = `guest_${pId.trim().toLowerCase().replace(/\s+/g, '_')}`;
-                    }
+                    const { key: gKey, name: gName } = getGuestKeyAndName(pId);
                     if (guestMap.has(gKey)) {
                       guestMap.get(gKey).spent += cost;
                     } else {
-                      const gName = pId.startsWith('guest_') ? pId.substring(6) : pId;
                       guestMap.set(gKey, { id: gKey, name: `${gName} (Invitado)`, spent: cost, contributionPaid: 0, balance: 0, isGuest: true });
                     }
                   }
                 }
               });
 
-              if (assignedUnitsSum === 0 && item.assignedTo) {
+              if (assignedUnitsSum === 0 && item.assignedTo && item.assignedTo !== 'all') {
                 assignedUnitsSum = qty;
                 const cost = itemTotal;
                 if (participantMap.has(item.assignedTo)) {
                   itemShares[item.assignedTo] = (itemShares[item.assignedTo] || 0) + cost;
                 } else {
-                  let gKey = item.assignedTo;
-                  if (!gKey.startsWith('guest_')) {
-                    gKey = `guest_${item.assignedTo.trim().toLowerCase().replace(/\s+/g, '_')}`;
-                  }
+                  const { key: gKey, name: gName } = getGuestKeyAndName(item.assignedTo);
                   if (guestMap.has(gKey)) {
                     guestMap.get(gKey).spent += cost;
                   } else {
-                    const gName = item.assignedTo.startsWith('guest_') ? item.assignedTo.substring(6) : item.assignedTo;
                     guestMap.set(gKey, { id: gKey, name: `${gName} (Invitado)`, spent: cost, contributionPaid: 0, balance: 0, isGuest: true });
                   }
                 }
@@ -2186,61 +2202,119 @@
       return total;
     }
 
-    function getAssignmentSummaryLabel(item) {
-      const assignments = item.assignments || {};
-      const keys = Object.keys(assignments).filter(k => (parseFloat(assignments[k]) || 0) > 0);
+    // ================================================================
+    // NORMALIZADOR UNIVERSAL DE ASIGNACIONES (PARTICIPANTES E INVITADOS)
+    // ================================================================
+    function normalizeItemAssignments(rawAssignments, guestsList = []) {
+      if (!rawAssignments || typeof rawAssignments !== 'object') return {};
+      const normalized = {};
 
-      if (keys.length === 0) {
-        if (item.assignedTo && item.assignedTo !== 'all') {
-          const pUser = appState.participants.find(p => p.id === item.assignedTo);
-          if (pUser) return `👤 ${pUser.name} (${item.quantity || 1} u.)`;
-          const gName = item.assignedTo.startsWith('guest_') ? item.assignedTo.substring(6) : item.assignedTo;
-          return `🎟️ ${gName} (Invitado) (${item.quantity || 1} u.)`;
+      Object.keys(rawAssignments).forEach(key => {
+        const qty = parseFloat(rawAssignments[key]) || 0;
+        if (qty <= 0) return;
+
+        // 1. Participante registrado
+        const pUser = appState.participants.find(p => p.id === key);
+        if (pUser) {
+          normalized[pUser.id] = (normalized[pUser.id] || 0) + qty;
+          return;
         }
-        return '👥 Para todos por igual';
-      }
 
-      if (keys.length === 1) {
-        const k = keys[0];
-        const qty = assignments[k];
-        const pUser = appState.participants.find(p => p.id === k);
-        if (pUser) return `👤 ${pUser.name} (${qty} u.)`;
-        const gName = k.startsWith('guest_') ? k.substring(6) : k;
-        return `🎟️ ${gName} (Invitado) (${qty} u.)`;
-      }
+        // 2. Índice numérico o string numérico (ej: "0", "1", "guest_0", "guest-0")
+        const numMatch = String(key).match(/\d+/);
+        if (numMatch && guestsList[parseInt(numMatch[0])]) {
+          const gName = guestsList[parseInt(numMatch[0])].trim();
+          const gKey = `guest_${gName.toLowerCase().replace(/\s+/g, '_')}`;
+          normalized[gKey] = (normalized[gKey] || 0) + qty;
+          return;
+        }
+        if (guestsList[parseInt(key)]) {
+          const gName = guestsList[parseInt(key)].trim();
+          const gKey = `guest_${gName.toLowerCase().replace(/\s+/g, '_')}`;
+          normalized[gKey] = (normalized[gKey] || 0) + qty;
+          return;
+        }
 
-      const totalAssigned = keys.reduce((sum, k) => sum + (parseFloat(assignments[k]) || 0), 0);
-      const names = keys.map(k => {
-        const pUser = appState.participants.find(p => p.id === k);
-        const name = pUser ? pUser.name : (k.startsWith('guest_') ? k.substring(6) : k);
-        return `${name} (${assignments[k]} u.)`;
+        // 3. Clave guest_nombre
+        if (String(key).startsWith('guest_') || String(key).startsWith('guest-')) {
+          const rawName = String(key).replace('guest_', '').replace('guest-', '').replace(/_/g, ' ').trim();
+          const matched = guestsList.find(g => g.toLowerCase() === rawName.toLowerCase());
+          const gName = matched || rawName;
+          const gKey = `guest_${gName.toLowerCase().replace(/\s+/g, '_')}`;
+          normalized[gKey] = (normalized[gKey] || 0) + qty;
+          return;
+        }
+
+        // 4. Fallback si solo hay 1 invitado en la lista
+        if (guestsList.length === 1) {
+          const gName = guestsList[0].trim();
+          const gKey = `guest_${gName.toLowerCase().replace(/\s+/g, '_')}`;
+          normalized[gKey] = (normalized[gKey] || 0) + qty;
+          return;
+        }
+
+        normalized[key] = (normalized[key] || 0) + qty;
       });
-      return `👥 ${keys.length} personas: ${names.join(', ')}`;
+
+      return normalized;
+    }
+
+    // Helper para obtener label resumen de asignación en la fila del ítem
+    function getAssignmentSummaryLabel(item, guestsList = []) {
+      const assignments = normalizeItemAssignments(item.assignments, guestsList);
+      const assignedKeys = Object.keys(assignments).filter(k => (parseFloat(assignments[k]) || 0) > 0);
+
+      if (assignedKeys.length > 0) {
+        const parts = assignedKeys.map(k => {
+          const uQty = assignments[k];
+          const pUser = appState.participants.find(p => p.id === k);
+          if (pUser) return `${pUser.name} (${uQty} u.)`;
+          const gName = k.startsWith('guest_') ? k.substring(6).replace(/_/g, ' ') : k;
+          return `${gName} (${uQty} u.)`;
+        });
+        return parts.join(', ');
+      } else if (item.assignedTo && item.assignedTo !== 'all') {
+        const pAssigned = appState.participants.find(p => p.id === item.assignedTo);
+        if (pAssigned) return `${pAssigned.name} (${item.quantity || 1} u.)`;
+        const gName = item.assignedTo.startsWith('guest_') ? item.assignedTo.substring(6).replace(/_/g, ' ') : item.assignedTo;
+        return `${gName} (${item.quantity || 1} u.)`;
+      }
+      return 'Para todos por igual';
     }
 
     function renderMobileItemsList() {
       const container = document.getElementById('mobile-items-container');
+      if (mobileExpenseItems.length === 0) {
+        container.innerHTML = `
+          <div class="text-center py-6 border-2 border-dashed border-slate-200 rounded-2xl">
+            <p class="text-xs text-slate-400 font-medium">No hay ítems en la lista.</p>
+            <p class="text-[10px] text-slate-300 mt-0.5">Toca el botón "+ Añadir Ítem" para comenzar.</p>
+          </div>
+        `;
+        renderListTotalBadge();
+        return;
+      }
 
-      container.innerHTML = mobileExpenseItems.map((item, idx) => {
-        const assignLabel = getAssignmentSummaryLabel(item);
-        const hasCustomAssignments = (item.assignments && Object.keys(item.assignments).length > 0) || (item.assignedTo && item.assignedTo !== 'all');
+      container.innerHTML = mobileExpenseItems.map((item, index) => {
+        const assignLabel = getAssignmentSummaryLabel(item, mobileExpenseGuests);
+        const hasCustomAssignments = Object.keys(item.assignments || {}).length > 0 || (item.assignedTo && item.assignedTo !== 'all');
 
         return `
-          <div class="bg-slate-50 p-3 rounded-2xl border border-slate-200/80 space-y-2 relative group" data-item-id="${item.id}">
+          <div class="bg-slate-50 border border-slate-200/80 rounded-2xl p-3.5 space-y-2.5 shadow-2xs">
             <div class="flex items-center justify-between gap-2">
-              <span class="w-5 h-5 rounded-full bg-slate-200 text-slate-700 text-[10px] font-black flex items-center justify-center shrink-0">
-                ${idx + 1}
+              <span class="w-5 h-5 rounded-full bg-slate-900 text-white text-[10px] font-black flex items-center justify-center shrink-0">
+                ${index + 1}
               </span>
-              <input type="text" placeholder="Ej: Pizza, Cerveza, Entrada..." value="${item.desc || ''}"
+              <input type="text" placeholder="Ej: Pizza, Bebidas, Taxi..." value="${item.desc || ''}"
                 oninput="updateMobileItemField('${item.id}', 'desc', this.value)"
-                class="flex-1 bg-white border border-slate-200 rounded-xl px-2.5 py-1.5 text-xs font-bold text-slate-800 focus:outline-none focus:border-indigo-500 placeholder:text-slate-300" />
-              
-              <button type="button" onclick="removeMobileItemRow('${item.id}')" class="w-7 h-7 rounded-xl text-slate-400 hover:text-rose-600 hover:bg-rose-50 flex items-center justify-center text-xs shrink-0 transition-colors">
-                <i class="fas fa-trash-alt"></i>
+                class="flex-1 bg-white border border-slate-200 rounded-xl px-2.5 py-1 text-xs font-bold text-slate-800 placeholder:text-slate-400 focus:outline-none focus:border-indigo-500" />
+              <button type="button" onclick="removeMobileItemRow('${item.id}')"
+                class="w-7 h-7 rounded-xl bg-rose-50 text-rose-500 hover:bg-rose-100 flex items-center justify-center text-xs active:scale-90 transition-transform">
+                <i class="fas fa-trash-alt text-[11px]"></i>
               </button>
             </div>
 
-            <div class="grid grid-cols-12 gap-2 items-center">
+            <div class="grid grid-cols-12 gap-2">
               <div class="col-span-4 flex items-center bg-white border border-slate-200 rounded-xl px-2 py-1">
                 <span class="text-[10px] font-bold text-slate-400 mr-1">Cant:</span>
                 <input type="number" min="0.1" step="any" value="${item.quantity || 1}"
@@ -2276,39 +2350,31 @@
     }
 
     // ================================================================
-    // MODAL BOTTOM SHEET DE ASIGNACIÓN DETALLADA (STEPPERS POR USUARIO)
+    // MODAL BOTTOM SHEET DE ASIGNACIÓN Y DESGLOSE (DISEÑO PANTALLA 4)
     // ================================================================
+    let currentAssigningItem = null;
+    let isAssignmentReadOnly = false;
+    let currentAssignModalGuests = [];
+
     function openItemAssignmentModal(itemId) {
       const item = mobileExpenseItems.find(i => i.id === itemId);
       if (!item) return;
 
       currentAssigningItemId = itemId;
+      currentAssigningItem = item;
+      isAssignmentReadOnly = false;
+      currentAssignModalGuests = [...mobileExpenseGuests];
+
       const itemQty = parseFloat(item.quantity) || 1;
-      tempItemAssignments = { ...(item.assignments || {}) };
+      const rawAssignments = normalizeItemAssignments(item.assignments, currentAssignModalGuests);
+      tempItemAssignments = { ...rawAssignments };
 
       if (Object.keys(tempItemAssignments).length === 0 && item.assignedTo && item.assignedTo !== 'all') {
-        tempItemAssignments = { [item.assignedTo]: itemQty };
+        const { key: gKey } = getGuestKeyAndName(item.assignedTo, currentAssignModalGuests);
+        tempItemAssignments = { [gKey]: itemQty };
       }
 
-      document.getElementById('assign-modal-item-title').textContent = item.desc ? `Asignar "${item.desc}"` : 'Asignar Ítem';
-      document.getElementById('assign-modal-item-subtitle').textContent = `Total: ${itemQty} unidad${itemQty === 1 ? '' : 'es'} en la cuenta`;
-
-      // Mostrar switcher y barra de estado en modo edición
-      document.getElementById('btn-assign-mode-all').parentElement.parentElement.classList.remove('hidden');
-      document.getElementById('assign-units-status-bar').classList.remove('hidden');
-
-      const confirmBtn = document.getElementById('btn-confirm-item-assignment');
-      confirmBtn.innerHTML = `<i class="fas fa-check-circle text-sm"></i><span>Confirmar Asignación de Ítem</span>`;
-
-      // Determinar modo inicial
-      const hasAssignments = Object.keys(tempItemAssignments).length > 0;
-      if (hasAssignments) {
-        setAssignModalMode('custom');
-      } else {
-        setAssignModalMode('all');
-      }
-
-      renderItemAssignmentList();
+      renderItemAssignmentModalUI();
       openModal('modal-item-assignment');
     }
     window.openItemAssignmentModal = openItemAssignmentModal;
@@ -2319,181 +2385,219 @@
       if (!exp || !exp.items || !exp.items[itemIndex]) return;
 
       const item = exp.items[itemIndex];
+      currentAssigningItemId = null;
+      currentAssigningItem = item;
+      isAssignmentReadOnly = true;
+      currentAssignModalGuests = (exp.guests && Array.isArray(exp.guests)) ? [...exp.guests] : (exp.guestName ? [exp.guestName] : []);
+
       const itemQty = parseFloat(item.quantity) || 1;
-      const unitPrice = parseFloat(item.amount) || 0;
-      const totalItemCost = itemQty * unitPrice;
-      const expenseGuests = (exp.guests && Array.isArray(exp.guests)) ? exp.guests : (exp.guestName ? [exp.guestName] : []);
+      const rawAssignments = normalizeItemAssignments(item.assignments, currentAssignModalGuests);
+      tempItemAssignments = { ...rawAssignments };
 
-      document.getElementById('assign-modal-item-title').textContent = item.desc ? `Desglose: "${item.desc}"` : 'Desglose del Ítem';
-      document.getElementById('assign-modal-item-subtitle').textContent = `Total: ${itemQty} u. × ${formatCurrency(unitPrice)} = ${formatCurrency(totalItemCost)}`;
-
-      // Ocultar switcher en modo consulta
-      document.getElementById('btn-assign-mode-all').parentElement.parentElement.classList.add('hidden');
-      document.getElementById('assign-units-status-bar').classList.remove('hidden');
-
-      const assignments = item.assignments || {};
-      const assignedKeys = Object.keys(assignments).filter(k => (parseFloat(assignments[k]) || 0) > 0);
-
-      const badge = document.getElementById('assign-units-badge');
-      const container = document.getElementById('assign-members-list');
-
-      // Miembros disponibles
-      const members = [
-        ...appState.participants.map(p => ({
-          id: p.id,
-          name: p.name,
-          isGuest: false,
-          isMe: p.firebaseUid === currentUserId
-        })),
-        ...expenseGuests.map(g => ({
-          id: `guest_${g.trim().toLowerCase().replace(/\s+/g, '_')}`,
-          name: g,
-          isGuest: true,
-          isMe: false
-        }))
-      ];
-
-      if (assignedKeys.length === 0 && (!item.assignedTo || item.assignedTo === 'all')) {
-        // Dividido equitativamente entre todos los miembros
-        const numPayees = members.length || 1;
-        const shareUnits = (itemQty / numPayees).toFixed(2);
-        const shareCost = totalItemCost / numPayees;
-
-        badge.textContent = `Dividido entre ${numPayees} personas`;
-        badge.className = 'text-xs font-black text-indigo-700 bg-white px-2.5 py-1 rounded-xl shadow-2xs border border-indigo-100';
-
-        container.innerHTML = members.map(m => `
-          <div class="bg-white border border-indigo-100 rounded-2xl p-3 flex items-center justify-between shadow-2xs">
-            <div class="flex items-center gap-2.5">
-              <div class="w-9 h-9 rounded-xl ${m.isGuest ? 'bg-amber-500' : 'bg-slate-900'} text-white flex items-center justify-center font-black text-xs shadow-xs">
-                ${(m.name || 'U').substring(0, 2).toUpperCase()}
-              </div>
-              <div>
-                <div class="flex items-center gap-1.5">
-                  <h4 class="font-extrabold text-xs text-slate-900">${m.name}</h4>
-                  ${m.isMe ? '<span class="text-[8px] font-black text-indigo-700 bg-indigo-50 px-1.5 py-0.5 rounded">TÚ</span>' : ''}
-                  ${m.isGuest ? '<span class="text-[8px] font-black text-amber-700 bg-amber-100 px-1.5 py-0.5 rounded">INVITADO</span>' : ''}
-                </div>
-                <p class="text-[10px] text-slate-400 font-medium">Parte equitativa (${shareUnits} u.)</p>
-              </div>
-            </div>
-            <span class="text-xs font-black text-slate-900 bg-slate-50 px-2.5 py-1 rounded-xl border border-slate-100">
-              ${formatCurrency(shareCost)}
-            </span>
-          </div>
-        `).join('');
-      } else {
-        // Asignaciones específicas por persona
-        let totalAssigned = 0;
-        container.innerHTML = members.map(m => {
-          let assignedQty = 0;
-          if (assignedKeys.length > 0) {
-            if (assignments[m.id] !== undefined) {
-              assignedQty = parseFloat(assignments[m.id]) || 0;
-            } else if (m.isGuest) {
-              const gIdx = expenseGuests.findIndex(g => g.toLowerCase() === m.name.toLowerCase());
-              if (gIdx !== -1) {
-                if (assignments[String(gIdx)] !== undefined) assignedQty = parseFloat(assignments[String(gIdx)]) || 0;
-                else if (assignments[`guest_${gIdx}`] !== undefined) assignedQty = parseFloat(assignments[`guest_${gIdx}`]) || 0;
-                else if (assignments[`guest-${gIdx}`] !== undefined) assignedQty = parseFloat(assignments[`guest-${gIdx}`]) || 0;
-              }
-              if (assignedQty === 0 && expenseGuests.length === 1) {
-                if (assignments["0"] !== undefined) assignedQty = parseFloat(assignments["0"]) || 0;
-                else if (assignments["guest_0"] !== undefined) assignedQty = parseFloat(assignments["guest_0"]) || 0;
-              }
-            }
-          } else if (item.assignedTo === m.id) {
-            assignedQty = itemQty;
-          } else if (m.isGuest) {
-            const gIdx = expenseGuests.findIndex(g => g.toLowerCase() === m.name.toLowerCase());
-            if (item.assignedTo === String(gIdx) || item.assignedTo === `guest_${gIdx}` || (expenseGuests.length === 1 && (item.assignedTo === '0' || item.assignedTo === 'guest_0'))) {
-              assignedQty = itemQty;
-            }
-          }
-
-          totalAssigned += assignedQty;
-          const cost = assignedQty * unitPrice;
-          const isSelected = assignedQty > 0;
-
-          return `
-            <div class="bg-white border ${isSelected ? 'border-indigo-500 ring-1 ring-indigo-500/20 bg-indigo-50/10' : 'border-slate-100 opacity-50'} rounded-2xl p-3 flex items-center justify-between shadow-2xs">
-              <div class="flex items-center gap-2.5">
-                <div class="w-9 h-9 rounded-xl ${m.isGuest ? 'bg-amber-500' : 'bg-slate-900'} text-white flex items-center justify-center font-black text-xs shadow-xs">
-                  ${(m.name || 'U').substring(0, 2).toUpperCase()}
-                </div>
-                <div>
-                  <div class="flex items-center gap-1.5">
-                    <h4 class="font-extrabold text-xs text-slate-900">${m.name}</h4>
-                    ${m.isMe ? '<span class="text-[8px] font-black text-indigo-700 bg-indigo-50 px-1.5 py-0.5 rounded">TÚ</span>' : ''}
-                    ${m.isGuest ? '<span class="text-[8px] font-black text-amber-700 bg-amber-100 px-1.5 py-0.5 rounded">INVITADO</span>' : ''}
-                  </div>
-                  <p class="text-[10px] ${isSelected ? 'text-indigo-600 font-bold' : 'text-slate-400 font-medium'}">${assignedQty > 0 ? `${assignedQty} unidad${assignedQty === 1 ? '' : 'es'} asignada${assignedQty === 1 ? '' : 's'}` : 'No asignado'}</p>
-                </div>
-              </div>
-              <span class="text-xs font-black ${isSelected ? 'text-indigo-900 bg-indigo-50 border-indigo-200' : 'text-slate-400 bg-slate-50 border-slate-100'} px-2.5 py-1 rounded-xl border">
-                ${formatCurrency(cost)}
-              </span>
-            </div>
-          `;
-        }).join('');
-
-        badge.textContent = `${totalAssigned} / ${itemQty} unidades`;
-        badge.className = 'text-xs font-black text-indigo-700 bg-white px-2.5 py-1 rounded-xl shadow-2xs border border-indigo-100';
+      if (Object.keys(tempItemAssignments).length === 0 && item.assignedTo && item.assignedTo !== 'all') {
+        const { key: gKey } = getGuestKeyAndName(item.assignedTo, currentAssignModalGuests);
+        tempItemAssignments = { [gKey]: itemQty };
       }
 
-      // Botón "Cerrar Desglose"
-      const confirmBtn = document.getElementById('btn-confirm-item-assignment');
-      confirmBtn.innerHTML = `<i class="fas fa-check"></i><span>Cerrar Desglose</span>`;
-
+      renderItemAssignmentModalUI();
       openModal('modal-item-assignment');
     }
     window.openDetailItemBreakdownModal = openDetailItemBreakdownModal;
 
-    function setAssignModalMode(mode) {
-      assignModalMode = mode;
-      const btnAll = document.getElementById('btn-assign-mode-all');
-      const btnCustom = document.getElementById('btn-assign-mode-custom');
-      const membersContainer = document.getElementById('assign-members-list');
-      const statusBar = document.getElementById('assign-units-status-bar');
+    // Renderizador UI del Bottom Sheet de Asignación (Pantalla 4)
+    function renderItemAssignmentModalUI() {
+      const item = currentAssigningItem;
+      if (!item) return;
 
-      if (mode === 'all') {
-        btnAll.className = 'flex-1 py-2 rounded-xl bg-white text-slate-900 shadow-xs flex items-center justify-center gap-1.5 transition-all';
-        btnCustom.className = 'flex-1 py-2 rounded-xl text-slate-500 hover:text-slate-900 flex items-center justify-center gap-1.5 transition-all';
-        statusBar.classList.add('hidden');
-        membersContainer.classList.add('opacity-40', 'pointer-events-none');
+      const itemQty = parseFloat(item.quantity) || 1;
+      const unitPrice = parseFloat(item.amount) || 0;
+      const totalCost = itemQty * unitPrice;
+
+      // 1. Header (Nombre | Cantidad | Monto)
+      document.getElementById('assign-modal-item-title').textContent = item.desc || 'Producto';
+      document.getElementById('assign-modal-total-qty-badge').textContent = `${itemQty} und`;
+      document.getElementById('assign-modal-total-cost-badge').textContent = formatCurrency(totalCost);
+
+      // 2. Lista de Miembros Disponibles (Participantes + Invitados)
+      const members = [
+        ...appState.participants.map(p => ({
+          id: p.id,
+          name: p.name,
+          initials: (p.name || 'U').substring(0, 2).toUpperCase(),
+          isGuest: false,
+          isMe: p.firebaseUid === currentUserId
+        })),
+        ...currentAssignModalGuests.map((g, gIdx) => {
+          const cleanName = g.trim();
+          const gKey = `guest_${cleanName.toLowerCase().replace(/\s+/g, '_')}`;
+          return {
+            id: gKey,
+            name: cleanName,
+            initials: cleanName.substring(0, 2).toUpperCase(),
+            isGuest: true,
+            isMe: false
+          };
+        })
+      ];
+
+      // 3. Renderizar Avatares Rápidos con Checkmarks (Pantalla 4)
+      const avatarRow = document.getElementById('assign-avatar-chips-row');
+      avatarRow.innerHTML = members.map(m => {
+        const isAssigned = (parseFloat(tempItemAssignments[m.id]) || 0) > 0;
+        return `
+          <button type="button" onclick="toggleMemberAssignment('${m.id}')"
+            class="relative flex flex-col items-center justify-center p-1 rounded-2xl transition-all ${isAssigned ? 'scale-105' : 'opacity-60 hover:opacity-100'} ${isAssignmentReadOnly ? 'pointer-events-none' : 'cursor-pointer'}">
+            <div class="w-12 h-12 rounded-2xl flex items-center justify-center text-sm font-black shadow-xs transition-colors ${isAssigned ? (m.isGuest ? 'bg-amber-100 text-amber-900 border-2 border-amber-500' : 'bg-emerald-100 text-emerald-900 border-2 border-emerald-500') : 'bg-slate-100 text-slate-600 border border-slate-200'}">
+              ${m.initials}
+            </div>
+            <span class="text-[9px] font-bold text-slate-700 mt-1 truncate max-w-[52px] text-center">${m.name}</span>
+            ${isAssigned ? `
+              <div class="absolute top-0 right-0 w-4 h-4 rounded-full bg-emerald-500 text-white text-[8px] font-black flex items-center justify-center shadow-xs border border-white">
+                ✓
+              </div>
+            ` : ''}
+          </button>
+        `;
+      }).join('');
+
+      // 4. Renderizar Tabla de Asignación por Miembro (Miembro | Und. | Monto)
+      const container = document.getElementById('assign-members-list');
+      const assignedKeys = Object.keys(tempItemAssignments).filter(k => (parseFloat(tempItemAssignments[k]) || 0) > 0);
+
+      if (assignedKeys.length === 0) {
+        // Modo Equitativo entre todos
+        const numPayees = members.length || 1;
+        const shareUnits = (itemQty / numPayees).toFixed(2);
+        const shareCost = totalCost / numPayees;
+
+        container.innerHTML = members.map(m => `
+          <div class="grid grid-cols-12 gap-2 items-center bg-emerald-50/50 border border-emerald-200/60 rounded-2xl p-2.5">
+            <div class="col-span-6 flex items-center gap-2 min-w-0">
+              <div class="w-7 h-7 rounded-xl ${m.isGuest ? 'bg-amber-500' : 'bg-slate-900'} text-white flex items-center justify-center font-black text-[10px] shrink-0">
+                ${m.initials}
+              </div>
+              <div class="truncate">
+                <h4 class="font-extrabold text-xs text-slate-900 truncate">${m.name}</h4>
+                <p class="text-[9px] text-emerald-700 font-bold">Equitativo</p>
+              </div>
+            </div>
+            <div class="col-span-3 text-center">
+              <span class="text-xs font-black text-slate-700 bg-white px-2 py-0.5 rounded-lg border border-emerald-100">${shareUnits}</span>
+            </div>
+            <div class="col-span-3 text-right">
+              <span class="text-xs font-black text-slate-900">${formatCurrency(shareCost)}</span>
+            </div>
+          </div>
+        `).join('');
       } else {
-        btnCustom.className = 'flex-1 py-2 rounded-xl bg-white text-slate-900 shadow-xs flex items-center justify-center gap-1.5 transition-all';
-        btnAll.className = 'flex-1 py-2 rounded-xl text-slate-500 hover:text-slate-900 flex items-center justify-center gap-1.5 transition-all';
-        statusBar.classList.remove('hidden');
-        membersContainer.classList.remove('opacity-40', 'pointer-events-none');
+        // Modo Por Persona / Unidades Específicas
+        container.innerHTML = members.map(m => {
+          const assignedQty = parseFloat(tempItemAssignments[m.id]) || 0;
+          const isSelected = assignedQty > 0;
+          const cost = assignedQty * unitPrice;
+
+          return `
+            <div class="grid grid-cols-12 gap-2 items-center ${isSelected ? 'bg-emerald-50/60 border-emerald-300 ring-1 ring-emerald-500/10' : 'bg-slate-50 border-slate-100 opacity-40'} border rounded-2xl p-2.5 transition-all">
+              <div class="col-span-6 flex items-center gap-2 min-w-0">
+                <div class="w-7 h-7 rounded-xl ${m.isGuest ? 'bg-amber-500' : 'bg-slate-900'} text-white flex items-center justify-center font-black text-[10px] shrink-0">
+                  ${m.initials}
+                </div>
+                <div class="truncate">
+                  <div class="flex items-center gap-1">
+                    <h4 class="font-extrabold text-xs text-slate-900 truncate">${m.name}</h4>
+                    ${m.isMe ? '<span class="text-[7px] font-black text-indigo-700 bg-indigo-50 px-1 rounded">TÚ</span>' : ''}
+                    ${m.isGuest ? '<span class="text-[7px] font-black text-amber-700 bg-amber-100 px-1 rounded">INV</span>' : ''}
+                  </div>
+                  <p class="text-[9px] ${isSelected ? 'text-emerald-700 font-bold' : 'text-slate-400'}">${isSelected ? 'Asignado' : 'Sin asignación'}</p>
+                </div>
+              </div>
+
+              <!-- Control Stepper (Und.) -->
+              <div class="col-span-3 flex items-center justify-center gap-1">
+                ${!isAssignmentReadOnly ? `
+                  <button type="button" onclick="changeItemAssignmentQty('${m.id}', -1)"
+                    class="w-6 h-6 rounded-lg bg-white text-slate-700 hover:bg-slate-200 active:scale-90 font-black text-xs flex items-center justify-center shadow-2xs border border-slate-200 transition-transform ${assignedQty === 0 ? 'opacity-30 pointer-events-none' : ''}">
+                    -
+                  </button>
+                ` : ''}
+                <span class="w-5 text-center text-xs font-black text-slate-900">${assignedQty}</span>
+                ${!isAssignmentReadOnly ? `
+                  <button type="button" onclick="changeItemAssignmentQty('${m.id}', 1)"
+                    class="w-6 h-6 rounded-lg bg-emerald-600 text-white hover:bg-emerald-700 active:scale-90 font-black text-xs flex items-center justify-center shadow-2xs transition-transform">
+                    +
+                  </button>
+                ` : ''}
+              </div>
+
+              <!-- Monto Calculado -->
+              <div class="col-span-3 text-right">
+                <span class="text-xs font-black ${isSelected ? 'text-slate-900' : 'text-slate-400'}">${formatCurrency(cost)}</span>
+              </div>
+            </div>
+          `;
+        }).join('');
+      }
+
+      // 5. Barra de Estado
+      const totalAssigned = Object.keys(tempItemAssignments).reduce((sum, k) => sum + (parseFloat(tempItemAssignments[k]) || 0), 0);
+      const badge = document.getElementById('assign-units-badge');
+
+      if (assignedKeys.length === 0) {
+        badge.textContent = `Dividido entre ${members.length} personas`;
+        badge.className = 'text-xs font-black text-indigo-700 bg-white px-2.5 py-1 rounded-xl shadow-2xs border border-indigo-100';
+      } else if (totalAssigned === itemQty) {
+        badge.textContent = `✓ Todo asignado (${totalAssigned} / ${itemQty} und.)`;
+        badge.className = 'text-xs font-black text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-xl shadow-2xs border border-emerald-200';
+      } else if (totalAssigned < itemQty) {
+        badge.textContent = `Pendiente: ${itemQty - totalAssigned} und.`;
+        badge.className = 'text-xs font-black text-amber-700 bg-amber-50 px-2.5 py-1 rounded-xl shadow-2xs border border-amber-200';
+      } else {
+        badge.textContent = `Excede por ${totalAssigned - itemQty} und.`;
+        badge.className = 'text-xs font-black text-rose-700 bg-rose-50 px-2.5 py-1 rounded-xl shadow-2xs border border-rose-200';
+      }
+
+      // 6. Botón de Acción Inferior
+      const confirmBtn = document.getElementById('btn-confirm-item-assignment');
+      if (isAssignmentReadOnly) {
+        confirmBtn.innerHTML = `<i class="fas fa-check"></i><span>Cerrar Desglose</span>`;
+      } else {
+        confirmBtn.innerHTML = `<i class="fas fa-check-circle text-sm text-emerald-400"></i><span>Confirmar Asignación</span>`;
       }
     }
 
-    document.getElementById('btn-assign-mode-all').addEventListener('click', () => {
-      setAssignModalMode('all');
-      tempItemAssignments = {};
-      renderItemAssignmentList();
-    });
+    // Toggle rápido de participante mediante avatar
+    function toggleMemberAssignment(memberId) {
+      if (isAssignmentReadOnly || !currentAssigningItem) return;
 
-    document.getElementById('btn-assign-mode-custom').addEventListener('click', () => {
-      setAssignModalMode('custom');
-      renderItemAssignmentList();
-    });
+      const totalItemQty = parseFloat(currentAssigningItem.quantity) || 1;
+      const currentQty = parseFloat(tempItemAssignments[memberId]) || 0;
 
+      if (currentQty > 0) {
+        delete tempItemAssignments[memberId];
+      } else {
+        const assignedSum = Object.keys(tempItemAssignments).reduce((s, k) => s + (parseFloat(tempItemAssignments[k]) || 0), 0);
+        const remaining = Math.max(1, totalItemQty - assignedSum);
+        tempItemAssignments[memberId] = remaining;
+      }
+
+      renderItemAssignmentModalUI();
+    }
+    window.toggleMemberAssignment = toggleMemberAssignment;
+
+    // Cambiar unidades con steppers (+ / -)
     function changeItemAssignmentQty(memberId, delta) {
-      const item = mobileExpenseItems.find(i => i.id === currentAssigningItemId);
-      if (!item) return;
+      if (isAssignmentReadOnly || !currentAssigningItem) return;
 
-      const totalItemQty = parseFloat(item.quantity) || 1;
+      const totalItemQty = parseFloat(currentAssigningItem.quantity) || 1;
       const currentQty = parseFloat(tempItemAssignments[memberId]) || 0;
       let newQty = Math.max(0, currentQty + delta);
 
-      // Calcular asignados en otros
+      // Calcular asignados en otros miembros
       const othersAssigned = Object.keys(tempItemAssignments).reduce((sum, k) => {
         return k === memberId ? sum : sum + (parseFloat(tempItemAssignments[k]) || 0);
       }, 0);
 
-      // No permitir superar el total del ítem
+      // Restringir a no exceder el total del ítem
       if (othersAssigned + newQty > totalItemQty) {
         newQty = Math.max(0, totalItemQty - othersAssigned);
       }
@@ -2504,93 +2608,18 @@
         delete tempItemAssignments[memberId];
       }
 
-      renderItemAssignmentList();
+      renderItemAssignmentModalUI();
     }
     window.changeItemAssignmentQty = changeItemAssignmentQty;
 
-    function renderItemAssignmentList() {
-      const container = document.getElementById('assign-members-list');
-      const badge = document.getElementById('assign-units-badge');
-      const item = mobileExpenseItems.find(i => i.id === currentAssigningItemId);
-      if (!item) return;
-
-      const totalItemQty = parseFloat(item.quantity) || 1;
-      const totalAssigned = Object.keys(tempItemAssignments).reduce((sum, k) => sum + (parseFloat(tempItemAssignments[k]) || 0), 0);
-
-      badge.textContent = `${totalAssigned} / ${totalItemQty} unidades`;
-      if (totalAssigned === totalItemQty) {
-        badge.className = 'text-xs font-black text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-xl shadow-2xs border border-emerald-200';
-      } else if (totalAssigned > 0) {
-        badge.className = 'text-xs font-black text-amber-700 bg-amber-50 px-2.5 py-1 rounded-xl shadow-2xs border border-amber-200';
-      } else {
-        badge.className = 'text-xs font-black text-indigo-700 bg-white px-2.5 py-1 rounded-xl shadow-2xs border border-indigo-100';
-      }
-
-      // Miembros: Participantes Registrados + Invitados del Gasto
-      const members = [
-        ...appState.participants.map(p => ({
-          id: p.id,
-          name: p.name,
-          isGuest: false,
-          isMe: p.firebaseUid === currentUserId
-        })),
-        ...mobileExpenseGuests.map(g => ({
-          id: `guest_${g.trim().toLowerCase().replace(/\s+/g, '_')}`,
-          name: g,
-          isGuest: true,
-          isMe: false
-        }))
-      ];
-
-      container.innerHTML = members.map(m => {
-        const assignedQty = parseFloat(tempItemAssignments[m.id]) || 0;
-        const isSelected = assignedQty > 0;
-
-        return `
-          <div class="bg-white border ${isSelected ? 'border-indigo-500 ring-1 ring-indigo-500/20 bg-indigo-50/10' : 'border-slate-200'} rounded-2xl p-3 flex items-center justify-between shadow-2xs transition-all">
-            <div class="flex items-center gap-2.5">
-              <div class="w-9 h-9 rounded-xl ${m.isGuest ? 'bg-amber-500' : 'bg-slate-900'} text-white flex items-center justify-center font-black text-xs shadow-xs">
-                ${(m.name || 'U').substring(0, 2).toUpperCase()}
-              </div>
-              <div>
-                <div class="flex items-center gap-1.5">
-                  <h4 class="font-extrabold text-xs text-slate-900">${m.name}</h4>
-                  ${m.isMe ? '<span class="text-[8px] font-black text-indigo-700 bg-indigo-50 px-1.5 py-0.5 rounded">TÚ</span>' : ''}
-                  ${m.isGuest ? '<span class="text-[8px] font-black text-amber-700 bg-amber-100 px-1.5 py-0.5 rounded">INVITADO</span>' : ''}
-                </div>
-                <p class="text-[10px] text-slate-400 font-medium">${assignedQty > 0 ? `${assignedQty} unidad${assignedQty === 1 ? '' : 'es'} asignada${assignedQty === 1 ? '' : 's'}` : 'Sin asignación'}</p>
-              </div>
-            </div>
-
-            <!-- Stepper Controls (+ / -) -->
-            <div class="flex items-center gap-1.5 bg-slate-100 p-1 rounded-xl">
-              <button type="button" onclick="changeItemAssignmentQty('${m.id}', -1)"
-                class="w-7 h-7 rounded-lg bg-white text-slate-700 hover:bg-slate-200 active:scale-90 font-black text-sm flex items-center justify-center shadow-2xs transition-transform ${assignedQty === 0 ? 'opacity-30 pointer-events-none' : ''}">
-                -
-              </button>
-              <span class="w-6 text-center text-xs font-black text-slate-900">${assignedQty}</span>
-              <button type="button" onclick="changeItemAssignmentQty('${m.id}', 1)"
-                class="w-7 h-7 rounded-lg bg-indigo-600 text-white hover:bg-indigo-700 active:scale-90 font-black text-sm flex items-center justify-center shadow-2xs transition-transform">
-                +
-              </button>
-            </div>
-          </div>
-        `;
-      }).join('');
-    }
-
+    // Confirmar asignación desde el botón inferior
     document.getElementById('btn-confirm-item-assignment').addEventListener('click', () => {
-      if (currentAssigningItemId) {
+      if (!isAssignmentReadOnly && currentAssigningItemId) {
         const item = mobileExpenseItems.find(i => i.id === currentAssigningItemId);
         if (item) {
-          if (assignModalMode === 'all') {
-            item.assignedTo = 'all';
-            item.assignments = {};
-          } else {
-            item.assignments = { ...tempItemAssignments };
-            const keys = Object.keys(item.assignments);
-            item.assignedTo = keys.length === 1 ? keys[0] : (keys.length > 1 ? 'custom' : 'all');
-          }
+          item.assignments = { ...tempItemAssignments };
+          const keys = Object.keys(item.assignments);
+          item.assignedTo = keys.length === 1 ? keys[0] : (keys.length > 1 ? 'custom' : 'all');
           renderMobileItemsList();
         }
       }
