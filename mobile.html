@@ -547,16 +547,86 @@
             <i class="fas fa-check-circle text-sm"></i>
             <span id="label-submit-income">Añadir Ingreso al Presupuesto</span>
           </button>
-          <button type="button" id="btn-delete-income" class="w-full py-2.5 bg-rose-50 hover:bg-rose-100 text-rose-600 rounded-2xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 hidden active:scale-98">
-            <i class="fas fa-trash-alt text-xs"></i>
-            <span>Eliminar Este Ingreso</span>
+  <!-- 3. Modal Detalle de Movimiento / Lista de Ítems (Read-Only con botón de edición lápiz) -->
+  <div id="modal-transaction-detail" class="fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-sm hidden items-end justify-center p-0 m3-bottom-sheet-backdrop">
+    <div class="w-full max-w-lg bg-white rounded-t-[32px] max-h-[92vh] flex flex-col shadow-2xl overflow-hidden m3-bottom-sheet-surface">
+      
+      <!-- Drag Handle Indicator -->
+      <div class="w-12 h-1.5 bg-slate-300 rounded-full mx-auto mt-3 mb-1 shrink-0"></div>
+
+      <!-- Header con Título, Botón Lápiz Editar y Cerrar -->
+      <div class="px-5 py-3 border-b border-slate-100 flex items-center justify-between shrink-0">
+        <div class="flex items-center gap-2.5">
+          <div class="w-9 h-9 rounded-2xl bg-indigo-50 text-indigo-600 flex items-center justify-center text-base font-bold shadow-xs">
+            <i class="fas fa-list-check"></i>
+          </div>
+          <div>
+            <h3 class="font-extrabold text-sm text-slate-900 leading-tight">Detalle del Gasto</h3>
+            <p class="text-[10px] text-slate-400 font-medium">Desglose de cuenta e ítems asignados</p>
+          </div>
+        </div>
+        
+        <div class="flex items-center gap-2">
+          <!-- Botón Lápiz para Editar -->
+          <button id="btn-edit-from-detail" type="button" class="w-9 h-9 rounded-2xl bg-indigo-50 hover:bg-indigo-100 text-indigo-600 flex items-center justify-center text-xs active:scale-90 transition-transform shadow-2xs" title="Editar este gasto">
+            <i class="fas fa-pencil-alt text-xs"></i>
+          </button>
+          <!-- Botón Cerrar -->
+          <button id="close-modal-detail" type="button" class="w-9 h-9 rounded-2xl bg-slate-100 text-slate-400 hover:text-slate-600 flex items-center justify-center text-xs active:scale-90 transition-transform">
+            <i class="fas fa-times"></i>
           </button>
         </div>
-      </form>
+      </div>
+
+      <!-- Contenido Read-Only del Detalle -->
+      <div class="p-5 overflow-y-auto space-y-4 flex-1 custom-scrollbar">
+        
+        <!-- Tarjeta Resumen del Gasto -->
+        <div class="bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 text-white p-4 rounded-2xl shadow-md space-y-2">
+          <div class="flex items-center justify-between">
+            <span id="detail-category-badge" class="text-[10px] font-bold px-2 py-0.5 rounded-lg bg-white/10 text-white">General</span>
+            <span id="detail-type-badge" class="text-[10px] font-bold px-2 py-0.5 rounded-lg bg-indigo-500/30 text-indigo-200">Compartido</span>
+          </div>
+          <div>
+            <h4 id="detail-description" class="text-sm font-bold text-slate-200">Descripción del gasto</h4>
+            <span id="detail-amount" class="text-2xl font-black text-white block mt-0.5">S/ 0.00</span>
+          </div>
+          <div class="pt-2 border-t border-white/10 flex items-center justify-between text-[11px] text-slate-300">
+            <span id="detail-payer-info">Pagado por: <strong>--</strong></span>
+            <span id="detail-date-info">--</span>
+          </div>
+        </div>
+
+        <!-- Badges de Invitados (si los hay) -->
+        <div id="detail-guests-section" class="hidden bg-amber-50/70 border border-amber-200/80 p-3 rounded-2xl space-y-1.5">
+          <span class="text-[10px] font-bold uppercase tracking-wider text-amber-800 block">Invitados Participantes</span>
+          <div id="detail-guests-list" class="flex flex-wrap gap-1.5">
+            <!-- Chips de invitados -->
+          </div>
+        </div>
+
+        <!-- Tabla / Lista de Ítems (Read-Only) -->
+        <div class="space-y-2">
+          <div class="flex items-center justify-between px-1">
+            <span class="text-xs font-black text-slate-900 uppercase tracking-wider">Desglose de Ítems</span>
+            <span id="detail-items-count-badge" class="text-[10px] font-bold bg-slate-100 text-slate-600 px-2 py-0.5 rounded-full">0 ítems</span>
+          </div>
+
+          <div id="detail-items-container" class="space-y-2">
+            <!-- Filas de ítems inyectadas por JS -->
+          </div>
+        </div>
+
+        <!-- Método de Pago Info -->
+        <div class="p-3 bg-slate-50 border border-slate-100 rounded-2xl flex items-center justify-between text-xs">
+          <span class="text-slate-400 font-medium">Método de pago utilizado:</span>
+          <span id="detail-pm-name" class="font-bold text-slate-800">Efectivo</span>
+        </div>
+      </div>
     </div>
   </div>
 
-  <!-- 3. Drawer / Modal de Ajustes (True Native M3 Bottom Sheet) -->
+  <!-- 4. Drawer / Modal de Ajustes (True Native M3 Bottom Sheet) -->
   <div id="modal-settings" class="fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-sm hidden items-end justify-center p-0 m3-bottom-sheet-backdrop">
     <div class="w-full max-w-lg bg-white rounded-t-[32px] max-h-[92vh] flex flex-col shadow-2xl overflow-hidden m3-bottom-sheet-surface">
       
@@ -1033,6 +1103,8 @@
             return; // No mostrar gastos fijos futuros
           }
 
+          const hasItems = !!(e.items && Array.isArray(e.items) && e.items.length > 0);
+
           items.push({
             id: e.id,
             type: 'expense',
@@ -1043,7 +1115,10 @@
             payerId: e.payerId,
             paymentMethod: e.paymentMethod || 'Efectivo',
             isFixed: e.isFixed,
-            isShared: e.type === 'shared' || !e.type
+            isShared: e.type === 'shared' || !e.type,
+            hasItems: hasItems,
+            items: e.items || [],
+            guests: e.guests || []
           });
         });
       }
@@ -1066,7 +1141,8 @@
                   date: inc.date,
                   category: 'Ingreso',
                   payerName: p.name,
-                  paymentMethod: 'Depósito/Efectivo'
+                  paymentMethod: 'Depósito/Efectivo',
+                  hasItems: false
                 });
               }
             }
@@ -1115,13 +1191,17 @@
         } else if (item.isFixed) {
           dateBoxClass = "bg-purple-50 border-purple-200 text-purple-600";
           typeBadge = `<span class="ml-1.5 inline-flex items-center justify-center w-4 h-4 rounded-full bg-purple-100 text-purple-600 text-[8px]" title="Gasto Fijo"><i class="fas fa-sync-alt"></i></span>`;
+        } else if (item.hasItems) {
+          dateBoxClass = "bg-indigo-50 border-indigo-200 text-indigo-600";
+          typeBadge = `<span class="ml-1.5 inline-flex items-center justify-center w-4 h-4 rounded-full bg-indigo-100 text-indigo-600 text-[8px]" title="Lista de Ítems"><i class="fas fa-list-ul"></i></span>`;
         } else if (item.isShared) {
           dateBoxClass = "bg-orange-50 border-orange-200 text-orange-600";
           typeBadge = `<span class="ml-1.5 inline-flex items-center justify-center w-4 h-4 rounded-full bg-orange-100 text-orange-600 text-[8px]" title="Compartido"><i class="fas fa-users"></i></span>`;
         }
 
+        // Si tiene lista de ítems, abrir primero el modal de detalle read-only con botón de lápiz
         const clickHandler = isExpense 
-          ? `onclick="openEditExpenseModal('${item.id}')"` 
+          ? (item.hasItems ? `onclick="openTransactionDetailModal('${item.id}')"` : `onclick="openEditExpenseModal('${item.id}')"`)
           : `onclick="openEditIncomeModal('${item.id}')"`;
 
         return `
@@ -1167,6 +1247,7 @@
     let mobileExpenseItems = []; // [{ id, desc, quantity, amount, assignedTo }]
     let editingExpenseId = null; // null si es nuevo
     let editingIncomeId = null; // null si es nuevo
+    let currentDetailExpenseId = null; // ID del gasto en visualización read-only
 
     // 6. Control de Modo Simple vs Modo Lista
     const btnModeSimple = document.getElementById('btn-mode-simple');
@@ -1199,6 +1280,153 @@
         addMobileItemRow();
       }
     });
+
+    // ================================================================
+    // MODAL DE DETALLE (READ-ONLY) CON BOTÓN DE LÁPIZ PARA EDITAR
+    // ================================================================
+    function openTransactionDetailModal(expenseId) {
+      const exp = appState.expenses.find(e => e.id === expenseId);
+      if (!exp) return;
+
+      currentDetailExpenseId = expenseId;
+
+      // Llenar datos principales
+      document.getElementById('detail-description').textContent = exp.description || 'Sin descripción';
+      document.getElementById('detail-amount').textContent = formatCurrency(exp.amount);
+      document.getElementById('detail-category-badge').textContent = exp.category || 'General';
+      document.getElementById('detail-type-badge').textContent = (exp.type === 'personal') ? 'Personal' : 'Compartido';
+      
+      const payerName = appState.participants.find(p => p.id === exp.payerId)?.name || 'Desconocido';
+      document.getElementById('detail-payer-info').innerHTML = `Pagado por: <strong>${payerName}</strong>`;
+      document.getElementById('detail-date-info').textContent = exp.date || '--';
+      document.getElementById('detail-pm-name').textContent = exp.paymentMethod || 'Efectivo';
+
+      // Invitados
+      const guestsSection = document.getElementById('detail-guests-section');
+      const guestsList = document.getElementById('detail-guests-list');
+      const expenseGuests = (exp.guests && Array.isArray(exp.guests)) ? exp.guests : (exp.guestName ? [exp.guestName] : []);
+
+      if (expenseGuests.length > 0) {
+        guestsSection.classList.remove('hidden');
+        guestsList.innerHTML = expenseGuests.map(g => `
+          <span class="inline-flex items-center gap-1 px-2.5 py-0.5 bg-white border border-amber-200 text-amber-900 rounded-lg text-[11px] font-bold shadow-2xs">
+            <i class="fas fa-user-tag text-amber-500 text-[9px]"></i>
+            <span>${g}</span>
+          </span>
+        `).join('');
+      } else {
+        guestsSection.classList.add('hidden');
+      }
+
+      // Ítems de la lista
+      const itemsCountBadge = document.getElementById('detail-items-count-badge');
+      const itemsContainer = document.getElementById('detail-items-container');
+      const items = exp.items || [];
+
+      itemsCountBadge.textContent = `${items.length} ítems`;
+
+      if (items.length > 0) {
+        itemsContainer.innerHTML = items.map((it, idx) => {
+          const qty = parseFloat(it.quantity) || 1;
+          const unitPrice = parseFloat(it.amount) || 0;
+          const totalItemCost = qty * unitPrice;
+
+          // Determinar asignación
+          let assignedLabel = '👥 Para todos';
+          let assignedClass = 'bg-slate-100 text-slate-700';
+
+          if (it.assignedTo && it.assignedTo !== 'all') {
+            const pAssigned = appState.participants.find(p => p.id === it.assignedTo);
+            if (pAssigned) {
+              assignedLabel = `👤 ${pAssigned.name}`;
+              assignedClass = 'bg-indigo-50 text-indigo-700 border border-indigo-100';
+            } else if (it.assignedTo.startsWith('guest_') || it.assignedTo.startsWith('guest-')) {
+              const gIdx = parseInt(it.assignedTo.replace('guest_', '').replace('guest-', '')) || 0;
+              const gName = expenseGuests[gIdx] || 'Invitado';
+              assignedLabel = `🎟️ ${gName} (Invitado)`;
+              assignedClass = 'bg-amber-50 text-amber-800 border border-amber-200';
+            }
+          }
+
+          return `
+            <div class="bg-white p-3 rounded-2xl border border-slate-100 shadow-2xs flex items-center justify-between gap-2">
+              <div class="min-w-0 flex-1">
+                <div class="flex items-center gap-1.5">
+                  <span class="w-4 h-4 rounded-full bg-slate-100 text-slate-600 text-[9px] font-black flex items-center justify-center shrink-0">
+                    ${idx + 1}
+                  </span>
+                  <span class="text-xs font-extrabold text-slate-900 truncate">${it.desc || 'Ítem'}</span>
+                </div>
+                <div class="flex items-center gap-2 mt-1 pl-5 text-[10px] text-slate-400">
+                  <span>${qty} × ${formatCurrency(unitPrice)}</span>
+                  <span>•</span>
+                  <span class="px-1.5 py-0.2 rounded font-bold ${assignedClass}">${assignedLabel}</span>
+                </div>
+              </div>
+              <div class="text-right shrink-0">
+                <span class="text-xs font-black text-slate-900">${formatCurrency(totalItemCost)}</span>
+              </div>
+            </div>
+          `;
+        }).join('');
+      } else {
+        itemsContainer.innerHTML = `
+          <div class="text-center py-4 bg-slate-50 rounded-2xl text-xs text-slate-400 font-medium">
+            Gasto registrado como monto global.
+          </div>
+        `;
+      }
+
+      openModal('modal-transaction-detail');
+    }
+    window.openTransactionDetailModal = openTransactionDetailModal;
+
+    // Botón Lápiz desde el Detalle: Abre el modal de edición
+    document.getElementById('btn-edit-from-detail').addEventListener('click', () => {
+      if (currentDetailExpenseId) {
+        closeModal('modal-transaction-detail');
+        setTimeout(() => {
+          openEditExpenseModal(currentDetailExpenseId);
+        }, 150);
+      }
+    });
+    document.getElementById('close-modal-detail').addEventListener('click', () => {
+      closeModal('modal-transaction-detail');
+    });
+
+    // ================================================================
+    // FUNCIONES DE RESETEO LIMPIO PARA NUEVOS REGISTROS
+    // ================================================================
+    function resetExpenseForm() {
+      editingExpenseId = null;
+      document.getElementById('form-mobile-expense').reset();
+      document.getElementById('exp-amount').value = '';
+      document.getElementById('exp-description').value = '';
+      document.getElementById('exp-date').value = new Date().toISOString().split('T')[0];
+      document.getElementById('exp-is-fixed').checked = false;
+      document.querySelector('#modal-expense h3').textContent = 'Registrar Nuevo Gasto';
+      document.getElementById('label-submit-expense').textContent = 'Confirmar y Guardar Gasto';
+      document.getElementById('btn-delete-expense').classList.add('hidden');
+      
+      const typeRadio = document.querySelector('input[name="exp-type"][value="shared"]');
+      if (typeRadio) typeRadio.checked = true;
+
+      mobileExpenseItems = [];
+      mobileExpenseGuests = [];
+      renderGuestsChips();
+      btnModeSimple.click();
+    }
+
+    function resetIncomeForm() {
+      editingIncomeId = null;
+      document.getElementById('form-mobile-income').reset();
+      document.getElementById('inc-amount').value = '';
+      document.getElementById('inc-description').value = '';
+      document.getElementById('inc-date').value = new Date().toISOString().split('T')[0];
+      document.getElementById('modal-income-title').textContent = 'Registrar Nuevo Ingreso';
+      document.getElementById('label-submit-income').textContent = 'Añadir Ingreso al Presupuesto';
+      document.getElementById('btn-delete-income').classList.add('hidden');
+    }
 
     // Abrir Modal para Editar Gasto Existente
     function openEditExpenseModal(expenseId) {
@@ -1718,7 +1946,7 @@
     };
 
     // Cerrar al tocar fuera (Backdrop scrim touch)
-    ['modal-expense', 'modal-income', 'modal-settings'].forEach(modalId => {
+    ['modal-expense', 'modal-income', 'modal-settings', 'modal-transaction-detail'].forEach(modalId => {
       const modalEl = document.getElementById(modalId);
       if (modalEl) {
         modalEl.addEventListener('click', (e) => {
@@ -1729,21 +1957,13 @@
       }
     });
 
-    // Botones de Apertura
+    // Botones de Apertura Limpia (Nuevos Registros sin residuos anteriores)
     document.getElementById('mobile-btn-add-expense').addEventListener('click', () => {
-      document.getElementById('exp-date').value = new Date().toISOString().split('T')[0];
-      editingExpenseId = null;
-      document.getElementById('btn-delete-expense').classList.add('hidden');
-      document.querySelector('#modal-expense h3').textContent = 'Registrar Nuevo Gasto';
-      document.getElementById('label-submit-expense').textContent = 'Confirmar y Guardar Gasto';
+      resetExpenseForm();
       openModal('modal-expense');
     });
     document.getElementById('mobile-btn-add-income').addEventListener('click', () => {
-      document.getElementById('inc-date').value = new Date().toISOString().split('T')[0];
-      editingIncomeId = null;
-      document.getElementById('btn-delete-income').classList.add('hidden');
-      document.getElementById('modal-income-title').textContent = 'Registrar Nuevo Ingreso';
-      document.getElementById('label-submit-income').textContent = 'Añadir Ingreso al Presupuesto';
+      resetIncomeForm();
       openModal('modal-income');
     });
     document.getElementById('mobile-btn-settings-nav').addEventListener('click', () => openModal('modal-settings'));
@@ -1756,8 +1976,14 @@
     });
 
     // Botones de Cierre
-    document.getElementById('close-modal-expense').addEventListener('click', () => closeModal('modal-expense'));
-    document.getElementById('close-modal-income').addEventListener('click', () => closeModal('modal-income'));
+    document.getElementById('close-modal-expense').addEventListener('click', () => {
+      closeModal('modal-expense');
+      resetExpenseForm();
+    });
+    document.getElementById('close-modal-income').addEventListener('click', () => {
+      closeModal('modal-income');
+      resetIncomeForm();
+    });
     document.getElementById('close-modal-settings').addEventListener('click', () => closeModal('modal-settings'));
 
     // Sincronizar / Cerrar sesión
