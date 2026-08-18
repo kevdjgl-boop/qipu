@@ -935,6 +935,10 @@
           </button>
           <p class="text-[10px] text-center text-slate-400">Crea transacciones de reembolso para dejar los saldos en S/ 0.00</p>
         </div>
+      </div>
+    </div>
+  </div>
+
   <!-- 7. Modal Asignación de Ítem (True Native M3 Bottom Sheet) -->
   <div id="modal-item-assignment"
     class="fixed inset-0 z-[60] bg-slate-950/70 backdrop-blur-sm hidden items-end justify-center p-0 m3-bottom-sheet-backdrop">
@@ -2158,7 +2162,13 @@
       const assignments = item.assignments || {};
       const keys = Object.keys(assignments).filter(k => (parseFloat(assignments[k]) || 0) > 0);
 
-      if (keys.length === 0 || item.assignedTo === 'all') {
+      if (keys.length === 0) {
+        if (item.assignedTo && item.assignedTo !== 'all') {
+          const pUser = appState.participants.find(p => p.id === item.assignedTo);
+          if (pUser) return `👤 ${pUser.name} (${item.quantity || 1} u.)`;
+          const gName = item.assignedTo.startsWith('guest_') ? item.assignedTo.substring(6) : item.assignedTo;
+          return `🎟️ ${gName} (Invitado) (${item.quantity || 1} u.)`;
+        }
         return '👥 Para todos por igual';
       }
 
@@ -2185,7 +2195,7 @@
 
       container.innerHTML = mobileExpenseItems.map((item, idx) => {
         const assignLabel = getAssignmentSummaryLabel(item);
-        const hasCustomAssignments = item.assignments && Object.keys(item.assignments).length > 0;
+        const hasCustomAssignments = (item.assignments && Object.keys(item.assignments).length > 0) || (item.assignedTo && item.assignedTo !== 'all');
 
         return `
           <div class="bg-slate-50 p-3 rounded-2xl border border-slate-200/80 space-y-2 relative group" data-item-id="${item.id}">
@@ -2247,6 +2257,10 @@
       currentAssigningItemId = itemId;
       const itemQty = parseFloat(item.quantity) || 1;
       tempItemAssignments = { ...(item.assignments || {}) };
+
+      if (Object.keys(tempItemAssignments).length === 0 && item.assignedTo && item.assignedTo !== 'all') {
+        tempItemAssignments = { [item.assignedTo]: itemQty };
+      }
 
       document.getElementById('assign-modal-item-title').textContent = item.desc ? `Asignar "${item.desc}"` : 'Asignar Ítem';
       document.getElementById('assign-modal-item-subtitle').textContent = `Total: ${itemQty} unidad${itemQty === 1 ? '' : 'es'} en la cuenta`;
