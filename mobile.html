@@ -144,9 +144,10 @@
     <!-- 1️⃣ BLOQUE SUPERIOR: PRESUPUESTO GLOBAL & MÉTRICAS -->
     <!-- ========================================== -->
     <section id="top-budget-section" class="space-y-3">
-      <!-- Tarjeta Hero de Disponible Global -->
-      <div
-        class="relative overflow-hidden bg-gradient-to-br from-slate-900 via-indigo-950 to-slate-900 rounded-3xl p-5 text-white shadow-xl shadow-indigo-950/20 border border-slate-800">
+      <!-- Tarjeta Hero de Disponible Global (Clicable -> Abre Bottom Sheet de Saldos) -->
+      <div onclick="openModal('modal-participants-balances');"
+        class="relative overflow-hidden bg-gradient-to-br from-slate-900 via-indigo-950 to-slate-900 rounded-3xl p-5 text-white shadow-xl shadow-indigo-950/20 border border-slate-800 cursor-pointer active:scale-98 transition-all group select-none"
+        title="Toca para ver el desglose por usuario">
         <!-- Decoración glow -->
         <div class="absolute -right-8 -bottom-8 w-36 h-36 bg-indigo-500/20 rounded-full blur-2xl"></div>
         <div class="absolute -left-8 -top-8 w-32 h-32 bg-emerald-500/15 rounded-full blur-2xl"></div>
@@ -157,9 +158,16 @@
               <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
               <span class="text-[10px] font-extrabold uppercase tracking-widest text-slate-300">Disponible Global</span>
             </div>
-            <span id="global-percent-badge"
-              class="text-[10px] font-black px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">100%
-              restante</span>
+            <div class="flex items-center gap-1.5">
+              <span class="text-[10px] font-bold text-indigo-300 bg-white/10 group-hover:bg-white/20 px-2 py-0.5 rounded-full transition-colors flex items-center gap-1">
+                <i class="fas fa-users text-[9px]"></i>
+                <span>Ver saldos</span>
+                <i class="fas fa-chevron-right text-[8px] opacity-70"></i>
+              </span>
+              <span id="global-percent-badge"
+                class="text-[10px] font-black px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">100%
+                restante</span>
+            </div>
           </div>
 
           <div class="my-2">
@@ -251,33 +259,7 @@
     </section>
 
     <!-- ========================================== -->
-    <!-- 2️⃣ BLOQUE MEDIO: CARRUSEL DE USUARIOS E INVITADOS -->
-    <!-- ========================================== -->
-    <section id="middle-participants-section" class="space-y-2.5">
-      <div class="flex items-center justify-between">
-        <div class="flex items-center gap-2">
-          <div class="w-2 h-2 rounded-full bg-indigo-600"></div>
-          <h3 class="text-xs font-black uppercase tracking-wider text-slate-900">Saldos Individuales</h3>
-          <span id="participants-count-badge"
-            class="text-[10px] font-bold bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded-full">0</span>
-        </div>
-        <span class="text-[10px] font-bold text-indigo-600 flex items-center gap-1">
-          Desliza <i class="fas fa-arrow-right text-[8px]"></i>
-        </span>
-      </div>
-
-      <!-- Carrusel Horizontal Táctil -->
-      <div id="mobile-participants-carousel" class="flex overflow-x-auto snap-x scrollbar-none gap-3 pb-1 -mx-4 px-4">
-        <!-- Tarjetas dinámicas inyectadas por JS -->
-        <div
-          class="w-[240px] shrink-0 snap-start bg-white p-4 rounded-2xl border border-slate-100 shadow-sm text-center text-slate-400 text-xs italic">
-          Cargando participantes...
-        </div>
-      </div>
-    </section>
-
-    <!-- ========================================== -->
-    <!-- 3️⃣ BLOQUE INFERIOR: HISTORIAL DE TRANSACCIONES -->
+    <!-- 2️⃣ BLOQUE PRINCIPAL: HISTORIAL DE TRANSACCIONES -->
     <!-- ========================================== -->
     <section id="bottom-history-section" class="space-y-3 pt-2">
       <div class="flex items-center justify-between">
@@ -356,32 +338,32 @@
   <!-- Contenedor Inferior: Barra Cápsula + Botón FAB Circular -->
   <div class="fixed bottom-4 left-4 right-4 z-40 max-w-lg mx-auto flex items-center gap-3 justify-between pointer-events-none">
     
-    <!-- 1. Barra Larga (Alto: 60px, Border-Radius: 24px) -->
-    <nav class="pointer-events-auto h-[60px] flex-1 bg-white/95 backdrop-blur-xl rounded-[24px] shadow-[0_10px_35px_rgba(0,0,0,0.12)] border border-slate-100/90 flex items-center justify-around px-2 text-slate-800">
+    <!-- 1. Barra Larga (Alto: 60px, Border-Radius: 16px) -->
+    <nav style="border-radius: 16px;" class="pointer-events-auto h-[60px] flex-1 bg-white/95 backdrop-blur-xl shadow-[0_10px_35px_rgba(0,0,0,0.12)] border border-slate-100/90 flex items-center justify-around px-2 text-slate-800">
       
       <!-- Icono 1: Monedero / Inicio -->
-      <button type="button" id="nav-btn-wallet" class="w-11 h-11 rounded-2xl flex items-center justify-center text-slate-900 hover:bg-slate-100 active:scale-90 transition-transform" title="Inicio / Monedero">
+      <button type="button" id="nav-btn-wallet" class="w-11 h-11 rounded-xl flex items-center justify-center text-slate-900 hover:bg-slate-100 active:scale-90 transition-transform" title="Inicio / Monedero">
         <i class="fas fa-wallet text-lg"></i>
       </button>
 
       <!-- Icono 2: Métricas / Estadísticas -->
-      <button type="button" id="nav-btn-stats" class="w-11 h-11 rounded-2xl flex items-center justify-center text-slate-900 hover:bg-slate-100 active:scale-90 transition-transform" title="Resumen Financiero">
+      <button type="button" id="nav-btn-stats" class="w-11 h-11 rounded-xl flex items-center justify-center text-slate-900 hover:bg-slate-100 active:scale-90 transition-transform" title="Resumen Financiero">
         <i class="fas fa-chart-column text-lg"></i>
       </button>
 
       <!-- Icono 3: Micrófono / Voz -->
-      <button type="button" id="nav-btn-voice" class="w-11 h-11 rounded-2xl flex items-center justify-center text-slate-900 hover:bg-slate-100 active:scale-90 transition-transform" title="Gasto por Voz">
+      <button type="button" id="nav-btn-voice" class="w-11 h-11 rounded-xl flex items-center justify-center text-slate-900 hover:bg-slate-100 active:scale-90 transition-transform" title="Gasto por Voz">
         <i class="fas fa-microphone text-lg"></i>
       </button>
 
       <!-- Icono 4: Buscador / Historial -->
-      <button type="button" id="nav-btn-search" class="w-11 h-11 rounded-2xl flex items-center justify-center text-slate-900 hover:bg-slate-100 active:scale-90 transition-transform" title="Buscar Movimientos">
+      <button type="button" id="nav-btn-search" class="w-11 h-11 rounded-xl flex items-center justify-center text-slate-900 hover:bg-slate-100 active:scale-90 transition-transform" title="Buscar Movimientos">
         <i class="fas fa-magnifying-glass text-lg"></i>
       </button>
     </nav>
 
-    <!-- 2. Botón FAB Flotante (60px x 60px, Border-Radius: 24px) -->
-    <button type="button" id="fab-main-btn" class="pointer-events-auto w-[60px] h-[60px] shrink-0 bg-white rounded-[24px] shadow-[0_10px_35px_rgba(0,0,0,0.12)] border border-slate-100/90 flex items-center justify-center text-slate-900 active:scale-95 transition-all cursor-pointer select-none">
+    <!-- 2. Botón FAB Flotante (60px x 60px, Border-Radius: 16px) -->
+    <button type="button" id="fab-main-btn" style="border-radius: 16px;" class="pointer-events-auto w-[60px] h-[60px] shrink-0 bg-white shadow-[0_10px_35px_rgba(0,0,0,0.12)] border border-slate-100/90 flex items-center justify-center text-slate-900 active:scale-95 transition-all cursor-pointer select-none">
       <i id="fab-icon" class="fas fa-plus text-2xl font-black transition-transform duration-300"></i>
     </button>
   </div>
@@ -841,6 +823,38 @@
     </div>
   </div>
 
+  <!-- 5. Modal de Saldos Individuales por Usuario (M3 Bottom Sheet) -->
+  <div id="modal-participants-balances"
+    class="fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-sm hidden items-end justify-center p-0 m3-bottom-sheet-backdrop">
+    <div
+      class="w-full max-w-lg bg-white rounded-t-[32px] max-h-[92vh] flex flex-col shadow-2xl overflow-hidden m3-bottom-sheet-surface">
+
+      <!-- Drag Handle Indicator -->
+      <div class="w-12 h-1.5 bg-slate-300 rounded-full mx-auto mt-3 mb-1 shrink-0"></div>
+
+      <div class="px-5 py-3.5 border-b border-slate-100 flex items-center justify-between shrink-0">
+        <div class="flex items-center gap-2.5">
+          <div
+            class="w-9 h-9 rounded-2xl bg-indigo-50 text-indigo-600 flex items-center justify-center text-base font-bold shadow-xs">
+            <i class="fas fa-users"></i>
+          </div>
+          <div>
+            <h3 class="font-extrabold text-sm text-slate-900 leading-tight">Saldos Individuales</h3>
+            <p class="text-[10px] text-slate-400 font-medium">Presupuesto y consumos por persona</p>
+          </div>
+        </div>
+        <button id="close-modal-participants" onclick="closeModal('modal-participants-balances');" type="button"
+          class="w-8 h-8 rounded-full bg-slate-100 text-slate-400 hover:text-slate-600 flex items-center justify-center text-xs active:scale-90 transition-transform cursor-pointer">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+
+      <div id="mobile-participants-modal-list" class="p-5 overflow-y-auto space-y-3 flex-1 custom-scrollbar">
+        <!-- Tarjetas inyectadas dinámicamente por JS -->
+      </div>
+    </div>
+  </div>
+
   <!-- ========================================== -->
   <!-- FIREBASE & JAVASCRIPT LOGIC MOBILE -->
   <!-- ========================================== -->
@@ -1181,8 +1195,8 @@
       document.getElementById('display-daily-budget').textContent = formatCurrency(globalDailyBudget);
       document.getElementById('display-days-remaining').textContent = `${daysRemaining} días rest.`;
 
-      // Actualizar Bloque 2: Carrusel de Usuarios
-      renderParticipantsCarousel(summary, daysRemaining);
+      // Actualizar Bloque 2: Lista en Modal de Saldos de Usuarios
+      renderParticipantsModalList(summary, daysRemaining);
 
       // Actualizar Bloque 3: Historial de Transacciones
       renderHistoryList(expensesForMonth);
@@ -1191,50 +1205,68 @@
       populateSelectOptions();
     }
 
-    // 4. Renderizar Carrusel Horizontal de Participantes
-    function renderParticipantsCarousel(summary, daysRemaining) {
-      const container = document.getElementById('mobile-participants-carousel');
-      document.getElementById('participants-count-badge').textContent = appState.participants.length;
+    // 4. Renderizar Lista de Participantes en el Bottom Sheet
+    function renderParticipantsModalList(summary, daysRemaining) {
+      const container = document.getElementById('mobile-participants-modal-list');
+      if (!container) return;
 
       if (!summary.participantData || summary.participantData.length === 0) {
-        container.innerHTML = `<div class="w-full text-center py-4 text-xs text-slate-400 italic">No hay participantes configurados.</div>`;
+        container.innerHTML = `<div class="w-full text-center py-6 text-xs text-slate-400 italic">No hay participantes configurados en este monedero.</div>`;
         return;
       }
 
       container.innerHTML = summary.participantData.map(p => {
         const pRemaining = p.remainingBudget || 0;
+        const pBudget = parseFloat(p.budget) || 0;
+        const pSpent = p.spent || 0;
         const pDaily = Math.max(0, pRemaining / daysRemaining);
         const isMe = p.firebaseUid === currentUserId;
         const isPositive = pRemaining >= 0;
+        const pPercent = pBudget > 0 ? Math.min(100, Math.max(0, (pRemaining / pBudget) * 100)) : 0;
 
         return `
-          <div class="w-[240px] shrink-0 snap-start bg-white p-4 rounded-2xl border ${isMe ? 'border-indigo-400 ring-2 ring-indigo-500/10' : 'border-slate-200/80'} shadow-sm flex flex-col justify-between">
-            <div>
-              <div class="flex items-center justify-between mb-2">
-                <div class="flex items-center gap-2">
-                  <div class="w-8 h-8 rounded-xl bg-slate-900 text-white flex items-center justify-center font-bold text-xs">
-                    ${(p.name || 'U').substring(0, 2).toUpperCase()}
+          <div class="bg-slate-50 border ${isMe ? 'border-indigo-400 bg-indigo-50/20 ring-1 ring-indigo-500/20' : 'border-slate-200'} rounded-2xl p-4 space-y-3 shadow-xs">
+            <!-- Header Participante -->
+            <div class="flex items-center justify-between">
+              <div class="flex items-center gap-2.5">
+                <div class="w-10 h-10 rounded-xl bg-slate-900 text-white flex items-center justify-center font-black text-xs shadow-xs">
+                  ${(p.name || 'U').substring(0, 2).toUpperCase()}
+                </div>
+                <div>
+                  <div class="flex items-center gap-1.5">
+                    <h4 class="font-extrabold text-sm text-slate-900">${p.name}</h4>
+                    ${isMe ? '<span class="text-[9px] font-black text-indigo-700 bg-indigo-100 px-1.5 py-0.5 rounded-md">TÚ</span>' : ''}
                   </div>
-                  <div>
-                    <h4 class="font-extrabold text-xs text-slate-900 truncate max-w-[110px]">${p.name}</h4>
-                    ${isMe ? '<span class="text-[9px] font-black text-indigo-600 bg-indigo-50 px-1.5 py-0.5 rounded">TÚ</span>' : '<span class="text-[9px] text-slate-400">Participante</span>'}
-                  </div>
+                  <p class="text-[10px] text-slate-400 font-medium">Presupuesto individual asignado</p>
                 </div>
               </div>
-
-              <div class="my-2">
-                <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Saldo Disponible</span>
-                <span class="text-xl font-black ${isPositive ? 'text-slate-900' : 'text-rose-600'}">${formatCurrency(pRemaining)}</span>
+              <div class="text-right">
+                <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">Disponible</span>
+                <span class="text-lg font-black ${isPositive ? 'text-emerald-600' : 'text-rose-600'}">${formatCurrency(pRemaining)}</span>
               </div>
             </div>
 
-            <div class="pt-2 border-t border-slate-100 flex items-center justify-between text-[10px]">
-              <span class="text-slate-400 font-semibold">Presupuesto:</span>
-              <span class="font-bold text-slate-700">${formatCurrency(p.budget)}</span>
+            <!-- Barra de Progreso Personal -->
+            <div class="space-y-1">
+              <div class="w-full bg-slate-200 h-2 rounded-full overflow-hidden">
+                <div class="h-full ${isPositive ? 'bg-emerald-500' : 'bg-rose-500'} rounded-full transition-all duration-500" style="width: ${pPercent}%"></div>
+              </div>
             </div>
-            <div class="mt-1 flex items-center justify-between text-[10px]">
-              <span class="text-slate-400 font-semibold">Máx. Diario:</span>
-              <span class="font-bold text-indigo-600">${formatCurrency(pDaily)}</span>
+
+            <!-- Métricas Secundarias -->
+            <div class="grid grid-cols-3 gap-2 pt-2 border-t border-slate-200/70 text-center">
+              <div class="bg-white p-2 rounded-xl border border-slate-100 shadow-2xs">
+                <span class="text-[9px] font-bold uppercase tracking-wider text-slate-400 block">Base</span>
+                <span class="text-xs font-black text-slate-800">${formatCurrency(pBudget)}</span>
+              </div>
+              <div class="bg-white p-2 rounded-xl border border-slate-100 shadow-2xs">
+                <span class="text-[9px] font-bold uppercase tracking-wider text-slate-400 block">Gastado</span>
+                <span class="text-xs font-black text-orange-600">${formatCurrency(pSpent)}</span>
+              </div>
+              <div class="bg-white p-2 rounded-xl border border-slate-100 shadow-2xs">
+                <span class="text-[9px] font-bold uppercase tracking-wider text-slate-400 block">Máx. Diario</span>
+                <span class="text-xs font-black text-indigo-600">${formatCurrency(pDaily)}</span>
+              </div>
             </div>
           </div>
         `;
@@ -2103,7 +2135,7 @@
     window.closeModal = closeModal;
 
     // Cerrar al tocar fuera (Backdrop scrim touch)
-    ['modal-expense', 'modal-income', 'modal-settings', 'modal-transaction-detail'].forEach(modalId => {
+    ['modal-expense', 'modal-income', 'modal-settings', 'modal-transaction-detail', 'modal-participants-balances'].forEach(modalId => {
       const modalEl = document.getElementById(modalId);
       if (modalEl) {
         modalEl.addEventListener('click', (e) => {
