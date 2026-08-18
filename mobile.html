@@ -328,7 +328,13 @@
       <span>Nuevo Ingreso</span>
     </button>
 
-    <!-- Opción 4: Ajustes -->
+    <!-- Opción 4: Liquidar Deudas -->
+    <button type="button" id="fab-opt-settlement" class="pointer-events-auto flex items-center gap-2 px-4 py-2.5 bg-rose-100 hover:bg-rose-200 active:scale-95 text-rose-950 font-extrabold text-xs rounded-full shadow-xl border border-rose-200/60 transition-transform">
+      <i class="fas fa-handshake text-xs text-rose-600"></i>
+      <span>Liquidar / Deudas</span>
+    </button>
+
+    <!-- Opción 5: Ajustes -->
     <button type="button" id="fab-opt-settings" class="pointer-events-auto flex items-center gap-2 px-4 py-2.5 bg-slate-100 hover:bg-slate-200 active:scale-95 text-slate-800 font-extrabold text-xs rounded-full shadow-xl border border-slate-200/80 transition-transform">
       <i class="fas fa-sliders text-xs text-slate-600"></i>
       <span>Ajustes & Opciones</span>
@@ -338,32 +344,32 @@
   <!-- Contenedor Inferior: Barra Cápsula + Botón FAB Circular -->
   <div class="fixed bottom-4 left-4 right-4 z-40 max-w-lg mx-auto flex items-center gap-3 justify-between pointer-events-none">
     
-    <!-- 1. Barra Larga (Alto: 60px, Border-Radius: 16px) -->
-    <nav style="border-radius: 16px;" class="pointer-events-auto h-[60px] flex-1 bg-white/95 backdrop-blur-xl shadow-[0_10px_35px_rgba(0,0,0,0.12)] border border-slate-100/90 flex items-center justify-around px-2 text-slate-800">
+    <!-- 1. Barra Larga (Alto: 60px, Border-Radius: 28px) -->
+    <nav style="border-radius: 28px;" class="pointer-events-auto h-[60px] flex-1 bg-white/95 backdrop-blur-xl shadow-[0_10px_35px_rgba(0,0,0,0.12)] border border-slate-100/90 flex items-center justify-around px-2 text-slate-800">
       
       <!-- Icono 1: Monedero / Inicio -->
-      <button type="button" id="nav-btn-wallet" class="w-11 h-11 rounded-xl flex items-center justify-center text-slate-900 hover:bg-slate-100 active:scale-90 transition-transform" title="Inicio / Monedero">
+      <button type="button" id="nav-btn-wallet" class="w-11 h-11 rounded-2xl flex items-center justify-center text-slate-900 hover:bg-slate-100 active:scale-90 transition-transform" title="Inicio / Monedero">
         <i class="fas fa-wallet text-lg"></i>
       </button>
 
       <!-- Icono 2: Métricas / Estadísticas -->
-      <button type="button" id="nav-btn-stats" class="w-11 h-11 rounded-xl flex items-center justify-center text-slate-900 hover:bg-slate-100 active:scale-90 transition-transform" title="Resumen Financiero">
+      <button type="button" id="nav-btn-stats" class="w-11 h-11 rounded-2xl flex items-center justify-center text-slate-900 hover:bg-slate-100 active:scale-90 transition-transform" title="Resumen Financiero">
         <i class="fas fa-chart-column text-lg"></i>
       </button>
 
       <!-- Icono 3: Micrófono / Voz -->
-      <button type="button" id="nav-btn-voice" class="w-11 h-11 rounded-xl flex items-center justify-center text-slate-900 hover:bg-slate-100 active:scale-90 transition-transform" title="Gasto por Voz">
+      <button type="button" id="nav-btn-voice" class="w-11 h-11 rounded-2xl flex items-center justify-center text-slate-900 hover:bg-slate-100 active:scale-90 transition-transform" title="Gasto por Voz">
         <i class="fas fa-microphone text-lg"></i>
       </button>
 
       <!-- Icono 4: Buscador / Historial -->
-      <button type="button" id="nav-btn-search" class="w-11 h-11 rounded-xl flex items-center justify-center text-slate-900 hover:bg-slate-100 active:scale-90 transition-transform" title="Buscar Movimientos">
+      <button type="button" id="nav-btn-search" class="w-11 h-11 rounded-2xl flex items-center justify-center text-slate-900 hover:bg-slate-100 active:scale-90 transition-transform" title="Buscar Movimientos">
         <i class="fas fa-magnifying-glass text-lg"></i>
       </button>
     </nav>
 
-    <!-- 2. Botón FAB Flotante (60px x 60px, Border-Radius: 16px) -->
-    <button type="button" id="fab-main-btn" style="border-radius: 16px;" class="pointer-events-auto w-[60px] h-[60px] shrink-0 bg-white shadow-[0_10px_35px_rgba(0,0,0,0.12)] border border-slate-100/90 flex items-center justify-center text-slate-900 active:scale-95 transition-all cursor-pointer select-none">
+    <!-- 2. Botón FAB Flotante (60px x 60px, Border-Radius: 28px) -->
+    <button type="button" id="fab-main-btn" style="border-radius: 28px;" class="pointer-events-auto w-[60px] h-[60px] shrink-0 bg-white shadow-[0_10px_35px_rgba(0,0,0,0.12)] border border-slate-100/90 flex items-center justify-center text-slate-900 active:scale-95 transition-all cursor-pointer select-none">
       <i id="fab-icon" class="fas fa-plus text-2xl font-black transition-transform duration-300"></i>
     </button>
   </div>
@@ -849,8 +855,86 @@
         </button>
       </div>
 
-      <div id="mobile-participants-modal-list" class="p-5 overflow-y-auto space-y-3 flex-1 custom-scrollbar">
-        <!-- Tarjetas inyectadas dinámicamente por JS -->
+      <!-- Barra de Acción Rápida: Liquidación & Deudas -->
+      <div class="px-5 pt-3 shrink-0">
+        <button type="button" id="btn-open-settlement-modal" onclick="closeModal('modal-participants-balances'); setTimeout(() => openModal('modal-settlement'), 270);"
+          class="w-full py-2.5 px-4 bg-gradient-to-r from-rose-500 to-pink-600 hover:from-rose-600 hover:to-pink-700 active:scale-98 text-white font-extrabold text-xs rounded-2xl shadow-md shadow-rose-500/20 flex items-center justify-between transition-all">
+          <div class="flex items-center gap-2">
+            <i class="fas fa-handshake text-sm"></i>
+            <span>Ver Liquidación & Deudas</span>
+          </div>
+          <div class="flex items-center gap-1 text-[11px] opacity-90">
+            <span>Cuentas Claras</span>
+            <i class="fas fa-arrow-right text-[10px]"></i>
+          </div>
+        </button>
+      </div>
+
+      <div id="mobile-participants-modal-list" class="p-5 pt-3 overflow-y-auto space-y-2.5 flex-1 custom-scrollbar">
+        <!-- Tarjetas simplificadas inyectadas dinámicamente por JS -->
+      </div>
+    </div>
+  </div>
+
+  <!-- 6. Modal de Liquidación / Deudas entre Miembros (M3 Bottom Sheet) -->
+  <div id="modal-settlement"
+    class="fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-sm hidden items-end justify-center p-0 m3-bottom-sheet-backdrop">
+    <div
+      class="w-full max-w-lg bg-white rounded-t-[32px] max-h-[92vh] flex flex-col shadow-2xl overflow-hidden m3-bottom-sheet-surface">
+
+      <!-- Drag Handle Indicator -->
+      <div class="w-12 h-1.5 bg-slate-300 rounded-full mx-auto mt-3 mb-1 shrink-0"></div>
+
+      <div class="px-5 py-3.5 border-b border-slate-100 flex items-center justify-between shrink-0">
+        <div class="flex items-center gap-2.5">
+          <div
+            class="w-9 h-9 rounded-2xl bg-rose-50 text-rose-600 flex items-center justify-center text-base font-bold shadow-xs">
+            <i class="fas fa-handshake"></i>
+          </div>
+          <div>
+            <h3 class="font-extrabold text-sm text-slate-900 leading-tight">Liquidación & Cuentas</h3>
+            <p class="text-[10px] text-slate-400 font-medium">Transferencias netas entre miembros</p>
+          </div>
+        </div>
+        <button id="close-modal-settlement" onclick="closeModal('modal-settlement');" type="button"
+          class="w-8 h-8 rounded-full bg-slate-100 text-slate-400 hover:text-slate-600 flex items-center justify-center text-xs active:scale-90 transition-transform cursor-pointer">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+
+      <div class="p-5 overflow-y-auto space-y-4 flex-1 custom-scrollbar">
+        <!-- Sección 1: Transferencias Sugeridas (Quién paga a Quién) -->
+        <div class="space-y-2">
+          <div class="flex items-center justify-between px-1">
+            <span class="text-xs font-black uppercase tracking-wider text-slate-900">Transferencias Sugeridas</span>
+            <span id="settlement-count-badge" class="text-[10px] font-bold bg-slate-100 text-slate-600 px-2 py-0.5 rounded-full">0 transferencias</span>
+          </div>
+          
+          <div id="settlement-transfers-list" class="space-y-2">
+            <!-- Inyectado por JS -->
+          </div>
+        </div>
+
+        <!-- Sección 2: Balance Neto por Miembro -->
+        <div class="space-y-2 pt-1">
+          <div class="px-1">
+            <span class="text-xs font-black uppercase tracking-wider text-slate-900">Balance Neto por Persona</span>
+          </div>
+
+          <div id="settlement-balances-list" class="space-y-2">
+            <!-- Inyectado por JS -->
+          </div>
+        </div>
+
+        <!-- Sección 3: Botón de Liquidación Automática -->
+        <div class="pt-2 sticky bottom-0 bg-white pb-1 space-y-1.5">
+          <button type="button" id="btn-execute-settlement"
+            class="w-full py-3.5 bg-rose-600 hover:bg-rose-700 active:scale-98 text-white font-extrabold text-xs rounded-2xl shadow-lg shadow-rose-500/25 transition-all flex items-center justify-center gap-2">
+            <i class="fas fa-check-double text-sm"></i>
+            <span>Liquidar y Saldar Cuentas del Mes</span>
+          </button>
+          <p class="text-[10px] text-center text-slate-400">Crea transacciones de reembolso para dejar los saldos en S/ 0.00</p>
+        </div>
       </div>
     </div>
   </div>
@@ -1198,6 +1282,9 @@
       // Actualizar Bloque 2: Lista en Modal de Saldos de Usuarios
       renderParticipantsModalList(summary, daysRemaining);
 
+      // Actualizar Bloque 2B: Modal de Liquidación y Deudas
+      renderSettlementModal(summary);
+
       // Actualizar Bloque 3: Historial de Transacciones
       renderHistoryList(expensesForMonth);
 
@@ -1205,7 +1292,7 @@
       populateSelectOptions();
     }
 
-    // 4. Renderizar Lista de Participantes en el Bottom Sheet
+    // 4. Renderizar Lista de Participantes en el Bottom Sheet (Diseño Simplificado y Completo)
     function renderParticipantsModalList(summary, daysRemaining) {
       const container = document.getElementById('mobile-participants-modal-list');
       if (!container) return;
@@ -1223,54 +1310,193 @@
         const isMe = p.firebaseUid === currentUserId;
         const isPositive = pRemaining >= 0;
         const pPercent = pBudget > 0 ? Math.min(100, Math.max(0, (pRemaining / pBudget) * 100)) : 0;
+        const pBalance = p.balance || 0;
+
+        let balanceBadge = '';
+        if (pBalance > 0.01) {
+          balanceBadge = `<span class="text-[9px] font-extrabold text-emerald-700 bg-emerald-100 px-1.5 py-0.5 rounded-md">A favor: +${formatCurrency(pBalance)}</span>`;
+        } else if (pBalance < -0.01) {
+          balanceBadge = `<span class="text-[9px] font-extrabold text-rose-700 bg-rose-100 px-1.5 py-0.5 rounded-md">Debe: ${formatCurrency(pBalance)}</span>`;
+        } else {
+          balanceBadge = `<span class="text-[9px] font-bold text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded-md">Al día</span>`;
+        }
 
         return `
-          <div class="bg-slate-50 border ${isMe ? 'border-indigo-400 bg-indigo-50/20 ring-1 ring-indigo-500/20' : 'border-slate-200'} rounded-2xl p-4 space-y-3 shadow-xs">
-            <!-- Header Participante -->
+          <div class="bg-white border ${isMe ? 'border-indigo-400 ring-1 ring-indigo-500/20' : 'border-slate-200'} rounded-2xl p-3 space-y-2 shadow-2xs">
+            <!-- Fila Superior: Usuario & Saldo Disponible Principal -->
             <div class="flex items-center justify-between">
-              <div class="flex items-center gap-2.5">
-                <div class="w-10 h-10 rounded-xl bg-slate-900 text-white flex items-center justify-center font-black text-xs shadow-xs">
+              <div class="flex items-center gap-2">
+                <div class="w-8 h-8 rounded-xl bg-slate-900 text-white flex items-center justify-center font-black text-xs">
                   ${(p.name || 'U').substring(0, 2).toUpperCase()}
                 </div>
                 <div>
                   <div class="flex items-center gap-1.5">
-                    <h4 class="font-extrabold text-sm text-slate-900">${p.name}</h4>
-                    ${isMe ? '<span class="text-[9px] font-black text-indigo-700 bg-indigo-100 px-1.5 py-0.5 rounded-md">TÚ</span>' : ''}
+                    <h4 class="font-extrabold text-xs text-slate-900">${p.name}</h4>
+                    ${isMe ? '<span class="text-[8px] font-black text-indigo-700 bg-indigo-50 px-1.5 py-0.5 rounded">TÚ</span>' : ''}
                   </div>
-                  <p class="text-[10px] text-slate-400 font-medium">Presupuesto individual asignado</p>
+                  <div class="mt-0.5">${balanceBadge}</div>
                 </div>
               </div>
               <div class="text-right">
-                <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">Disponible</span>
-                <span class="text-lg font-black ${isPositive ? 'text-emerald-600' : 'text-rose-600'}">${formatCurrency(pRemaining)}</span>
+                <span class="text-sm font-black ${isPositive ? 'text-slate-900' : 'text-rose-600'}">${formatCurrency(pRemaining)}</span>
+                <span class="text-[8px] text-slate-400 font-bold uppercase tracking-wider block">Disponible</span>
               </div>
             </div>
 
-            <!-- Barra de Progreso Personal -->
-            <div class="space-y-1">
-              <div class="w-full bg-slate-200 h-2 rounded-full overflow-hidden">
-                <div class="h-full ${isPositive ? 'bg-emerald-500' : 'bg-rose-500'} rounded-full transition-all duration-500" style="width: ${pPercent}%"></div>
-              </div>
+            <!-- Barra de Progreso Fina -->
+            <div class="w-full bg-slate-100 h-1.5 rounded-full overflow-hidden">
+              <div class="h-full ${isPositive ? 'bg-indigo-500' : 'bg-rose-500'} rounded-full transition-all duration-500" style="width: ${pPercent}%"></div>
             </div>
 
-            <!-- Métricas Secundarias -->
-            <div class="grid grid-cols-3 gap-2 pt-2 border-t border-slate-200/70 text-center">
-              <div class="bg-white p-2 rounded-xl border border-slate-100 shadow-2xs">
-                <span class="text-[9px] font-bold uppercase tracking-wider text-slate-400 block">Base</span>
-                <span class="text-xs font-black text-slate-800">${formatCurrency(pBudget)}</span>
-              </div>
-              <div class="bg-white p-2 rounded-xl border border-slate-100 shadow-2xs">
-                <span class="text-[9px] font-bold uppercase tracking-wider text-slate-400 block">Gastado</span>
-                <span class="text-xs font-black text-orange-600">${formatCurrency(pSpent)}</span>
-              </div>
-              <div class="bg-white p-2 rounded-xl border border-slate-100 shadow-2xs">
-                <span class="text-[9px] font-bold uppercase tracking-wider text-slate-400 block">Máx. Diario</span>
-                <span class="text-xs font-black text-indigo-600">${formatCurrency(pDaily)}</span>
-              </div>
+            <!-- Fila Inferior de Datos Simplificada: Base | Gastado | Máx. Diario -->
+            <div class="flex items-center justify-between text-[10px] text-slate-500 pt-0.5">
+              <span>Base: <strong class="text-slate-800 font-bold">${formatCurrency(pBudget)}</strong></span>
+              <span>•</span>
+              <span>Gastado: <strong class="text-slate-800 font-bold">${formatCurrency(pSpent)}</strong></span>
+              <span>•</span>
+              <span>Máx/día: <strong class="text-indigo-600 font-bold">${formatCurrency(pDaily)}</strong></span>
             </div>
           </div>
         `;
       }).join('');
+    }
+
+    // 4B. Renderizar Modal de Liquidación y Deudas Cruzadas
+    let currentSettlementDebts = [];
+    function renderSettlementModal(summary) {
+      const containerTransfers = document.getElementById('settlement-transfers-list');
+      const containerBalances = document.getElementById('settlement-balances-list');
+      const countBadge = document.getElementById('settlement-count-badge');
+      if (!containerTransfers || !containerBalances) return;
+
+      const participantData = summary.participantData || [];
+      const balances = participantData.map(p => ({
+        id: p.id,
+        name: p.name,
+        balance: p.balance || 0,
+        contributionPaid: p.contributionPaid || 0,
+        spent: p.spent || 0
+      }));
+
+      // A. Balance Neto por Persona
+      containerBalances.innerHTML = balances.map(p => {
+        const isPositive = p.balance > 0.01;
+        const isNegative = p.balance < -0.01;
+        const statusClass = isPositive ? 'text-emerald-700 bg-emerald-50 border-emerald-200' : (isNegative ? 'text-rose-700 bg-rose-50 border-rose-200' : 'text-slate-600 bg-slate-50 border-slate-200');
+        const statusText = isPositive ? `A favor: +${formatCurrency(p.balance)}` : (isNegative ? `Debe pagar: ${formatCurrency(Math.abs(p.balance))}` : 'Cuentas al día');
+
+        return `
+          <div class="bg-white border border-slate-200 rounded-2xl p-3 flex items-center justify-between text-xs shadow-2xs">
+            <div class="flex items-center gap-2">
+              <div class="w-8 h-8 rounded-xl bg-slate-900 text-white flex items-center justify-center font-black text-xs">
+                ${(p.name || 'U').substring(0, 2).toUpperCase()}
+              </div>
+              <div>
+                <h4 class="font-extrabold text-xs text-slate-900">${p.name}</h4>
+                <p class="text-[10px] text-slate-400 font-medium">Aportó: ${formatCurrency(p.contributionPaid)} • Consumo: ${formatCurrency(p.spent)}</p>
+              </div>
+            </div>
+            <span class="text-[10px] font-black px-2 py-0.5 rounded-lg border ${statusClass}">${statusText}</span>
+          </div>
+        `;
+      }).join('');
+
+      // B. Algoritmo de Liquidación de Deudas Cruzadas (Greedy Debt Reconciliation)
+      const debtors = balances.filter(p => p.balance < -0.01).map(p => ({ ...p, remainingBalance: Math.abs(p.balance) })).sort((a, b) => b.remainingBalance - a.remainingBalance);
+      const creditors = balances.filter(p => p.balance > 0.01).map(p => ({ ...p, remainingBalance: p.balance })).sort((a, b) => b.remainingBalance - a.remainingBalance);
+
+      const transfers = [];
+      let i = 0, j = 0;
+      while (i < debtors.length && j < creditors.length) {
+        const debtor = debtors[i];
+        const creditor = creditors[j];
+        const amount = Math.min(debtor.remainingBalance, creditor.remainingBalance);
+
+        if (amount > 0.01) {
+          transfers.push({
+            debtorId: debtor.id,
+            from: debtor.name,
+            creditorId: creditor.id,
+            to: creditor.name,
+            amount: amount
+          });
+          debtor.remainingBalance -= amount;
+          creditor.remainingBalance -= amount;
+        }
+
+        if (debtor.remainingBalance < 0.01) i++;
+        if (creditor.remainingBalance < 0.01) j++;
+      }
+
+      currentSettlementDebts = transfers;
+      if (countBadge) countBadge.textContent = `${transfers.length} transferencia${transfers.length === 1 ? '' : 's'}`;
+
+      if (transfers.length === 0) {
+        containerTransfers.innerHTML = `
+          <div class="bg-emerald-50 border border-emerald-200 rounded-2xl p-4 text-center space-y-1 text-emerald-800">
+            <i class="fas fa-check-circle text-2xl text-emerald-500"></i>
+            <p class="text-xs font-black">¡Las cuentas están al día!</p>
+            <p class="text-[10px] text-emerald-600">No existen deudas pendientes entre los miembros para este mes.</p>
+          </div>
+        `;
+        document.getElementById('btn-execute-settlement')?.classList.add('hidden');
+      } else {
+        document.getElementById('btn-execute-settlement')?.classList.remove('hidden');
+        containerTransfers.innerHTML = transfers.map(t => `
+          <div class="bg-rose-50/50 border border-rose-200 rounded-2xl p-3 flex items-center justify-between shadow-2xs">
+            <div class="flex items-center gap-2.5">
+              <div class="w-8 h-8 rounded-xl bg-rose-600 text-white flex items-center justify-center text-xs font-black shadow-xs">
+                <i class="fas fa-arrow-right"></i>
+              </div>
+              <div>
+                <p class="text-xs font-extrabold text-slate-900"><strong class="text-rose-700 font-black">${t.from}</strong> ➔ <strong class="text-emerald-700 font-black">${t.to}</strong></p>
+                <p class="text-[10px] text-slate-400 font-medium">Transferencia directa sugerida</p>
+              </div>
+            </div>
+            <span class="text-sm font-black text-rose-600 bg-white px-2.5 py-1 rounded-xl border border-rose-100 shadow-2xs">
+              ${formatCurrency(t.amount)}
+            </span>
+          </div>
+        `).join('');
+      }
+    }
+
+    // 4C. Ejecutar Liquidación y Ajustes en Firestore
+    async function liquidateMonthMobile() {
+      if (!currentWalletId) return alert('No hay un monedero cargado.');
+      if (currentSettlementDebts.length === 0) return alert('Las cuentas ya están al día.');
+
+      if (!confirm(`Se crearán ${currentSettlementDebts.length} transacciones de ajuste para dejar las cuentas saldadas. ¿Deseas continuar?`)) {
+        return;
+      }
+
+      try {
+        const now = new Date().toISOString().split('T')[0];
+        const newExpenses = [...(appState.expenses || [])];
+
+        currentSettlementDebts.forEach(t => {
+          newExpenses.push({
+            id: 'settle_' + Date.now() + '_' + Math.random().toString(36).substring(2, 7),
+            type: 'personal',
+            description: `REEMBOLSO: ${t.from} a ${t.to}`,
+            amount: t.amount,
+            payerId: t.debtorId,
+            category: 'Liquidación',
+            paymentMethodId: 'm1',
+            date: now,
+            dateCreated: new Date().toISOString()
+          });
+        });
+
+        const walletRef = doc(db, 'wallets', currentWalletId);
+        await updateDoc(walletRef, { expenses: newExpenses });
+
+        closeModal('modal-settlement');
+        alert('🎉 ¡Liquidación completada con éxito! Cuentas saldadas.');
+      } catch (err) {
+        console.error('Error al liquidar cuentas:', err);
+        alert('Error al liquidar cuentas: ' + err.message);
+      }
     }
 
     // 5. Renderizar Historial de Transacciones (Con fecha idéntica a Desktop y sin fijos futuros)
@@ -2135,7 +2361,7 @@
     window.closeModal = closeModal;
 
     // Cerrar al tocar fuera (Backdrop scrim touch)
-    ['modal-expense', 'modal-income', 'modal-settings', 'modal-transaction-detail', 'modal-participants-balances'].forEach(modalId => {
+    ['modal-expense', 'modal-income', 'modal-settings', 'modal-transaction-detail', 'modal-participants-balances', 'modal-settlement'].forEach(modalId => {
       const modalEl = document.getElementById(modalId);
       if (modalEl) {
         modalEl.addEventListener('click', (e) => {
@@ -2203,9 +2429,19 @@
       openModal('modal-income');
     });
 
+    document.getElementById('fab-opt-settlement')?.addEventListener('click', () => {
+      closeFabMenu();
+      openModal('modal-settlement');
+    });
+
     document.getElementById('fab-opt-settings')?.addEventListener('click', () => {
       closeFabMenu();
       openModal('modal-settings');
+    });
+
+    // Botón de Ejecutar Liquidación en Firestore
+    document.getElementById('btn-execute-settlement')?.addEventListener('click', () => {
+      liquidateMonthMobile();
     });
 
     // Navegación de Iconos en la Barra Cápsula (60px)
