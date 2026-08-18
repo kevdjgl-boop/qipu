@@ -1070,10 +1070,11 @@
           ? expense.guests
           : (expense.guestName ? [expense.guestName] : []);
 
-        expenseGuests.forEach((gName, gIdx) => {
-          const gKey = `guest_${gIdx}`;
+        expenseGuests.forEach((gName) => {
+          if (!gName || !gName.trim()) return;
+          const gKey = `guest_${gName.trim().toLowerCase().replace(/\s+/g, '_')}`;
           if (!guestMap.has(gKey)) {
-            guestMap.set(gKey, { id: gKey, name: `${gName} (Invitado)`, spent: 0, contributionPaid: 0, balance: 0, isGuest: true });
+            guestMap.set(gKey, { id: gKey, name: `${gName.trim()} (Invitado)`, spent: 0, contributionPaid: 0, balance: 0, isGuest: true });
           }
         });
 
@@ -1109,7 +1110,6 @@
             let itemsTotalCost = 0;
             let itemShares = {};
             participantData.forEach(p => { itemShares[p.id] = 0; });
-            let guestItemShares = 0;
 
             expense.items.forEach(item => {
               const qty = parseFloat(item.quantity) || 1;
@@ -1125,11 +1125,19 @@
                 if (assignedQty > 0) {
                   assignedUnitsSum += assignedQty;
                   const cost = assignedQty * unitPrice;
-                  if (itemShares[pId] !== undefined) {
-                    itemShares[pId] += cost;
-                  } else if (pId.startsWith("guest_") || pId.startsWith("guest-")) {
-                    guestItemShares += cost;
-                    if (guestMap.has(pId)) guestMap.get(pId).spent += cost;
+                  if (participantMap.has(pId)) {
+                    itemShares[pId] = (itemShares[pId] || 0) + cost;
+                  } else {
+                    let gKey = pId;
+                    if (!gKey.startsWith('guest_')) {
+                      gKey = `guest_${pId.trim().toLowerCase().replace(/\s+/g, '_')}`;
+                    }
+                    if (guestMap.has(gKey)) {
+                      guestMap.get(gKey).spent += cost;
+                    } else {
+                      const gName = pId.startsWith('guest_') ? pId.substring(6) : pId;
+                      guestMap.set(gKey, { id: gKey, name: `${gName} (Invitado)`, spent: cost, contributionPaid: 0, balance: 0, isGuest: true });
+                    }
                   }
                 }
               });
@@ -1137,31 +1145,62 @@
               if (assignedUnitsSum === 0 && item.assignedTo) {
                 assignedUnitsSum = qty;
                 const cost = itemTotal;
-                if (itemShares[item.assignedTo] !== undefined) {
-                  itemShares[item.assignedTo] += cost;
-                } else if (item.assignedTo.startsWith("guest_") || item.assignedTo.startsWith("guest-")) {
-                  guestItemShares += cost;
-                  if (guestMap.has(item.assignedTo)) guestMap.get(item.assignedTo).spent += cost;
+                if (participantMap.has(item.assignedTo)) {
+                  itemShares[item.assignedTo] = (itemShares[item.assignedTo] || 0) + cost;
+                } else {
+                  let gKey = item.assignedTo;
+                  if (!gKey.startsWith('guest_')) {
+                    gKey = `guest_${item.assignedTo.trim().toLowerCase().replace(/\s+/g, '_')}`;
+                  }
+                  if (guestMap.has(gKey)) {
+                    guestMap.get(gKey).spent += cost;
+                  } else {
+                    const gName = item.assignedTo.startsWith('guest_') ? item.assignedTo.substring(6) : item.assignedTo;
+                    guestMap.set(gKey, { id: gKey, name: `${gName} (Invitado)`, spent: cost, contributionPaid: 0, balance: 0, isGuest: true });
+                  }
                 }
               }
 
               const unassignedUnits = Math.max(0, qty - assignedUnitsSum);
-              if (unassignedUnits > 0) {
+              if (unassignedUnits > 0 && numPayees > 0) {
                 const unassignedCost = unassignedUnits * unitPrice;
                 const sharePerPerson = unassignedCost / numPayees;
-                participantData.forEach(p => { itemShares[p.id] += sharePerPerson; });
-                guestItemShares += sharePerPerson * guestsCount;
+                participantData.forEach(p => { itemShares[p.id] = (itemShares[p.id] || 0) + sharePerPerson; });
+                expenseGuests.forEach(gName => {
+                  const gKey = `guest_${gName.trim().toLowerCase().replace(/\s+/g, '_')}`;
+                  if (guestMap.has(gKey)) {
+                    guestMap.get(gKey).spent += sharePerPerson;
+                  }
+                });
               }
             });
 
             const remainingAmount = Math.max(0, amount - itemsTotalCost);
-            const remainingSharePerPerson = remainingAmount / numPayees;
-            participantData.forEach(p => {
-              p.spent += (itemShares[p.id] || 0) + remainingSharePerPerson;
-            });
+            if (remainingAmount > 0.001 && numPayees > 0) {
+              const remainingSharePerPerson = remainingAmount / numPayees;
+              participantData.forEach(p => {
+                p.spent += (itemShares[p.id] || 0) + remainingSharePerPerson;
+              });
+              expenseGuests.forEach(gName => {
+                const gKey = `guest_${gName.trim().toLowerCase().replace(/\s+/g, '_')}`;
+                if (guestMap.has(gKey)) {
+                  guestMap.get(gKey).spent += remainingSharePerPerson;
+                }
+              });
+            } else {
+              participantData.forEach(p => {
+                p.spent += (itemShares[p.id] || 0);
+              });
+            }
           } else {
             const splitAmount = numPayees > 0 ? amount / numPayees : 0;
             participantData.forEach((p) => { p.spent += splitAmount; });
+            expenseGuests.forEach(gName => {
+              const gKey = `guest_${gName.trim().toLowerCase().replace(/\s+/g, '_')}`;
+              if (guestMap.has(gKey)) {
+                guestMap.get(gKey).spent += splitAmount;
+              }
+            });
             if (guestsCount > 0) guestSummary.spent += splitAmount * guestsCount;
           }
         } else {
@@ -1187,11 +1226,17 @@
         globalSharedSavingsGoal += p.sharedSavingsGoal;
       });
 
+      const guestList = Array.from(guestMap.values()).map(g => {
+        g.balance = (g.contributionPaid || 0) - (g.spent || 0);
+        return g;
+      });
+
       return {
         globalTotalRemainingBudget,
         globalSharedSavingsGoal,
         totalSpent,
         participantData,
+        guestList,
         guestSummary
       };
     }
@@ -1370,29 +1415,47 @@
       if (!containerTransfers || !containerBalances) return;
 
       const participantData = summary.participantData || [];
-      const balances = participantData.map(p => ({
-        id: p.id,
-        name: p.name,
-        balance: p.balance || 0,
-        contributionPaid: p.contributionPaid || 0,
-        spent: p.spent || 0
-      }));
+      const guestList = summary.guestList || [];
 
-      // A. Balance Neto por Persona
+      // Unificar miembros registrados e invitados con actividad
+      const balances = [
+        ...participantData.map(p => ({
+          id: p.id,
+          name: p.name,
+          balance: p.balance || 0,
+          contributionPaid: p.contributionPaid || 0,
+          spent: p.spent || 0,
+          isGuest: false
+        })),
+        ...guestList.filter(g => (g.spent > 0.001 || g.contributionPaid > 0.001)).map(g => ({
+          id: g.id,
+          name: g.name,
+          balance: g.balance || 0,
+          contributionPaid: g.contributionPaid || 0,
+          spent: g.spent || 0,
+          isGuest: true
+        }))
+      ];
+
+      // A. Balance Neto por Persona (Registrados + Invitados)
       containerBalances.innerHTML = balances.map(p => {
         const isPositive = p.balance > 0.01;
         const isNegative = p.balance < -0.01;
         const statusClass = isPositive ? 'text-emerald-700 bg-emerald-50 border-emerald-200' : (isNegative ? 'text-rose-700 bg-rose-50 border-rose-200' : 'text-slate-600 bg-slate-50 border-slate-200');
         const statusText = isPositive ? `A favor: +${formatCurrency(p.balance)}` : (isNegative ? `Debe pagar: ${formatCurrency(Math.abs(p.balance))}` : 'Cuentas al día');
+        const guestBadge = p.isGuest ? `<span class="text-[8px] font-black text-amber-700 bg-amber-100 px-1.5 py-0.5 rounded ml-1">INVITADO</span>` : '';
 
         return `
-          <div class="bg-white border border-slate-200 rounded-2xl p-3 flex items-center justify-between text-xs shadow-2xs">
+          <div class="bg-white border ${p.isGuest ? 'border-amber-200 bg-amber-50/20' : 'border-slate-200'} rounded-2xl p-3 flex items-center justify-between text-xs shadow-2xs">
             <div class="flex items-center gap-2">
-              <div class="w-8 h-8 rounded-xl bg-slate-900 text-white flex items-center justify-center font-black text-xs">
+              <div class="w-8 h-8 rounded-xl ${p.isGuest ? 'bg-amber-500' : 'bg-slate-900'} text-white flex items-center justify-center font-black text-xs shadow-xs">
                 ${(p.name || 'U').substring(0, 2).toUpperCase()}
               </div>
               <div>
-                <h4 class="font-extrabold text-xs text-slate-900">${p.name}</h4>
+                <div class="flex items-center">
+                  <h4 class="font-extrabold text-xs text-slate-900">${p.name}</h4>
+                  ${guestBadge}
+                </div>
                 <p class="text-[10px] text-slate-400 font-medium">Aportó: ${formatCurrency(p.contributionPaid)} • Consumo: ${formatCurrency(p.spent)}</p>
               </div>
             </div>
