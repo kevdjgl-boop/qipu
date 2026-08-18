@@ -1112,6 +1112,36 @@
       return `${year}-${month}`;
     };
 
+    // ================================================================
+    // SISTEMA DE MODALES MATERIAL DESIGN 3 MOTION
+    // ================================================================
+    function openModal(id) {
+      const m = document.getElementById(id);
+      if (!m) return;
+      m.classList.remove('hidden');
+      m.classList.add('flex');
+      // Forzar reflujo del navegador para iniciar animación M3
+      void m.offsetWidth;
+      m.classList.add('m3-visible');
+      document.body.classList.add('overflow-hidden');
+    }
+    window.openModal = openModal;
+
+    function closeModal(id) {
+      const m = document.getElementById(id);
+      if (!m) return;
+      m.classList.remove('m3-visible');
+      document.body.classList.remove('overflow-hidden');
+      // Esperar duración de salida M3 (short3 = 250ms)
+      setTimeout(() => {
+        if (!m.classList.contains('m3-visible')) {
+          m.classList.add('hidden');
+          m.classList.remove('flex');
+        }
+      }, 260);
+    }
+    window.closeModal = closeModal;
+
     // 1. Verificación de Autenticación
     onAuthStateChanged(auth, async (user) => {
       if (!user) {
@@ -3264,39 +3294,8 @@
       renderMobileUI();
     });
 
-    // Control de Modales
-    // ================================================================
-    // SISTEMA DE MODALES MATERIAL DESIGN 3 MOTION
-    // ================================================================
-    const openModal = (id) => {
-      const m = document.getElementById(id);
-      if (!m) return;
-      m.classList.remove('hidden');
-      m.classList.add('flex');
-      // Forzar reflujo del navegador para iniciar animación M3
-      void m.offsetWidth;
-      m.classList.add('m3-visible');
-      document.body.classList.add('overflow-hidden');
-    };
-    window.openModal = openModal;
-
-    const closeModal = (id) => {
-      const m = document.getElementById(id);
-      if (!m) return;
-      m.classList.remove('m3-visible');
-      document.body.classList.remove('overflow-hidden');
-      // Esperar duración de salida M3 (short3 = 250ms)
-      setTimeout(() => {
-        if (!m.classList.contains('m3-visible')) {
-          m.classList.add('hidden');
-          m.classList.remove('flex');
-        }
-      }, 260);
-    };
-    window.closeModal = closeModal;
-
     // Cerrar al tocar fuera (Backdrop scrim touch)
-    ['modal-expense', 'modal-income', 'modal-settings', 'modal-transaction-detail', 'modal-participants-balances', 'modal-settlement', 'modal-item-assignment'].forEach(modalId => {
+    ['modal-expense', 'modal-income', 'modal-settings', 'modal-transaction-detail', 'modal-participants-balances', 'modal-settlement', 'modal-item-assignment', 'modal-option-picker'].forEach(modalId => {
       const modalEl = document.getElementById(modalId);
       if (modalEl) {
         modalEl.addEventListener('click', (e) => {
