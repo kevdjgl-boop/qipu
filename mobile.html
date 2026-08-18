@@ -444,7 +444,7 @@
 
       <!-- Pestañas Superiores Tipo de Registro: Personal | Compartido | Ingreso -->
       <div class="px-5 pt-2 pb-2 shrink-0">
-        <div class="w-full max-w-[372px] mx-auto bg-slate-100/90 p-1 rounded-full flex items-center gap-1 text-xs font-black">
+        <div class="w-full bg-slate-100/90 p-1 rounded-full flex items-center gap-1 text-xs font-black">
           <button type="button" id="tab-type-personal" onclick="switchExpenseRegistrationType('personal')"
             class="flex-1 py-2 rounded-full text-slate-500 hover:text-slate-900 transition-all text-center">
             Personal
@@ -465,9 +465,9 @@
         <!-- CONTENIDO DESPLAZABLE -->
         <div class="p-5 pt-1 overflow-y-auto space-y-3.5 flex-1 custom-scrollbar">
 
-          <!-- BLOQUE PRINCIPAL SUPERIOR (Card blanca, radius 24px, z-10) -->
-          <div class="w-full max-w-[372px] mx-auto bg-white rounded-[24px] p-3.5 border border-slate-100 shadow-sm space-y-3 relative z-10">
-            <!-- Fila de Chips de Metadatos: Ancho total 372px, repartido equitativo, gap 8px -->
+          <!-- BLOQUE PRINCIPAL SUPERIOR (Card blanca más ancha, radius 24px, sin bordes ni sombras, z-10) -->
+          <div class="w-full bg-white rounded-[24px] p-4 space-y-3.5 relative z-10 border-0 shadow-none">
+            <!-- Fila de Chips de Metadatos: Ancho completo repartido equitativo -->
             <div class="grid grid-cols-3 gap-2 pb-0.5">
               <!-- Chip Fecha -->
               <div class="relative bg-[#dcfce7] hover:bg-[#bbf7d0] text-emerald-950 px-2 h-[34px] rounded-full flex items-center justify-center gap-1.5 text-xs font-black cursor-pointer transition-colors shadow-2xs overflow-hidden">
@@ -481,7 +481,7 @@
               <button type="button" onclick="openOptionPicker('category')"
                 class="relative bg-[#dcfce7] hover:bg-[#bbf7d0] active:scale-95 text-emerald-950 px-2 h-[34px] rounded-full flex items-center justify-center gap-1 text-xs font-black transition-all shadow-2xs overflow-hidden">
                 <i class="fas fa-shapes text-[11px] text-emerald-800 shrink-0"></i>
-                <span id="chip-category-label" class="truncate max-w-[65px]">General</span>
+                <span id="chip-category-label" class="truncate max-w-[70px]">General</span>
                 <i class="fas fa-chevron-down text-[8px] text-emerald-800/70 shrink-0"></i>
                 <input type="hidden" id="exp-category" value="General" />
               </button>
@@ -490,7 +490,7 @@
               <button type="button" onclick="openOptionPicker('payment-method')"
                 class="relative bg-[#dcfce7] hover:bg-[#bbf7d0] active:scale-95 text-emerald-950 px-2 h-[34px] rounded-full flex items-center justify-center gap-1 text-xs font-black transition-all shadow-2xs overflow-hidden">
                 <i class="far fa-credit-card text-[11px] text-emerald-800 shrink-0"></i>
-                <span id="chip-pm-label" class="truncate max-w-[65px]">Efectivo</span>
+                <span id="chip-pm-label" class="truncate max-w-[70px]">Efectivo</span>
                 <i class="fas fa-chevron-down text-[8px] text-emerald-800/70 shrink-0"></i>
                 <input type="hidden" id="exp-payment-method" value="Efectivo" />
                 <input type="hidden" id="exp-payment-method-id" value="" />
@@ -589,8 +589,8 @@
             </select>
           </div>
 
-          <!-- SECCIÓN CONDICIONAL: Gasto Fijo Recurrente (372px de ancho, separación 10px) -->
-          <div id="section-fixed-config" class="w-full max-w-[372px] mx-auto hidden pt-2 space-y-2">
+          <!-- SECCIÓN CONDICIONAL: Gasto Fijo Recurrente -->
+          <div id="section-fixed-config" class="w-full hidden pt-2 space-y-2">
             <div class="grid grid-cols-2 gap-[10px]">
               <!-- Selector Frecuencia (Abre Bottom Sheet M3) -->
               <div>
@@ -617,9 +617,9 @@
             </p>
           </div>
 
-          <!-- BLOQUE LISTA DE PRODUCTOS (Fondo verde distintivo, parte superior plana y solapada, border-radius inferior 20px) -->
+          <!-- BLOQUE LISTA DE PRODUCTOS (Fondo verde distintivo, parte superior plana y solapada, border-radius inferior 24px) -->
           <div id="section-list-items"
-            class="w-full max-w-[372px] mx-auto bg-[#c6f6b5] rounded-b-[20px] rounded-t-none p-4 space-y-3 shadow-sm relative -mt-6 pt-9 z-0 m3-slide-sheet-block m3-block-closed">
+            class="w-full bg-[#c6f6b5] rounded-b-[24px] rounded-t-none p-4 space-y-3 relative -mt-6 pt-9 z-0 m3-slide-sheet-block m3-block-closed border-0 shadow-none">
             <!-- Cabecera de la Tabla (Píldoras Blancas) -->
             <div class="flex items-center gap-2 text-xs font-black text-slate-800">
               <div class="flex-1 bg-white rounded-xl py-1.5 px-3.5 text-left shadow-2xs">Producto</div>
@@ -649,7 +649,7 @@
 
         <!-- BOTÓN GUARDAR GASTO FIJO EN EL FONDO (FUERA DEL CONTENEDOR CON SCROLL) -->
         <div class="p-4 pt-2.5 pb-6 bg-white border-t border-slate-100 shrink-0 z-30 w-full">
-          <div class="w-full max-w-[372px] mx-auto space-y-1.5">
+          <div class="w-full space-y-1.5">
             <button type="submit" id="btn-submit-expense"
               class="w-full py-3.5 bg-slate-900 hover:bg-slate-800 active:scale-98 text-white font-black text-xs rounded-2xl shadow-lg transition-all flex items-center justify-center gap-2">
               <i class="fas fa-check-circle text-sm text-emerald-400"></i>
