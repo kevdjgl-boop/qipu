@@ -3061,13 +3061,11 @@
     // ================================================================
     // MODAL BOTTOM SHEET DE ASIGNACIÓN Y DESGLOSE (DISEÑO PANTALLA 4)
     // ================================================================
+    let currentAssigningItemId = null;
     let currentAssigningItem = null;
     let isAssignmentReadOnly = false;
     let currentAssignModalGuests = [];
-
-    let currentAssigningItem = null;
-    let isAssignmentReadOnly = false;
-    let currentAssignModalGuests = [];
+    let tempItemAssignments = {};
 
     function openItemAssignmentModal(itemId) {
       const item = mobileExpenseItems.find(i => i.id === itemId);
