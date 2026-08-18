@@ -2702,24 +2702,26 @@
     // 8. Gestión de Invitados
     const boxAddGuest = document.getElementById('box-add-guest');
     const inputGuestName = document.getElementById('input-guest-name');
-    const guestsChipsContainer = document.getElementById('mobile-guests-chips');
 
-    document.getElementById('btn-toggle-add-guest').addEventListener('click', () => {
-      boxAddGuest.classList.toggle('hidden');
-      if (!boxAddGuest.classList.contains('hidden')) {
-        inputGuestName.focus();
+    document.getElementById('btn-toggle-add-guest')?.addEventListener('click', () => {
+      if (boxAddGuest) {
+        boxAddGuest.classList.toggle('hidden');
+        if (!boxAddGuest.classList.contains('hidden') && inputGuestName) {
+          inputGuestName.focus();
+        }
       }
     });
 
-    document.getElementById('btn-confirm-add-guest').addEventListener('click', () => {
+    document.getElementById('btn-confirm-add-guest')?.addEventListener('click', () => {
+      if (!inputGuestName) return;
       const gName = inputGuestName.value.trim();
       if (gName) {
         if (!mobileExpenseGuests.includes(gName)) {
           mobileExpenseGuests.push(gName);
-          renderGuestsChips();
+          renderSharedMembersAvatars();
           inputGuestName.value = '';
-          boxAddGuest.classList.add('hidden');
-          if (mobileExpenseMode === 'list') {
+          if (boxAddGuest) boxAddGuest.classList.add('hidden');
+          if (isListExpenseActive) {
             renderMobileItemsList();
           }
         }
@@ -2728,28 +2730,12 @@
 
     function removeGuestChip(index) {
       mobileExpenseGuests.splice(index, 1);
-      renderGuestsChips();
-      if (mobileExpenseMode === 'list') {
+      renderSharedMembersAvatars();
+      if (isListExpenseActive) {
         renderMobileItemsList();
       }
     }
     window.removeGuestChip = removeGuestChip;
-
-    function renderGuestsChips() {
-      if (mobileExpenseGuests.length === 0) {
-        guestsChipsContainer.innerHTML = `<span class="text-[10px] text-slate-400 italic">No hay invitados agregados aún.</span>`;
-        return;
-      }
-      guestsChipsContainer.innerHTML = mobileExpenseGuests.map((g, idx) => `
-        <span class="inline-flex items-center gap-1.5 px-2.5 py-1 bg-amber-50 text-amber-900 border border-amber-200 rounded-xl text-xs font-bold shadow-2xs">
-          <i class="fas fa-user-tag text-amber-500 text-[10px]"></i>
-          <span>${g}</span>
-          <button type="button" onclick="removeGuestChip(${idx})" class="text-amber-400 hover:text-rose-600 ml-0.5">
-            <i class="fas fa-times text-[10px]"></i>
-          </button>
-        </span>
-      `).join('');
-    }
 
     // 9. Poblar Opciones de Selectores
     function populateSelectOptions() {
@@ -2927,8 +2913,25 @@
     });
 
 
+    // Eliminar Gasto
+    document.getElementById('btn-delete-expense')?.addEventListener('click', async () => {
+      if (!editingExpenseId) return;
+      if (!confirm('¿Estás seguro de eliminar este gasto definitivamente?')) return;
+
+      try {
+        const updatedExpenses = appState.expenses.filter(e => e.id !== editingExpenseId);
+        const walletRef = doc(db, "artifacts", appId, "public/data/wallets", currentWalletId);
+        await updateDoc(walletRef, { expenses: updatedExpenses });
+        closeModal('modal-expense');
+        resetExpenseForm();
+      } catch (err) {
+        console.error('Error al eliminar gasto:', err);
+        alert('Error al eliminar el gasto.');
+      }
+    });
+
     // 11. Guardar Ingreso Rápido (Crear o Actualizar)
-    document.getElementById('form-mobile-income').addEventListener('submit', async (e) => {
+    document.getElementById('form-mobile-income')?.addEventListener('submit', async (e) => {
       e.preventDefault();
       const amount = parseFloat(document.getElementById('inc-amount').value) || 0;
       const description = document.getElementById('inc-description').value.trim();
@@ -2982,6 +2985,29 @@
       } catch (err) {
         console.error('Error al guardar ingreso:', err);
         alert('Ocurrió un error al guardar el ingreso.');
+      }
+    });
+
+    // Eliminar Ingreso
+    document.getElementById('btn-delete-income')?.addEventListener('click', async () => {
+      if (!editingIncomeId) return;
+      if (!confirm('¿Estás seguro de eliminar este ingreso definitivamente?')) return;
+
+      try {
+        const updatedParticipants = JSON.parse(JSON.stringify(appState.participants));
+        updatedParticipants.forEach(p => {
+          if (p.incomes) {
+            p.incomes = p.incomes.filter(inc => inc.id !== editingIncomeId);
+            p.budget = p.incomes.reduce((s, inc) => s + (parseFloat(inc.amount) || 0), 0);
+          }
+        });
+
+        const walletRef = doc(db, "artifacts", appId, "public/data/wallets", currentWalletId);
+        await updateDoc(walletRef, { participants: updatedParticipants });
+        closeModal('modal-income');
+      } catch (err) {
+        console.error('Error al eliminar ingreso:', err);
+        alert('Error al eliminar el ingreso.');
       }
     });
 
@@ -3104,21 +3130,23 @@
     document.getElementById('fab-opt-simple-expense')?.addEventListener('click', () => {
       closeFabMenu();
       resetExpenseForm();
-      btnModeSimple.click();
+      switchExpenseRegistrationType('shared');
       openModal('modal-expense');
     });
 
     document.getElementById('fab-opt-list-expense')?.addEventListener('click', () => {
       closeFabMenu();
       resetExpenseForm();
-      btnModeList.click();
+      switchExpenseRegistrationType('shared');
+      toggleListExpenseSection();
       openModal('modal-expense');
     });
 
     document.getElementById('fab-opt-income')?.addEventListener('click', () => {
       closeFabMenu();
-      resetIncomeForm();
-      openModal('modal-income');
+      resetExpenseForm();
+      switchExpenseRegistrationType('income');
+      openModal('modal-expense');
     });
 
     document.getElementById('fab-opt-settlement')?.addEventListener('click', () => {
