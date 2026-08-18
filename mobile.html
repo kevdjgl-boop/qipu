@@ -703,7 +703,7 @@
     </div>
   </div>
 
-  <!-- 3. Modal Detalle de Movimiento / Lista de Ítems (Read-Only con botón de edición lápiz) -->
+  <!-- 3. Modal Detalle de Movimiento / Lista de Ítems (Diseño Minimalista M3) -->
   <div id="modal-transaction-detail"
     class="fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-sm hidden items-end justify-center p-0 m3-bottom-sheet-backdrop">
     <div
@@ -712,29 +712,29 @@
       <!-- Drag Handle Indicator -->
       <div class="w-12 h-1.5 bg-slate-300 rounded-full mx-auto mt-3 mb-1 shrink-0"></div>
 
-      <!-- Header con Título, Botón Lápiz Editar y Cerrar -->
+      <!-- Header con Nombre del Gasto / Lista, Botón Lápiz Editar y Cerrar -->
       <div class="px-5 py-3 border-b border-slate-100 flex items-center justify-between shrink-0">
-        <div class="flex items-center gap-2.5">
+        <div class="flex items-center gap-2.5 min-w-0 flex-1">
           <div
-            class="w-9 h-9 rounded-2xl bg-indigo-50 text-indigo-600 flex items-center justify-center text-base font-bold shadow-xs">
-            <i class="fas fa-list-check"></i>
+            class="w-9 h-9 rounded-2xl bg-[#dcfce7] text-emerald-900 flex items-center justify-center text-base font-black shadow-xs shrink-0">
+            <i class="fas fa-receipt"></i>
           </div>
-          <div>
-            <h3 class="font-extrabold text-sm text-slate-900 leading-tight">Detalle del Gasto</h3>
-            <p class="text-[10px] text-slate-400 font-medium">Desglose de cuenta e ítems asignados</p>
+          <div class="min-w-0 flex-1">
+            <h3 id="detail-modal-title" class="font-black text-base text-slate-900 leading-tight truncate">Gasto</h3>
+            <p id="detail-modal-subtitle" class="text-[10px] text-slate-400 font-bold truncate">Compartido • --</p>
           </div>
         </div>
 
-        <div class="flex items-center gap-2">
+        <div class="flex items-center gap-2 shrink-0">
           <!-- Botón Lápiz para Editar -->
           <button id="btn-edit-from-detail" type="button"
-            class="w-9 h-9 rounded-2xl bg-indigo-50 hover:bg-indigo-100 text-indigo-600 flex items-center justify-center text-xs active:scale-90 transition-transform shadow-2xs"
+            class="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 active:scale-90 text-slate-700 flex items-center justify-center text-xs transition-transform shadow-2xs cursor-pointer"
             title="Editar este gasto">
             <i class="fas fa-pencil-alt text-xs"></i>
           </button>
           <!-- Botón Cerrar -->
           <button id="close-modal-detail" onclick="closeModal('modal-transaction-detail');" type="button"
-            class="w-9 h-9 rounded-2xl bg-slate-100 text-slate-400 hover:text-slate-600 flex items-center justify-center text-xs active:scale-90 transition-transform cursor-pointer">
+            class="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 flex items-center justify-center text-xs active:scale-90 transition-transform cursor-pointer">
             <i class="fas fa-times"></i>
           </button>
         </div>
@@ -743,32 +743,40 @@
       <!-- Contenido Read-Only del Detalle -->
       <div class="p-5 overflow-y-auto space-y-4 flex-1 custom-scrollbar">
 
-        <!-- Tarjeta Resumen del Gasto -->
+        <!-- Tarjeta Resumen del Gasto (Sin nombre repetido) -->
         <div
-          class="bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 text-white p-4 rounded-2xl shadow-md space-y-2">
+          class="bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 text-white p-4 rounded-2xl shadow-md space-y-2.5">
           <div class="flex items-center justify-between">
-            <span id="detail-category-badge"
-              class="text-[10px] font-bold px-2 py-0.5 rounded-lg bg-white/10 text-white">General</span>
-            <span id="detail-type-badge"
-              class="text-[10px] font-bold px-2 py-0.5 rounded-lg bg-indigo-500/30 text-indigo-200">Compartido</span>
+            <div class="flex items-center gap-1.5 flex-wrap">
+              <span id="detail-category-badge"
+                class="text-[10px] font-bold px-2 py-0.5 rounded-lg bg-white/10 text-white">General</span>
+              <span id="detail-type-badge"
+                class="text-[10px] font-bold px-2 py-0.5 rounded-lg bg-emerald-500/30 text-emerald-200">Compartido</span>
+            </div>
+            <span id="detail-items-pill-badge"
+              class="text-[10px] font-black px-2.5 py-0.5 rounded-lg bg-white/10 text-slate-200">0 ítems</span>
           </div>
+
           <div>
-            <h4 id="detail-description" class="text-sm font-bold text-slate-200">Descripción del gasto</h4>
-            <span id="detail-amount" class="text-2xl font-black text-white block mt-0.5">S/ 0.00</span>
+            <span id="detail-amount" class="text-2xl font-black text-white block">S/ 0.00</span>
           </div>
+
           <div class="pt-2 border-t border-white/10 flex items-center justify-between text-[11px] text-slate-300">
             <span id="detail-payer-info">Pagado por: <strong>--</strong></span>
             <span id="detail-date-info">--</span>
           </div>
         </div>
 
-        <!-- Badges de Invitados (si los hay) -->
-        <div id="detail-guests-section"
-          class="hidden bg-amber-50/70 border border-amber-200/80 p-3 rounded-2xl space-y-1.5">
-          <span class="text-[10px] font-bold uppercase tracking-wider text-amber-800 block">Invitados
-            Participantes</span>
-          <div id="detail-guests-list" class="flex flex-wrap gap-1.5">
-            <!-- Chips de invitados -->
+        <!-- Sección de Todos los Participantes y Consumos Totales -->
+        <div class="space-y-2">
+          <div class="flex items-center justify-between px-1">
+            <span class="text-xs font-black text-slate-900 uppercase tracking-wider">Participantes</span>
+            <span id="detail-participants-count-badge"
+              class="text-[10px] font-bold bg-slate-100 text-slate-600 px-2 py-0.5 rounded-full">0 miembros</span>
+          </div>
+
+          <div id="detail-participants-container" class="space-y-1.5">
+            <!-- Participantes inyectados dinámicamente por JS -->
           </div>
         </div>
 
@@ -780,7 +788,7 @@
               class="text-[10px] font-bold bg-slate-100 text-slate-600 px-2 py-0.5 rounded-full">0 ítems</span>
           </div>
 
-          <div id="detail-items-container" class="space-y-2">
+          <div id="detail-items-container" class="space-y-1.5">
             <!-- Filas de ítems inyectadas por JS -->
           </div>
         </div>
@@ -1976,131 +1984,211 @@
 
       currentDetailExpenseId = expenseId;
 
-      // Llenar datos principales
-      document.getElementById('detail-description').textContent = exp.description || 'Sin descripción';
-      document.getElementById('detail-amount').textContent = formatCurrency(exp.amount);
-      document.getElementById('detail-category-badge').textContent = exp.category || 'General';
-      document.getElementById('detail-type-badge').textContent = (exp.type === 'personal') ? 'Personal' : 'Compartido';
-
-      const payerName = appState.participants.find(p => p.id === exp.payerId)?.name || 'Desconocido';
-      document.getElementById('detail-payer-info').innerHTML = `Pagado por: <strong>${payerName}</strong>`;
-      document.getElementById('detail-date-info').textContent = exp.date || '--';
-      document.getElementById('detail-pm-name').textContent = exp.paymentMethod || 'Efectivo';
-
-      // Invitados
-      const guestsSection = document.getElementById('detail-guests-section');
-      const guestsList = document.getElementById('detail-guests-list');
-      const expenseGuests = (exp.guests && Array.isArray(exp.guests)) ? exp.guests : (exp.guestName ? [exp.guestName] : []);
-
-      if (expenseGuests.length > 0) {
-        guestsSection.classList.remove('hidden');
-        guestsList.innerHTML = expenseGuests.map(g => `
-          <span class="inline-flex items-center gap-1 px-2.5 py-0.5 bg-white border border-amber-200 text-amber-900 rounded-lg text-[11px] font-bold shadow-2xs">
-            <i class="fas fa-user-tag text-amber-500 text-[9px]"></i>
-            <span>${g}</span>
-          </span>
-        `).join('');
-      } else {
-        guestsSection.classList.add('hidden');
+      // 1. Header con Nombre del Gasto / Lista
+      const titleEl = document.getElementById('detail-modal-title');
+      const subtitleEl = document.getElementById('detail-modal-subtitle');
+      if (titleEl) titleEl.textContent = exp.description || 'Gasto';
+      if (subtitleEl) {
+        const typeLabel = exp.type === 'personal' ? 'Personal' : 'Compartido';
+        subtitleEl.textContent = `${typeLabel} • ${exp.date || '--'}`;
       }
 
-      // Ítems de la lista
-      const itemsCountBadge = document.getElementById('detail-items-count-badge');
-      const itemsContainer = document.getElementById('detail-items-container');
-      const items = exp.items || [];
+      // 2. Tarjeta Resumen
+      const amountEl = document.getElementById('detail-amount');
+      const catBadge = document.getElementById('detail-category-badge');
+      const typeBadge = document.getElementById('detail-type-badge');
+      const itemsPill = document.getElementById('detail-items-pill-badge');
+      const payerEl = document.getElementById('detail-payer-info');
+      const dateEl = document.getElementById('detail-date-info');
+      const pmEl = document.getElementById('detail-pm-name');
 
-      itemsCountBadge.textContent = `${items.length} ítems`;
+      const items = exp.items || [];
+      if (amountEl) amountEl.textContent = formatCurrency(exp.amount);
+      if (catBadge) catBadge.textContent = exp.category || 'General';
+      if (typeBadge) typeBadge.textContent = exp.type === 'personal' ? 'Personal' : 'Compartido';
+      if (itemsPill) itemsPill.textContent = items.length > 0 ? `${items.length} ítems` : 'Gasto simple';
+
+      const payerName = appState.participants.find(p => p.id === exp.payerId)?.name || 'Desconocido';
+      if (payerEl) payerEl.innerHTML = `Pagado por: <strong>${payerName}</strong>`;
+      if (dateEl) dateEl.textContent = exp.date || '--';
+      if (pmEl) pmEl.textContent = exp.paymentMethod || 'Efectivo';
+
+      // 3. Resolución de Invitados y Participantes
+      const expenseGuests = (exp.guests && Array.isArray(exp.guests)) ? exp.guests : (exp.guestName ? [exp.guestName] : []);
+      
+      const allMembersList = [
+        ...appState.participants.map(p => ({
+          id: p.id,
+          name: p.name,
+          initials: (p.name || 'U').substring(0, 2).toUpperCase(),
+          isGuest: false
+        })),
+        ...expenseGuests.map(g => {
+          const cleanName = g.trim();
+          const gKey = `guest_${cleanName.toLowerCase().replace(/\s+/g, '_')}`;
+          return {
+            id: gKey,
+            name: cleanName,
+            initials: cleanName.substring(0, 2).toUpperCase(),
+            isGuest: true
+          };
+        })
+      ];
+
+      function resolveMemberInfo(key) {
+        const found = allMembersList.find(m => m.id === key);
+        if (found) return found;
+
+        // Fallback por índice o prefijo
+        const numMatch = String(key).match(/\d+/);
+        if (numMatch && expenseGuests[parseInt(numMatch[0])]) {
+          const gName = expenseGuests[parseInt(numMatch[0])];
+          return { id: key, name: gName, initials: gName.substring(0, 2).toUpperCase(), isGuest: true };
+        }
+        if (String(key).startsWith('guest_') || String(key).startsWith('guest-')) {
+          const rawName = String(key).replace('guest_', '').replace('guest-', '').replace(/_/g, ' ');
+          const matched = expenseGuests.find(g => g.toLowerCase() === rawName.toLowerCase());
+          const gName = matched || rawName;
+          return { id: key, name: gName, initials: gName.substring(0, 2).toUpperCase(), isGuest: true };
+        }
+        return { id: key, name: key, initials: String(key).substring(0, 2).toUpperCase(), isGuest: true };
+      }
+
+      // 4. Calcular Consumo y Cantidad de Ítems por Participante
+      const memberStats = {}; // { [memberId]: { info, itemCount, totalCost } }
+      allMembersList.forEach(m => {
+        memberStats[m.id] = { info: m, itemCount: 0, totalCost: 0 };
+      });
 
       if (items.length > 0) {
-        itemsContainer.innerHTML = items.map((it, idx) => {
+        items.forEach(it => {
           const qty = parseFloat(it.quantity) || 1;
           const unitPrice = parseFloat(it.amount) || 0;
-          const totalItemCost = qty * unitPrice;
-
-          // Función robusta para resolver nombre e invitado
-          function resolveMemberInfo(key) {
-            const pUser = appState.participants.find(p => p.id === key);
-            if (pUser) return { name: pUser.name, isGuest: false };
-
-            // Caso índice numérico o string numérico (ej: "0", "1", "guest_0", "guest-0")
-            const numMatch = String(key).match(/\d+/);
-            if (numMatch && expenseGuests[parseInt(numMatch[0])]) {
-              return { name: expenseGuests[parseInt(numMatch[0])], isGuest: true };
-            }
-            if (expenseGuests[parseInt(key)]) {
-              return { name: expenseGuests[parseInt(key)], isGuest: true };
-            }
-
-            // Caso guest_nombre
-            if (String(key).startsWith('guest_') || String(key).startsWith('guest-')) {
-              const rawName = String(key).replace('guest_', '').replace('guest-', '').replace(/_/g, ' ');
-              const matched = expenseGuests.find(g => g.toLowerCase() === rawName.toLowerCase());
-              return { name: matched || rawName, isGuest: true };
-            }
-
-            // Fallback a lista de invitados si existe solo uno
-            if (expenseGuests.length === 1) {
-              return { name: expenseGuests[0], isGuest: true };
-            }
-
-            return { name: key, isGuest: true };
-          }
-
-          let assignBadgesHtml = '';
+          const itemTotalCost = qty * unitPrice;
           const assignments = it.assignments || {};
           const assignedKeys = Object.keys(assignments).filter(k => (parseFloat(assignments[k]) || 0) > 0);
 
           if (assignedKeys.length > 0) {
-            assignBadgesHtml = assignedKeys.map(k => {
-              const uQty = assignments[k];
+            assignedKeys.forEach(k => {
+              const uQty = parseFloat(assignments[k]) || 0;
               const info = resolveMemberInfo(k);
-              if (info.isGuest) {
-                return `<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg text-[10px] font-extrabold bg-amber-50 text-amber-900 border border-amber-200/80 shadow-2xs">🎟️ ${info.name} (${uQty} u.)</span>`;
-              } else {
-                return `<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg text-[10px] font-extrabold bg-indigo-50 text-indigo-700 border border-indigo-100 shadow-2xs">👤 ${info.name} (${uQty} u.)</span>`;
-              }
-            }).join(' ');
+              if (!memberStats[info.id]) memberStats[info.id] = { info, itemCount: 0, totalCost: 0 };
+              memberStats[info.id].itemCount += 1;
+              memberStats[info.id].totalCost += uQty * unitPrice;
+            });
           } else if (it.assignedTo && it.assignedTo !== 'all') {
             const info = resolveMemberInfo(it.assignedTo);
-            if (info.isGuest) {
-              assignBadgesHtml = `<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg text-[10px] font-extrabold bg-amber-50 text-amber-900 border border-amber-200/80 shadow-2xs">🎟️ ${info.name} (${qty} u.)</span>`;
-            } else {
-              assignBadgesHtml = `<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg text-[10px] font-extrabold bg-indigo-50 text-indigo-700 border border-indigo-100 shadow-2xs">👤 ${info.name} (${qty} u.)</span>`;
-            }
+            if (!memberStats[info.id]) memberStats[info.id] = { info, itemCount: 0, totalCost: 0 };
+            memberStats[info.id].itemCount += 1;
+            memberStats[info.id].totalCost += itemTotalCost;
           } else {
-            assignBadgesHtml = `<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg text-[10px] font-bold bg-slate-100 text-slate-600 border border-slate-200/80">👥 Para todos</span>`;
+            // Dividido equitativamente entre todos
+            const perMemberCost = itemTotalCost / (allMembersList.length || 1);
+            allMembersList.forEach(m => {
+              memberStats[m.id].itemCount += 1;
+              memberStats[m.id].totalCost += perMemberCost;
+            });
           }
+        });
+      } else {
+        // Gasto simple sin lista
+        const perMemberCost = (parseFloat(exp.amount) || 0) / (allMembersList.length || 1);
+        allMembersList.forEach(m => {
+          memberStats[m.id].itemCount = 1;
+          memberStats[m.id].totalCost = perMemberCost;
+        });
+      }
 
-          return `
-            <div onclick="openDetailItemBreakdownModal(${idx})" class="bg-white p-3 rounded-2xl border border-slate-100 shadow-2xs flex items-center justify-between gap-2 cursor-pointer hover:border-indigo-200 hover:bg-slate-50/50 active:scale-98 transition-all group">
-              <div class="min-w-0 flex-1">
-                <div class="flex items-center gap-1.5">
-                  <span class="w-4 h-4 rounded-full bg-slate-100 group-hover:bg-indigo-100 text-slate-600 group-hover:text-indigo-600 text-[9px] font-black flex items-center justify-center shrink-0 transition-colors">
-                    ${idx + 1}
-                  </span>
-                  <span class="text-xs font-extrabold text-slate-900 truncate">${it.desc || 'Ítem'}</span>
-                </div>
-                <div class="flex items-center gap-2 mt-1 pl-5 text-[10px] text-slate-400 flex-wrap">
-                  <span class="font-bold text-slate-500">${qty} × ${formatCurrency(unitPrice)}</span>
-                  <span>•</span>
-                  <div class="flex items-center gap-1 flex-wrap">
+      // Renderizar Sección Participantes
+      const participantsContainer = document.getElementById('detail-participants-container');
+      const participantsCountBadge = document.getElementById('detail-participants-count-badge');
+      const activeMembersWithCosts = Object.values(memberStats).filter(st => st.totalCost > 0 || st.itemCount > 0);
+
+      if (participantsCountBadge) {
+        participantsCountBadge.textContent = `${activeMembersWithCosts.length} miembros`;
+      }
+
+      if (participantsContainer) {
+        participantsContainer.innerHTML = activeMembersWithCosts.map(st => `
+          <div class="flex items-center justify-between p-2.5 bg-slate-50/80 rounded-2xl border border-slate-100 hover:bg-slate-100/60 transition-all">
+            <div class="flex items-center gap-2 min-w-0">
+              <div class="w-8 h-8 rounded-xl ${st.info.isGuest ? 'bg-amber-500' : 'bg-slate-900'} text-white flex items-center justify-center font-black text-[10px] shrink-0">
+                ${st.info.initials}
+              </div>
+              <div class="truncate">
+                <h4 class="text-xs font-extrabold text-slate-900 truncate">${st.info.name}</h4>
+                <p class="text-[10px] text-slate-400 font-bold">${st.itemCount} ${st.itemCount === 1 ? 'ítem' : 'ítems'}</p>
+              </div>
+            </div>
+            <div class="text-right shrink-0">
+              <span class="text-xs font-black text-slate-900">${formatCurrency(st.totalCost)}</span>
+            </div>
+          </div>
+        `).join('');
+      }
+
+      // 5. Renderizar Desglose de Ítems (Limpio, sin bordes pesados, precio y cantidad a la derecha)
+      const itemsCountBadge = document.getElementById('detail-items-count-badge');
+      const itemsContainer = document.getElementById('detail-items-container');
+
+      if (itemsCountBadge) itemsCountBadge.textContent = `${items.length} ítems`;
+
+      if (itemsContainer) {
+        if (items.length > 0) {
+          itemsContainer.innerHTML = items.map((it, idx) => {
+            const qty = parseFloat(it.quantity) || 1;
+            const unitPrice = parseFloat(it.amount) || 0;
+            const totalItemCost = qty * unitPrice;
+
+            let assignBadgesHtml = '';
+            const assignments = it.assignments || {};
+            const assignedKeys = Object.keys(assignments).filter(k => (parseFloat(assignments[k]) || 0) > 0);
+
+            if (assignedKeys.length > 0) {
+              assignBadgesHtml = assignedKeys.map(k => {
+                const uQty = assignments[k];
+                const info = resolveMemberInfo(k);
+                return `<span class="inline-block px-1.5 py-0.5 rounded-md text-[9px] font-extrabold ${info.isGuest ? 'bg-amber-100/80 text-amber-900' : 'bg-slate-100 text-slate-700'}">${info.name} (${uQty} u.)</span>`;
+              }).join(' ');
+            } else if (it.assignedTo && it.assignedTo !== 'all') {
+              const info = resolveMemberInfo(it.assignedTo);
+              assignBadgesHtml = `<span class="inline-block px-1.5 py-0.5 rounded-md text-[9px] font-extrabold ${info.isGuest ? 'bg-amber-100/80 text-amber-900' : 'bg-slate-100 text-slate-700'}">${info.name} (${qty} u.)</span>`;
+            } else {
+              assignBadgesHtml = `<span class="inline-block px-1.5 py-0.5 rounded-md text-[9px] font-bold bg-slate-100 text-slate-500">Para todos</span>`;
+            }
+
+            return `
+              <div onclick="openDetailItemBreakdownModal(${idx})" class="bg-white p-3 rounded-2xl border border-slate-100 shadow-2xs flex items-center justify-between gap-2 cursor-pointer hover:border-emerald-300 hover:bg-slate-50/50 active:scale-98 transition-all group">
+                <div class="min-w-0 flex-1">
+                  <div class="flex items-center gap-1.5">
+                    <span class="w-4 h-4 rounded-full bg-slate-100 group-hover:bg-emerald-100 text-slate-600 group-hover:text-emerald-700 text-[9px] font-black flex items-center justify-center shrink-0 transition-colors">
+                      ${idx + 1}
+                    </span>
+                    <span class="text-xs font-extrabold text-slate-900 truncate">${it.desc || 'Ítem'}</span>
+                  </div>
+                  <div class="mt-1 pl-5">
                     ${assignBadgesHtml}
                   </div>
                 </div>
+
+                <!-- Lado Derecho: Monto Total arriba, Cantidad x Precio unitario abajo -->
+                <div class="text-right shrink-0 flex items-center gap-2">
+                  <div>
+                    <span class="text-xs font-black text-slate-900 block">${formatCurrency(totalItemCost)}</span>
+                    <span class="text-[10px] text-slate-400 font-semibold block">${qty} × ${formatCurrency(unitPrice)}</span>
+                  </div>
+                  <i class="fas fa-chevron-right text-[8px] text-slate-300 group-hover:text-emerald-600 transition-colors"></i>
+                </div>
               </div>
-              <div class="text-right shrink-0 flex items-center gap-1.5">
-                <span class="text-xs font-black text-slate-900">${formatCurrency(totalItemCost)}</span>
-                <i class="fas fa-chevron-right text-[9px] text-slate-300 group-hover:text-indigo-500 transition-colors"></i>
-              </div>
+            `;
+          }).join('');
+        } else {
+          itemsContainer.innerHTML = `
+            <div class="text-center py-4 bg-slate-50 rounded-2xl text-xs text-slate-400 font-medium">
+              Gasto registrado como monto global.
             </div>
           `;
-        }).join('');
-      } else {
-        itemsContainer.innerHTML = `
-          <div class="text-center py-4 bg-slate-50 rounded-2xl text-xs text-slate-400 font-medium">
-            Gasto registrado como monto global.
-          </div>
-        `;
+        }
       }
 
       openModal('modal-transaction-detail');
