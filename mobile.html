@@ -356,32 +356,32 @@
   <!-- Contenedor Inferior: Barra Cápsula + Botón FAB Circular -->
   <div class="fixed bottom-4 left-4 right-4 z-40 max-w-lg mx-auto flex items-center gap-3 justify-between pointer-events-none">
     
-    <!-- 1. Barra Larga Cápsula (Alto: 60px) -->
-    <nav class="pointer-events-auto h-[60px] flex-1 bg-white/95 backdrop-blur-xl rounded-full shadow-[0_10px_35px_rgba(0,0,0,0.12)] border border-slate-100/90 flex items-center justify-around px-2 text-slate-800">
+    <!-- 1. Barra Larga (Alto: 60px, Border-Radius: 24px) -->
+    <nav class="pointer-events-auto h-[60px] flex-1 bg-white/95 backdrop-blur-xl rounded-[24px] shadow-[0_10px_35px_rgba(0,0,0,0.12)] border border-slate-100/90 flex items-center justify-around px-2 text-slate-800">
       
       <!-- Icono 1: Monedero / Inicio -->
-      <button type="button" id="nav-btn-wallet" class="w-11 h-11 rounded-full flex items-center justify-center text-slate-900 hover:bg-slate-100 active:scale-90 transition-transform" title="Inicio / Monedero">
+      <button type="button" id="nav-btn-wallet" class="w-11 h-11 rounded-2xl flex items-center justify-center text-slate-900 hover:bg-slate-100 active:scale-90 transition-transform" title="Inicio / Monedero">
         <i class="fas fa-wallet text-lg"></i>
       </button>
 
       <!-- Icono 2: Métricas / Estadísticas -->
-      <button type="button" id="nav-btn-stats" class="w-11 h-11 rounded-full flex items-center justify-center text-slate-900 hover:bg-slate-100 active:scale-90 transition-transform" title="Resumen Financiero">
+      <button type="button" id="nav-btn-stats" class="w-11 h-11 rounded-2xl flex items-center justify-center text-slate-900 hover:bg-slate-100 active:scale-90 transition-transform" title="Resumen Financiero">
         <i class="fas fa-chart-column text-lg"></i>
       </button>
 
       <!-- Icono 3: Micrófono / Voz -->
-      <button type="button" id="nav-btn-voice" class="w-11 h-11 rounded-full flex items-center justify-center text-slate-900 hover:bg-slate-100 active:scale-90 transition-transform" title="Gasto por Voz">
+      <button type="button" id="nav-btn-voice" class="w-11 h-11 rounded-2xl flex items-center justify-center text-slate-900 hover:bg-slate-100 active:scale-90 transition-transform" title="Gasto por Voz">
         <i class="fas fa-microphone text-lg"></i>
       </button>
 
       <!-- Icono 4: Buscador / Historial -->
-      <button type="button" id="nav-btn-search" class="w-11 h-11 rounded-full flex items-center justify-center text-slate-900 hover:bg-slate-100 active:scale-90 transition-transform" title="Buscar Movimientos">
+      <button type="button" id="nav-btn-search" class="w-11 h-11 rounded-2xl flex items-center justify-center text-slate-900 hover:bg-slate-100 active:scale-90 transition-transform" title="Buscar Movimientos">
         <i class="fas fa-magnifying-glass text-lg"></i>
       </button>
     </nav>
 
-    <!-- 2. Botón FAB Flotante Cuadrado/Circular (60px x 60px) -->
-    <button type="button" id="fab-main-btn" class="pointer-events-auto w-[60px] h-[60px] shrink-0 bg-white rounded-full shadow-[0_10px_35px_rgba(0,0,0,0.12)] border border-slate-100/90 flex items-center justify-center text-slate-900 active:scale-95 transition-all cursor-pointer select-none">
+    <!-- 2. Botón FAB Flotante (60px x 60px, Border-Radius: 24px) -->
+    <button type="button" id="fab-main-btn" class="pointer-events-auto w-[60px] h-[60px] shrink-0 bg-white rounded-[24px] shadow-[0_10px_35px_rgba(0,0,0,0.12)] border border-slate-100/90 flex items-center justify-center text-slate-900 active:scale-95 transition-all cursor-pointer select-none">
       <i id="fab-icon" class="fas fa-plus text-2xl font-black transition-transform duration-300"></i>
     </button>
   </div>
