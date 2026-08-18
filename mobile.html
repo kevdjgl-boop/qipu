@@ -935,6 +935,71 @@
           </button>
           <p class="text-[10px] text-center text-slate-400">Crea transacciones de reembolso para dejar los saldos en S/ 0.00</p>
         </div>
+  <!-- 7. Modal Asignación de Ítem (True Native M3 Bottom Sheet) -->
+  <div id="modal-item-assignment"
+    class="fixed inset-0 z-[60] bg-slate-950/70 backdrop-blur-sm hidden items-end justify-center p-0 m3-bottom-sheet-backdrop">
+    <div
+      class="w-full max-w-lg bg-white rounded-t-[32px] max-h-[92vh] flex flex-col shadow-2xl overflow-hidden m3-bottom-sheet-surface">
+
+      <!-- Drag Handle Indicator -->
+      <div class="w-12 h-1.5 bg-slate-300 rounded-full mx-auto mt-3 mb-1 shrink-0"></div>
+
+      <!-- Header del Bottom Sheet -->
+      <div class="px-5 py-3.5 border-b border-slate-100 flex items-center justify-between shrink-0">
+        <div class="flex items-center gap-2.5">
+          <div
+            class="w-9 h-9 rounded-2xl bg-indigo-50 text-indigo-600 flex items-center justify-center text-base font-bold shadow-xs">
+            <i class="fas fa-users-cog"></i>
+          </div>
+          <div>
+            <h3 id="assign-modal-item-title" class="font-extrabold text-sm text-slate-900 leading-tight">Asignar Ítem</h3>
+            <p id="assign-modal-item-subtitle" class="text-[10px] text-slate-400 font-medium">Define quién consume este ítem</p>
+          </div>
+        </div>
+        <button id="close-modal-item-assignment" onclick="closeModal('modal-item-assignment');" type="button"
+          class="w-8 h-8 rounded-full bg-slate-100 text-slate-400 hover:text-slate-600 flex items-center justify-center text-xs active:scale-90 transition-transform cursor-pointer">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+
+      <!-- Switcher: Para Todos vs Por Persona -->
+      <div class="px-5 pt-3 pb-1 shrink-0">
+        <div class="bg-slate-100 p-1 rounded-2xl flex items-center gap-1 text-xs font-bold">
+          <button type="button" id="btn-assign-mode-all"
+            class="flex-1 py-2 rounded-xl bg-white text-slate-900 shadow-xs flex items-center justify-center gap-1.5 transition-all">
+            <i class="fas fa-users text-indigo-600 text-xs"></i>
+            <span>Para todos por igual</span>
+          </button>
+          <button type="button" id="btn-assign-mode-custom"
+            class="flex-1 py-2 rounded-xl text-slate-500 hover:text-slate-900 flex items-center justify-center gap-1.5 transition-all">
+            <i class="fas fa-user-check text-xs"></i>
+            <span>Por persona / unidades</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Contenido: Lista de Participantes e Invitados con Steppers -->
+      <div class="p-5 pt-2 overflow-y-auto space-y-3 flex-1 custom-scrollbar">
+        <!-- Indicador de Unidades Asignadas vs Totales -->
+        <div id="assign-units-status-bar" class="bg-indigo-50 border border-indigo-100 rounded-2xl p-3 flex items-center justify-between">
+          <span class="text-xs font-bold text-indigo-950">Unidades asignadas:</span>
+          <span id="assign-units-badge" class="text-xs font-black text-indigo-700 bg-white px-2.5 py-1 rounded-xl shadow-2xs border border-indigo-100">
+            0 / 1 unidades
+          </span>
+        </div>
+
+        <div id="assign-members-list" class="space-y-2">
+          <!-- Filas con foto, nombre y steppers inyectadas por JS -->
+        </div>
+
+        <!-- Botón Guardar Asignación -->
+        <div class="pt-2 sticky bottom-0 bg-white pb-1">
+          <button type="button" id="btn-confirm-item-assignment"
+            class="w-full py-3.5 bg-indigo-600 hover:bg-indigo-700 active:scale-98 text-white font-extrabold text-xs rounded-2xl shadow-lg shadow-indigo-500/25 transition-all flex items-center justify-center gap-2">
+            <i class="fas fa-check-circle text-sm"></i>
+            <span>Confirmar Asignación de Ítem</span>
+          </button>
+        </div>
       </div>
     </div>
   </div>
@@ -1805,18 +1870,30 @@
           const unitPrice = parseFloat(it.amount) || 0;
           const totalItemCost = qty * unitPrice;
 
-          // Determinar asignación
+          // Determinar asignación detallada
           let assignedLabel = '👥 Para todos';
           let assignedClass = 'bg-slate-100 text-slate-700';
 
-          if (it.assignedTo && it.assignedTo !== 'all') {
+          const assignments = it.assignments || {};
+          const assignedKeys = Object.keys(assignments).filter(k => (parseFloat(assignments[k]) || 0) > 0);
+
+          if (assignedKeys.length > 0) {
+            const parts = assignedKeys.map(k => {
+              const uQty = assignments[k];
+              const pUser = appState.participants.find(p => p.id === k);
+              if (pUser) return `${pUser.name} (${uQty} u.)`;
+              const gName = k.startsWith('guest_') ? k.substring(6) : k;
+              return `${gName} (${uQty} u.)`;
+            });
+            assignedLabel = `👥 ${parts.join(', ')}`;
+            assignedClass = 'bg-indigo-50 text-indigo-700 border border-indigo-100';
+          } else if (it.assignedTo && it.assignedTo !== 'all') {
             const pAssigned = appState.participants.find(p => p.id === it.assignedTo);
             if (pAssigned) {
               assignedLabel = `👤 ${pAssigned.name}`;
               assignedClass = 'bg-indigo-50 text-indigo-700 border border-indigo-100';
-            } else if (it.assignedTo.startsWith('guest_') || it.assignedTo.startsWith('guest-')) {
-              const gIdx = parseInt(it.assignedTo.replace('guest_', '').replace('guest-', '')) || 0;
-              const gName = expenseGuests[gIdx] || 'Invitado';
+            } else {
+              const gName = it.assignedTo.startsWith('guest_') ? it.assignedTo.substring(6) : it.assignedTo;
               assignedLabel = `🎟️ ${gName} (Invitado)`;
               assignedClass = 'bg-amber-50 text-amber-800 border border-amber-200';
             }
@@ -1831,10 +1908,10 @@
                   </span>
                   <span class="text-xs font-extrabold text-slate-900 truncate">${it.desc || 'Ítem'}</span>
                 </div>
-                <div class="flex items-center gap-2 mt-1 pl-5 text-[10px] text-slate-400">
+                <div class="flex items-center gap-2 mt-1 pl-5 text-[10px] text-slate-400 flex-wrap">
                   <span>${qty} × ${formatCurrency(unitPrice)}</span>
                   <span>•</span>
-                  <span class="px-1.5 py-0.2 rounded font-bold ${assignedClass}">${assignedLabel}</span>
+                  <span class="px-2 py-0.5 rounded-lg font-bold ${assignedClass}">${assignedLabel}</span>
                 </div>
               </div>
               <div class="text-right shrink-0">
@@ -1932,15 +2009,25 @@
       mobileExpenseGuests = (exp.guests && Array.isArray(exp.guests)) ? [...exp.guests] : (exp.guestName ? [exp.guestName] : []);
       renderGuestsChips();
 
-      // Ítems
+      // Ítems (Preservando todas las asignaciones individuales)
       if (exp.items && exp.items.length > 0) {
-        mobileExpenseItems = exp.items.map(it => ({
-          id: 'item_' + Date.now() + '_' + Math.random().toString(36).substring(2, 6),
-          desc: it.desc || '',
-          quantity: it.quantity || 1,
-          amount: it.amount || '',
-          assignedTo: it.assignedTo || (it.assignments ? Object.keys(it.assignments)[0] : 'all') || 'all'
-        }));
+        mobileExpenseItems = exp.items.map(it => {
+          let assignments = {};
+          if (it.assignments && Object.keys(it.assignments).length > 0) {
+            assignments = { ...it.assignments };
+          } else if (it.assignedTo && it.assignedTo !== 'all') {
+            assignments = { [it.assignedTo]: parseFloat(it.quantity) || 1 };
+          }
+
+          return {
+            id: 'item_' + Date.now() + '_' + Math.random().toString(36).substring(2, 6),
+            desc: it.desc || '',
+            quantity: it.quantity || 1,
+            amount: it.amount || '',
+            assignedTo: it.assignedTo || (Object.keys(assignments).length === 1 ? Object.keys(assignments)[0] : 'all'),
+            assignments: assignments
+          };
+        });
         btnModeList.click();
         renderMobileItemsList();
       } else {
@@ -2023,14 +2110,21 @@
       }
     });
 
-    // 7. Gestión de Ítems (Modo Lista)
+    // ================================================================
+    // GESTIÓN DE ÍTEMS Y ASIGNACIONES MEDIANTE BOTTOM SHEET
+    // ================================================================
+    let currentAssigningItemId = null;
+    let tempItemAssignments = {};
+    let assignModalMode = 'all'; // 'all' o 'custom'
+
     function addMobileItemRow() {
       const newItem = {
         id: 'item_' + Date.now() + '_' + Math.random().toString(36).substring(2, 6),
         desc: '',
         quantity: 1,
         amount: '',
-        assignedTo: 'all'
+        assignedTo: 'all',
+        assignments: {}
       };
       mobileExpenseItems.push(newItem);
       renderMobileItemsList();
@@ -2060,17 +2154,39 @@
       return total;
     }
 
+    function getAssignmentSummaryLabel(item) {
+      const assignments = item.assignments || {};
+      const keys = Object.keys(assignments).filter(k => (parseFloat(assignments[k]) || 0) > 0);
+
+      if (keys.length === 0 || item.assignedTo === 'all') {
+        return '👥 Para todos por igual';
+      }
+
+      if (keys.length === 1) {
+        const k = keys[0];
+        const qty = assignments[k];
+        const pUser = appState.participants.find(p => p.id === k);
+        if (pUser) return `👤 ${pUser.name} (${qty} u.)`;
+        const gName = k.startsWith('guest_') ? k.substring(6) : k;
+        return `🎟️ ${gName} (Invitado) (${qty} u.)`;
+      }
+
+      const totalAssigned = keys.reduce((sum, k) => sum + (parseFloat(assignments[k]) || 0), 0);
+      const names = keys.map(k => {
+        const pUser = appState.participants.find(p => p.id === k);
+        const name = pUser ? pUser.name : (k.startsWith('guest_') ? k.substring(6) : k);
+        return `${name} (${assignments[k]} u.)`;
+      });
+      return `👥 ${keys.length} personas: ${names.join(', ')}`;
+    }
+
     function renderMobileItemsList() {
       const container = document.getElementById('mobile-items-container');
 
-      // Opciones de asignación: 'all' + participantes + invitados
-      const assignmentOptions = [
-        `<option value="all">👥 Para todos por igual</option>`,
-        ...appState.participants.map(p => `<option value="${p.id}">👤 ${p.name}</option>`),
-        ...mobileExpenseGuests.map((g, idx) => `<option value="guest_${idx}">🎟️ ${g} (Invitado)</option>`)
-      ].join('');
-
       container.innerHTML = mobileExpenseItems.map((item, idx) => {
+        const assignLabel = getAssignmentSummaryLabel(item);
+        const hasCustomAssignments = item.assignments && Object.keys(item.assignments).length > 0;
+
         return `
           <div class="bg-slate-50 p-3 rounded-2xl border border-slate-200/80 space-y-2 relative group" data-item-id="${item.id}">
             <div class="flex items-center justify-between gap-2">
@@ -2102,11 +2218,17 @@
               </div>
             </div>
 
+            <!-- Botón Bottom Sheet para Asignación -->
             <div>
               <label class="block text-[9px] font-bold text-slate-400 uppercase mb-0.5">Asignar este ítem a:</label>
-              <select onchange="updateMobileItemField('${item.id}', 'assignedTo', this.value)" class="w-full bg-white border border-slate-200 rounded-xl py-1.5 px-2 text-xs font-bold text-slate-800 focus:outline-none focus:border-indigo-500">
-                ${assignmentOptions.replace(`value="${item.assignedTo}"`, `value="${item.assignedTo}" selected`)}
-              </select>
+              <button type="button" onclick="openItemAssignmentModal('${item.id}')"
+                class="w-full py-2 px-3 bg-white hover:bg-slate-100 active:scale-98 border ${hasCustomAssignments ? 'border-indigo-300 ring-1 ring-indigo-500/15' : 'border-slate-200'} rounded-xl text-xs font-bold text-slate-800 flex items-center justify-between shadow-2xs transition-all text-left">
+                <div class="flex items-center gap-1.5 truncate">
+                  <i class="fas fa-users-cog ${hasCustomAssignments ? 'text-indigo-600' : 'text-slate-400'} text-[11px]"></i>
+                  <span class="truncate ${hasCustomAssignments ? 'text-indigo-950 font-black' : 'text-slate-700'}">${assignLabel}</span>
+                </div>
+                <i class="fas fa-chevron-right text-[9px] text-slate-400"></i>
+              </button>
             </div>
           </div>
         `;
@@ -2114,6 +2236,179 @@
 
       renderListTotalBadge();
     }
+
+    // ================================================================
+    // MODAL BOTTOM SHEET DE ASIGNACIÓN DETALLADA (STEPPERS POR USUARIO)
+    // ================================================================
+    function openItemAssignmentModal(itemId) {
+      const item = mobileExpenseItems.find(i => i.id === itemId);
+      if (!item) return;
+
+      currentAssigningItemId = itemId;
+      const itemQty = parseFloat(item.quantity) || 1;
+      tempItemAssignments = { ...(item.assignments || {}) };
+
+      document.getElementById('assign-modal-item-title').textContent = item.desc ? `Asignar "${item.desc}"` : 'Asignar Ítem';
+      document.getElementById('assign-modal-item-subtitle').textContent = `Total: ${itemQty} unidad${itemQty === 1 ? '' : 'es'} en la cuenta`;
+
+      // Determinar modo inicial
+      const hasAssignments = Object.keys(tempItemAssignments).length > 0;
+      if (hasAssignments) {
+        setAssignModalMode('custom');
+      } else {
+        setAssignModalMode('all');
+      }
+
+      renderItemAssignmentList();
+      openModal('modal-item-assignment');
+    }
+    window.openItemAssignmentModal = openItemAssignmentModal;
+
+    function setAssignModalMode(mode) {
+      assignModalMode = mode;
+      const btnAll = document.getElementById('btn-assign-mode-all');
+      const btnCustom = document.getElementById('btn-assign-mode-custom');
+      const membersContainer = document.getElementById('assign-members-list');
+      const statusBar = document.getElementById('assign-units-status-bar');
+
+      if (mode === 'all') {
+        btnAll.className = 'flex-1 py-2 rounded-xl bg-white text-slate-900 shadow-xs flex items-center justify-center gap-1.5 transition-all';
+        btnCustom.className = 'flex-1 py-2 rounded-xl text-slate-500 hover:text-slate-900 flex items-center justify-center gap-1.5 transition-all';
+        statusBar.classList.add('hidden');
+        membersContainer.classList.add('opacity-40', 'pointer-events-none');
+      } else {
+        btnCustom.className = 'flex-1 py-2 rounded-xl bg-white text-slate-900 shadow-xs flex items-center justify-center gap-1.5 transition-all';
+        btnAll.className = 'flex-1 py-2 rounded-xl text-slate-500 hover:text-slate-900 flex items-center justify-center gap-1.5 transition-all';
+        statusBar.classList.remove('hidden');
+        membersContainer.classList.remove('opacity-40', 'pointer-events-none');
+      }
+    }
+
+    document.getElementById('btn-assign-mode-all').addEventListener('click', () => {
+      setAssignModalMode('all');
+      tempItemAssignments = {};
+      renderItemAssignmentList();
+    });
+
+    document.getElementById('btn-assign-mode-custom').addEventListener('click', () => {
+      setAssignModalMode('custom');
+      renderItemAssignmentList();
+    });
+
+    function changeItemAssignmentQty(memberId, delta) {
+      const item = mobileExpenseItems.find(i => i.id === currentAssigningItemId);
+      if (!item) return;
+
+      const totalItemQty = parseFloat(item.quantity) || 1;
+      const currentQty = parseFloat(tempItemAssignments[memberId]) || 0;
+      let newQty = Math.max(0, currentQty + delta);
+
+      // Calcular asignados en otros
+      const othersAssigned = Object.keys(tempItemAssignments).reduce((sum, k) => {
+        return k === memberId ? sum : sum + (parseFloat(tempItemAssignments[k]) || 0);
+      }, 0);
+
+      // No permitir superar el total del ítem
+      if (othersAssigned + newQty > totalItemQty) {
+        newQty = Math.max(0, totalItemQty - othersAssigned);
+      }
+
+      if (newQty > 0) {
+        tempItemAssignments[memberId] = newQty;
+      } else {
+        delete tempItemAssignments[memberId];
+      }
+
+      renderItemAssignmentList();
+    }
+    window.changeItemAssignmentQty = changeItemAssignmentQty;
+
+    function renderItemAssignmentList() {
+      const container = document.getElementById('assign-members-list');
+      const badge = document.getElementById('assign-units-badge');
+      const item = mobileExpenseItems.find(i => i.id === currentAssigningItemId);
+      if (!item) return;
+
+      const totalItemQty = parseFloat(item.quantity) || 1;
+      const totalAssigned = Object.keys(tempItemAssignments).reduce((sum, k) => sum + (parseFloat(tempItemAssignments[k]) || 0), 0);
+
+      badge.textContent = `${totalAssigned} / ${totalItemQty} unidades`;
+      if (totalAssigned === totalItemQty) {
+        badge.className = 'text-xs font-black text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-xl shadow-2xs border border-emerald-200';
+      } else if (totalAssigned > 0) {
+        badge.className = 'text-xs font-black text-amber-700 bg-amber-50 px-2.5 py-1 rounded-xl shadow-2xs border border-amber-200';
+      } else {
+        badge.className = 'text-xs font-black text-indigo-700 bg-white px-2.5 py-1 rounded-xl shadow-2xs border border-indigo-100';
+      }
+
+      // Miembros: Participantes Registrados + Invitados del Gasto
+      const members = [
+        ...appState.participants.map(p => ({
+          id: p.id,
+          name: p.name,
+          isGuest: false,
+          isMe: p.firebaseUid === currentUserId
+        })),
+        ...mobileExpenseGuests.map(g => ({
+          id: `guest_${g.trim().toLowerCase().replace(/\s+/g, '_')}`,
+          name: g,
+          isGuest: true,
+          isMe: false
+        }))
+      ];
+
+      container.innerHTML = members.map(m => {
+        const assignedQty = parseFloat(tempItemAssignments[m.id]) || 0;
+        const isSelected = assignedQty > 0;
+
+        return `
+          <div class="bg-white border ${isSelected ? 'border-indigo-500 ring-1 ring-indigo-500/20 bg-indigo-50/10' : 'border-slate-200'} rounded-2xl p-3 flex items-center justify-between shadow-2xs transition-all">
+            <div class="flex items-center gap-2.5">
+              <div class="w-9 h-9 rounded-xl ${m.isGuest ? 'bg-amber-500' : 'bg-slate-900'} text-white flex items-center justify-center font-black text-xs shadow-xs">
+                ${(m.name || 'U').substring(0, 2).toUpperCase()}
+              </div>
+              <div>
+                <div class="flex items-center gap-1.5">
+                  <h4 class="font-extrabold text-xs text-slate-900">${m.name}</h4>
+                  ${m.isMe ? '<span class="text-[8px] font-black text-indigo-700 bg-indigo-50 px-1.5 py-0.5 rounded">TÚ</span>' : ''}
+                  ${m.isGuest ? '<span class="text-[8px] font-black text-amber-700 bg-amber-100 px-1.5 py-0.5 rounded">INVITADO</span>' : ''}
+                </div>
+                <p class="text-[10px] text-slate-400 font-medium">${assignedQty > 0 ? `${assignedQty} unidad${assignedQty === 1 ? '' : 'es'} asignada${assignedQty === 1 ? '' : 's'}` : 'Sin asignación'}</p>
+              </div>
+            </div>
+
+            <!-- Stepper Controls (+ / -) -->
+            <div class="flex items-center gap-1.5 bg-slate-100 p-1 rounded-xl">
+              <button type="button" onclick="changeItemAssignmentQty('${m.id}', -1)"
+                class="w-7 h-7 rounded-lg bg-white text-slate-700 hover:bg-slate-200 active:scale-90 font-black text-sm flex items-center justify-center shadow-2xs transition-transform ${assignedQty === 0 ? 'opacity-30 pointer-events-none' : ''}">
+                -
+              </button>
+              <span class="w-6 text-center text-xs font-black text-slate-900">${assignedQty}</span>
+              <button type="button" onclick="changeItemAssignmentQty('${m.id}', 1)"
+                class="w-7 h-7 rounded-lg bg-indigo-600 text-white hover:bg-indigo-700 active:scale-90 font-black text-sm flex items-center justify-center shadow-2xs transition-transform">
+                +
+              </button>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    document.getElementById('btn-confirm-item-assignment').addEventListener('click', () => {
+      const item = mobileExpenseItems.find(i => i.id === currentAssigningItemId);
+      if (item) {
+        if (assignModalMode === 'all') {
+          item.assignedTo = 'all';
+          item.assignments = {};
+        } else {
+          item.assignments = { ...tempItemAssignments };
+          const keys = Object.keys(item.assignments);
+          item.assignedTo = keys.length === 1 ? keys[0] : (keys.length > 1 ? 'custom' : 'all');
+        }
+        renderMobileItemsList();
+      }
+      closeModal('modal-item-assignment');
+    });
 
     window.addMobileItemRow = addMobileItemRow;
     window.removeMobileItemRow = removeMobileItemRow;
@@ -2238,9 +2533,16 @@
             amount: itemPrice
           };
 
-          if (item.assignedTo && item.assignedTo !== 'all') {
+          if (item.assignments && Object.keys(item.assignments).length > 0) {
+            itemObj.assignments = { ...item.assignments };
+            const keys = Object.keys(item.assignments);
+            itemObj.assignedTo = keys.length === 1 ? keys[0] : 'custom';
+          } else if (item.assignedTo && item.assignedTo !== 'all') {
             itemObj.assignedTo = item.assignedTo;
             itemObj.assignments = { [item.assignedTo]: itemQty };
+          } else {
+            itemObj.assignedTo = 'all';
+            itemObj.assignments = {};
           }
           return itemObj;
         });
@@ -2424,7 +2726,7 @@
     window.closeModal = closeModal;
 
     // Cerrar al tocar fuera (Backdrop scrim touch)
-    ['modal-expense', 'modal-income', 'modal-settings', 'modal-transaction-detail', 'modal-participants-balances', 'modal-settlement'].forEach(modalId => {
+    ['modal-expense', 'modal-income', 'modal-settings', 'modal-transaction-detail', 'modal-participants-balances', 'modal-settlement', 'modal-item-assignment'].forEach(modalId => {
       const modalEl = document.getElementById(modalId);
       if (modalEl) {
         modalEl.addEventListener('click', (e) => {
