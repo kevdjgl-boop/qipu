@@ -530,17 +530,22 @@
           </div>
         </div>
 
-        <!-- BOTONERA TOGGLE MODULAR: [ 🔁 Fijo ] | [ ☷ Lista ] -->
+        <!-- BOTONERA MATERIAL DESIGN 3 SEGMENTED BUTTON: [ 🔁 Fijo ] | [ ☷ Lista ] -->
         <div class="w-full max-w-[372px] mx-auto pt-1">
-          <div class="bg-slate-100 p-1 rounded-full flex items-center gap-1 text-xs font-black">
+          <div class="w-full h-[40px] rounded-full border border-slate-300 overflow-hidden flex divide-x divide-slate-300 bg-transparent">
+            <!-- Segmento 1: Fijo -->
             <button type="button" id="btn-toggle-fixed" onclick="toggleFixedExpenseSection()"
-              class="flex-1 py-2 rounded-full text-slate-500 hover:text-slate-900 flex items-center justify-center gap-1.5 transition-all">
-              <i class="fas fa-sync-alt text-xs"></i>
+              class="flex-1 h-full px-3 flex items-center justify-center gap-1.5 text-xs font-bold text-slate-600 hover:bg-slate-50 transition-all select-none active:scale-[0.98]">
+              <i id="icon-fixed-check" class="fas fa-check text-xs text-emerald-900 hidden"></i>
+              <i id="icon-fixed-symbol" class="fas fa-sync-alt text-xs opacity-75"></i>
               <span>Fijo</span>
             </button>
+
+            <!-- Segmento 2: Lista -->
             <button type="button" id="btn-toggle-list" onclick="toggleListExpenseSection()"
-              class="flex-1 py-2 rounded-full text-slate-500 hover:text-slate-900 flex items-center justify-center gap-1.5 transition-all">
-              <i class="fas fa-list-ul text-xs"></i>
+              class="flex-1 h-full px-3 flex items-center justify-center gap-1.5 text-xs font-bold text-slate-600 hover:bg-slate-50 transition-all select-none active:scale-[0.98]">
+              <i id="icon-list-check" class="fas fa-check text-xs text-emerald-900 hidden"></i>
+              <i id="icon-list-symbol" class="fas fa-list-ul text-xs opacity-75"></i>
               <span>Lista</span>
             </button>
           </div>
@@ -2280,35 +2285,66 @@
     }
     window.selectOptionPickerValue = selectOptionPickerValue;
 
+    // ================================================================
+    // CONTROLADORES DE MATERIAL 3 SEGMENTED BUTTONS (FIJO & LISTA)
+    // ================================================================
+    function updateSegmentedButtonsUI() {
+      const btnFixed = document.getElementById('btn-toggle-fixed');
+      const btnList = document.getElementById('btn-toggle-list');
+      const secFixed = document.getElementById('section-fixed-config');
+      const secList = document.getElementById('section-list-items');
+      const fixedCheck = document.getElementById('icon-fixed-check');
+      const fixedSymbol = document.getElementById('icon-fixed-symbol');
+      const listCheck = document.getElementById('icon-list-check');
+      const listSymbol = document.getElementById('icon-list-symbol');
+
+      // Fijo
+      if (btnFixed) {
+        if (isFixedExpenseActive) {
+          btnFixed.className = 'flex-1 h-full px-3 flex items-center justify-center gap-1.5 text-xs font-black text-slate-950 bg-[#c6f6b5] transition-all select-none active:scale-[0.98]';
+          if (fixedCheck) fixedCheck.classList.remove('hidden');
+          if (fixedSymbol) fixedSymbol.classList.add('hidden');
+          if (secFixed) secFixed.classList.add('m3-open');
+        } else {
+          btnFixed.className = 'flex-1 h-full px-3 flex items-center justify-center gap-1.5 text-xs font-bold text-slate-600 hover:bg-slate-50 transition-all select-none active:scale-[0.98]';
+          if (fixedCheck) fixedCheck.classList.add('hidden');
+          if (fixedSymbol) fixedSymbol.classList.remove('hidden');
+          if (secFixed) secFixed.classList.remove('m3-open');
+        }
+      }
+
+      // Lista
+      if (btnList) {
+        if (isListExpenseActive) {
+          btnList.className = 'flex-1 h-full px-3 flex items-center justify-center gap-1.5 text-xs font-black text-slate-950 bg-[#c6f6b5] transition-all select-none active:scale-[0.98]';
+          if (listCheck) listCheck.classList.remove('hidden');
+          if (listSymbol) listSymbol.classList.add('hidden');
+          if (secList) secList.classList.add('m3-open');
+        } else {
+          btnList.className = 'flex-1 h-full px-3 flex items-center justify-center gap-1.5 text-xs font-bold text-slate-600 hover:bg-slate-50 transition-all select-none active:scale-[0.98]';
+          if (listCheck) listCheck.classList.add('hidden');
+          if (listSymbol) listSymbol.classList.remove('hidden');
+          if (secList) secList.classList.remove('m3-open');
+        }
+      }
+    }
+    window.updateSegmentedButtonsUI = updateSegmentedButtonsUI;
+
     function toggleFixedExpenseSection() {
       isFixedExpenseActive = !isFixedExpenseActive;
-      const btn = document.getElementById('btn-toggle-fixed');
-      const sec = document.getElementById('section-fixed-config');
-      if (isFixedExpenseActive) {
-        if (btn) btn.className = 'flex-1 py-2 rounded-full bg-[#c6f6b5] text-slate-950 shadow-xs font-black flex items-center justify-center gap-1.5 transition-all';
-        if (sec) sec.classList.add('m3-open');
-      } else {
-        if (btn) btn.className = 'flex-1 py-2 rounded-full text-slate-500 hover:text-slate-900 font-bold flex items-center justify-center gap-1.5 transition-all';
-        if (sec) sec.classList.remove('m3-open');
-      }
+      updateSegmentedButtonsUI();
     }
     window.toggleFixedExpenseSection = toggleFixedExpenseSection;
 
     function toggleListExpenseSection() {
       isListExpenseActive = !isListExpenseActive;
-      const btn = document.getElementById('btn-toggle-list');
-      const sec = document.getElementById('section-list-items');
-      if (isListExpenseActive) {
-        if (btn) btn.className = 'flex-1 py-2 rounded-full bg-[#c6f6b5] text-slate-950 shadow-xs font-black flex items-center justify-center gap-1.5 transition-all';
-        if (sec) sec.classList.add('m3-open');
-        if (mobileExpenseItems.length === 0) {
-          addMobileItemRow();
-        }
-        renderMobileItemsList();
-      } else {
-        if (btn) btn.className = 'flex-1 py-2 rounded-full text-slate-500 hover:text-slate-900 font-bold flex items-center justify-center gap-1.5 transition-all';
-        if (sec) sec.classList.remove('m3-open');
+      if (isListExpenseActive && mobileExpenseItems.length === 0) {
+        addMobileItemRow();
       }
+      if (isListExpenseActive) {
+        renderMobileItemsList();
+      }
+      updateSegmentedButtonsUI();
     }
     window.toggleListExpenseSection = toggleListExpenseSection;
 
@@ -2423,14 +2459,7 @@
       // Restablecer toggles
       isFixedExpenseActive = false;
       isListExpenseActive = false;
-      const btnFixed = document.getElementById('btn-toggle-fixed');
-      const btnList = document.getElementById('btn-toggle-list');
-      const secFixed = document.getElementById('section-fixed-config');
-      const secList = document.getElementById('section-list-items');
-      if (btnFixed) btnFixed.className = 'flex-1 py-2 rounded-full text-slate-500 hover:text-slate-900 font-bold flex items-center justify-center gap-1.5 transition-all';
-      if (btnList) btnList.className = 'flex-1 py-2 rounded-full text-slate-500 hover:text-slate-900 font-bold flex items-center justify-center gap-1.5 transition-all';
-      if (secFixed) secFixed.classList.remove('m3-open');
-      if (secList) secList.classList.remove('m3-open');
+      updateSegmentedButtonsUI();
 
       switchExpenseRegistrationType('shared');
     }
@@ -2491,7 +2520,7 @@
 
       // Fijo
       if (exp.isFixed) {
-        if (!isFixedExpenseActive) toggleFixedExpenseSection();
+        isFixedExpenseActive = true;
         if (exp.fixedFrequency) {
           document.getElementById('exp-fixed-frequency').value = exp.fixedFrequency;
           const freqMap = { monthly: 'Mensual', biweekly: 'Quincenal', weekly: 'Semanal', yearly: 'Anual' };
@@ -2501,12 +2530,13 @@
           document.getElementById('exp-fixed-repeat').value = exp.fixedRepeat;
           document.getElementById('chip-repeat-label').textContent = exp.fixedRepeat === 'indefinite' ? 'Indefinido' : `${exp.fixedRepeat} cuotas`;
         }
-      } else if (isFixedExpenseActive) {
-        toggleFixedExpenseSection();
+      } else {
+        isFixedExpenseActive = false;
       }
 
       // Ítems
       if (exp.items && exp.items.length > 0) {
+        isListExpenseActive = true;
         mobileExpenseItems = exp.items.map(it => {
           let assignments = normalizeItemAssignments(it.assignments, mobileExpenseGuests);
           if (Object.keys(assignments).length === 0 && it.assignedTo && it.assignedTo !== 'all') {
@@ -2523,12 +2553,13 @@
             assignments: assignments
           };
         });
-        if (!isListExpenseActive) toggleListExpenseSection();
         renderMobileItemsList();
       } else {
+        isListExpenseActive = false;
         mobileExpenseItems = [];
-        if (isListExpenseActive) toggleListExpenseSection();
       }
+
+      updateSegmentedButtonsUI();
 
       openModal('modal-expense');
     }
