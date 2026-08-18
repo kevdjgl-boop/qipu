@@ -551,41 +551,39 @@
           </div>
         </div>
 
-        <!-- SECCIÓN CONDICIONAL: Gasto Fijo Recurrente (Animado con M3) -->
-        <div id="section-fixed-config" class="w-full max-w-[372px] mx-auto m3-accordion-collapse space-y-2">
-          <div class="bg-[#f0fdf4] border border-emerald-200/80 rounded-2xl p-3 space-y-2 shadow-2xs">
-            <div class="grid grid-cols-2 gap-2.5">
+        <!-- SECCIÓN CONDICIONAL: Gasto Fijo Recurrente (Sin fondo exterior, 340px de ancho, separación 10px) -->
+        <div id="section-fixed-config" class="w-full max-w-[340px] mx-auto m3-accordion-collapse">
+          <div class="pt-[10px] space-y-2">
+            <div class="grid grid-cols-2 gap-[10px]">
               <!-- Selector Frecuencia (Abre Bottom Sheet M3) -->
               <div>
-                <label class="block text-[9px] font-black uppercase tracking-wider text-emerald-900/70 mb-1">Frecuencia</label>
                 <button type="button" onclick="openOptionPicker('fixed-frequency')"
-                  class="w-full bg-white border border-emerald-200 rounded-xl py-2 px-3 text-xs font-extrabold text-slate-900 flex items-center justify-between shadow-2xs active:scale-98 transition-all">
-                  <span id="chip-frequency-label">Mensual</span>
-                  <i class="fas fa-chevron-down text-[9px] text-emerald-700"></i>
+                  class="w-full h-[38px] bg-[#dcfce7] hover:bg-[#bbf7d0] active:scale-98 text-emerald-950 rounded-[12px] px-3 font-bold text-xs flex items-center justify-between shadow-2xs transition-all">
+                  <span id="chip-frequency-label" class="truncate">Frecuencia</span>
+                  <i class="fas fa-chevron-down text-[9px] text-emerald-800 shrink-0"></i>
                 </button>
                 <input type="hidden" id="exp-fixed-frequency" value="monthly" />
               </div>
 
               <!-- Selector Repetir / Cuotas (Abre Bottom Sheet M3) -->
               <div>
-                <label class="block text-[9px] font-black uppercase tracking-wider text-emerald-900/70 mb-1">Repetir</label>
                 <button type="button" onclick="openOptionPicker('fixed-repeat')"
-                  class="w-full bg-white border border-emerald-200 rounded-xl py-2 px-3 text-xs font-extrabold text-slate-900 flex items-center justify-between shadow-2xs active:scale-98 transition-all">
-                  <span id="chip-repeat-label">Indefinido</span>
-                  <i class="fas fa-chevron-down text-[9px] text-emerald-700"></i>
+                  class="w-full h-[38px] bg-[#dcfce7] hover:bg-[#bbf7d0] active:scale-98 text-emerald-950 rounded-[12px] px-3 font-bold text-xs flex items-center justify-between shadow-2xs transition-all">
+                  <span id="chip-repeat-label" class="truncate">Repetir</span>
+                  <i class="fas fa-chevron-down text-[9px] text-emerald-800 shrink-0"></i>
                 </button>
                 <input type="hidden" id="exp-fixed-repeat" value="indefinite" />
               </div>
             </div>
-            <p class="text-[10px] text-emerald-800 font-medium pt-0.5">
-              Los gastos fijos sin cuotas se registran como: <span class="font-black text-emerald-950">Indefinidos</span>
+            <p class="text-[10px] text-slate-500 font-medium px-0.5 pt-0.5">
+              Los gastos fijos sin cuotas se registran como: <span class="font-bold text-emerald-700">Indefinidos</span>
             </p>
           </div>
         </div>
 
-        <!-- SECCIÓN CONDICIONAL: Lista de Productos (Animado con M3) -->
-        <div id="section-list-items" class="w-full max-w-[372px] mx-auto m3-accordion-collapse space-y-2">
-          <div class="bg-[#f0fdf4] border border-emerald-200/80 rounded-2xl p-3 space-y-2 shadow-2xs">
+        <!-- SECCIÓN CONDICIONAL: Lista de Productos (340px de ancho, separación 10px) -->
+        <div id="section-list-items" class="w-full max-w-[340px] mx-auto m3-accordion-collapse">
+          <div class="pt-[10px] space-y-2">
             <!-- Cabecera de la Tabla -->
             <div class="grid grid-cols-12 gap-2 text-[11px] font-black text-slate-800 uppercase px-1">
               <span class="col-span-6">Producto</span>
