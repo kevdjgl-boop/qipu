@@ -1807,47 +1807,7 @@
       }).join('');
     }
 
-    // ================================================================
-    // ESTADO LOCAL PARA EL MODAL DE GASTOS (MODO LISTA & INVITADOS & EDICIÓN)
-    // ================================================================
-    let mobileExpenseMode = 'simple'; // 'simple' | 'list'
-    let mobileExpenseGuests = []; // array de nombres ['Carlos', 'Ana']
-    let mobileExpenseItems = []; // [{ id, desc, quantity, amount, assignedTo }]
-    let editingExpenseId = null; // null si es nuevo
-    let editingIncomeId = null; // null si es nuevo
     let currentDetailExpenseId = null; // ID del gasto en visualización read-only
-
-    // 6. Control de Modo Simple vs Modo Lista
-    const btnModeSimple = document.getElementById('btn-mode-simple');
-    const btnModeList = document.getElementById('btn-mode-list');
-    const sectionSimple = document.getElementById('section-simple-amount');
-    const sectionList = document.getElementById('section-list-items');
-    const expAmountInput = document.getElementById('exp-amount');
-    const expDescInput = document.getElementById('exp-description');
-
-    btnModeSimple.addEventListener('click', () => {
-      mobileExpenseMode = 'simple';
-      btnModeSimple.className = 'flex-1 py-2 rounded-xl bg-white text-slate-900 shadow-xs flex items-center justify-center gap-1.5 transition-all';
-      btnModeList.className = 'flex-1 py-2 rounded-xl text-slate-500 hover:text-slate-900 flex items-center justify-center gap-1.5 transition-all';
-      sectionSimple.classList.remove('hidden');
-      sectionList.classList.add('hidden');
-      expAmountInput.setAttribute('required', 'true');
-      expDescInput.setAttribute('required', 'true');
-    });
-
-    btnModeList.addEventListener('click', () => {
-      mobileExpenseMode = 'list';
-      btnModeList.className = 'flex-1 py-2 rounded-xl bg-white text-slate-900 shadow-xs flex items-center justify-center gap-1.5 transition-all';
-      btnModeSimple.className = 'flex-1 py-2 rounded-xl text-slate-500 hover:text-slate-900 flex items-center justify-center gap-1.5 transition-all';
-      sectionSimple.classList.add('hidden');
-      sectionList.classList.remove('hidden');
-      expAmountInput.removeAttribute('required');
-      expDescInput.removeAttribute('required');
-
-      if (mobileExpenseItems.length === 0) {
-        addMobileItemRow();
-      }
-    });
 
     // ================================================================
     // MODAL DE DETALLE (READ-ONLY) CON BOTÓN DE LÁPIZ PARA EDITAR
