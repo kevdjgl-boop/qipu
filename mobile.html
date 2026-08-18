@@ -71,6 +71,12 @@
       transition: transform var(--md-sys-motion-duration-short3) var(--md-sys-motion-easing-emphasized-accelerate);
     }
 
+    .m3-bottom-sheet-backdrop.m3-visible .m3-bottom-sheet-surface {
+      transform: translateY(0%) !important;
+      opacity: 1 !important;
+      transition: transform var(--md-sys-motion-duration-extra-long4) var(--md-sys-motion-easing-emphasized-decelerate);
+    }
+
     /* Transición de acordeón M3 para secciones desplegables */
     .m3-accordion-collapse {
       max-height: 0;
