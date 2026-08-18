@@ -378,210 +378,219 @@
   <!-- MODALES TIPO BOTTOM-SHEET PARA MOBILE -->
   <!-- ========================================== -->
 
-  <!-- 1. Modal Añadir Gasto (True Native M3 Bottom Sheet) -->
+  <!-- 1. Modal Añadir / Editar Gasto (True Native M3 Bottom Sheet - Rediseño Modular) -->
   <div id="modal-expense"
     class="fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-sm hidden items-end justify-center p-0 m3-bottom-sheet-backdrop">
     <div
-      class="w-full max-w-lg bg-white rounded-t-[32px] max-h-[92vh] flex flex-col shadow-2xl overflow-hidden m3-bottom-sheet-surface">
+      class="w-full max-w-lg bg-white rounded-t-[32px] max-h-[94vh] flex flex-col shadow-2xl overflow-hidden m3-bottom-sheet-surface">
 
       <!-- Drag Handle Indicator -->
       <div class="w-12 h-1.5 bg-slate-300 rounded-full mx-auto mt-3 mb-1 shrink-0"></div>
 
-      <!-- Header del Bottom Sheet -->
-      <div class="px-5 py-3 border-b border-slate-100 flex items-center justify-between shrink-0">
-        <div class="flex items-center gap-2.5">
-          <div
-            class="w-9 h-9 rounded-2xl bg-indigo-50 text-indigo-600 flex items-center justify-center text-base font-bold shadow-xs">
-            <i class="fas fa-receipt"></i>
-          </div>
-          <div>
-            <h3 class="font-extrabold text-sm text-slate-900 leading-tight">Registrar Nuevo Gasto</h3>
-            <p class="text-[10px] text-slate-400 font-medium">Completa los detalles o desglosa ítems</p>
-          </div>
-        </div>
-        <button id="close-modal-expense" onclick="closeModal('modal-expense'); resetExpenseForm();" type="button"
-          class="w-8 h-8 rounded-full bg-slate-100 text-slate-400 hover:text-slate-600 flex items-center justify-center text-xs active:scale-90 transition-transform cursor-pointer">
-          <i class="fas fa-times"></i>
-        </button>
-      </div>
-
-      <!-- Switcher: Modo Simple vs Modo Lista -->
-      <div class="px-5 pt-3 pb-1 shrink-0">
-        <div class="bg-slate-100 p-1 rounded-2xl flex items-center gap-1 text-xs font-bold">
-          <button type="button" id="btn-mode-simple"
-            class="flex-1 py-2 rounded-xl bg-white text-slate-900 shadow-xs flex items-center justify-center gap-1.5 transition-all">
-            <i class="fas fa-tag text-indigo-600 text-xs"></i>
-            <span>Gasto Simple</span>
+      <!-- Pestañas Superiores Tipo de Registro: Personal | Compartido | Ingreso -->
+      <div class="px-5 pt-2 pb-2 shrink-0">
+        <div class="bg-slate-100/90 p-1 rounded-full flex items-center gap-1 text-xs font-black">
+          <button type="button" id="tab-type-personal" onclick="switchExpenseRegistrationType('personal')"
+            class="flex-1 py-2 rounded-full text-slate-500 hover:text-slate-900 transition-all text-center">
+            Personal
           </button>
-          <button type="button" id="btn-mode-list"
-            class="flex-1 py-2 rounded-xl text-slate-500 hover:text-slate-900 flex items-center justify-center gap-1.5 transition-all">
-            <i class="fas fa-list-ul text-xs"></i>
-            <span>Modo Lista (Ítems)</span>
+          <button type="button" id="tab-type-shared" onclick="switchExpenseRegistrationType('shared')"
+            class="flex-1 py-2 rounded-full bg-[#c6f6b5] text-slate-950 shadow-xs transition-all text-center">
+            Compartido
+          </button>
+          <button type="button" id="tab-type-income" onclick="switchExpenseRegistrationType('income')"
+            class="flex-1 py-2 rounded-full text-slate-500 hover:text-slate-900 transition-all text-center">
+            Ingreso
           </button>
         </div>
       </div>
 
-      <form id="form-mobile-expense" class="p-5 pt-3 overflow-y-auto space-y-4 flex-1 custom-scrollbar">
+      <form id="form-mobile-expense" class="p-5 pt-1 overflow-y-auto space-y-3.5 flex-1 custom-scrollbar">
 
-        <!-- MODO A: Gasto Simple -->
-        <div id="section-simple-amount" class="space-y-3">
-          <div>
-            <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1">Monto Total</label>
+        <!-- Fila de Chips de Metadatos: Fecha | Categoría | Método de Pago -->
+        <div class="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none">
+          <!-- Chip Fecha -->
+          <div class="relative bg-[#dcfce7] hover:bg-[#bbf7d0] text-emerald-950 px-3 py-1.5 rounded-full flex items-center gap-1.5 text-xs font-extrabold shrink-0 cursor-pointer transition-colors">
+            <i class="far fa-calendar-alt text-xs text-emerald-800"></i>
+            <span id="chip-date-label">26-Jun</span>
+            <input type="date" id="exp-date"
+              class="absolute inset-0 opacity-0 cursor-pointer w-full h-full" />
+          </div>
+
+          <!-- Chip Categoría -->
+          <div class="relative bg-[#dcfce7] hover:bg-[#bbf7d0] text-emerald-950 px-3 py-1.5 rounded-full flex items-center gap-1.5 text-xs font-extrabold shrink-0 transition-colors">
+            <i class="fas fa-shapes text-xs text-emerald-800"></i>
+            <select id="exp-category" class="bg-transparent border-none text-xs font-extrabold text-emerald-950 focus:ring-0 p-0 pr-4 cursor-pointer outline-none">
+              <!-- Categorías dinámicas -->
+            </select>
+          </div>
+
+          <!-- Chip Método de Pago -->
+          <div class="relative bg-[#dcfce7] hover:bg-[#bbf7d0] text-emerald-950 px-3 py-1.5 rounded-full flex items-center gap-1.5 text-xs font-extrabold shrink-0 transition-colors">
+            <i class="far fa-credit-card text-xs text-emerald-800"></i>
+            <select id="exp-payment-method" class="bg-transparent border-none text-xs font-extrabold text-emerald-950 focus:ring-0 p-0 pr-4 cursor-pointer outline-none">
+              <!-- Métodos dinámicos -->
+            </select>
+          </div>
+        </div>
+
+        <!-- Bloque Principal: Icono + Concepto + Monto Total -->
+        <div class="flex gap-2.5 items-stretch">
+          <!-- Icono / Avatar Ilustrativo -->
+          <div id="box-expense-visual-icon"
+            class="w-20 bg-[#dcfce7] text-emerald-900 rounded-3xl flex flex-col items-center justify-center shrink-0 p-2 shadow-2xs">
+            <i class="fas fa-receipt text-2xl mb-1 opacity-80"></i>
+            <span class="text-[9px] font-black uppercase text-emerald-800/80">Gasto</span>
+          </div>
+
+          <!-- Inputs Concepto y Monto -->
+          <div class="flex-1 space-y-2">
+            <input type="text" id="exp-description" required placeholder="Concepto (ej: Trattoria)"
+              class="w-full bg-[#dcfce7] border-0 rounded-2xl px-4 py-2.5 text-sm font-black text-slate-900 placeholder:text-emerald-900/40 focus:ring-2 focus:ring-emerald-500 focus:bg-white transition-all" />
+
             <div class="relative">
-              <span class="absolute left-4 top-3 text-slate-400 font-bold text-base">S/</span>
-              <input type="number" step="0.01" min="0.01" id="exp-amount" placeholder="0.00"
-                class="w-full bg-slate-50 border border-slate-200 rounded-2xl py-3 pl-10 pr-4 text-2xl font-black text-slate-900 focus:bg-white focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all placeholder:text-slate-300" />
+              <input type="number" step="0.01" min="0.01" id="exp-amount" required placeholder="120"
+                class="w-full bg-[#dcfce7] border-0 rounded-2xl px-4 py-2.5 text-base font-black text-slate-900 placeholder:text-emerald-900/40 focus:ring-2 focus:ring-emerald-500 focus:bg-white text-right transition-all" />
             </div>
-          </div>
-
-          <div>
-            <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1">Descripción /
-              Concepto</label>
-            <input type="text" id="exp-description" placeholder="Ej: Almuerzo, Supermercado, Taxi..."
-              class="w-full bg-slate-50 border border-slate-200 rounded-2xl py-2.5 px-3.5 text-xs font-bold text-slate-800 focus:bg-white focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all placeholder:text-slate-400" />
           </div>
         </div>
 
-        <!-- MODO B: Modo Lista (Desglose de Ítems / Islas) -->
-        <div id="section-list-items" class="hidden space-y-3">
-          <div class="flex items-center justify-between">
-            <div>
-              <span class="text-xs font-black text-slate-900 block">Ítems de la Cuenta</span>
-              <span class="text-[10px] text-slate-400">Asigna ítems a personas específicas o divide el resto</span>
-            </div>
-            <span id="list-items-total-badge"
-              class="text-xs font-black bg-indigo-50 text-indigo-700 px-2.5 py-1 rounded-xl border border-indigo-100">
-              Total: S/ 0.00
-            </span>
-          </div>
-
-          <!-- Contenedor dinámico de ítems -->
-          <div id="mobile-items-container" class="space-y-2.5">
-            <!-- Ítems generados dinámicamente -->
-          </div>
-
-          <button type="button" id="btn-add-item-row"
-            class="w-full py-2.5 bg-indigo-50/70 hover:bg-indigo-50 text-indigo-600 border border-dashed border-indigo-200 rounded-2xl text-xs font-bold flex items-center justify-center gap-2 active:scale-98 transition-all">
-            <i class="fas fa-plus-circle text-sm"></i>
-            <span>+ Añadir Otro Ítem</span>
-          </button>
+        <!-- Pagador (Invisible o Seleccionable) -->
+        <div class="hidden">
+          <select id="exp-payer">
+            <!-- Dinámico -->
+          </select>
         </div>
 
-        <!-- SECCIÓN: Invitados en el Gasto -->
-        <div class="bg-slate-50/80 p-3.5 rounded-2xl border border-slate-200/80 space-y-2.5">
+        <!-- SECCIÓN MIEMBROS (Visible en Modo Compartido) -->
+        <div id="section-shared-members" class="space-y-2 pt-1">
           <div class="flex items-center justify-between">
-            <div class="flex items-center gap-1.5">
-              <i class="fas fa-user-friends text-slate-500 text-xs"></i>
-              <span class="text-xs font-bold text-slate-800">Invitados en este gasto</span>
+            <h4 class="font-black text-sm text-slate-900">Miembros</h4>
+            
+            <!-- Dropdown de Modo de División -->
+            <div class="flex items-center gap-1 bg-[#dcfce7] px-2.5 py-1 rounded-xl text-xs font-black text-emerald-950 cursor-pointer">
+              <i class="fas fa-balance-scale text-xs text-emerald-800"></i>
+              <select id="exp-split-mode-select" onchange="onSplitModeChange(this.value)"
+                class="bg-transparent border-none text-xs font-black text-emerald-950 focus:ring-0 p-0 pr-3 cursor-pointer outline-none">
+                <option value="equitativo">Equitativo</option>
+                <option value="porcentual">Porcentual</option>
+                <option value="detallado">Detallado</option>
+              </select>
             </div>
+          </div>
+
+          <!-- Fila de Avatares Rápidos + Botón Añadir Invitado -->
+          <div class="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none">
+            <div id="shared-members-avatars-row" class="flex items-center gap-2">
+              <!-- Inyectado por JS -->
+            </div>
+
+            <!-- Botón (+) para Añadir Invitado -->
             <button type="button" id="btn-toggle-add-guest"
-              class="text-[11px] font-bold text-indigo-600 hover:text-indigo-700">
-              + Añadir Invitado
+              class="w-11 h-11 rounded-2xl border-2 border-dashed border-slate-300 hover:border-indigo-500 hover:bg-indigo-50 text-slate-600 hover:text-indigo-600 flex items-center justify-center text-lg font-black transition-all shrink-0 active:scale-95">
+              +
             </button>
           </div>
 
-          <!-- Input para agregar nuevo invitado -->
+          <!-- Mini Input Añadir Invitado -->
           <div id="box-add-guest" class="hidden flex gap-2 pt-1">
             <input type="text" id="input-guest-name" placeholder="Nombre del invitado..."
-              class="flex-1 bg-white border border-slate-200 rounded-xl px-3 py-1.5 text-xs font-bold text-slate-800 focus:outline-none focus:border-indigo-500" />
+              class="flex-1 bg-slate-50 border border-slate-200 rounded-xl px-3 py-1.5 text-xs font-bold text-slate-800 focus:outline-none focus:border-indigo-500" />
             <button type="button" id="btn-confirm-add-guest"
-              class="px-3 py-1.5 bg-indigo-600 text-white rounded-xl text-xs font-bold shadow-xs active:scale-95">
+              class="px-3 py-1.5 bg-slate-900 text-white rounded-xl text-xs font-black active:scale-95">
               Agregar
             </button>
           </div>
+        </div>
 
-          <!-- Lista de badges de invitados -->
-          <div id="mobile-guests-chips" class="flex flex-wrap gap-1.5">
-            <span class="text-[10px] text-slate-400 italic">No hay invitados agregados aún.</span>
+        <!-- BOTONERA TOGGLE MODULAR: [ 🔁 Fijo ] | [ ☷ Lista ] -->
+        <div class="pt-1">
+          <div class="bg-slate-100 p-1 rounded-full flex items-center gap-1 text-xs font-black">
+            <button type="button" id="btn-toggle-fixed" onclick="toggleFixedExpenseSection()"
+              class="flex-1 py-2 rounded-full text-slate-500 hover:text-slate-900 flex items-center justify-center gap-1.5 transition-all">
+              <i class="fas fa-sync-alt text-xs"></i>
+              <span>Fijo</span>
+            </button>
+            <button type="button" id="btn-toggle-list" onclick="toggleListExpenseSection()"
+              class="flex-1 py-2 rounded-full text-slate-500 hover:text-slate-900 flex items-center justify-center gap-1.5 transition-all">
+              <i class="fas fa-list-ul text-xs"></i>
+              <span>Lista</span>
+            </button>
           </div>
         </div>
 
-        <!-- Tipo: Compartido vs Personal -->
-        <div>
-          <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1.5">Tipo de
-            División</label>
-          <div class="grid grid-cols-2 gap-2">
-            <label
-              class="cursor-pointer border border-slate-200 rounded-2xl p-2.5 flex items-center gap-2.5 has-[:checked]:border-indigo-600 has-[:checked]:bg-indigo-50/40 has-[:checked]:ring-1 has-[:checked]:ring-indigo-600 transition-all">
-              <input type="radio" name="exp-type" value="shared" checked
-                class="text-indigo-600 focus:ring-indigo-500" />
-              <div>
-                <p class="text-xs font-black text-slate-900">Compartido</p>
-                <p class="text-[10px] text-slate-400">Dividir consumo</p>
-              </div>
-            </label>
-            <label
-              class="cursor-pointer border border-slate-200 rounded-2xl p-2.5 flex items-center gap-2.5 has-[:checked]:border-indigo-600 has-[:checked]:bg-indigo-50/40 has-[:checked]:ring-1 has-[:checked]:ring-indigo-600 transition-all">
-              <input type="radio" name="exp-type" value="personal" class="text-indigo-600 focus:ring-indigo-500" />
-              <div>
-                <p class="text-xs font-black text-slate-900">Personal</p>
-                <p class="text-[10px] text-slate-400">Solo para mí</p>
-              </div>
-            </label>
-          </div>
-        </div>
-
-        <!-- Categoría & Pagador -->
-        <div class="grid grid-cols-2 gap-3">
-          <div>
-            <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1">Categoría</label>
-            <select id="exp-category"
-              class="w-full bg-slate-50 border border-slate-200 rounded-2xl py-2.5 px-3 text-xs font-bold text-slate-800 focus:bg-white focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all">
-              <!-- Opciones dinámicas -->
-            </select>
-          </div>
-
-          <div>
-            <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1">¿Quién Pagó?</label>
-            <select id="exp-payer"
-              class="w-full bg-slate-50 border border-slate-200 rounded-2xl py-2.5 px-3 text-xs font-bold text-slate-800 focus:bg-white focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all">
-              <!-- Opciones dinámicas -->
-            </select>
-          </div>
-        </div>
-
-        <!-- Método de Pago & Fecha -->
-        <div class="grid grid-cols-2 gap-3">
-          <div>
-            <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1">Método de
-              Pago</label>
-            <select id="exp-payment-method"
-              class="w-full bg-slate-50 border border-slate-200 rounded-2xl py-2.5 px-3 text-xs font-bold text-slate-800 focus:bg-white focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all">
-              <!-- Opciones dinámicas -->
-            </select>
-          </div>
-
-          <div>
-            <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1">Fecha</label>
-            <input type="date" id="exp-date"
-              class="w-full bg-slate-50 border border-slate-200 rounded-2xl py-2.5 px-3 text-xs font-bold text-slate-800 focus:bg-white focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all" />
-          </div>
-        </div>
-
-        <!-- Toggle Gasto Fijo Recurrente -->
-        <div class="flex items-center justify-between p-3 bg-slate-50 border border-slate-200 rounded-2xl">
-          <div class="flex items-center gap-2">
-            <div class="w-7 h-7 rounded-xl bg-purple-100 text-purple-600 flex items-center justify-center text-xs"><i
-                class="fas fa-sync-alt"></i></div>
+        <!-- SECCIÓN CONDICIONAL: Gasto Fijo Recurrente (Frecuencia | Repetir) -->
+        <div id="section-fixed-config" class="hidden space-y-2 bg-[#f0fdf4] border border-emerald-200/80 rounded-2xl p-3 transition-all">
+          <div class="grid grid-cols-2 gap-2.5">
+            <!-- Selector Frecuencia -->
             <div>
-              <p class="text-xs font-bold text-slate-800">Gasto Fijo Recurrente</p>
-              <p class="text-[9px] text-slate-400">Se proyecta todos los meses</p>
+              <label class="block text-[9px] font-black uppercase tracking-wider text-emerald-900/70 mb-1">Frecuencia</label>
+              <select id="exp-fixed-frequency"
+                class="w-full bg-white border border-emerald-200 rounded-xl py-2 px-3 text-xs font-extrabold text-slate-900 focus:ring-2 focus:ring-emerald-500 outline-none">
+                <option value="monthly" selected>Mensual</option>
+                <option value="biweekly">Quincenal</option>
+                <option value="weekly">Semanal</option>
+                <option value="yearly">Anual</option>
+              </select>
+            </div>
+
+            <!-- Selector Repetir / Cuotas -->
+            <div>
+              <label class="block text-[9px] font-black uppercase tracking-wider text-emerald-900/70 mb-1">Repetir</label>
+              <select id="exp-fixed-repeat"
+                class="w-full bg-white border border-emerald-200 rounded-xl py-2 px-3 text-xs font-extrabold text-slate-900 focus:ring-2 focus:ring-emerald-500 outline-none">
+                <option value="indefinite" selected>Indefinido</option>
+                <option value="2">2 veces / cuotas</option>
+                <option value="3">3 veces / cuotas</option>
+                <option value="6">6 veces / cuotas</option>
+                <option value="12">12 veces / cuotas</option>
+                <option value="24">24 veces / cuotas</option>
+              </select>
             </div>
           </div>
-          <input type="checkbox" id="exp-is-fixed" class="w-4 h-4 text-purple-600 rounded focus:ring-purple-500" />
+          <p class="text-[10px] text-emerald-800 font-medium pt-0.5">
+            Los gastos fijos sin cuotas se registran como: <span class="font-black text-emerald-950">Indefinidos</span>
+          </p>
         </div>
 
-        <!-- Botón Fijo Inferior de Confirmación & Eliminar -->
-        <div class="pt-2 sticky bottom-0 bg-white pb-2 space-y-2">
+        <!-- SECCIÓN CONDICIONAL: Lista de Productos (Tabla: Producto | Cant. | Total) -->
+        <div id="section-list-items" class="hidden space-y-2 bg-[#f0fdf4] border border-emerald-200/80 rounded-2xl p-3 transition-all">
+          <!-- Cabecera de la Tabla -->
+          <div class="grid grid-cols-12 gap-2 text-[11px] font-black text-slate-800 uppercase px-1">
+            <span class="col-span-6">Producto</span>
+            <span class="col-span-3 text-center">Cant.</span>
+            <span class="col-span-3 text-right">Total</span>
+          </div>
+
+          <!-- Filas de Productos Dinámicas -->
+          <div id="mobile-items-container" class="space-y-1.5">
+            <!-- Inyectado por JS -->
+          </div>
+
+          <!-- Botón Agregar Producto -->
+          <div class="pt-1 flex items-center justify-between">
+            <button type="button" id="btn-add-item-row"
+              class="py-2 px-3 bg-emerald-600 hover:bg-emerald-700 active:scale-98 text-white font-extrabold text-xs rounded-xl shadow-xs transition-all flex items-center gap-1.5">
+              <i class="fas fa-plus"></i>
+              <span>Agregar producto</span>
+            </button>
+            <span id="list-items-total-badge" class="text-xs font-black text-emerald-950">
+              Total: S/ 0.00
+            </span>
+          </div>
+        </div>
+
+        <!-- Botón Guardar Gasto -->
+        <div class="pt-2 sticky bottom-0 bg-white pb-1 space-y-1.5">
           <button type="submit" id="btn-submit-expense"
-            class="w-full py-3.5 bg-indigo-600 hover:bg-indigo-700 active:scale-98 text-white font-extrabold text-xs rounded-2xl shadow-lg shadow-indigo-500/25 transition-all flex items-center justify-center gap-2">
-            <i class="fas fa-check-circle text-sm"></i>
+            class="w-full py-3.5 bg-slate-900 hover:bg-slate-800 active:scale-98 text-white font-black text-xs rounded-2xl shadow-lg transition-all flex items-center justify-center gap-2">
+            <i class="fas fa-check-circle text-sm text-emerald-400"></i>
             <span id="label-submit-expense">Confirmar y Guardar Gasto</span>
           </button>
           <button type="button" id="btn-delete-expense"
-            class="w-full py-2.5 bg-rose-50 hover:bg-rose-100 text-rose-600 rounded-2xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 hidden active:scale-98">
+            class="w-full py-2 bg-rose-50 hover:bg-rose-100 text-rose-600 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 hidden active:scale-98">
             <i class="fas fa-trash-alt text-xs"></i>
-            <span>Eliminar Este Gasto</span>
+            <span>Eliminar Gasto</span>
           </button>
         </div>
       </form>
@@ -1996,24 +2005,185 @@
     // ================================================================
     // FUNCIONES DE RESETEO LIMPIO PARA NUEVOS REGISTROS
     // ================================================================
+    // Variables de Estado del Modal de Registro
+    let currentRegistrationType = 'shared'; // 'personal', 'shared', 'income'
+    let isFixedExpenseActive = false;
+    let isListExpenseActive = false;
+    let activeSharedMemberIds = new Set();
+
+    function updateDateChipLabel(dateStr) {
+      if (!dateStr) return;
+      const d = new Date(dateStr + 'T00:00:00Z');
+      const day = d.getUTCDate();
+      const month = d.toLocaleString('es-ES', { month: 'short', timeZone: 'UTC' });
+      const label = `${day}-${month.charAt(0).toUpperCase() + month.slice(1).replace('.', '')}`;
+      const chip = document.getElementById('chip-date-label');
+      if (chip) chip.textContent = label;
+    }
+
+    document.getElementById('exp-date').addEventListener('input', (e) => {
+      updateDateChipLabel(e.target.value);
+    });
+
+    function switchExpenseRegistrationType(type) {
+      currentRegistrationType = type;
+      const btnPersonal = document.getElementById('tab-type-personal');
+      const btnShared = document.getElementById('tab-type-shared');
+      const btnIncome = document.getElementById('tab-type-income');
+      const sharedSection = document.getElementById('section-shared-members');
+      const iconBox = document.getElementById('box-expense-visual-icon');
+
+      [btnPersonal, btnShared, btnIncome].forEach(b => {
+        if (b) b.className = 'flex-1 py-2 rounded-full text-slate-500 hover:text-slate-900 transition-all text-center';
+      });
+
+      if (type === 'personal') {
+        if (btnPersonal) btnPersonal.className = 'flex-1 py-2 rounded-full bg-[#c6f6b5] text-slate-950 shadow-xs font-black transition-all text-center';
+        if (sharedSection) sharedSection.classList.add('hidden');
+        if (iconBox) {
+          iconBox.className = 'w-20 bg-[#dcfce7] text-emerald-900 rounded-3xl flex flex-col items-center justify-center shrink-0 p-2 shadow-2xs';
+          iconBox.innerHTML = '<i class="fas fa-user text-2xl mb-1 opacity-80"></i><span class="text-[9px] font-black uppercase text-emerald-800/80">Personal</span>';
+        }
+      } else if (type === 'income') {
+        if (btnIncome) btnIncome.className = 'flex-1 py-2 rounded-full bg-emerald-200 text-emerald-950 shadow-xs font-black transition-all text-center';
+        if (sharedSection) sharedSection.classList.add('hidden');
+        if (iconBox) {
+          iconBox.className = 'w-20 bg-emerald-100 text-emerald-900 rounded-3xl flex flex-col items-center justify-center shrink-0 p-2 shadow-2xs';
+          iconBox.innerHTML = '<i class="fas fa-coins text-2xl mb-1 opacity-80"></i><span class="text-[9px] font-black uppercase text-emerald-800/80">Ingreso</span>';
+        }
+      } else {
+        if (btnShared) btnShared.className = 'flex-1 py-2 rounded-full bg-[#c6f6b5] text-slate-950 shadow-xs font-black transition-all text-center';
+        if (sharedSection) sharedSection.classList.remove('hidden');
+        if (iconBox) {
+          iconBox.className = 'w-20 bg-[#dcfce7] text-emerald-900 rounded-3xl flex flex-col items-center justify-center shrink-0 p-2 shadow-2xs';
+          iconBox.innerHTML = '<i class="fas fa-receipt text-2xl mb-1 opacity-80"></i><span class="text-[9px] font-black uppercase text-emerald-800/80">Gasto</span>';
+        }
+      }
+      renderSharedMembersAvatars();
+    }
+    window.switchExpenseRegistrationType = switchExpenseRegistrationType;
+
+    function toggleFixedExpenseSection() {
+      isFixedExpenseActive = !isFixedExpenseActive;
+      const btn = document.getElementById('btn-toggle-fixed');
+      const sec = document.getElementById('section-fixed-config');
+      if (isFixedExpenseActive) {
+        if (btn) btn.className = 'flex-1 py-2 rounded-full bg-[#c6f6b5] text-slate-950 shadow-xs font-black flex items-center justify-center gap-1.5 transition-all';
+        if (sec) sec.classList.remove('hidden');
+      } else {
+        if (btn) btn.className = 'flex-1 py-2 rounded-full text-slate-500 hover:text-slate-900 font-bold flex items-center justify-center gap-1.5 transition-all';
+        if (sec) sec.classList.add('hidden');
+      }
+    }
+    window.toggleFixedExpenseSection = toggleFixedExpenseSection;
+
+    function toggleListExpenseSection() {
+      isListExpenseActive = !isListExpenseActive;
+      const btn = document.getElementById('btn-toggle-list');
+      const sec = document.getElementById('section-list-items');
+      if (isListExpenseActive) {
+        if (btn) btn.className = 'flex-1 py-2 rounded-full bg-[#c6f6b5] text-slate-950 shadow-xs font-black flex items-center justify-center gap-1.5 transition-all';
+        if (sec) sec.classList.remove('hidden');
+        if (mobileExpenseItems.length === 0) {
+          addMobileItemRow();
+        }
+        renderMobileItemsList();
+      } else {
+        if (btn) btn.className = 'flex-1 py-2 rounded-full text-slate-500 hover:text-slate-900 font-bold flex items-center justify-center gap-1.5 transition-all';
+        if (sec) sec.classList.add('hidden');
+      }
+    }
+    window.toggleListExpenseSection = toggleListExpenseSection;
+
+    function onSplitModeChange(mode) {
+      if (mode === 'detallado') {
+        if (!isListExpenseActive) {
+          toggleListExpenseSection();
+        }
+      }
+    }
+    window.onSplitModeChange = onSplitModeChange;
+
+    function renderSharedMembersAvatars() {
+      const container = document.getElementById('shared-members-avatars-row');
+      if (!container) return;
+
+      const allMembers = [
+        ...appState.participants.map(p => ({
+          id: p.id,
+          name: p.name,
+          initials: (p.name || 'U').substring(0, 2).toUpperCase(),
+          isGuest: false
+        })),
+        ...mobileExpenseGuests.map((g, gIdx) => {
+          const cleanName = g.trim();
+          const gKey = `guest_${cleanName.toLowerCase().replace(/\s+/g, '_')}`;
+          return {
+            id: gKey,
+            name: cleanName,
+            initials: cleanName.substring(0, 2).toUpperCase(),
+            isGuest: true
+          };
+        })
+      ];
+
+      if (activeSharedMemberIds.size === 0) {
+        allMembers.forEach(m => activeSharedMemberIds.add(m.id));
+      }
+
+      container.innerHTML = allMembers.map(m => {
+        const isSelected = activeSharedMemberIds.has(m.id);
+        return `
+          <button type="button" onclick="toggleSharedMemberInclusion('${m.id}')"
+            class="w-11 h-11 rounded-2xl flex items-center justify-center text-xs font-black transition-all shrink-0 active:scale-95 ${isSelected ? (m.isGuest ? 'bg-amber-200 text-amber-950 ring-2 ring-amber-400' : 'bg-[#c6f6b5] text-slate-950 ring-2 ring-emerald-400') : 'bg-slate-100 text-slate-400 opacity-60'}">
+            ${m.initials}
+          </button>
+        `;
+      }).join('');
+    }
+    window.renderSharedMembersAvatars = renderSharedMembersAvatars;
+
+    function toggleSharedMemberInclusion(memberId) {
+      if (activeSharedMemberIds.has(memberId)) {
+        if (activeSharedMemberIds.size > 1) {
+          activeSharedMemberIds.delete(memberId);
+        }
+      } else {
+        activeSharedMemberIds.add(memberId);
+      }
+      renderSharedMembersAvatars();
+    }
+    window.toggleSharedMemberInclusion = toggleSharedMemberInclusion;
+
     function resetExpenseForm() {
       editingExpenseId = null;
       document.getElementById('form-mobile-expense').reset();
       document.getElementById('exp-amount').value = '';
       document.getElementById('exp-description').value = '';
-      document.getElementById('exp-date').value = new Date().toISOString().split('T')[0];
-      document.getElementById('exp-is-fixed').checked = false;
-      document.querySelector('#modal-expense h3').textContent = 'Registrar Nuevo Gasto';
+      const todayIso = new Date().toISOString().split('T')[0];
+      document.getElementById('exp-date').value = todayIso;
+      updateDateChipLabel(todayIso);
+
       document.getElementById('label-submit-expense').textContent = 'Confirmar y Guardar Gasto';
       document.getElementById('btn-delete-expense').classList.add('hidden');
 
-      const typeRadio = document.querySelector('input[name="exp-type"][value="shared"]');
-      if (typeRadio) typeRadio.checked = true;
-
       mobileExpenseItems = [];
       mobileExpenseGuests = [];
-      renderGuestsChips();
-      btnModeSimple.click();
+      activeSharedMemberIds.clear();
+
+      // Restablecer toggles
+      isFixedExpenseActive = false;
+      isListExpenseActive = false;
+      const btnFixed = document.getElementById('btn-toggle-fixed');
+      const btnList = document.getElementById('btn-toggle-list');
+      const secFixed = document.getElementById('section-fixed-config');
+      const secList = document.getElementById('section-list-items');
+      if (btnFixed) btnFixed.className = 'flex-1 py-2 rounded-full text-slate-500 hover:text-slate-900 font-bold flex items-center justify-center gap-1.5 transition-all';
+      if (btnList) btnList.className = 'flex-1 py-2 rounded-full text-slate-500 hover:text-slate-900 font-bold flex items-center justify-center gap-1.5 transition-all';
+      if (secFixed) secFixed.classList.add('hidden');
+      if (secList) secList.classList.add('hidden');
+
+      switchExpenseRegistrationType('shared');
     }
 
     function resetIncomeForm() {
@@ -2035,36 +2205,43 @@
       if (!exp) return;
 
       editingExpenseId = expenseId;
-      document.querySelector('#modal-expense h3').textContent = 'Editar Gasto';
       document.getElementById('label-submit-expense').textContent = 'Guardar Cambios';
       document.getElementById('btn-delete-expense').classList.remove('hidden');
 
       // Cargar Valores
       document.getElementById('exp-amount').value = exp.amount || '';
       document.getElementById('exp-description').value = exp.description || '';
-      document.getElementById('exp-date').value = exp.date || new Date().toISOString().split('T')[0];
-      document.getElementById('exp-is-fixed').checked = !!exp.isFixed;
+      const expDate = exp.date || new Date().toISOString().split('T')[0];
+      document.getElementById('exp-date').value = expDate;
+      updateDateChipLabel(expDate);
 
       if (exp.category) document.getElementById('exp-category').value = exp.category;
       if (exp.payerId) document.getElementById('exp-payer').value = exp.payerId;
       if (exp.paymentMethod) document.getElementById('exp-payment-method').value = exp.paymentMethod;
 
       // Tipo
-      const typeRadio = document.querySelector(`input[name="exp-type"][value="${exp.type || 'shared'}"]`);
-      if (typeRadio) typeRadio.checked = true;
+      switchExpenseRegistrationType(exp.type || 'shared');
 
       // Invitados
       mobileExpenseGuests = (exp.guests && Array.isArray(exp.guests)) ? [...exp.guests] : (exp.guestName ? [exp.guestName] : []);
-      renderGuestsChips();
+      renderSharedMembersAvatars();
 
-      // Ítems (Preservando todas las asignaciones individuales)
+      // Fijo
+      if (exp.isFixed) {
+        if (!isFixedExpenseActive) toggleFixedExpenseSection();
+        if (exp.fixedFrequency) document.getElementById('exp-fixed-frequency').value = exp.fixedFrequency;
+        if (exp.fixedRepeat) document.getElementById('exp-fixed-repeat').value = exp.fixedRepeat;
+      } else if (isFixedExpenseActive) {
+        toggleFixedExpenseSection();
+      }
+
+      // Ítems
       if (exp.items && exp.items.length > 0) {
         mobileExpenseItems = exp.items.map(it => {
-          let assignments = {};
-          if (it.assignments && Object.keys(it.assignments).length > 0) {
-            assignments = { ...it.assignments };
-          } else if (it.assignedTo && it.assignedTo !== 'all') {
-            assignments = { [it.assignedTo]: parseFloat(it.quantity) || 1 };
+          let assignments = normalizeItemAssignments(it.assignments, mobileExpenseGuests);
+          if (Object.keys(assignments).length === 0 && it.assignedTo && it.assignedTo !== 'all') {
+            const { key: gKey } = getGuestKeyAndName(it.assignedTo, mobileExpenseGuests);
+            assignments = { [gKey]: parseFloat(it.quantity) || 1 };
           }
 
           return {
@@ -2076,131 +2253,16 @@
             assignments: assignments
           };
         });
-        btnModeList.click();
+        if (!isListExpenseActive) toggleListExpenseSection();
         renderMobileItemsList();
       } else {
         mobileExpenseItems = [];
-        btnModeSimple.click();
+        if (isListExpenseActive) toggleListExpenseSection();
       }
 
       openModal('modal-expense');
     }
     window.openEditExpenseModal = openEditExpenseModal;
-
-    // Abrir Modal para Editar Ingreso Existente
-    function openEditIncomeModal(incomeId) {
-      let targetIncome = null;
-      let targetParticipant = null;
-
-      appState.participants.forEach(p => {
-        (p.incomes || []).forEach(inc => {
-          if (inc.id === incomeId) {
-            targetIncome = inc;
-            targetParticipant = p;
-          }
-        });
-      });
-
-      if (!targetIncome) return;
-
-      editingIncomeId = incomeId;
-      document.getElementById('modal-income-title').textContent = 'Editar Ingreso';
-      document.getElementById('label-submit-income').textContent = 'Guardar Cambios';
-      document.getElementById('btn-delete-income').classList.remove('hidden');
-
-      document.getElementById('inc-amount').value = targetIncome.amount || '';
-      document.getElementById('inc-description').value = targetIncome.name || targetIncome.description || '';
-      document.getElementById('inc-date').value = targetIncome.date || new Date().toISOString().split('T')[0];
-      if (targetParticipant) {
-        document.getElementById('inc-participant').value = targetParticipant.id;
-      }
-
-      openModal('modal-income');
-    }
-    window.openEditIncomeModal = openEditIncomeModal;
-
-    // Eliminar Gasto
-    document.getElementById('btn-delete-expense').addEventListener('click', async () => {
-      if (!editingExpenseId) return;
-      if (!confirm('¿Estás seguro de eliminar este gasto definitivamente?')) return;
-
-      try {
-        const updatedExpenses = appState.expenses.filter(e => e.id !== editingExpenseId);
-        const walletRef = doc(db, "artifacts", appId, "public/data/wallets", currentWalletId);
-        await updateDoc(walletRef, { expenses: updatedExpenses });
-        closeModal('modal-expense');
-      } catch (err) {
-        console.error('Error al eliminar gasto:', err);
-        alert('Error al eliminar el gasto.');
-      }
-    });
-
-    // Eliminar Ingreso
-    document.getElementById('btn-delete-income').addEventListener('click', async () => {
-      if (!editingIncomeId) return;
-      if (!confirm('¿Estás seguro de eliminar este ingreso definitivamente?')) return;
-
-      try {
-        const updatedParticipants = JSON.parse(JSON.stringify(appState.participants));
-        updatedParticipants.forEach(p => {
-          if (p.incomes) {
-            p.incomes = p.incomes.filter(inc => inc.id !== editingIncomeId);
-            p.budget = p.incomes.reduce((s, inc) => s + (parseFloat(inc.amount) || 0), 0);
-          }
-        });
-
-        const walletRef = doc(db, "artifacts", appId, "public/data/wallets", currentWalletId);
-        await updateDoc(walletRef, { participants: updatedParticipants });
-        closeModal('modal-income');
-      } catch (err) {
-        console.error('Error al eliminar ingreso:', err);
-        alert('Error al eliminar el ingreso.');
-      }
-    });
-
-    // ================================================================
-    // GESTIÓN DE ÍTEMS Y ASIGNACIONES MEDIANTE BOTTOM SHEET
-    // ================================================================
-    let currentAssigningItemId = null;
-    let tempItemAssignments = {};
-    let assignModalMode = 'all'; // 'all' o 'custom'
-
-    function addMobileItemRow() {
-      const newItem = {
-        id: 'item_' + Date.now() + '_' + Math.random().toString(36).substring(2, 6),
-        desc: '',
-        quantity: 1,
-        amount: '',
-        assignedTo: 'all',
-        assignments: {}
-      };
-      mobileExpenseItems.push(newItem);
-      renderMobileItemsList();
-    }
-
-    function removeMobileItemRow(id) {
-      mobileExpenseItems = mobileExpenseItems.filter(item => item.id !== id);
-      renderMobileItemsList();
-    }
-
-    function updateMobileItemField(id, field, value) {
-      const item = mobileExpenseItems.find(i => i.id === id);
-      if (item) {
-        item[field] = value;
-        renderListTotalBadge();
-      }
-    }
-
-    function renderListTotalBadge() {
-      let total = 0;
-      mobileExpenseItems.forEach(item => {
-        const q = parseFloat(item.quantity) || 1;
-        const p = parseFloat(item.amount) || 0;
-        total += (q * p);
-      });
-      document.getElementById('list-items-total-badge').textContent = `Total: ${formatCurrency(total)}`;
-      return total;
-    }
 
     // ================================================================
     // NORMALIZADOR UNIVERSAL DE ASIGNACIONES (PARTICIPANTES E INVITADOS)
@@ -2284,63 +2346,69 @@
 
     function renderMobileItemsList() {
       const container = document.getElementById('mobile-items-container');
+      if (!container) return;
+
       if (mobileExpenseItems.length === 0) {
         container.innerHTML = `
-          <div class="text-center py-6 border-2 border-dashed border-slate-200 rounded-2xl">
-            <p class="text-xs text-slate-400 font-medium">No hay ítems en la lista.</p>
-            <p class="text-[10px] text-slate-300 mt-0.5">Toca el botón "+ Añadir Ítem" para comenzar.</p>
+          <div class="text-center py-3 bg-white rounded-2xl border border-dashed border-emerald-200">
+            <p class="text-xs text-emerald-800 font-bold">No hay productos en la lista.</p>
+            <p class="text-[10px] text-slate-400">Toca "+ Agregar producto" para empezar.</p>
           </div>
         `;
         renderListTotalBadge();
         return;
       }
 
-      container.innerHTML = mobileExpenseItems.map((item, index) => {
+      container.innerHTML = mobileExpenseItems.map((item, idx) => {
+        const qty = parseFloat(item.quantity) || 1;
+        const unitPrice = parseFloat(item.amount) || 0;
+        const totalCost = (qty * unitPrice).toFixed(2);
         const assignLabel = getAssignmentSummaryLabel(item, mobileExpenseGuests);
-        const hasCustomAssignments = Object.keys(item.assignments || {}).length > 0 || (item.assignedTo && item.assignedTo !== 'all');
+        const hasCustom = Object.keys(item.assignments || {}).length > 0 || (item.assignedTo && item.assignedTo !== 'all');
 
         return `
-          <div class="bg-slate-50 border border-slate-200/80 rounded-2xl p-3.5 space-y-2.5 shadow-2xs">
-            <div class="flex items-center justify-between gap-2">
-              <span class="w-5 h-5 rounded-full bg-slate-900 text-white text-[10px] font-black flex items-center justify-center shrink-0">
-                ${index + 1}
-              </span>
-              <input type="text" placeholder="Ej: Pizza, Bebidas, Taxi..." value="${item.desc || ''}"
-                oninput="updateMobileItemField('${item.id}', 'desc', this.value)"
-                class="flex-1 bg-white border border-slate-200 rounded-xl px-2.5 py-1 text-xs font-bold text-slate-800 placeholder:text-slate-400 focus:outline-none focus:border-indigo-500" />
-              <button type="button" onclick="removeMobileItemRow('${item.id}')"
-                class="w-7 h-7 rounded-xl bg-rose-50 text-rose-500 hover:bg-rose-100 flex items-center justify-center text-xs active:scale-90 transition-transform">
-                <i class="fas fa-trash-alt text-[11px]"></i>
-              </button>
-            </div>
+          <div class="space-y-1 bg-white p-2.5 rounded-2xl border border-emerald-100 shadow-2xs">
+            <div class="grid grid-cols-12 gap-2 items-center">
+              <!-- Nombre del Producto -->
+              <div class="col-span-6 flex items-center gap-1.5">
+                <span class="w-4 h-4 rounded-full bg-slate-100 text-slate-600 text-[9px] font-black flex items-center justify-center shrink-0">
+                  ${idx + 1}
+                </span>
+                <input type="text" placeholder="Producto" value="${item.desc || ''}"
+                  oninput="updateMobileItemField('${item.id}', 'desc', this.value)"
+                  class="w-full bg-slate-50 border-0 rounded-xl px-2.5 py-1 text-xs font-black text-slate-900 placeholder:text-slate-300 focus:bg-white focus:ring-1 focus:ring-emerald-500 outline-none" />
+              </div>
 
-            <div class="grid grid-cols-12 gap-2">
-              <div class="col-span-4 flex items-center bg-white border border-slate-200 rounded-xl px-2 py-1">
-                <span class="text-[10px] font-bold text-slate-400 mr-1">Cant:</span>
+              <!-- Cantidad -->
+              <div class="col-span-3">
                 <input type="number" min="0.1" step="any" value="${item.quantity || 1}"
                   oninput="updateMobileItemField('${item.id}', 'quantity', this.value)"
-                  class="w-full bg-transparent text-xs font-bold text-slate-800 text-center focus:outline-none" />
+                  class="w-full bg-slate-50 border-0 rounded-xl px-2 py-1 text-xs font-black text-slate-900 text-center focus:bg-white focus:ring-1 focus:ring-emerald-500 outline-none" />
               </div>
 
-              <div class="col-span-8 flex items-center bg-white border border-slate-200 rounded-xl px-2 py-1">
-                <span class="text-[10px] font-bold text-slate-400 mr-1">P. Unit S/:</span>
-                <input type="number" min="0.01" step="0.01" placeholder="0.00" value="${item.amount || ''}"
+              <!-- Total / Monto -->
+              <div class="col-span-3 flex items-center gap-1 justify-end">
+                <input type="number" min="0.01" step="0.01" placeholder="0.00" value="${unitPrice > 0 ? unitPrice : ''}"
                   oninput="updateMobileItemField('${item.id}', 'amount', this.value)"
-                  class="w-full bg-transparent text-xs font-black text-slate-900 text-right focus:outline-none" />
+                  class="w-16 bg-slate-50 border-0 rounded-xl px-2 py-1 text-xs font-black text-slate-900 text-right focus:bg-white focus:ring-1 focus:ring-emerald-500 outline-none" />
+                <button type="button" onclick="removeMobileItemRow('${item.id}')"
+                  class="w-6 h-6 rounded-lg text-slate-300 hover:text-rose-600 flex items-center justify-center text-xs active:scale-90 shrink-0">
+                  <i class="fas fa-times"></i>
+                </button>
               </div>
             </div>
 
-            <!-- Botón Bottom Sheet para Asignación -->
-            <div>
-              <label class="block text-[9px] font-bold text-slate-400 uppercase mb-0.5">Asignar este ítem a:</label>
+            <!-- Píldora de Asignación / Desglose -->
+            <div class="pt-0.5 flex items-center justify-between">
               <button type="button" onclick="openItemAssignmentModal('${item.id}')"
-                class="w-full py-2 px-3 bg-white hover:bg-slate-100 active:scale-98 border ${hasCustomAssignments ? 'border-indigo-300 ring-1 ring-indigo-500/15' : 'border-slate-200'} rounded-xl text-xs font-bold text-slate-800 flex items-center justify-between shadow-2xs transition-all text-left">
-                <div class="flex items-center gap-1.5 truncate">
-                  <i class="fas fa-users-cog ${hasCustomAssignments ? 'text-indigo-600' : 'text-slate-400'} text-[11px]"></i>
-                  <span class="truncate ${hasCustomAssignments ? 'text-indigo-950 font-black' : 'text-slate-700'}">${assignLabel}</span>
-                </div>
-                <i class="fas fa-chevron-right text-[9px] text-slate-400"></i>
+                class="px-2.5 py-0.5 rounded-lg text-[10px] font-extrabold flex items-center gap-1.5 transition-all ${hasCustom ? 'bg-emerald-100 text-emerald-950 border border-emerald-300' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}">
+                <i class="fas fa-users-cog text-[9px] text-emerald-700"></i>
+                <span class="truncate max-w-[200px]">${assignLabel}</span>
+                <i class="fas fa-chevron-right text-[8px] text-slate-400"></i>
               </button>
+              <span class="text-[10px] font-black text-emerald-950">
+                S/ ${totalCost}
+              </span>
             </div>
           </div>
         `;
@@ -2705,13 +2773,56 @@
         : `<option value="Efectivo">Efectivo</option><option value="Tarjeta">Tarjeta</option><option value="Transferencia">Transferencia</option>`;
     }
 
-    // 10. Guardar Gasto (Crear o Actualizar)
+    // 10. Guardar Registro (Gasto o Ingreso según la pestaña seleccionada)
     document.getElementById('form-mobile-expense').addEventListener('submit', async (e) => {
       e.preventDefault();
 
-      const type = document.querySelector('input[name="exp-type"]:checked').value;
+      // Si la pestaña superior está en Ingreso:
+      if (currentRegistrationType === 'income') {
+        const incAmount = parseFloat(document.getElementById('exp-amount').value) || 0;
+        const incDesc = document.getElementById('exp-description').value.trim() || 'Ingreso';
+        const incDate = document.getElementById('exp-date').value || new Date().toISOString().split('T')[0];
+        const participantId = appState.participants[0]?.id || 'default';
+
+        if (incAmount <= 0) {
+          alert('Por favor ingresa un monto válido.');
+          return;
+        }
+
+        const incomeData = {
+          id: editingExpenseId || ('inc_' + Date.now()),
+          amount: incAmount,
+          name: incDesc,
+          description: incDesc,
+          date: incDate,
+          createdAt: new Date().toISOString()
+        };
+
+        try {
+          const updatedParticipants = JSON.parse(JSON.stringify(appState.participants));
+          const targetP = updatedParticipants.find(p => p.id === participantId) || updatedParticipants[0];
+          if (targetP) {
+            if (!targetP.incomes) targetP.incomes = [];
+            targetP.incomes.push(incomeData);
+            targetP.budget = targetP.incomes.reduce((s, inc) => s + (parseFloat(inc.amount) || 0), 0);
+          }
+
+          const walletRef = doc(db, "artifacts", appId, "public/data/wallets", currentWalletId);
+          await updateDoc(walletRef, { participants: updatedParticipants });
+
+          closeModal('modal-expense');
+          resetExpenseForm();
+        } catch (err) {
+          console.error('Error al guardar ingreso:', err);
+          alert('Error al guardar el ingreso.');
+        }
+        return;
+      }
+
+      // Proceso de Gasto (Personal o Compartido)
+      const type = currentRegistrationType;
       const category = document.getElementById('exp-category').value;
-      const payerId = document.getElementById('exp-payer').value;
+      const payerId = document.getElementById('exp-payer').value || appState.participants[0]?.id;
 
       const pmSelect = document.getElementById('exp-payment-method');
       const paymentMethod = pmSelect.value;
@@ -2719,24 +2830,25 @@
       const paymentMethodId = selectedPmOption ? selectedPmOption.getAttribute('data-id') : null;
 
       const date = document.getElementById('exp-date').value || new Date().toISOString().split('T')[0];
-      const isFixed = document.getElementById('exp-is-fixed').checked;
+      const isFixed = isFixedExpenseActive;
+      const fixedFrequency = isFixed ? document.getElementById('exp-fixed-frequency').value : null;
+      const fixedRepeat = isFixed ? document.getElementById('exp-fixed-repeat').value : null;
 
       let finalAmount = 0;
-      let finalDescription = '';
+      let finalDescription = document.getElementById('exp-description').value.trim();
       let finalItems = [];
 
-      if (mobileExpenseMode === 'simple') {
-        finalAmount = parseFloat(expAmountInput.value) || 0;
-        finalDescription = expDescInput.value.trim();
+      if (!isListExpenseActive) {
+        finalAmount = parseFloat(document.getElementById('exp-amount').value) || 0;
         if (finalAmount <= 0 || !finalDescription) {
-          alert('Por favor ingresa un monto y una descripción válida.');
+          alert('Por favor ingresa un concepto y un monto válido.');
           return;
         }
       } else {
         // Modo Lista
         finalAmount = renderListTotalBadge();
         if (finalAmount <= 0) {
-          alert('Por favor añade al menos un ítem con precio mayor a cero.');
+          alert('Por favor añade al menos un producto con precio mayor a cero.');
           return;
         }
 
@@ -2744,7 +2856,7 @@
           const itemQty = parseFloat(item.quantity) || 1;
           const itemPrice = parseFloat(item.amount) || 0;
           const itemObj = {
-            desc: item.desc || 'Ítem sin nombre',
+            desc: item.desc || 'Producto',
             quantity: itemQty,
             amount: itemPrice
           };
@@ -2763,7 +2875,9 @@
           return itemObj;
         });
 
-        finalDescription = `Lista de ${finalItems.length} ítems (${finalItems[0]?.desc || 'Compra'})`;
+        if (!finalDescription) {
+          finalDescription = `Lista de ${finalItems.length} ítems (${finalItems[0]?.desc || 'Compra'})`;
+        }
       }
 
       const expenseData = {
@@ -2779,6 +2893,11 @@
         isFixed,
         createdAt: new Date().toISOString()
       };
+
+      if (isFixed) {
+        expenseData.fixedFrequency = fixedFrequency;
+        expenseData.fixedRepeat = fixedRepeat;
+      }
 
       if (mobileExpenseGuests.length > 0) {
         expenseData.guests = [...mobileExpenseGuests];
@@ -2799,22 +2918,14 @@
         const walletRef = doc(db, "artifacts", appId, "public/data/wallets", currentWalletId);
         await updateDoc(walletRef, { expenses: updatedExpenses });
 
-        // Cerrar modal y reiniciar estado
         closeModal('modal-expense');
-        document.getElementById('form-mobile-expense').reset();
-        editingExpenseId = null;
-        document.getElementById('btn-delete-expense').classList.add('hidden');
-        document.querySelector('#modal-expense h3').textContent = 'Registrar Nuevo Gasto';
-        document.getElementById('label-submit-expense').textContent = 'Confirmar y Guardar Gasto';
-        mobileExpenseItems = [];
-        mobileExpenseGuests = [];
-        renderGuestsChips();
-        btnModeSimple.click();
+        resetExpenseForm();
       } catch (err) {
         console.error('Error al guardar gasto:', err);
         alert('Ocurrió un error al guardar el gasto.');
       }
     });
+
 
     // 11. Guardar Ingreso Rápido (Crear o Actualizar)
     document.getElementById('form-mobile-income').addEventListener('submit', async (e) => {
