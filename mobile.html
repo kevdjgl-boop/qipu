@@ -1874,33 +1874,58 @@
           const unitPrice = parseFloat(it.amount) || 0;
           const totalItemCost = qty * unitPrice;
 
-          // Determinar asignación detallada
-          let assignedLabel = '👥 Para todos';
-          let assignedClass = 'bg-slate-100 text-slate-700';
+          // Función robusta para resolver nombre e invitado
+          function resolveMemberInfo(key) {
+            const pUser = appState.participants.find(p => p.id === key);
+            if (pUser) return { name: pUser.name, isGuest: false };
 
+            // Caso índice numérico o string numérico (ej: "0", "1", "guest_0", "guest-0")
+            const numMatch = String(key).match(/\d+/);
+            if (numMatch && expenseGuests[parseInt(numMatch[0])]) {
+              return { name: expenseGuests[parseInt(numMatch[0])], isGuest: true };
+            }
+            if (expenseGuests[parseInt(key)]) {
+              return { name: expenseGuests[parseInt(key)], isGuest: true };
+            }
+
+            // Caso guest_nombre
+            if (String(key).startsWith('guest_') || String(key).startsWith('guest-')) {
+              const rawName = String(key).replace('guest_', '').replace('guest-', '').replace(/_/g, ' ');
+              const matched = expenseGuests.find(g => g.toLowerCase() === rawName.toLowerCase());
+              return { name: matched || rawName, isGuest: true };
+            }
+
+            // Fallback a lista de invitados si existe solo uno
+            if (expenseGuests.length === 1) {
+              return { name: expenseGuests[0], isGuest: true };
+            }
+
+            return { name: key, isGuest: true };
+          }
+
+          let assignBadgesHtml = '';
           const assignments = it.assignments || {};
           const assignedKeys = Object.keys(assignments).filter(k => (parseFloat(assignments[k]) || 0) > 0);
 
           if (assignedKeys.length > 0) {
-            const parts = assignedKeys.map(k => {
+            assignBadgesHtml = assignedKeys.map(k => {
               const uQty = assignments[k];
-              const pUser = appState.participants.find(p => p.id === k);
-              if (pUser) return `${pUser.name} (${uQty} u.)`;
-              const gName = k.startsWith('guest_') ? k.substring(6) : k;
-              return `${gName} (${uQty} u.)`;
-            });
-            assignedLabel = `👥 ${parts.join(', ')}`;
-            assignedClass = 'bg-indigo-50 text-indigo-700 border border-indigo-100';
+              const info = resolveMemberInfo(k);
+              if (info.isGuest) {
+                return `<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg text-[10px] font-extrabold bg-amber-50 text-amber-900 border border-amber-200/80 shadow-2xs">🎟️ ${info.name} (${uQty} u.)</span>`;
+              } else {
+                return `<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg text-[10px] font-extrabold bg-indigo-50 text-indigo-700 border border-indigo-100 shadow-2xs">👤 ${info.name} (${uQty} u.)</span>`;
+              }
+            }).join(' ');
           } else if (it.assignedTo && it.assignedTo !== 'all') {
-            const pAssigned = appState.participants.find(p => p.id === it.assignedTo);
-            if (pAssigned) {
-              assignedLabel = `👤 ${pAssigned.name}`;
-              assignedClass = 'bg-indigo-50 text-indigo-700 border border-indigo-100';
+            const info = resolveMemberInfo(it.assignedTo);
+            if (info.isGuest) {
+              assignBadgesHtml = `<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg text-[10px] font-extrabold bg-amber-50 text-amber-900 border border-amber-200/80 shadow-2xs">🎟️ ${info.name} (${qty} u.)</span>`;
             } else {
-              const gName = it.assignedTo.startsWith('guest_') ? it.assignedTo.substring(6) : it.assignedTo;
-              assignedLabel = `🎟️ ${gName} (Invitado)`;
-              assignedClass = 'bg-amber-50 text-amber-800 border border-amber-200';
+              assignBadgesHtml = `<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg text-[10px] font-extrabold bg-indigo-50 text-indigo-700 border border-indigo-100 shadow-2xs">👤 ${info.name} (${qty} u.)</span>`;
             }
+          } else {
+            assignBadgesHtml = `<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg text-[10px] font-bold bg-slate-100 text-slate-600 border border-slate-200/80">👥 Para todos</span>`;
           }
 
           return `
@@ -1913,9 +1938,11 @@
                   <span class="text-xs font-extrabold text-slate-900 truncate">${it.desc || 'Ítem'}</span>
                 </div>
                 <div class="flex items-center gap-2 mt-1 pl-5 text-[10px] text-slate-400 flex-wrap">
-                  <span>${qty} × ${formatCurrency(unitPrice)}</span>
+                  <span class="font-bold text-slate-500">${qty} × ${formatCurrency(unitPrice)}</span>
                   <span>•</span>
-                  <span class="px-2 py-0.5 rounded-lg font-bold ${assignedClass}">${assignedLabel}</span>
+                  <div class="flex items-center gap-1 flex-wrap">
+                    ${assignBadgesHtml}
+                  </div>
                 </div>
               </div>
               <div class="text-right shrink-0 flex items-center gap-1.5">
@@ -2361,10 +2388,29 @@
         container.innerHTML = members.map(m => {
           let assignedQty = 0;
           if (assignedKeys.length > 0) {
-            assignedQty = parseFloat(assignments[m.id]) || 0;
+            if (assignments[m.id] !== undefined) {
+              assignedQty = parseFloat(assignments[m.id]) || 0;
+            } else if (m.isGuest) {
+              const gIdx = expenseGuests.findIndex(g => g.toLowerCase() === m.name.toLowerCase());
+              if (gIdx !== -1) {
+                if (assignments[String(gIdx)] !== undefined) assignedQty = parseFloat(assignments[String(gIdx)]) || 0;
+                else if (assignments[`guest_${gIdx}`] !== undefined) assignedQty = parseFloat(assignments[`guest_${gIdx}`]) || 0;
+                else if (assignments[`guest-${gIdx}`] !== undefined) assignedQty = parseFloat(assignments[`guest-${gIdx}`]) || 0;
+              }
+              if (assignedQty === 0 && expenseGuests.length === 1) {
+                if (assignments["0"] !== undefined) assignedQty = parseFloat(assignments["0"]) || 0;
+                else if (assignments["guest_0"] !== undefined) assignedQty = parseFloat(assignments["guest_0"]) || 0;
+              }
+            }
           } else if (item.assignedTo === m.id) {
             assignedQty = itemQty;
+          } else if (m.isGuest) {
+            const gIdx = expenseGuests.findIndex(g => g.toLowerCase() === m.name.toLowerCase());
+            if (item.assignedTo === String(gIdx) || item.assignedTo === `guest_${gIdx}` || (expenseGuests.length === 1 && (item.assignedTo === '0' || item.assignedTo === 'guest_0'))) {
+              assignedQty = itemQty;
+            }
           }
+
           totalAssigned += assignedQty;
           const cost = assignedQty * unitPrice;
           const isSelected = assignedQty > 0;
