@@ -2010,6 +2010,52 @@
     let isFixedExpenseActive = false;
     let isListExpenseActive = false;
     let activeSharedMemberIds = new Set();
+    let mobileExpenseItems = [];
+    let mobileExpenseGuests = [];
+    let editingExpenseId = null;
+    let editingIncomeId = null;
+
+    function addMobileItemRow() {
+      const newItem = {
+        id: 'item_' + Date.now() + '_' + Math.random().toString(36).substring(2, 6),
+        desc: '',
+        quantity: 1,
+        amount: '',
+        assignedTo: 'all',
+        assignments: {}
+      };
+      mobileExpenseItems.push(newItem);
+      renderMobileItemsList();
+    }
+    window.addMobileItemRow = addMobileItemRow;
+
+    function removeMobileItemRow(id) {
+      mobileExpenseItems = mobileExpenseItems.filter(item => item.id !== id);
+      renderMobileItemsList();
+    }
+    window.removeMobileItemRow = removeMobileItemRow;
+
+    function updateMobileItemField(id, field, value) {
+      const item = mobileExpenseItems.find(i => i.id === id);
+      if (item) {
+        item[field] = value;
+        renderListTotalBadge();
+      }
+    }
+    window.updateMobileItemField = updateMobileItemField;
+
+    function renderListTotalBadge() {
+      let total = 0;
+      mobileExpenseItems.forEach(item => {
+        const q = parseFloat(item.quantity) || 1;
+        const p = parseFloat(item.amount) || 0;
+        total += (q * p);
+      });
+      const badge = document.getElementById('list-items-total-badge');
+      if (badge) badge.textContent = `Total: ${formatCurrency(total)}`;
+      return total;
+    }
+    window.renderListTotalBadge = renderListTotalBadge;
 
     function updateDateChipLabel(dateStr) {
       if (!dateStr) return;
@@ -2694,10 +2740,7 @@
       closeModal('modal-item-assignment');
     });
 
-    window.addMobileItemRow = addMobileItemRow;
-    window.removeMobileItemRow = removeMobileItemRow;
-    window.updateMobileItemField = updateMobileItemField;
-    document.getElementById('btn-add-item-row').addEventListener('click', addMobileItemRow);
+    document.getElementById('btn-add-item-row')?.addEventListener('click', addMobileItemRow);
 
     // 8. Gestión de Invitados
     const boxAddGuest = document.getElementById('box-add-guest');
