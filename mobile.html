@@ -531,21 +531,21 @@
         </div>
 
         <!-- BOTONERA MATERIAL DESIGN 3 SEGMENTED BUTTON: [ 🔁 Fijo ] | [ ☷ Lista ] -->
-        <div class="w-full max-w-[372px] mx-auto pt-1">
-          <div class="w-full h-[40px] rounded-full border border-slate-300 overflow-hidden flex divide-x divide-slate-300 bg-transparent">
+        <div class="w-full max-w-[340px] mx-auto pt-0.5">
+          <div class="w-full h-[24px] rounded-full border border-slate-300 overflow-hidden flex divide-x divide-slate-300 bg-transparent">
             <!-- Segmento 1: Fijo -->
             <button type="button" id="btn-toggle-fixed" onclick="toggleFixedExpenseSection()"
-              class="flex-1 h-full px-3 flex items-center justify-center gap-1.5 text-xs font-bold text-slate-600 hover:bg-slate-50 transition-all select-none active:scale-[0.98]">
-              <i id="icon-fixed-check" class="fas fa-check text-xs text-emerald-900 hidden"></i>
-              <i id="icon-fixed-symbol" class="fas fa-sync-alt text-xs opacity-75"></i>
+              class="flex-1 h-full px-2 flex items-center justify-center gap-1.5 text-[11px] font-bold text-slate-600 hover:bg-slate-50 transition-all select-none active:scale-[0.98]">
+              <i id="icon-fixed-check" class="fas fa-check text-[10px] text-emerald-900 hidden"></i>
+              <i id="icon-fixed-symbol" class="fas fa-sync-alt text-[10px] opacity-75"></i>
               <span>Fijo</span>
             </button>
 
             <!-- Segmento 2: Lista -->
             <button type="button" id="btn-toggle-list" onclick="toggleListExpenseSection()"
-              class="flex-1 h-full px-3 flex items-center justify-center gap-1.5 text-xs font-bold text-slate-600 hover:bg-slate-50 transition-all select-none active:scale-[0.98]">
-              <i id="icon-list-check" class="fas fa-check text-xs text-emerald-900 hidden"></i>
-              <i id="icon-list-symbol" class="fas fa-list-ul text-xs opacity-75"></i>
+              class="flex-1 h-full px-2 flex items-center justify-center gap-1.5 text-[11px] font-bold text-slate-600 hover:bg-slate-50 transition-all select-none active:scale-[0.98]">
+              <i id="icon-list-check" class="fas fa-check text-[10px] text-emerald-900 hidden"></i>
+              <i id="icon-list-symbol" class="fas fa-list-ul text-[10px] opacity-75"></i>
               <span>Lista</span>
             </button>
           </div>
@@ -2301,12 +2301,12 @@
       // Fijo
       if (btnFixed) {
         if (isFixedExpenseActive) {
-          btnFixed.className = 'flex-1 h-full px-3 flex items-center justify-center gap-1.5 text-xs font-black text-slate-950 bg-[#c6f6b5] transition-all select-none active:scale-[0.98]';
+          btnFixed.className = 'flex-1 h-full px-2 flex items-center justify-center gap-1.5 text-[11px] font-black text-slate-950 bg-[#c6f6b5] transition-all select-none active:scale-[0.98]';
           if (fixedCheck) fixedCheck.classList.remove('hidden');
           if (fixedSymbol) fixedSymbol.classList.add('hidden');
           if (secFixed) secFixed.classList.add('m3-open');
         } else {
-          btnFixed.className = 'flex-1 h-full px-3 flex items-center justify-center gap-1.5 text-xs font-bold text-slate-600 hover:bg-slate-50 transition-all select-none active:scale-[0.98]';
+          btnFixed.className = 'flex-1 h-full px-2 flex items-center justify-center gap-1.5 text-[11px] font-bold text-slate-600 hover:bg-slate-50 transition-all select-none active:scale-[0.98]';
           if (fixedCheck) fixedCheck.classList.add('hidden');
           if (fixedSymbol) fixedSymbol.classList.remove('hidden');
           if (secFixed) secFixed.classList.remove('m3-open');
@@ -2316,12 +2316,12 @@
       // Lista
       if (btnList) {
         if (isListExpenseActive) {
-          btnList.className = 'flex-1 h-full px-3 flex items-center justify-center gap-1.5 text-xs font-black text-slate-950 bg-[#c6f6b5] transition-all select-none active:scale-[0.98]';
+          btnList.className = 'flex-1 h-full px-2 flex items-center justify-center gap-1.5 text-[11px] font-black text-slate-950 bg-[#c6f6b5] transition-all select-none active:scale-[0.98]';
           if (listCheck) listCheck.classList.remove('hidden');
           if (listSymbol) listSymbol.classList.add('hidden');
           if (secList) secList.classList.add('m3-open');
         } else {
-          btnList.className = 'flex-1 h-full px-3 flex items-center justify-center gap-1.5 text-xs font-bold text-slate-600 hover:bg-slate-50 transition-all select-none active:scale-[0.98]';
+          btnList.className = 'flex-1 h-full px-2 flex items-center justify-center gap-1.5 text-[11px] font-bold text-slate-600 hover:bg-slate-50 transition-all select-none active:scale-[0.98]';
           if (listCheck) listCheck.classList.add('hidden');
           if (listSymbol) listSymbol.classList.remove('hidden');
           if (secList) secList.classList.remove('m3-open');
