@@ -71,10 +71,27 @@
       transition: transform var(--md-sys-motion-duration-short3) var(--md-sys-motion-easing-emphasized-accelerate);
     }
 
-    .m3-bottom-sheet-backdrop.m3-visible .m3-bottom-sheet-surface {
-      transform: translateY(0%);
-      opacity: 1 !important;
-      transition: transform var(--md-sys-motion-duration-extra-long4) var(--md-sys-motion-easing-emphasized-decelerate);
+    /* Transición de acordeón M3 para secciones desplegables */
+    .m3-accordion-collapse {
+      max-height: 0;
+      opacity: 0;
+      overflow: hidden;
+      transform: scaleY(0.96) translateY(-4px);
+      transform-origin: top center;
+      transition: max-height 380ms var(--md-sys-motion-easing-emphasized-decelerate),
+                  opacity 300ms var(--md-sys-motion-easing-emphasized-decelerate),
+                  transform 350ms var(--md-sys-motion-easing-emphasized-decelerate),
+                  margin 300ms var(--md-sys-motion-easing-emphasized-decelerate),
+                  padding 300ms var(--md-sys-motion-easing-emphasized-decelerate);
+      pointer-events: none;
+      visibility: hidden;
+    }
+    .m3-accordion-collapse.m3-open {
+      max-height: 1200px;
+      opacity: 1;
+      transform: scaleY(1) translateY(0);
+      pointer-events: auto;
+      visibility: visible;
     }
   </style>
 </head>
@@ -417,40 +434,46 @@
               class="absolute inset-0 opacity-0 cursor-pointer w-full h-full" />
           </div>
 
-          <!-- Chip Categoría -->
-          <div class="relative bg-[#dcfce7] hover:bg-[#bbf7d0] text-emerald-950 px-2 h-[34px] rounded-full flex items-center justify-center gap-1.5 text-xs font-black transition-colors shadow-2xs overflow-hidden">
-            <i class="fas fa-shapes text-xs text-emerald-800 shrink-0"></i>
-            <select id="exp-category" class="bg-transparent border-none text-xs font-black text-emerald-950 focus:ring-0 p-0 cursor-pointer outline-none truncate text-center max-w-[70px]">
-              <!-- Categorías dinámicas -->
-            </select>
-          </div>
+          <!-- Chip Categoría (Abre Bottom Sheet M3) -->
+          <button type="button" onclick="openOptionPicker('category')"
+            class="relative bg-[#dcfce7] hover:bg-[#bbf7d0] active:scale-95 text-emerald-950 px-2 h-[34px] rounded-full flex items-center justify-center gap-1 text-xs font-black transition-all shadow-2xs overflow-hidden">
+            <i class="fas fa-shapes text-[11px] text-emerald-800 shrink-0"></i>
+            <span id="chip-category-label" class="truncate max-w-[65px]">General</span>
+            <i class="fas fa-chevron-down text-[8px] text-emerald-800/70 shrink-0"></i>
+            <input type="hidden" id="exp-category" value="General" />
+          </button>
 
-          <!-- Chip Método de Pago -->
-          <div class="relative bg-[#dcfce7] hover:bg-[#bbf7d0] text-emerald-950 px-2 h-[34px] rounded-full flex items-center justify-center gap-1.5 text-xs font-black transition-colors shadow-2xs overflow-hidden">
-            <i class="far fa-credit-card text-xs text-emerald-800 shrink-0"></i>
-            <select id="exp-payment-method" class="bg-transparent border-none text-xs font-black text-emerald-950 focus:ring-0 p-0 cursor-pointer outline-none truncate text-center max-w-[70px]">
-              <!-- Métodos dinámicos -->
-            </select>
-          </div>
+          <!-- Chip Método de Pago (Abre Bottom Sheet M3) -->
+          <button type="button" onclick="openOptionPicker('payment-method')"
+            class="relative bg-[#dcfce7] hover:bg-[#bbf7d0] active:scale-95 text-emerald-950 px-2 h-[34px] rounded-full flex items-center justify-center gap-1 text-xs font-black transition-all shadow-2xs overflow-hidden">
+            <i class="far fa-credit-card text-[11px] text-emerald-800 shrink-0"></i>
+            <span id="chip-pm-label" class="truncate max-w-[65px]">Efectivo</span>
+            <i class="fas fa-chevron-down text-[8px] text-emerald-800/70 shrink-0"></i>
+            <input type="hidden" id="exp-payment-method" value="Efectivo" />
+            <input type="hidden" id="exp-payment-method-id" value="" />
+          </button>
         </div>
 
-        <!-- Bloque Principal: Icono 90x90px + Concepto (40px) + Monto (40px) -->
+        <!-- Bloque Principal: Icono 90x90px (Radius 12px) + Concepto (Radius 8px, Text Right) + Monto (Radius 8px, Text Right) -->
         <div class="w-full max-w-[372px] mx-auto flex gap-2.5 items-center">
-          <!-- Icono / Avatar Ilustrativo 90x90px -->
+          <!-- Icono / Avatar Ilustrativo 90x90px con Radio 12px -->
           <div id="box-expense-visual-icon"
-            class="w-[90px] h-[90px] min-w-[90px] bg-[#dcfce7] text-emerald-900 rounded-[24px] flex flex-col items-center justify-center shrink-0 p-2 shadow-2xs">
+            style="width: 90px; height: 90px; min-width: 90px; min-height: 90px; border-radius: 12px;"
+            class="w-[90px] h-[90px] min-w-[90px] bg-[#dcfce7] text-emerald-900 rounded-[12px] flex flex-col items-center justify-center shrink-0 p-2 shadow-2xs">
             <i class="fas fa-receipt text-2xl mb-1 opacity-80"></i>
             <span class="text-[9px] font-black uppercase text-emerald-800/80">Gasto</span>
           </div>
 
-          <!-- Inputs Concepto y Monto (ambos de 40px de alto) -->
+          <!-- Inputs Concepto y Monto (ambos de 40px de alto, radio 8px, texto alineado a la derecha) -->
           <div class="flex-1 flex flex-col justify-between h-[90px]">
             <input type="text" id="exp-description" required placeholder="Concepto (ej: Trattoria)"
-              class="w-full h-[40px] bg-[#dcfce7] border-0 rounded-[18px] px-3.5 text-xs sm:text-sm font-black text-slate-900 placeholder:text-emerald-900/40 focus:ring-2 focus:ring-emerald-500 focus:bg-white transition-all outline-none" />
+              style="height: 40px; border-radius: 8px;"
+              class="w-full h-[40px] bg-[#dcfce7] border-0 rounded-[8px] px-3.5 text-xs sm:text-sm font-black text-slate-900 placeholder:text-emerald-900/40 focus:ring-2 focus:ring-emerald-500 focus:bg-white text-right transition-all outline-none" />
 
             <div class="relative">
               <input type="number" step="0.01" min="0.01" id="exp-amount" required placeholder="120"
-                class="w-full h-[40px] bg-[#dcfce7] border-0 rounded-[18px] px-3.5 text-sm sm:text-base font-black text-slate-900 placeholder:text-emerald-900/40 focus:ring-2 focus:ring-emerald-500 focus:bg-white text-right transition-all outline-none" />
+                style="height: 40px; border-radius: 8px;"
+                class="w-full h-[40px] bg-[#dcfce7] border-0 rounded-[8px] px-3.5 text-sm sm:text-base font-black text-slate-900 placeholder:text-emerald-900/40 focus:ring-2 focus:ring-emerald-500 focus:bg-white text-right transition-all outline-none" />
             </div>
           </div>
         </div>
@@ -467,16 +490,14 @@
           <div class="flex items-center justify-between">
             <h4 class="font-black text-sm text-slate-900">Miembros</h4>
             
-            <!-- Dropdown de Modo de División -->
-            <div class="flex items-center gap-1 bg-[#dcfce7] px-2.5 py-1 rounded-xl text-xs font-black text-emerald-950 cursor-pointer">
+            <!-- Dropdown de Modo de División (Abre Bottom Sheet M3) -->
+            <button type="button" onclick="openOptionPicker('split-mode')"
+              class="flex items-center gap-1.5 bg-[#dcfce7] hover:bg-[#bbf7d0] px-3 py-1.5 rounded-xl text-xs font-black text-emerald-950 active:scale-95 transition-all shadow-2xs">
               <i class="fas fa-balance-scale text-xs text-emerald-800"></i>
-              <select id="exp-split-mode-select" onchange="onSplitModeChange(this.value)"
-                class="bg-transparent border-none text-xs font-black text-emerald-950 focus:ring-0 p-0 pr-3 cursor-pointer outline-none">
-                <option value="equitativo">Equitativo</option>
-                <option value="porcentual">Porcentual</option>
-                <option value="detallado">Detallado</option>
-              </select>
-            </div>
+              <span id="chip-split-mode-label">Equitativo</span>
+              <i class="fas fa-chevron-down text-[8px] text-emerald-800/70"></i>
+              <input type="hidden" id="exp-split-mode-select" value="equitativo" />
+            </button>
           </div>
 
           <!-- Fila de Avatares Rápidos + Botón Añadir Invitado -->
@@ -519,64 +540,64 @@
           </div>
         </div>
 
-        <!-- SECCIÓN CONDICIONAL: Gasto Fijo Recurrente (Frecuencia | Repetir) -->
-        <div id="section-fixed-config" class="w-full max-w-[372px] mx-auto hidden space-y-2 bg-[#f0fdf4] border border-emerald-200/80 rounded-2xl p-3 transition-all">
-          <div class="grid grid-cols-2 gap-2.5">
-            <!-- Selector Frecuencia -->
-            <div>
-              <label class="block text-[9px] font-black uppercase tracking-wider text-emerald-900/70 mb-1">Frecuencia</label>
-              <select id="exp-fixed-frequency"
-                class="w-full bg-white border border-emerald-200 rounded-xl py-2 px-3 text-xs font-extrabold text-slate-900 focus:ring-2 focus:ring-emerald-500 outline-none">
-                <option value="monthly" selected>Mensual</option>
-                <option value="biweekly">Quincenal</option>
-                <option value="weekly">Semanal</option>
-                <option value="yearly">Anual</option>
-              </select>
-            </div>
+        <!-- SECCIÓN CONDICIONAL: Gasto Fijo Recurrente (Animado con M3) -->
+        <div id="section-fixed-config" class="w-full max-w-[372px] mx-auto m3-accordion-collapse space-y-2">
+          <div class="bg-[#f0fdf4] border border-emerald-200/80 rounded-2xl p-3 space-y-2 shadow-2xs">
+            <div class="grid grid-cols-2 gap-2.5">
+              <!-- Selector Frecuencia (Abre Bottom Sheet M3) -->
+              <div>
+                <label class="block text-[9px] font-black uppercase tracking-wider text-emerald-900/70 mb-1">Frecuencia</label>
+                <button type="button" onclick="openOptionPicker('fixed-frequency')"
+                  class="w-full bg-white border border-emerald-200 rounded-xl py-2 px-3 text-xs font-extrabold text-slate-900 flex items-center justify-between shadow-2xs active:scale-98 transition-all">
+                  <span id="chip-frequency-label">Mensual</span>
+                  <i class="fas fa-chevron-down text-[9px] text-emerald-700"></i>
+                </button>
+                <input type="hidden" id="exp-fixed-frequency" value="monthly" />
+              </div>
 
-            <!-- Selector Repetir / Cuotas -->
-            <div>
-              <label class="block text-[9px] font-black uppercase tracking-wider text-emerald-900/70 mb-1">Repetir</label>
-              <select id="exp-fixed-repeat"
-                class="w-full bg-white border border-emerald-200 rounded-xl py-2 px-3 text-xs font-extrabold text-slate-900 focus:ring-2 focus:ring-emerald-500 outline-none">
-                <option value="indefinite" selected>Indefinido</option>
-                <option value="2">2 veces / cuotas</option>
-                <option value="3">3 veces / cuotas</option>
-                <option value="6">6 veces / cuotas</option>
-                <option value="12">12 veces / cuotas</option>
-                <option value="24">24 veces / cuotas</option>
-              </select>
+              <!-- Selector Repetir / Cuotas (Abre Bottom Sheet M3) -->
+              <div>
+                <label class="block text-[9px] font-black uppercase tracking-wider text-emerald-900/70 mb-1">Repetir</label>
+                <button type="button" onclick="openOptionPicker('fixed-repeat')"
+                  class="w-full bg-white border border-emerald-200 rounded-xl py-2 px-3 text-xs font-extrabold text-slate-900 flex items-center justify-between shadow-2xs active:scale-98 transition-all">
+                  <span id="chip-repeat-label">Indefinido</span>
+                  <i class="fas fa-chevron-down text-[9px] text-emerald-700"></i>
+                </button>
+                <input type="hidden" id="exp-fixed-repeat" value="indefinite" />
+              </div>
             </div>
+            <p class="text-[10px] text-emerald-800 font-medium pt-0.5">
+              Los gastos fijos sin cuotas se registran como: <span class="font-black text-emerald-950">Indefinidos</span>
+            </p>
           </div>
-          <p class="text-[10px] text-emerald-800 font-medium pt-0.5">
-            Los gastos fijos sin cuotas se registran como: <span class="font-black text-emerald-950">Indefinidos</span>
-          </p>
         </div>
 
-        <!-- SECCIÓN CONDICIONAL: Lista de Productos (Tabla: Producto | Cant. | Total) -->
-        <div id="section-list-items" class="w-full max-w-[372px] mx-auto hidden space-y-2 bg-[#f0fdf4] border border-emerald-200/80 rounded-2xl p-3 transition-all">
-          <!-- Cabecera de la Tabla -->
-          <div class="grid grid-cols-12 gap-2 text-[11px] font-black text-slate-800 uppercase px-1">
-            <span class="col-span-6">Producto</span>
-            <span class="col-span-3 text-center">Cant.</span>
-            <span class="col-span-3 text-right">Total</span>
-          </div>
+        <!-- SECCIÓN CONDICIONAL: Lista de Productos (Animado con M3) -->
+        <div id="section-list-items" class="w-full max-w-[372px] mx-auto m3-accordion-collapse space-y-2">
+          <div class="bg-[#f0fdf4] border border-emerald-200/80 rounded-2xl p-3 space-y-2 shadow-2xs">
+            <!-- Cabecera de la Tabla -->
+            <div class="grid grid-cols-12 gap-2 text-[11px] font-black text-slate-800 uppercase px-1">
+              <span class="col-span-6">Producto</span>
+              <span class="col-span-3 text-center">Cant.</span>
+              <span class="col-span-3 text-right">Total</span>
+            </div>
 
-          <!-- Filas de Productos Dinámicas -->
-          <div id="mobile-items-container" class="space-y-1.5">
-            <!-- Inyectado por JS -->
-          </div>
+            <!-- Filas de Productos Dinámicas -->
+            <div id="mobile-items-container" class="space-y-1.5">
+              <!-- Inyectado por JS -->
+            </div>
 
-          <!-- Botón Agregar Producto -->
-          <div class="pt-1 flex items-center justify-between">
-            <button type="button" id="btn-add-item-row"
-              class="py-2 px-3 bg-emerald-600 hover:bg-emerald-700 active:scale-98 text-white font-extrabold text-xs rounded-xl shadow-xs transition-all flex items-center gap-1.5">
-              <i class="fas fa-plus"></i>
-              <span>Agregar producto</span>
-            </button>
-            <span id="list-items-total-badge" class="text-xs font-black text-emerald-950">
-              Total: S/ 0.00
-            </span>
+            <!-- Botón Agregar Producto -->
+            <div class="pt-1 flex items-center justify-between">
+              <button type="button" id="btn-add-item-row"
+                class="py-2 px-3 bg-emerald-600 hover:bg-emerald-700 active:scale-98 text-white font-extrabold text-xs rounded-xl shadow-xs transition-all flex items-center gap-1.5">
+                <i class="fas fa-plus"></i>
+                <span>Agregar producto</span>
+              </button>
+              <span id="list-items-total-badge" class="text-xs font-black text-emerald-950">
+                Total: S/ 0.00
+              </span>
+            </div>
           </div>
         </div>
 
@@ -1012,6 +1033,31 @@
             <span>Confirmar Asignación</span>
           </button>
         </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 8. Modal Selector de Opciones Genérico (True Native M3 Bottom Sheet) -->
+  <div id="modal-option-picker"
+    class="fixed inset-0 z-[70] bg-slate-950/70 backdrop-blur-sm hidden items-end justify-center p-0 m3-bottom-sheet-backdrop">
+    <div
+      class="w-full max-w-lg bg-white rounded-t-[32px] max-h-[85vh] flex flex-col shadow-2xl overflow-hidden m3-bottom-sheet-surface">
+      
+      <!-- Drag Handle Indicator -->
+      <div class="w-12 h-1.5 bg-slate-300 rounded-full mx-auto mt-3 mb-1 shrink-0"></div>
+
+      <!-- Header del Picker -->
+      <div class="px-5 py-3 border-b border-slate-100 flex items-center justify-between shrink-0">
+        <h3 id="option-picker-title" class="font-black text-base text-slate-900 truncate">Seleccionar Opción</h3>
+        <button onclick="closeModal('modal-option-picker')" type="button"
+          class="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 active:scale-90 text-slate-600 flex items-center justify-center text-xs transition-transform cursor-pointer shrink-0">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+
+      <!-- Lista de Opciones -->
+      <div id="option-picker-items-container" class="p-4 space-y-1.5 overflow-y-auto max-h-[60vh] custom-scrollbar">
+        <!-- Inyectado por JS -->
       </div>
     </div>
   </div>
@@ -2069,16 +2115,145 @@
     }
     window.switchExpenseRegistrationType = switchExpenseRegistrationType;
 
+    // ================================================================
+    // SELECTOR DE OPCIONES GENÉRICO M3 (MODAL BOTTOM SHEET PICKER)
+    // ================================================================
+    let currentPickerType = null;
+    function openOptionPicker(type) {
+      currentPickerType = type;
+      const titleEl = document.getElementById('option-picker-title');
+      const container = document.getElementById('option-picker-items-container');
+      if (!titleEl || !container) return;
+
+      let title = 'Seleccionar';
+      let options = [];
+      let currentValue = '';
+
+      if (type === 'category') {
+        title = 'Seleccionar Categoría';
+        currentValue = document.getElementById('exp-category')?.value || 'General';
+        const cats = (appState.categories && appState.categories.length > 0)
+          ? appState.categories
+          : [{ name: 'General', icon: 'fa-shapes' }, { name: 'Alimentación', icon: 'fa-utensils' }, { name: 'Transporte', icon: 'fa-car' }, { name: 'Servicios', icon: 'fa-bolt' }, { name: 'Entretenimiento', icon: 'fa-gamepad' }, { name: 'Salud', icon: 'fa-heartbeat' }, { name: 'Hogar', icon: 'fa-home' }];
+        options = cats.map(c => ({
+          value: c.name,
+          label: c.name,
+          icon: c.icon || 'fa-shapes',
+          subtitle: 'Categoría de gasto'
+        }));
+      } else if (type === 'payment-method') {
+        title = 'Seleccionar Método de Pago';
+        currentValue = document.getElementById('exp-payment-method')?.value || 'Efectivo';
+        const pms = (appState.paymentMethods && appState.paymentMethods.length > 0)
+          ? appState.paymentMethods
+          : [{ id: 'm1', name: 'Efectivo', type: 'cash' }, { id: 'm2', name: 'Tarjeta', type: 'card' }, { id: 'm3', name: 'Transferencia', type: 'transfer' }];
+        options = pms.map(pm => ({
+          value: pm.name,
+          label: pm.name,
+          extra: pm.id,
+          icon: pm.type === 'cash' ? 'fa-money-bill-wave' : (pm.type === 'card' ? 'fa-credit-card' : 'fa-exchange-alt'),
+          subtitle: pm.type ? pm.type.toUpperCase() : 'Método de pago'
+        }));
+      } else if (type === 'split-mode') {
+        title = 'Modo de División de Gasto';
+        currentValue = document.getElementById('exp-split-mode-select')?.value || 'equitativo';
+        options = [
+          { value: 'equitativo', label: 'Equitativo', icon: 'fa-balance-scale', subtitle: 'División en partes iguales entre los miembros' },
+          { value: 'porcentual', label: 'Porcentual', icon: 'fa-percentage', subtitle: 'Según el porcentaje de presupuesto de cada miembro' },
+          { value: 'detallado', label: 'Detallado', icon: 'fa-list-ol', subtitle: 'Permite asignar productos específicos por miembro' }
+        ];
+      } else if (type === 'fixed-frequency') {
+        title = 'Frecuencia de Gasto Fijo';
+        currentValue = document.getElementById('exp-fixed-frequency')?.value || 'monthly';
+        options = [
+          { value: 'monthly', label: 'Mensual', icon: 'fa-calendar-alt', subtitle: 'Se repite cada mes' },
+          { value: 'biweekly', label: 'Quincenal', icon: 'fa-calendar-check', subtitle: 'Se repite cada 15 días' },
+          { value: 'weekly', label: 'Semanal', icon: 'fa-calendar-week', subtitle: 'Se repite cada semana' },
+          { value: 'yearly', label: 'Anual', icon: 'fa-calendar', subtitle: 'Se repite cada año' }
+        ];
+      } else if (type === 'fixed-repeat') {
+        title = 'Repetición / Cuotas';
+        currentValue = document.getElementById('exp-fixed-repeat')?.value || 'indefinite';
+        options = [
+          { value: 'indefinite', label: 'Indefinido', icon: 'fa-infinity', subtitle: 'Sin límite de cuotas / recurrente continuo' },
+          { value: '2', label: '2 veces / cuotas', icon: 'fa-layer-group', subtitle: '2 meses' },
+          { value: '3', label: '3 veces / cuotas', icon: 'fa-layer-group', subtitle: '3 meses' },
+          { value: '6', label: '6 veces / cuotas', icon: 'fa-layer-group', subtitle: '6 meses' },
+          { value: '12', label: '12 veces / cuotas', icon: 'fa-layer-group', subtitle: '12 meses (1 año)' },
+          { value: '24', label: '24 veces / cuotas', icon: 'fa-layer-group', subtitle: '24 meses (2 años)' }
+        ];
+      }
+
+      titleEl.textContent = title;
+      container.innerHTML = options.map(opt => {
+        const isSelected = opt.value === currentValue;
+        return `
+          <button type="button" onclick="selectOptionPickerValue('${type}', '${opt.value}', '${opt.label.replace(/'/g, "\\'")}', '${opt.extra || ''}')"
+            class="w-full p-3.5 rounded-2xl flex items-center justify-between transition-all active:scale-98 ${isSelected ? 'bg-emerald-50 border-2 border-emerald-500 shadow-2xs' : 'bg-slate-50/80 border border-slate-200/70 hover:bg-slate-100'}">
+            <div class="flex items-center gap-3 text-left min-w-0 flex-1">
+              <div class="w-9 h-9 rounded-xl flex items-center justify-center text-sm shrink-0 ${isSelected ? 'bg-emerald-600 text-white shadow-xs' : 'bg-white text-slate-700 border border-slate-200'}">
+                <i class="fas ${opt.icon}"></i>
+              </div>
+              <div class="min-w-0 flex-1">
+                <h4 class="text-xs font-black ${isSelected ? 'text-emerald-950' : 'text-slate-900'} truncate">${opt.label}</h4>
+                ${opt.subtitle ? `<p class="text-[10px] ${isSelected ? 'text-emerald-700 font-semibold' : 'text-slate-400 font-medium'} truncate">${opt.subtitle}</p>` : ''}
+              </div>
+            </div>
+            <div class="w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 ml-2 ${isSelected ? 'border-emerald-600 bg-emerald-600' : 'border-slate-300 bg-white'}">
+              ${isSelected ? '<i class="fas fa-check text-[9px] text-white"></i>' : ''}
+            </div>
+          </button>
+        `;
+      }).join('');
+
+      openModal('modal-option-picker');
+    }
+    window.openOptionPicker = openOptionPicker;
+
+    function selectOptionPickerValue(type, value, label, extra) {
+      if (type === 'category') {
+        const input = document.getElementById('exp-category');
+        const chip = document.getElementById('chip-category-label');
+        if (input) input.value = value;
+        if (chip) chip.textContent = label;
+      } else if (type === 'payment-method') {
+        const input = document.getElementById('exp-payment-method');
+        const inputId = document.getElementById('exp-payment-method-id');
+        const chip = document.getElementById('chip-pm-label');
+        if (input) input.value = value;
+        if (inputId) inputId.value = extra || '';
+        if (chip) chip.textContent = label;
+      } else if (type === 'split-mode') {
+        const input = document.getElementById('exp-split-mode-select');
+        const chip = document.getElementById('chip-split-mode-label');
+        if (input) input.value = value;
+        if (chip) chip.textContent = label;
+        onSplitModeChange(value);
+      } else if (type === 'fixed-frequency') {
+        const input = document.getElementById('exp-fixed-frequency');
+        const chip = document.getElementById('chip-frequency-label');
+        if (input) input.value = value;
+        if (chip) chip.textContent = label;
+      } else if (type === 'fixed-repeat') {
+        const input = document.getElementById('exp-fixed-repeat');
+        const chip = document.getElementById('chip-repeat-label');
+        if (input) input.value = value;
+        if (chip) chip.textContent = label;
+      }
+      closeModal('modal-option-picker');
+    }
+    window.selectOptionPickerValue = selectOptionPickerValue;
+
     function toggleFixedExpenseSection() {
       isFixedExpenseActive = !isFixedExpenseActive;
       const btn = document.getElementById('btn-toggle-fixed');
       const sec = document.getElementById('section-fixed-config');
       if (isFixedExpenseActive) {
         if (btn) btn.className = 'flex-1 py-2 rounded-full bg-[#c6f6b5] text-slate-950 shadow-xs font-black flex items-center justify-center gap-1.5 transition-all';
-        if (sec) sec.classList.remove('hidden');
+        if (sec) sec.classList.add('m3-open');
       } else {
         if (btn) btn.className = 'flex-1 py-2 rounded-full text-slate-500 hover:text-slate-900 font-bold flex items-center justify-center gap-1.5 transition-all';
-        if (sec) sec.classList.add('hidden');
+        if (sec) sec.classList.remove('m3-open');
       }
     }
     window.toggleFixedExpenseSection = toggleFixedExpenseSection;
@@ -2089,14 +2264,14 @@
       const sec = document.getElementById('section-list-items');
       if (isListExpenseActive) {
         if (btn) btn.className = 'flex-1 py-2 rounded-full bg-[#c6f6b5] text-slate-950 shadow-xs font-black flex items-center justify-center gap-1.5 transition-all';
-        if (sec) sec.classList.remove('hidden');
+        if (sec) sec.classList.add('m3-open');
         if (mobileExpenseItems.length === 0) {
           addMobileItemRow();
         }
         renderMobileItemsList();
       } else {
         if (btn) btn.className = 'flex-1 py-2 rounded-full text-slate-500 hover:text-slate-900 font-bold flex items-center justify-center gap-1.5 transition-all';
-        if (sec) sec.classList.add('hidden');
+        if (sec) sec.classList.remove('m3-open');
       }
     }
     window.toggleListExpenseSection = toggleListExpenseSection;
@@ -2170,6 +2345,38 @@
       document.getElementById('exp-date').value = todayIso;
       updateDateChipLabel(todayIso);
 
+      // Reset Chips Labels
+      const defaultCat = (appState.categories && appState.categories[0]?.name) || 'General';
+      const defaultPm = (appState.paymentMethods && appState.paymentMethods[0]?.name) || 'Efectivo';
+      const defaultPmId = (appState.paymentMethods && appState.paymentMethods[0]?.id) || '';
+
+      const expCat = document.getElementById('exp-category');
+      const chipCat = document.getElementById('chip-category-label');
+      if (expCat) expCat.value = defaultCat;
+      if (chipCat) chipCat.textContent = defaultCat;
+
+      const expPm = document.getElementById('exp-payment-method');
+      const expPmId = document.getElementById('exp-payment-method-id');
+      const chipPm = document.getElementById('chip-pm-label');
+      if (expPm) expPm.value = defaultPm;
+      if (expPmId) expPmId.value = defaultPmId;
+      if (chipPm) chipPm.textContent = defaultPm;
+
+      const splitSelect = document.getElementById('exp-split-mode-select');
+      const splitChip = document.getElementById('chip-split-mode-label');
+      if (splitSelect) splitSelect.value = 'equitativo';
+      if (splitChip) splitChip.textContent = 'Equitativo';
+
+      const freqSelect = document.getElementById('exp-fixed-frequency');
+      const freqChip = document.getElementById('chip-frequency-label');
+      if (freqSelect) freqSelect.value = 'monthly';
+      if (freqChip) freqChip.textContent = 'Mensual';
+
+      const repSelect = document.getElementById('exp-fixed-repeat');
+      const repChip = document.getElementById('chip-repeat-label');
+      if (repSelect) repSelect.value = 'indefinite';
+      if (repChip) repChip.textContent = 'Indefinido';
+
       document.getElementById('label-submit-expense').textContent = 'Confirmar y Guardar Gasto';
       document.getElementById('btn-delete-expense').classList.add('hidden');
 
@@ -2186,8 +2393,8 @@
       const secList = document.getElementById('section-list-items');
       if (btnFixed) btnFixed.className = 'flex-1 py-2 rounded-full text-slate-500 hover:text-slate-900 font-bold flex items-center justify-center gap-1.5 transition-all';
       if (btnList) btnList.className = 'flex-1 py-2 rounded-full text-slate-500 hover:text-slate-900 font-bold flex items-center justify-center gap-1.5 transition-all';
-      if (secFixed) secFixed.classList.add('hidden');
-      if (secList) secList.classList.add('hidden');
+      if (secFixed) secFixed.classList.remove('m3-open');
+      if (secList) secList.classList.remove('m3-open');
 
       switchExpenseRegistrationType('shared');
     }
@@ -2221,9 +2428,23 @@
       document.getElementById('exp-date').value = expDate;
       updateDateChipLabel(expDate);
 
-      if (exp.category) document.getElementById('exp-category').value = exp.category;
+      // Cargar Categoría
+      const catVal = exp.category || 'General';
+      const expCat = document.getElementById('exp-category');
+      const chipCat = document.getElementById('chip-category-label');
+      if (expCat) expCat.value = catVal;
+      if (chipCat) chipCat.textContent = catVal;
+
       if (exp.payerId) document.getElementById('exp-payer').value = exp.payerId;
-      if (exp.paymentMethod) document.getElementById('exp-payment-method').value = exp.paymentMethod;
+
+      // Cargar Método de Pago
+      const pmVal = exp.paymentMethod || 'Efectivo';
+      const expPm = document.getElementById('exp-payment-method');
+      const expPmId = document.getElementById('exp-payment-method-id');
+      const chipPm = document.getElementById('chip-pm-label');
+      if (expPm) expPm.value = pmVal;
+      if (expPmId) expPmId.value = exp.paymentMethodId || '';
+      if (chipPm) chipPm.textContent = pmVal;
 
       // Tipo
       switchExpenseRegistrationType(exp.type || 'shared');
@@ -2235,8 +2456,15 @@
       // Fijo
       if (exp.isFixed) {
         if (!isFixedExpenseActive) toggleFixedExpenseSection();
-        if (exp.fixedFrequency) document.getElementById('exp-fixed-frequency').value = exp.fixedFrequency;
-        if (exp.fixedRepeat) document.getElementById('exp-fixed-repeat').value = exp.fixedRepeat;
+        if (exp.fixedFrequency) {
+          document.getElementById('exp-fixed-frequency').value = exp.fixedFrequency;
+          const freqMap = { monthly: 'Mensual', biweekly: 'Quincenal', weekly: 'Semanal', yearly: 'Anual' };
+          document.getElementById('chip-frequency-label').textContent = freqMap[exp.fixedFrequency] || exp.fixedFrequency;
+        }
+        if (exp.fixedRepeat) {
+          document.getElementById('exp-fixed-repeat').value = exp.fixedRepeat;
+          document.getElementById('chip-repeat-label').textContent = exp.fixedRepeat === 'indefinite' ? 'Indefinido' : `${exp.fixedRepeat} cuotas`;
+        }
       } else if (isFixedExpenseActive) {
         toggleFixedExpenseSection();
       }
@@ -2742,24 +2970,12 @@
 
     // 9. Poblar Opciones de Selectores
     function populateSelectOptions() {
-      // Categorías
-      const catSelect = document.getElementById('exp-category');
-      catSelect.innerHTML = appState.categories.length > 0
-        ? appState.categories.map(c => `<option value="${c.name}">${c.name}</option>`).join('')
-        : `<option value="General">General</option><option value="Alimentación">Alimentación</option><option value="Transporte">Transporte</option><option value="Servicios">Servicios</option>`;
-
       // Participantes
       const payerSelect = document.getElementById('exp-payer');
       const incParticipantSelect = document.getElementById('inc-participant');
       const participantsHtml = appState.participants.map(p => `<option value="${p.id}">${p.name}</option>`).join('');
-      payerSelect.innerHTML = participantsHtml || `<option value="default">Principal</option>`;
-      incParticipantSelect.innerHTML = participantsHtml || `<option value="default">Principal</option>`;
-
-      // Métodos de Pago
-      const pmSelect = document.getElementById('exp-payment-method');
-      pmSelect.innerHTML = appState.paymentMethods.length > 0
-        ? appState.paymentMethods.map(pm => `<option value="${pm.name}" data-id="${pm.id}">${pm.name}</option>`).join('')
-        : `<option value="Efectivo">Efectivo</option><option value="Tarjeta">Tarjeta</option><option value="Transferencia">Transferencia</option>`;
+      if (payerSelect) payerSelect.innerHTML = participantsHtml || `<option value="default">Principal</option>`;
+      if (incParticipantSelect) incParticipantSelect.innerHTML = participantsHtml || `<option value="default">Principal</option>`;
     }
 
     // 10. Guardar Registro (Gasto o Ingreso según la pestaña seleccionada)
@@ -2810,13 +3026,11 @@
 
       // Proceso de Gasto (Personal o Compartido)
       const type = currentRegistrationType;
-      const category = document.getElementById('exp-category').value;
-      const payerId = document.getElementById('exp-payer').value || appState.participants[0]?.id;
+      const category = document.getElementById('exp-category')?.value || 'General';
+      const payerId = document.getElementById('exp-payer')?.value || appState.participants[0]?.id;
 
-      const pmSelect = document.getElementById('exp-payment-method');
-      const paymentMethod = pmSelect.value;
-      const selectedPmOption = pmSelect.options[pmSelect.selectedIndex];
-      const paymentMethodId = selectedPmOption ? selectedPmOption.getAttribute('data-id') : null;
+      const paymentMethod = document.getElementById('exp-payment-method')?.value || 'Efectivo';
+      const paymentMethodId = document.getElementById('exp-payment-method-id')?.value || null;
 
       const date = document.getElementById('exp-date').value || new Date().toISOString().split('T')[0];
       const isFixed = isFixedExpenseActive;
