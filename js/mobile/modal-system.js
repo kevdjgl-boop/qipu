@@ -3,19 +3,23 @@
 // ================================================================
 
 export function setAppThemeColor(color) {
-  let meta = document.getElementById('theme-color-meta');
-  if (!meta) {
-    meta = document.querySelector('meta[name="theme-color"]');
-    if (meta) meta.id = 'theme-color-meta';
-  }
-  if (!meta) {
-    meta = document.createElement('meta');
+  const metas = document.querySelectorAll('meta[name="theme-color"]');
+  if (metas.length > 0) {
+    metas.forEach(m => m.setAttribute('content', color));
+  } else {
+    const meta = document.createElement('meta');
     meta.id = 'theme-color-meta';
     meta.name = 'theme-color';
+    meta.content = color;
     document.head.appendChild(meta);
   }
-  meta.setAttribute('content', color);
+
+  const msMeta = document.querySelector('meta[name="msapplication-navbutton-color"]');
+  if (msMeta) msMeta.setAttribute('content', color);
 }
+
+// Inicializar de inmediato el color del tema
+setAppThemeColor('#f8fafc');
 
 export function openModal(id) {
   const m = document.getElementById(id);
