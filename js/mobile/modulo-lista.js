@@ -90,17 +90,17 @@ export function renderMobileItemsList() {
             <!-- Nombre del Producto (Píldora Blanca) -->
             <input type="text" placeholder="Producto" value="${item.desc || ''}"
               oninput="updateMobileItemField('${item.id}', 'desc', this.value)"
-              class="w-full h-10 bg-white border-0 rounded-lg px-3 text-xs font-black text-slate-900 placeholder:text-slate-400 focus:ring-2 focus:ring-emerald-700 outline-none shadow-2xs" />
+              class="w-full h-10 bg-white border-0 rounded-lg px-3 text-xs font-black text-slate-900 placeholder:text-slate-400 focus:bg-[#e4f7d7] focus:ring-0 focus:outline-none outline-none shadow-2xs transition-colors" />
 
             <!-- Cantidad (Píldora Blanca, 48px) -->
             <input type="number" min="1" max="99" step="1" value="${qty}"
               oninput="updateMobileItemField('${item.id}', 'quantity', this.value)"
-              class="w-full h-10 bg-white border-0 rounded-lg text-xs font-black text-slate-900 text-center focus:ring-2 focus:ring-emerald-700 outline-none shadow-2xs" />
+              class="w-full h-10 bg-white border-0 rounded-lg text-xs font-black text-slate-900 text-center focus:bg-[#e4f7d7] focus:ring-0 focus:outline-none outline-none shadow-2xs transition-colors" />
 
             <!-- Total / Monto (Píldora Blanca, 72px) -->
             <input type="number" min="0.01" step="0.01" placeholder="0.00" value="${unitPrice > 0 ? unitPrice : ''}"
               oninput="updateMobileItemField('${item.id}', 'amount', this.value)"
-              class="w-full h-10 bg-white border-0 rounded-lg text-xs font-black text-slate-900 text-center focus:ring-2 focus:ring-emerald-700 outline-none shadow-2xs" />
+              class="w-full h-10 bg-white border-0 rounded-lg text-xs font-black text-slate-900 text-center focus:bg-[#e4f7d7] focus:ring-0 focus:outline-none outline-none shadow-2xs transition-colors" />
           </div>
 
           <!-- Botón Eliminar Expandible (Aparece de derecha a izquierda) -->

@@ -4,7 +4,8 @@ import {
   formatCurrency, getFilterMonthString, getCycleDates, isExpenseInBillingMonth, calculateSummary
 } from "./core-state.js";
 
-import { openModal, closeModal } from "./modal-system.js";
+import { openModal, closeModal, setAppThemeColor } from "./modal-system.js";
+import { setupKeyboardNavFab, advanceToNextInput } from "./fab-keyboard-nav.js";
 
 import {
   renderMobileUI, renderParticipantsModalList, renderSettlementModal,
@@ -83,6 +84,8 @@ window.openItemAssignmentModal = openItemAssignmentModal;
 window.openDetailItemBreakdownModal = openDetailItemBreakdownModal;
 window.toggleMemberAssignment = toggleMemberAssignment;
 window.setMemberExactUnits = setMemberExactUnits;
+window.setAppThemeColor = setAppThemeColor;
+window.advanceToNextInput = advanceToNextInput;
 
 // ================================================================
 // AUTENTICACIÓN Y SUSCRIPCIÓN EN TIEMPO REAL
@@ -134,6 +137,9 @@ function listenToWallet(walletId) {
 // EVENT LISTENERS DE LA APLICACIÓN
 // ================================================================
 document.addEventListener('DOMContentLoaded', () => {
+  // Inicializar navegación por teclado con botón flotante
+  setupKeyboardNavFab();
+
   // 1. Formulario Principal de Gasto / Ingreso
   const formExpense = document.getElementById('form-mobile-expense');
   if (formExpense) {
