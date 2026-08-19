@@ -126,13 +126,13 @@
       visibility: visible;
     }
 
-    /* Animación de deslizamiento M3 ultra suave para la Lista de Productos */
+    /* Animación de deslizamiento M3 ultra suave para la Lista de Productos (sale desde atrás del bloque principal) */
     .m3-slide-sheet-block {
       display: grid !important;
       grid-template-rows: 0fr;
       opacity: 0;
       overflow: hidden;
-      transform: translateY(-8px);
+      transform: translateY(-20px);
       transform-origin: top center;
       transition: grid-template-rows 360ms cubic-bezier(0.05, 0.7, 0.1, 1.0),
         opacity 280ms ease,
@@ -140,7 +140,7 @@
         margin 360ms cubic-bezier(0.05, 0.7, 0.1, 1.0);
       pointer-events: none;
       visibility: hidden;
-      margin-top: 0px !important;
+      margin-top: -32px !important;
       padding: 0px !important;
     }
 
@@ -153,10 +153,10 @@
     .m3-slide-sheet-block.m3-block-closed {
       grid-template-rows: 0fr !important;
       opacity: 0 !important;
-      transform: translateY(-8px) scale(0.99) !important;
+      transform: translateY(-20px) scale(0.99) !important;
       pointer-events: none !important;
       visibility: hidden !important;
-      margin-top: 0px !important;
+      margin-top: -32px !important;
       padding: 0px !important;
     }
 
@@ -166,7 +166,7 @@
       transform: translateY(0px) scale(1) !important;
       pointer-events: auto !important;
       visibility: visible !important;
-      margin-top: 12px !important;
+      margin-top: -32px !important;
       padding: 0px !important;
     }
 
@@ -705,12 +705,12 @@
             </select>
           </div>
 
-          <!-- BLOQUE LISTA DE PRODUCTOS (FUERA DEL BLOQUE PRINCIPAL, COLOR #ECF9E1) -->
+          <!-- BLOQUE LISTA DE PRODUCTOS (SALE DESDE ATRÁS DEL BLOQUE PRINCIPAL, COLOR #ECF9E1) -->
           <div id="section-list-items"
-            class="w-full bg-[#ECF9E1] rounded-b-[28px] overflow-hidden m3-slide-sheet-block m3-block-closed">
-            <div class="min-h-0 flex flex-col justify-between">
+            class="w-full bg-[#ECF9E1] rounded-b-[28px] overflow-hidden m3-slide-sheet-block m3-block-closed relative z-0">
+            <div class="min-h-0 flex flex-col justify-between pt-9">
               <!-- Contenido Superior de la Lista -->
-              <div class="p-3.5 space-y-2.5">
+              <div class="p-3.5 pt-1 space-y-2.5">
                 <!-- Cabecera de la Tabla (Píldoras Blancas) -->
                 <div class="flex items-center gap-2 text-xs font-black text-slate-900">
                   <div class="flex-1 bg-white rounded-2xl py-2 px-4 text-left shadow-2xs">Producto</div>
