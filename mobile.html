@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="es">
 
 <head>
@@ -64,6 +64,7 @@
       transition: opacity 280ms cubic-bezier(0.16, 1, 0.3, 1);
       pointer-events: none;
     }
+
     .m3-bottom-sheet-backdrop.m3-visible {
       opacity: 1;
       pointer-events: auto;
@@ -76,6 +77,7 @@
       will-change: transform;
       transition: transform 380ms cubic-bezier(0.16, 1, 0.3, 1) !important;
     }
+
     .m3-bottom-sheet-backdrop.m3-visible .m3-bottom-sheet-surface {
       transform: translateY(0%) !important;
       opacity: 1 !important;
@@ -87,8 +89,9 @@
       opacity: 1;
       transition: transform 320ms cubic-bezier(0.16, 1, 0.3, 1);
     }
+
     .m3-visible .m3-dialog-card,
-    #modal-confirm-delete-item.m3-visible > div {
+    #modal-confirm-delete-item.m3-visible>div {
       transform: translateY(0px) !important;
     }
 
@@ -101,18 +104,20 @@
       transform: translateY(-6px);
       transform-origin: top center;
       transition: grid-template-rows 360ms cubic-bezier(0.05, 0.7, 0.1, 1.0),
-                  opacity 280ms ease,
-                  transform 360ms cubic-bezier(0.05, 0.7, 0.1, 1.0),
-                  margin 360ms cubic-bezier(0.05, 0.7, 0.1, 1.0),
-                  padding 360ms cubic-bezier(0.05, 0.7, 0.1, 1.0);
+        opacity 280ms ease,
+        transform 360ms cubic-bezier(0.05, 0.7, 0.1, 1.0),
+        margin 360ms cubic-bezier(0.05, 0.7, 0.1, 1.0),
+        padding 360ms cubic-bezier(0.05, 0.7, 0.1, 1.0);
       pointer-events: none;
       visibility: hidden;
     }
-    .m3-accordion-collapse > div,
-    .m3-accordion-collapse > * {
+
+    .m3-accordion-collapse>div,
+    .m3-accordion-collapse>* {
       min-height: 0;
       overflow: hidden;
     }
+
     .m3-accordion-collapse.m3-open {
       grid-template-rows: 1fr;
       opacity: 1;
@@ -130,21 +135,23 @@
       transform: translateY(-24px);
       transform-origin: top center;
       transition: grid-template-rows 420ms cubic-bezier(0.05, 0.7, 0.1, 1.0),
-                  opacity 320ms ease,
-                  transform 420ms cubic-bezier(0.05, 0.7, 0.1, 1.0),
-                  margin 420ms cubic-bezier(0.05, 0.7, 0.1, 1.0),
-                  padding 420ms cubic-bezier(0.05, 0.7, 0.1, 1.0);
+        opacity 320ms ease,
+        transform 420ms cubic-bezier(0.05, 0.7, 0.1, 1.0),
+        margin 420ms cubic-bezier(0.05, 0.7, 0.1, 1.0),
+        padding 420ms cubic-bezier(0.05, 0.7, 0.1, 1.0);
       pointer-events: none;
       visibility: hidden;
       margin-top: -24px !important;
       padding-top: 0px !important;
       padding-bottom: 0px !important;
     }
-    .m3-slide-sheet-block > div,
-    .m3-slide-sheet-block > * {
+
+    .m3-slide-sheet-block>div,
+    .m3-slide-sheet-block>* {
       min-height: 0;
       overflow: hidden;
     }
+
     .m3-slide-sheet-block.m3-block-closed {
       grid-template-rows: 0fr !important;
       opacity: 0 !important;
@@ -154,6 +161,7 @@
       padding-top: 0px !important;
       padding-bottom: 0px !important;
     }
+
     .m3-slide-sheet-block.m3-block-open {
       grid-template-rows: 1fr !important;
       opacity: 1 !important;
@@ -164,6 +172,7 @@
       padding-top: 36px !important;
       padding-bottom: 20px !important;
     }
+
     /* Ocultar barra de scroll nativa */
     .scrollbar-none::-webkit-scrollbar {
       display: none !important;
@@ -171,6 +180,7 @@
       height: 0px !important;
       background: transparent !important;
     }
+
     .scrollbar-none {
       -ms-overflow-style: none !important;
       scrollbar-width: none !important;
@@ -258,7 +268,8 @@
               <span class="text-[10px] font-extrabold uppercase tracking-widest text-slate-300">Disponible Global</span>
             </div>
             <div class="flex items-center gap-1.5">
-              <span class="text-[10px] font-bold text-indigo-300 bg-white/10 group-hover:bg-white/20 px-2 py-0.5 rounded-full transition-colors flex items-center gap-1">
+              <span
+                class="text-[10px] font-bold text-indigo-300 bg-white/10 group-hover:bg-white/20 px-2 py-0.5 rounded-full transition-colors flex items-center gap-1">
                 <i class="fas fa-users text-[9px]"></i>
                 <span>Ver saldos</span>
                 <i class="fas fa-chevron-right text-[8px] opacity-70"></i>
@@ -405,70 +416,88 @@
   <!-- ========================================== -->
 
   <!-- Overlay para cerrar el menú FAB al tocar fuera -->
-  <div id="fab-backdrop" class="fixed inset-0 z-40 bg-slate-950/40 backdrop-blur-xs hidden transition-opacity duration-200"></div>
+  <div id="fab-backdrop"
+    class="fixed inset-0 z-40 bg-slate-950/40 backdrop-blur-xs hidden transition-opacity duration-200"></div>
 
   <!-- Menú Speed-Dial de Acciones Flotantes (arriba del FAB) -->
-  <div id="fab-menu-options" class="fixed bottom-24 right-4 z-50 flex flex-col items-end gap-2.5 pointer-events-none opacity-0 translate-y-4 transition-all duration-300 ease-out">
+  <div id="fab-menu-options"
+    class="fixed bottom-24 right-4 z-50 flex flex-col items-end gap-2.5 pointer-events-none opacity-0 translate-y-4 transition-all duration-300 ease-out">
     <!-- Opción 1: Gasto Simple -->
-    <button type="button" id="fab-opt-simple-expense" class="pointer-events-auto flex items-center gap-2 px-4 py-2.5 bg-fuchsia-100 hover:bg-fuchsia-200 active:scale-95 text-fuchsia-950 font-extrabold text-xs rounded-full shadow-xl border border-fuchsia-200/60 transition-transform">
+    <button type="button" id="fab-opt-simple-expense"
+      class="pointer-events-auto flex items-center gap-2 px-4 py-2.5 bg-fuchsia-100 hover:bg-fuchsia-200 active:scale-95 text-fuchsia-950 font-extrabold text-xs rounded-full shadow-xl border border-fuchsia-200/60 transition-transform">
       <i class="fas fa-receipt text-xs text-fuchsia-600"></i>
       <span>Registrar Gasto</span>
     </button>
 
     <!-- Opción 2: Modo Lista (Ítems) -->
-    <button type="button" id="fab-opt-list-expense" class="pointer-events-auto flex items-center gap-2 px-4 py-2.5 bg-violet-100 hover:bg-violet-200 active:scale-95 text-violet-950 font-extrabold text-xs rounded-full shadow-xl border border-violet-200/60 transition-transform">
+    <button type="button" id="fab-opt-list-expense"
+      class="pointer-events-auto flex items-center gap-2 px-4 py-2.5 bg-violet-100 hover:bg-violet-200 active:scale-95 text-violet-950 font-extrabold text-xs rounded-full shadow-xl border border-violet-200/60 transition-transform">
       <i class="fas fa-list-check text-xs text-violet-600"></i>
       <span>Modo Lista (Ítems)</span>
     </button>
 
     <!-- Opción 3: Nuevo Ingreso -->
-    <button type="button" id="fab-opt-income" class="pointer-events-auto flex items-center gap-2 px-4 py-2.5 bg-emerald-100 hover:bg-emerald-200 active:scale-95 text-emerald-950 font-extrabold text-xs rounded-full shadow-xl border border-emerald-200/60 transition-transform">
+    <button type="button" id="fab-opt-income"
+      class="pointer-events-auto flex items-center gap-2 px-4 py-2.5 bg-emerald-100 hover:bg-emerald-200 active:scale-95 text-emerald-950 font-extrabold text-xs rounded-full shadow-xl border border-emerald-200/60 transition-transform">
       <i class="fas fa-coins text-xs text-emerald-600"></i>
       <span>Nuevo Ingreso</span>
     </button>
 
     <!-- Opción 4: Liquidar Deudas -->
-    <button type="button" id="fab-opt-settlement" class="pointer-events-auto flex items-center gap-2 px-4 py-2.5 bg-rose-100 hover:bg-rose-200 active:scale-95 text-rose-950 font-extrabold text-xs rounded-full shadow-xl border border-rose-200/60 transition-transform">
+    <button type="button" id="fab-opt-settlement"
+      class="pointer-events-auto flex items-center gap-2 px-4 py-2.5 bg-rose-100 hover:bg-rose-200 active:scale-95 text-rose-950 font-extrabold text-xs rounded-full shadow-xl border border-rose-200/60 transition-transform">
       <i class="fas fa-handshake text-xs text-rose-600"></i>
       <span>Liquidar / Deudas</span>
     </button>
 
     <!-- Opción 5: Ajustes -->
-    <button type="button" id="fab-opt-settings" class="pointer-events-auto flex items-center gap-2 px-4 py-2.5 bg-slate-100 hover:bg-slate-200 active:scale-95 text-slate-800 font-extrabold text-xs rounded-full shadow-xl border border-slate-200/80 transition-transform">
+    <button type="button" id="fab-opt-settings"
+      class="pointer-events-auto flex items-center gap-2 px-4 py-2.5 bg-slate-100 hover:bg-slate-200 active:scale-95 text-slate-800 font-extrabold text-xs rounded-full shadow-xl border border-slate-200/80 transition-transform">
       <i class="fas fa-sliders text-xs text-slate-600"></i>
       <span>Ajustes & Opciones</span>
     </button>
   </div>
 
   <!-- Contenedor Inferior: Barra Cápsula + Botón FAB Circular -->
-  <div class="fixed bottom-4 left-4 right-4 z-40 max-w-lg mx-auto flex items-center gap-3 justify-between pointer-events-none">
-    
+  <div
+    class="fixed bottom-4 left-4 right-4 z-40 max-w-lg mx-auto flex items-center gap-3 justify-between pointer-events-none">
+
     <!-- 1. Barra Larga (Alto: 60px, Border-Radius: 28px) -->
-    <nav style="border-radius: 28px;" class="pointer-events-auto h-[60px] flex-1 bg-white/95 backdrop-blur-xl shadow-[0_10px_35px_rgba(0,0,0,0.12)] border border-slate-100/90 flex items-center justify-around px-2 text-slate-800">
-      
+    <nav style="border-radius: 28px;"
+      class="pointer-events-auto h-[60px] flex-1 bg-white/95 backdrop-blur-xl shadow-[0_10px_35px_rgba(0,0,0,0.12)] border border-slate-100/90 flex items-center justify-around px-2 text-slate-800">
+
       <!-- Icono 1: Monedero / Inicio -->
-      <button type="button" id="nav-btn-wallet" class="w-11 h-11 rounded-2xl flex items-center justify-center text-slate-900 hover:bg-slate-100 active:scale-90 transition-transform" title="Inicio / Monedero">
+      <button type="button" id="nav-btn-wallet"
+        class="w-11 h-11 rounded-2xl flex items-center justify-center text-slate-900 hover:bg-slate-100 active:scale-90 transition-transform"
+        title="Inicio / Monedero">
         <i class="fas fa-wallet text-lg"></i>
       </button>
 
       <!-- Icono 2: Métricas / Estadísticas -->
-      <button type="button" id="nav-btn-stats" class="w-11 h-11 rounded-2xl flex items-center justify-center text-slate-900 hover:bg-slate-100 active:scale-90 transition-transform" title="Resumen Financiero">
+      <button type="button" id="nav-btn-stats"
+        class="w-11 h-11 rounded-2xl flex items-center justify-center text-slate-900 hover:bg-slate-100 active:scale-90 transition-transform"
+        title="Resumen Financiero">
         <i class="fas fa-chart-column text-lg"></i>
       </button>
 
       <!-- Icono 3: Micrófono / Voz -->
-      <button type="button" id="nav-btn-voice" class="w-11 h-11 rounded-2xl flex items-center justify-center text-slate-900 hover:bg-slate-100 active:scale-90 transition-transform" title="Gasto por Voz">
+      <button type="button" id="nav-btn-voice"
+        class="w-11 h-11 rounded-2xl flex items-center justify-center text-slate-900 hover:bg-slate-100 active:scale-90 transition-transform"
+        title="Gasto por Voz">
         <i class="fas fa-microphone text-lg"></i>
       </button>
 
       <!-- Icono 4: Buscador / Historial -->
-      <button type="button" id="nav-btn-search" class="w-11 h-11 rounded-2xl flex items-center justify-center text-slate-900 hover:bg-slate-100 active:scale-90 transition-transform" title="Buscar Movimientos">
+      <button type="button" id="nav-btn-search"
+        class="w-11 h-11 rounded-2xl flex items-center justify-center text-slate-900 hover:bg-slate-100 active:scale-90 transition-transform"
+        title="Buscar Movimientos">
         <i class="fas fa-magnifying-glass text-lg"></i>
       </button>
     </nav>
 
     <!-- 2. Botón FAB Flotante (60px x 60px, Border-Radius: 28px) -->
-    <button type="button" id="fab-main-btn" style="border-radius: 28px;" class="pointer-events-auto w-[60px] h-[60px] shrink-0 bg-white shadow-[0_10px_35px_rgba(0,0,0,0.12)] border border-slate-100/90 flex items-center justify-center text-slate-900 active:scale-95 transition-all cursor-pointer select-none">
+    <button type="button" id="fab-main-btn" style="border-radius: 28px;"
+      class="pointer-events-auto w-[60px] h-[60px] shrink-0 bg-white shadow-[0_10px_35px_rgba(0,0,0,0.12)] border border-slate-100/90 flex items-center justify-center text-slate-900 active:scale-95 transition-all cursor-pointer select-none">
       <i id="fab-icon" class="fas fa-plus text-2xl font-black transition-transform duration-300"></i>
     </button>
   </div>
@@ -491,7 +520,8 @@
 
         <div class="flex-1 min-w-0">
           <h2 id="modal-expense-main-title" class="text-2xl font-black text-slate-900 leading-tight">Registrar</h2>
-          <p id="modal-expense-sub-title" class="text-xs font-semibold text-slate-800/80 truncate">Detalla y clasifica tu movimiento</p>
+          <p id="modal-expense-sub-title" class="text-xs font-semibold text-slate-800/80 truncate">Detalla y clasifica
+            tu movimiento</p>
         </div>
 
         <button type="button" onclick="openOptionPicker('category')"
@@ -526,11 +556,11 @@
             <!-- Fila de Chips de Metadatos (Fondo verde claro #c6f6b5) -->
             <div class="grid grid-cols-3 gap-2 pb-0.5">
               <!-- Chip Fecha -->
-              <div class="relative bg-[#c6f6b5] hover:opacity-90 text-emerald-950 px-2 h-[34px] rounded-full flex items-center justify-center gap-1.5 text-xs font-black cursor-pointer transition-colors shadow-2xs overflow-hidden">
+              <div
+                class="relative bg-[#c6f6b5] hover:opacity-90 text-emerald-950 px-2 h-[34px] rounded-full flex items-center justify-center gap-1.5 text-xs font-black cursor-pointer transition-colors shadow-2xs overflow-hidden">
                 <i class="far fa-calendar-alt text-xs text-emerald-900 shrink-0"></i>
                 <span id="chip-date-label" class="truncate">26-Jun</span>
-                <input type="date" id="exp-date"
-                  class="absolute inset-0 opacity-0 cursor-pointer w-full h-full" />
+                <input type="date" id="exp-date" class="absolute inset-0 opacity-0 cursor-pointer w-full h-full" />
               </div>
 
               <!-- Chip Categoría (Abre Bottom Sheet M3) -->
@@ -576,11 +606,12 @@
             </div>
 
             <!-- SECCIÓN MIEMBROS (Dentro del Bloque Principal) -->
-            <div id="section-shared-members" class="w-full space-y-2 pt-1 border-t border-slate-100 m3-accordion-collapse m3-open">
+            <div id="section-shared-members"
+              class="w-full space-y-2 pt-1 border-t border-slate-100 m3-accordion-collapse m3-open">
               <div>
                 <div class="flex items-center justify-between pt-0.5">
                   <h4 class="font-black text-sm text-slate-900">Miembros</h4>
-                  
+
                   <!-- Dropdown de Modo de División -->
                   <button type="button" onclick="openSplitBreakdownModal()"
                     class="flex items-center gap-1.5 bg-[#c6f6b5] hover:opacity-90 px-3 py-1 rounded-full text-xs font-black text-emerald-950 active:scale-95 transition-all shadow-2xs">
@@ -616,22 +647,23 @@
               </div>
             </div>
 
-            <!-- BOTONERA MATERIAL DESIGN 3 SEGMENTED BUTTON: [ 🔁 Fijo ] | [ ☷ Lista ] -->
-            <div class="w-full max-w-[260px] mx-auto pt-0.5">
-              <div class="w-full h-[32px] rounded-full bg-[#c6f6b5] p-0.5 flex divide-x divide-emerald-600/30 overflow-hidden shadow-2xs">
+            <!-- BOTONERA MATERIAL DESIGN 3 OFICIAL (https://m3.material.io/components/segmented-buttons/overview) -->
+            <div class="w-full max-w-[260px] mx-auto pt-1">
+              <div
+                class="w-full h-[24px] rounded-full border border-slate-300 overflow-hidden flex divide-x divide-slate-300 bg-white">
                 <!-- Segmento 1: Fijo -->
                 <button type="button" id="btn-toggle-fixed" onclick="toggleFixedExpenseSection()"
-                  class="flex-1 h-full px-2 flex items-center justify-center gap-1.5 text-xs font-black text-slate-800 rounded-full transition-all select-none active:scale-[0.98]">
-                  <i id="icon-fixed-check" class="fas fa-check text-[10px] hidden"></i>
-                  <i id="icon-fixed-symbol" class="fas fa-sync-alt text-[11px] opacity-75"></i>
+                  class="flex-1 h-full px-3 flex items-center justify-center gap-2 text-xs font-bold text-slate-700 hover:bg-slate-50 transition-all select-none active:scale-[0.98]">
+                  <i id="icon-fixed-check" class="fas fa-check text-xs text-emerald-900 hidden"></i>
+                  <i id="icon-fixed-symbol" class="fas fa-sync-alt text-xs opacity-75"></i>
                   <span>Fijo</span>
                 </button>
 
                 <!-- Segmento 2: Lista -->
                 <button type="button" id="btn-toggle-list" onclick="toggleListExpenseSection()"
-                  class="flex-1 h-full px-2 flex items-center justify-center gap-1.5 text-xs font-black text-slate-800 rounded-full transition-all select-none active:scale-[0.98]">
-                  <i id="icon-list-check" class="fas fa-check text-[10px] hidden"></i>
-                  <i id="icon-list-symbol" class="fas fa-list-ul text-[11px] opacity-75"></i>
+                  class="flex-1 h-full px-3 flex items-center justify-center gap-2 text-xs font-bold text-slate-700 hover:bg-slate-50 transition-all select-none active:scale-[0.98]">
+                  <i id="icon-list-check" class="fas fa-check text-xs text-emerald-900 hidden"></i>
+                  <i id="icon-list-symbol" class="fas fa-list-ul text-xs opacity-75"></i>
                   <span>Lista</span>
                 </button>
               </div>
@@ -662,7 +694,8 @@
                   </div>
                 </div>
                 <p class="text-[10px] text-slate-600 font-medium px-0.5 pt-0.5 text-center">
-                  Los gastos fijos sin cuotas se registran como: <span class="font-bold text-emerald-900">Indefinidos</span>
+                  Los gastos fijos sin cuotas se registran como: <span
+                    class="font-bold text-emerald-900">Indefinidos</span>
                 </p>
               </div>
             </div>
@@ -920,7 +953,8 @@
           class="flex items-center justify-between p-3.5 bg-indigo-50/50 hover:bg-indigo-50 border border-indigo-100 rounded-2xl text-indigo-900 transition-colors">
           <div class="flex items-center gap-3">
             <div class="w-9 h-9 rounded-xl bg-indigo-600 text-white flex items-center justify-center text-sm shadow-sm">
-              <i class="fas fa-desktop"></i></div>
+              <i class="fas fa-desktop"></i>
+            </div>
             <div>
               <p class="text-xs font-extrabold">Ir a Vista Completa (Desktop)</p>
               <p class="text-[10px] text-indigo-500 font-medium">Ver gráficos de dona y liquidación</p>
@@ -947,7 +981,8 @@
           class="w-full flex items-center justify-between p-3.5 bg-slate-50 hover:bg-slate-100 border border-slate-100 rounded-2xl text-slate-800 transition-colors text-left">
           <div class="flex items-center gap-3">
             <div class="w-9 h-9 rounded-xl bg-slate-900 text-white flex items-center justify-center text-sm shadow-sm">
-              <i class="fas fa-sync"></i></div>
+              <i class="fas fa-sync"></i>
+            </div>
             <div>
               <p class="text-xs font-extrabold">Sincronizar Datos</p>
               <p class="text-[10px] text-slate-400 font-medium">Recargar estado desde Firestore</p>
@@ -1000,7 +1035,8 @@
 
       <!-- Barra de Acción Rápida: Liquidación & Deudas -->
       <div class="px-5 pt-3 shrink-0">
-        <button type="button" id="btn-open-settlement-modal" onclick="closeModal('modal-participants-balances'); setTimeout(() => openModal('modal-settlement'), 270);"
+        <button type="button" id="btn-open-settlement-modal"
+          onclick="closeModal('modal-participants-balances'); setTimeout(() => openModal('modal-settlement'), 270);"
           class="w-full py-2.5 px-4 bg-gradient-to-r from-rose-500 to-pink-600 hover:from-rose-600 hover:to-pink-700 active:scale-98 text-white font-extrabold text-xs rounded-2xl shadow-md shadow-rose-500/20 flex items-center justify-between transition-all">
           <div class="flex items-center gap-2">
             <i class="fas fa-handshake text-sm"></i>
@@ -1050,9 +1086,10 @@
         <div class="space-y-2">
           <div class="flex items-center justify-between px-1">
             <span class="text-xs font-black uppercase tracking-wider text-slate-900">Transferencias Sugeridas</span>
-            <span id="settlement-count-badge" class="text-[10px] font-bold bg-slate-100 text-slate-600 px-2 py-0.5 rounded-full">0 transferencias</span>
+            <span id="settlement-count-badge"
+              class="text-[10px] font-bold bg-slate-100 text-slate-600 px-2 py-0.5 rounded-full">0 transferencias</span>
           </div>
-          
+
           <div id="settlement-transfers-list" class="space-y-2">
             <!-- Inyectado por JS -->
           </div>
@@ -1076,7 +1113,8 @@
             <i class="fas fa-check-double text-sm"></i>
             <span>Liquidar y Saldar Cuentas del Mes</span>
           </button>
-          <p class="text-[10px] text-center text-slate-400">Crea transacciones de reembolso para dejar los saldos en S/ 0.00</p>
+          <p class="text-[10px] text-center text-slate-400">Crea transacciones de reembolso para dejar los saldos en S/
+            0.00</p>
         </div>
       </div>
     </div>
@@ -1095,8 +1133,10 @@
       <div class="px-5 py-3 border-b border-slate-100 flex items-center justify-between shrink-0">
         <div class="flex items-center gap-2 min-w-0 flex-1">
           <h3 id="assign-modal-item-title" class="font-black text-base text-slate-900 truncate">Producto</h3>
-          <span id="assign-modal-total-qty-badge" class="text-xs font-black text-emerald-950 bg-[#dcfce7] px-2.5 py-0.5 rounded-lg shrink-0">2 und</span>
-          <span id="assign-modal-total-cost-badge" class="text-xs font-black text-emerald-950 bg-[#86efac] px-2.5 py-0.5 rounded-lg shrink-0">S/ 60.00</span>
+          <span id="assign-modal-total-qty-badge"
+            class="text-xs font-black text-emerald-950 bg-[#dcfce7] px-2.5 py-0.5 rounded-lg shrink-0">2 und</span>
+          <span id="assign-modal-total-cost-badge"
+            class="text-xs font-black text-emerald-950 bg-[#86efac] px-2.5 py-0.5 rounded-lg shrink-0">S/ 60.00</span>
         </div>
         <button id="close-modal-item-assignment" onclick="closeModal('modal-item-assignment');" type="button"
           class="w-8 h-8 rounded-full bg-rose-500 hover:bg-rose-600 active:scale-90 text-white flex items-center justify-center text-xs transition-transform cursor-pointer shrink-0 shadow-xs">
@@ -1109,7 +1149,8 @@
 
         <!-- Selector Rápido de Avatares con Checkmark (Horizontal) -->
         <div class="space-y-1.5">
-          <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-400">Participantes del Ítem (Toca para activar/desactivar):</label>
+          <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-400">Participantes del Ítem
+            (Toca para activar/desactivar):</label>
           <div id="assign-avatar-chips-row" class="flex items-center gap-2.5 overflow-x-auto pb-1 scrollbar-none">
             <!-- Avatares inyectados dinámicamente por JS -->
           </div>
@@ -1118,7 +1159,8 @@
         <!-- Tabla de Asignación por Miembro -->
         <div class="space-y-2">
           <!-- Cabecera de Columnas: Miembro | Und. | Monto -->
-          <div class="grid grid-cols-12 gap-2 px-2 text-[11px] font-black text-slate-800 uppercase tracking-wider border-b border-slate-100 pb-1.5">
+          <div
+            class="grid grid-cols-12 gap-2 px-2 text-[11px] font-black text-slate-800 uppercase tracking-wider border-b border-slate-100 pb-1.5">
             <span class="col-span-5">Miembro</span>
             <span class="col-span-3 text-center">Und.</span>
             <span class="col-span-4 text-right">Monto</span>
@@ -1131,9 +1173,11 @@
         </div>
 
         <!-- Barra de Estado de Unidades Asignadas vs Totales -->
-        <div id="assign-units-status-bar" class="bg-slate-50 border border-slate-200/80 rounded-2xl p-3 flex items-center justify-between">
+        <div id="assign-units-status-bar"
+          class="bg-slate-50 border border-slate-200/80 rounded-2xl p-3 flex items-center justify-between">
           <span class="text-xs font-bold text-slate-700">Estado de asignación:</span>
-          <span id="assign-units-badge" class="text-xs font-black text-indigo-700 bg-white px-2.5 py-1 rounded-xl shadow-2xs border border-indigo-100">
+          <span id="assign-units-badge"
+            class="text-xs font-black text-indigo-700 bg-white px-2.5 py-1 rounded-xl shadow-2xs border border-indigo-100">
             0 / 1 unidades
           </span>
         </div>
@@ -1154,12 +1198,14 @@
   <div id="modal-confirm-delete-item"
     class="fixed inset-0 z-[85] bg-slate-950/70 backdrop-blur-sm hidden items-center justify-center p-4 m3-bottom-sheet-backdrop">
     <div class="w-full max-w-xs bg-white rounded-3xl p-5 text-center space-y-4 shadow-2xl m3-dialog-card">
-      <div class="w-12 h-12 rounded-2xl bg-rose-100 text-rose-600 flex items-center justify-center text-xl font-black mx-auto shadow-2xs">
+      <div
+        class="w-12 h-12 rounded-2xl bg-rose-100 text-rose-600 flex items-center justify-center text-xl font-black mx-auto shadow-2xs">
         <i class="fas fa-trash-alt"></i>
       </div>
       <div>
         <h4 class="font-extrabold text-sm text-slate-900">¿Eliminar producto?</h4>
-        <p id="confirm-delete-item-desc" class="text-xs text-slate-500 mt-1 font-medium truncate max-w-[200px] mx-auto">Producto</p>
+        <p id="confirm-delete-item-desc" class="text-xs text-slate-500 mt-1 font-medium truncate max-w-[200px] mx-auto">
+          Producto</p>
       </div>
       <div class="flex items-center gap-2 pt-1">
         <button type="button" onclick="closeModal('modal-confirm-delete-item')"
@@ -1179,7 +1225,7 @@
     class="fixed inset-0 z-[65] bg-slate-950/70 backdrop-blur-sm hidden items-end justify-center p-0 m3-bottom-sheet-backdrop">
     <div
       class="w-full max-w-lg bg-white rounded-t-[32px] max-h-[92vh] flex flex-col shadow-2xl overflow-hidden m3-bottom-sheet-surface">
-      
+
       <!-- Drag Handle Indicator -->
       <div class="w-12 h-1.5 bg-slate-300 rounded-full mx-auto mt-3 mb-1 shrink-0"></div>
 
@@ -1189,7 +1235,8 @@
           <h3 id="split-modal-title" class="font-black text-base text-slate-900 truncate">Concepto</h3>
         </div>
         <div class="flex items-center gap-2">
-          <span id="split-modal-total-badge" class="font-black text-sm text-slate-900 bg-slate-100 px-3 py-1 rounded-xl">S/ 0.00</span>
+          <span id="split-modal-total-badge"
+            class="font-black text-sm text-slate-900 bg-slate-100 px-3 py-1 rounded-xl">S/ 0.00</span>
           <button onclick="closeModal('modal-split-breakdown')" type="button"
             class="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 active:scale-90 text-slate-600 flex items-center justify-center text-xs transition-transform cursor-pointer shrink-0">
             <i class="fas fa-times"></i>
@@ -1218,7 +1265,8 @@
       <!-- Contenido Dinámico de la Repartición -->
       <div class="p-5 pt-3 overflow-y-auto space-y-3 flex-1 custom-scrollbar">
         <!-- Cabecera de Columnas Dinámica -->
-        <div id="split-modal-table-header" class="grid grid-cols-12 gap-2 px-2 text-[11px] font-black text-slate-800 uppercase tracking-wider border-b border-slate-100 pb-1.5">
+        <div id="split-modal-table-header"
+          class="grid grid-cols-12 gap-2 px-2 text-[11px] font-black text-slate-800 uppercase tracking-wider border-b border-slate-100 pb-1.5">
           <!-- Inyectado por JS -->
         </div>
 
@@ -1228,9 +1276,11 @@
         </div>
 
         <!-- Estado de Porcentajes / Totales (Para vista porcentual) -->
-        <div id="split-percentage-status-bar" class="hidden bg-slate-50 border border-slate-200/80 rounded-2xl p-3 flex items-center justify-between">
+        <div id="split-percentage-status-bar"
+          class="hidden bg-slate-50 border border-slate-200/80 rounded-2xl p-3 flex items-center justify-between">
           <span class="text-xs font-bold text-slate-700">Total distribuido:</span>
-          <span id="split-percentage-total-badge" class="text-xs font-black text-emerald-800 bg-emerald-100 px-2.5 py-1 rounded-xl">
+          <span id="split-percentage-total-badge"
+            class="text-xs font-black text-emerald-800 bg-emerald-100 px-2.5 py-1 rounded-xl">
             100%
           </span>
         </div>
@@ -1252,7 +1302,7 @@
     class="fixed inset-0 z-[70] bg-slate-950/70 backdrop-blur-sm hidden items-end justify-center p-0 m3-bottom-sheet-backdrop">
     <div
       class="w-full max-w-lg bg-white rounded-t-[32px] max-h-[85vh] flex flex-col shadow-2xl overflow-hidden m3-bottom-sheet-surface">
-      
+
       <!-- Drag Handle Indicator -->
       <div class="w-12 h-1.5 bg-slate-300 rounded-full mx-auto mt-3 mb-1 shrink-0"></div>
 
@@ -1273,2938 +1323,9 @@
   </div>
 
   <!-- ========================================== -->
-  <!-- FIREBASE & JAVASCRIPT LOGIC MOBILE -->
+  <!-- MODULOS JAVASCRIPT MOBILE (ARQUITECTURA MODULAR) -->
   <!-- ========================================== -->
-  <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-    import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-    import { getFirestore, doc, getDoc, onSnapshot, updateDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
-
-    // Configuración Firebase idéntica a app.html
-    const firebaseConfig = {
-      apiKey: "AIzaSyA63OZWFM30Tu17DGxAmbtVsNFWeQU3k4s",
-      authDomain: "qipu-d1dcd.firebaseapp.com",
-      projectId: "qipu-d1dcd",
-      storageBucket: "qipu-d1dcd.firebasestorage.app",
-      messagingSenderId: "398775085739",
-      appId: "1:398775085739:web:be8643b5d9fea9ef8da5ee"
-    };
-
-    const app = initializeApp(firebaseConfig);
-    const auth = getAuth(app);
-    const db = getFirestore(app);
-    const appId = "qipu-d1dcd";
-
-    let currentUserId = null;
-    let currentWalletId = null;
-    let appState = {
-      participants: [],
-      categories: [],
-      paymentMethods: [],
-      expenses: []
-    };
-
-    let filterDate = new Date();
-    let currentTab = 'all'; // 'all', 'expenses', 'incomes'
-    let searchTerm = '';
-
-    const MONTHS = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
-
-    // Formateador de moneda
-    const formatCurrency = (amount) => {
-      const num = parseFloat(amount) || 0;
-      return `S/ ${num.toLocaleString('es-PE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-    };
-
-    const getFilterMonthString = (date) => {
-      const year = date.getFullYear();
-      const month = String(date.getMonth() + 1).padStart(2, "0");
-      return `${year}-${month}`;
-    };
-
-    // ================================================================
-    // SISTEMA DE MODALES MATERIAL DESIGN 3 MOTION
-    // ================================================================
-    function openModal(id) {
-      const m = document.getElementById(id);
-      if (!m) return;
-      m.classList.remove('hidden');
-      m.classList.add('flex');
-      // Forzar reflujo del navegador para iniciar animación M3
-      void m.offsetWidth;
-      m.classList.add('m3-visible');
-      document.body.classList.add('overflow-hidden');
-    }
-    window.openModal = openModal;
-
-    function closeModal(id) {
-      const m = document.getElementById(id);
-      if (!m) return;
-      m.classList.remove('m3-visible');
-      document.body.classList.remove('overflow-hidden');
-      // Esperar duración de salida M3 (short3 = 250ms)
-      setTimeout(() => {
-        if (!m.classList.contains('m3-visible')) {
-          m.classList.add('hidden');
-          m.classList.remove('flex');
-        }
-      }, 260);
-    }
-    window.closeModal = closeModal;
-
-    // 1. Verificación de Autenticación
-    onAuthStateChanged(auth, async (user) => {
-      if (!user) {
-        window.location.href = "index.html";
-        return;
-      }
-      currentUserId = user.uid;
-      const initials = (user.email || 'ME').substring(0, 2).toUpperCase();
-      document.getElementById('user-initials').textContent = initials;
-
-      // Obtener Wallet ID del perfil del usuario
-      try {
-        const userRef = doc(db, "artifacts", appId, "users", currentUserId);
-        const userSnap = await getDoc(userRef);
-        if (userSnap.exists() && userSnap.data().walletId) {
-          currentWalletId = userSnap.data().walletId;
-          document.getElementById('mobile-wallet-name').textContent = `Monedero #${currentWalletId.substring(0, 6)}`;
-          listenToWallet(currentWalletId);
-        } else {
-          window.location.href = "app.html";
-        }
-      } catch (err) {
-        console.error("Error al cargar monedero:", err);
-      }
-    });
-
-    // 2. Suscripción en Tiempo Real al Monedero
-    function listenToWallet(walletId) {
-      const walletRef = doc(db, "artifacts", appId, "public/data/wallets", walletId);
-      onSnapshot(walletRef, (snap) => {
-        if (snap.exists()) {
-          const data = snap.data();
-          appState.participants = data.participants || [];
-          appState.categories = data.categories || [];
-          appState.paymentMethods = data.paymentMethods || [];
-          appState.expenses = data.expenses || [];
-          renderMobileUI();
-          document.getElementById('loading-screen').classList.add('hidden');
-        }
-      });
-    }
-
-    // ================================================================
-    // CÁLCULO DE CICLOS Y FACTURACIÓN (IDÉNTICO A APP.HTML)
-    // ================================================================
-    function getCycleDates(method, referenceDate) {
-      if (!method || method.type !== "credit") {
-        return { startDate: null, closingDate: null, paymentDate: null };
-      }
-
-      const closingDay = parseInt(method.closingDay) || 20;
-      const paymentDay = parseInt(method.paymentDay) || 5;
-
-      const refYear = referenceDate.getUTCFullYear();
-      const refMonth = referenceDate.getUTCMonth();
-
-      // 1. Fecha de cierre tentativa para el mes de referencia
-      let activeClosingDate = new Date(Date.UTC(refYear, refMonth, closingDay));
-
-      // 2. Normalizar 'hoy' para comparar sin horas
-      const todayCheck = new Date(referenceDate);
-      todayCheck.setUTCHours(0, 0, 0, 0);
-
-      // 3. REGLA DE ORO: Si hoy es mayor al cierre, saltamos al mes siguiente
-      if (todayCheck.getTime() > activeClosingDate.getTime()) {
-        activeClosingDate.setUTCMonth(activeClosingDate.getUTCMonth() + 1);
-      }
-
-      // 4. Calcular Inicio (Cierre anterior + 1 día)
-      const prevClosingDate = new Date(activeClosingDate);
-      prevClosingDate.setUTCMonth(prevClosingDate.getUTCMonth() - 1);
-
-      const activeStartDate = new Date(prevClosingDate);
-      activeStartDate.setUTCDate(activeStartDate.getUTCDate() + 1);
-
-      // 5. Calcular Pago
-      let paymentDateObj = new Date(activeClosingDate);
-      if (paymentDay <= closingDay) {
-        paymentDateObj.setUTCMonth(paymentDateObj.getUTCMonth() + 1);
-      }
-      paymentDateObj.setUTCDate(paymentDay);
-
-      // 6. Verificar cierres manuales
-      const paymentDateString = paymentDateObj.toISOString().split("T")[0];
-      const isManual = method.manualClosures && method.manualClosures[paymentDateString];
-
-      return {
-        startDate: activeStartDate.toISOString().split("T")[0],
-        closingDate: activeClosingDate.toISOString().split("T")[0],
-        paymentDate: paymentDateString,
-        isManual: !!isManual,
-      };
-    }
-
-    // --- Helper: Determinar si un gasto entra en el mes de facturación ---
-    function isExpenseInBillingMonth(e, filterMonthString, filterDate, paymentMethods) {
-      if (!e.date) return false;
-
-      if (e.paymentMethodId && !e.isFixed && !e.isProjected) {
-        const method = (paymentMethods || []).find((m) => m.id === e.paymentMethodId);
-        // Si es tarjeta de crédito, se agrupa según su ciclo de facturación
-        if (method && method.type === "credit") {
-          const refDate = new Date(Date.UTC(filterDate.getFullYear(), filterDate.getMonth(), 15));
-          const cycle = getCycleDates(method, refDate);
-          if (cycle && cycle.startDate && cycle.closingDate) {
-            const expTime = new Date(e.date + "T00:00:00Z").getTime();
-            const startMs = new Date(cycle.startDate + "T00:00:00Z").getTime();
-            const endMs = new Date(cycle.closingDate + "T00:00:00Z").getTime();
-            return expTime >= startMs && expTime <= endMs;
-          }
-        }
-      }
-      // Para todo lo demás, agrupamos por el mes calendario exacto
-      return e.date.startsWith(filterMonthString);
-    }
-
-    // ================================================================
-    // MOTOR DE CÁLCULO EXACTO (IDÉNTICO A APP.HTML)
-    // ================================================================
-    function calculateSummary(state, filteredExpenses) {
-      const participants = state.participants || [];
-      const paymentMethodsMap = new Map((state.paymentMethods || []).map((m) => [m.id, m]));
-
-      // 1. Inicializar datos de participantes
-      const participantData = participants.map((p) => {
-        const budget = parseFloat(p.budget) || 0;
-        const sharedPct = parseFloat(p.sharedSavingsPercent) || 0;
-        const indepPct = parseFloat(p.independentSavingsPercent) || 0;
-
-        return {
-          ...p,
-          budget: budget,
-          spent: 0,
-          contributionPaid: 0,
-          contributionByMethod: {},
-          sharedSavingsGoal: (budget * sharedPct) / 100,
-          independentSavingsGoal: (budget * indepPct) / 100,
-          availableForSpending: budget * (1 - (sharedPct + indepPct) / 100),
-        };
-      });
-
-      const participantMap = new Map(participantData.map((p) => [p.id, p]));
-      let totalSpent = 0;
-      const guestMap = new Map();
-      const guestSummary = { spent: 0, balance: 0, contributionPaid: 0 };
-
-      // 2. Procesar Gastos
-      filteredExpenses.forEach((expense) => {
-        const amount = parseFloat(expense.amount) || 0;
-        totalSpent += amount;
-
-        const expenseGuests = (expense.guests && Array.isArray(expense.guests) && expense.guests.length > 0)
-          ? expense.guests
-          : (expense.guestName ? [expense.guestName] : []);
-
-        expenseGuests.forEach((gName) => {
-          if (!gName || !gName.trim()) return;
-          const gKey = `guest_${gName.trim().toLowerCase().replace(/\s+/g, '_')}`;
-          if (!guestMap.has(gKey)) {
-            guestMap.set(gKey, { id: gKey, name: `${gName.trim()} (Invitado)`, spent: 0, contributionPaid: 0, balance: 0, isGuest: true });
-          }
-        });
-
-        // Helper para resolver clave canónica y nombre de invitado
-        function getGuestKeyAndName(rawKey) {
-          const numMatch = String(rawKey).match(/\d+/);
-          if (numMatch && expenseGuests[parseInt(numMatch[0])]) {
-            const name = expenseGuests[parseInt(numMatch[0])].trim();
-            return { key: `guest_${name.toLowerCase().replace(/\s+/g, '_')}`, name, isGuest: true };
-          }
-          if (expenseGuests[parseInt(rawKey)]) {
-            const name = expenseGuests[parseInt(rawKey)].trim();
-            return { key: `guest_${name.toLowerCase().replace(/\s+/g, '_')}`, name, isGuest: true };
-          }
-          if (String(rawKey).startsWith('guest_') || String(rawKey).startsWith('guest-')) {
-            const rawName = String(rawKey).replace('guest_', '').replace('guest-', '').replace(/_/g, ' ').trim();
-            const matched = expenseGuests.find(g => g.toLowerCase() === rawName.toLowerCase());
-            const name = matched || rawName;
-            return { key: `guest_${name.toLowerCase().replace(/\s+/g, '_')}`, name, isGuest: true };
-          }
-          if (expenseGuests.length === 1) {
-            const name = expenseGuests[0].trim();
-            return { key: `guest_${name.toLowerCase().replace(/\s+/g, '_')}`, name, isGuest: true };
-          }
-          const name = String(rawKey).trim();
-          return { key: `guest_${name.toLowerCase().replace(/\s+/g, '_')}`, name, isGuest: true };
-        }
-
-        // A. Registrar Pago
-        let realPayerId = expense.payerId;
-        const method = paymentMethodsMap.get(expense.paymentMethodId);
-        if (method && method.type === "credit" && method.ownerId && !(realPayerId && (realPayerId.startsWith("guest_") || realPayerId.startsWith("guest-")))) {
-          realPayerId = method.ownerId;
-        }
-
-        const realPayer = participantMap.get(realPayerId);
-        if (realPayer) {
-          realPayer.contributionPaid += amount;
-          const methodId = expense.paymentMethodId || "unknown";
-          realPayer.contributionByMethod[methodId] = (realPayer.contributionByMethod[methodId] || 0) + amount;
-        } else if (realPayerId && (realPayerId.startsWith("guest_") || realPayerId.startsWith("guest-") || !participantMap.has(realPayerId))) {
-          guestSummary.contributionPaid = (guestSummary.contributionPaid || 0) + amount;
-          const { key: gKey, name: gName } = getGuestKeyAndName(realPayerId);
-          if (guestMap.has(gKey)) {
-            guestMap.get(gKey).contributionPaid += amount;
-          } else {
-            guestMap.set(gKey, { id: gKey, name: `${gName} (Invitado)`, spent: 0, contributionPaid: amount, balance: 0, isGuest: true });
-          }
-        }
-
-        // B. Registrar Consumo
-        if (expense.type === "shared" || !expense.type) {
-          const registeredCount = participants.length;
-          let guestsCount = expenseGuests.length;
-          const numPayees = registeredCount + guestsCount;
-
-          if (expense.items && expense.items.length > 0 && numPayees > 0) {
-            let itemsTotalCost = 0;
-            let itemShares = {};
-            participantData.forEach(p => { itemShares[p.id] = 0; });
-
-            expense.items.forEach(item => {
-              const qty = parseFloat(item.quantity) || 1;
-              const unitPrice = parseFloat(item.amount) || 0;
-              const itemTotal = qty * unitPrice;
-              itemsTotalCost += itemTotal;
-
-              const assignments = item.assignments || {};
-              let assignedUnitsSum = 0;
-
-              Object.keys(assignments).forEach(pId => {
-                const assignedQty = parseFloat(assignments[pId]) || 0;
-                if (assignedQty > 0) {
-                  assignedUnitsSum += assignedQty;
-                  const cost = assignedQty * unitPrice;
-                  if (participantMap.has(pId)) {
-                    itemShares[pId] = (itemShares[pId] || 0) + cost;
-                  } else {
-                    const { key: gKey, name: gName } = getGuestKeyAndName(pId);
-                    if (guestMap.has(gKey)) {
-                      guestMap.get(gKey).spent += cost;
-                    } else {
-                      guestMap.set(gKey, { id: gKey, name: `${gName} (Invitado)`, spent: cost, contributionPaid: 0, balance: 0, isGuest: true });
-                    }
-                  }
-                }
-              });
-
-              if (assignedUnitsSum === 0 && item.assignedTo && item.assignedTo !== 'all') {
-                assignedUnitsSum = qty;
-                const cost = itemTotal;
-                if (participantMap.has(item.assignedTo)) {
-                  itemShares[item.assignedTo] = (itemShares[item.assignedTo] || 0) + cost;
-                } else {
-                  const { key: gKey, name: gName } = getGuestKeyAndName(item.assignedTo);
-                  if (guestMap.has(gKey)) {
-                    guestMap.get(gKey).spent += cost;
-                  } else {
-                    guestMap.set(gKey, { id: gKey, name: `${gName} (Invitado)`, spent: cost, contributionPaid: 0, balance: 0, isGuest: true });
-                  }
-                }
-              }
-
-              const unassignedUnits = Math.max(0, qty - assignedUnitsSum);
-              if (unassignedUnits > 0 && numPayees > 0) {
-                const unassignedCost = unassignedUnits * unitPrice;
-                const sharePerPerson = unassignedCost / numPayees;
-                participantData.forEach(p => { itemShares[p.id] = (itemShares[p.id] || 0) + sharePerPerson; });
-                expenseGuests.forEach(gName => {
-                  const gKey = `guest_${gName.trim().toLowerCase().replace(/\s+/g, '_')}`;
-                  if (guestMap.has(gKey)) {
-                    guestMap.get(gKey).spent += sharePerPerson;
-                  }
-                });
-              }
-            });
-
-            const remainingAmount = Math.max(0, amount - itemsTotalCost);
-            if (remainingAmount > 0.001 && numPayees > 0) {
-              const remainingSharePerPerson = remainingAmount / numPayees;
-              participantData.forEach(p => {
-                p.spent += (itemShares[p.id] || 0) + remainingSharePerPerson;
-              });
-              expenseGuests.forEach(gName => {
-                const gKey = `guest_${gName.trim().toLowerCase().replace(/\s+/g, '_')}`;
-                if (guestMap.has(gKey)) {
-                  guestMap.get(gKey).spent += remainingSharePerPerson;
-                }
-              });
-            } else {
-              participantData.forEach(p => {
-                p.spent += (itemShares[p.id] || 0);
-              });
-            }
-          } else {
-            const splitAmount = numPayees > 0 ? amount / numPayees : 0;
-            participantData.forEach((p) => { p.spent += splitAmount; });
-            expenseGuests.forEach(gName => {
-              const gKey = `guest_${gName.trim().toLowerCase().replace(/\s+/g, '_')}`;
-              if (guestMap.has(gKey)) {
-                guestMap.get(gKey).spent += splitAmount;
-              }
-            });
-            if (guestsCount > 0) guestSummary.spent += splitAmount * guestsCount;
-          }
-        } else {
-          // Gasto Personal
-          const consumer = participantMap.get(expense.payerId);
-          if (consumer) {
-            consumer.spent += amount;
-          } else if (expense.payerId && (expense.payerId.startsWith("guest_") || expense.payerId.startsWith("guest-"))) {
-            guestSummary.spent += amount;
-            if (guestMap.has(expense.payerId)) guestMap.get(expense.payerId).spent += amount;
-          }
-        }
-      });
-
-      // 3. Cálculos Finales
-      let globalTotalRemainingBudget = 0;
-      let globalSharedSavingsGoal = 0;
-
-      participantData.forEach((p) => {
-        p.balance = p.contributionPaid - p.spent;
-        p.remainingBudget = p.availableForSpending - p.spent;
-        globalTotalRemainingBudget += p.remainingBudget;
-        globalSharedSavingsGoal += p.sharedSavingsGoal;
-      });
-
-      const guestList = Array.from(guestMap.values()).map(g => {
-        g.balance = (g.contributionPaid || 0) - (g.spent || 0);
-        return g;
-      });
-
-      return {
-        globalTotalRemainingBudget,
-        globalSharedSavingsGoal,
-        totalSpent,
-        participantData,
-        guestList,
-        guestSummary
-      };
-    }
-
-    // 3. Cálculos y Renderizado de UI Mobile
-    function renderMobileUI() {
-      // Mes actual
-      document.getElementById('mobile-current-month').textContent = `${MONTHS[filterDate.getMonth()]} ${filterDate.getFullYear()}`;
-
-      const filterMonthString = getFilterMonthString(filterDate);
-      const allExpenses = appState.expenses || [];
-      const projectedFixedExpenses = [];
-      const filterViewDate = new Date(filterDate.getTime());
-
-      // Proyección de gastos fijos
-      const baseFixedExpenses = allExpenses.filter((e) => e.isFixed);
-      baseFixedExpenses.forEach((baseExpense) => {
-        const baseDate = new Date(baseExpense.date + "T00:00:00Z");
-        const recurrenceMonths = baseExpense.fixedRecurrenceMonths || 12;
-        const baseYear = baseDate.getUTCFullYear();
-        const baseMonth = baseDate.getUTCMonth();
-        const viewYear = filterViewDate.getUTCFullYear();
-        const viewMonth = filterViewDate.getUTCMonth();
-        const monthDifference = (viewYear - baseYear) * 12 + (viewMonth - baseMonth);
-
-        if (monthDifference > 0 && monthDifference < recurrenceMonths) {
-          let projectedDate = new Date(Date.UTC(viewYear, viewMonth, baseDate.getUTCDate()));
-          if (projectedDate.getUTCMonth() !== viewMonth) {
-            projectedDate = new Date(Date.UTC(viewYear, viewMonth + 1, 0));
-          }
-          const alreadyExists = allExpenses.some((e) => e.date.startsWith(filterMonthString) && e.description.toLowerCase() === baseExpense.description.toLowerCase());
-          if (!alreadyExists) {
-            projectedFixedExpenses.push({
-              ...baseExpense,
-              id: `proj_${baseExpense.id}_${monthDifference}`,
-              date: projectedDate.toISOString().split("T")[0],
-              isProjected: true,
-            });
-          }
-        }
-      });
-
-      let expensesForMonth = allExpenses.filter((e) => isExpenseInBillingMonth(e, filterMonthString, filterDate, appState.paymentMethods));
-      expensesForMonth = [...expensesForMonth, ...projectedFixedExpenses];
-
-      // Ejecutar motor de cálculo maestro
-      const summary = calculateSummary(appState, expensesForMonth);
-
-      // Totales
-      let totalBudget = 0;
-      let totalAccumulatedSavings = 0;
-      appState.participants.forEach(p => {
-        totalBudget += (parseFloat(p.budget) || 0);
-        (p.goals || []).forEach(g => {
-          totalAccumulatedSavings += (parseFloat(g.current) || 0);
-        });
-      });
-
-      let totalFixed = 0;
-      expensesForMonth.forEach(e => {
-        if (e.isFixed) totalFixed += (parseFloat(e.amount) || 0);
-      });
-
-      const spentPercent = totalBudget > 0 ? Math.min(100, (summary.totalSpent / totalBudget) * 100) : 0;
-      const remainingPercent = Math.max(0, 100 - spentPercent);
-
-      // Días restantes
-      const lastDayOfMonth = new Date(filterDate.getFullYear(), filterDate.getMonth() + 1, 0).getDate();
-      const today = new Date();
-      const currentDay = (today.getFullYear() === filterDate.getFullYear() && today.getMonth() === filterDate.getMonth()) ? today.getDate() : 1;
-      const daysRemaining = Math.max(1, lastDayOfMonth - currentDay + 1);
-      const globalDailyBudget = Math.max(0, summary.globalTotalRemainingBudget / daysRemaining);
-
-      // Actualizar Bloque 1: Presupuesto Global
-      document.getElementById('display-global-remaining').textContent = formatCurrency(summary.globalTotalRemainingBudget);
-      document.getElementById('display-global-budget').textContent = formatCurrency(totalBudget);
-      document.getElementById('display-global-spent-percent').textContent = `${spentPercent.toFixed(0)}%`;
-      document.getElementById('global-percent-badge').textContent = `${remainingPercent.toFixed(0)}% restante`;
-      document.getElementById('global-progress-bar').style.width = `${remainingPercent}%`;
-
-      document.getElementById('display-total-spent').textContent = formatCurrency(summary.totalSpent);
-      document.getElementById('display-total-fixed').textContent = `Fijos: ${formatCurrency(totalFixed)}`;
-      document.getElementById('display-global-savings').textContent = formatCurrency(totalAccumulatedSavings);
-      document.getElementById('display-shared-savings').textContent = `Mutuo: ${formatCurrency(summary.globalSharedSavingsGoal)}`;
-      document.getElementById('display-daily-budget').textContent = formatCurrency(globalDailyBudget);
-      document.getElementById('display-days-remaining').textContent = `${daysRemaining} días rest.`;
-
-      // Actualizar Bloque 2: Lista en Modal de Saldos de Usuarios
-      renderParticipantsModalList(summary, daysRemaining);
-
-      // Actualizar Bloque 2B: Modal de Liquidación y Deudas
-      renderSettlementModal(summary);
-
-      // Actualizar Bloque 3: Historial de Transacciones
-      renderHistoryList(expensesForMonth);
-
-      // Actualizar opciones de los selectores de modales
-      populateSelectOptions();
-    }
-
-    // 4. Renderizar Lista de Participantes en el Bottom Sheet (Diseño Simplificado y Completo)
-    function renderParticipantsModalList(summary, daysRemaining) {
-      const container = document.getElementById('mobile-participants-modal-list');
-      if (!container) return;
-
-      if (!summary.participantData || summary.participantData.length === 0) {
-        container.innerHTML = `<div class="w-full text-center py-6 text-xs text-slate-400 italic">No hay participantes configurados en este monedero.</div>`;
-        return;
-      }
-
-      container.innerHTML = summary.participantData.map(p => {
-        const pRemaining = p.remainingBudget || 0;
-        const pBudget = parseFloat(p.budget) || 0;
-        const pSpent = p.spent || 0;
-        const pDaily = Math.max(0, pRemaining / daysRemaining);
-        const isMe = p.firebaseUid === currentUserId;
-        const isPositive = pRemaining >= 0;
-        const pPercent = pBudget > 0 ? Math.min(100, Math.max(0, (pRemaining / pBudget) * 100)) : 0;
-        const pBalance = p.balance || 0;
-
-        let balanceBadge = '';
-        if (pBalance > 0.01) {
-          balanceBadge = `<span class="text-[9px] font-extrabold text-emerald-700 bg-emerald-100 px-1.5 py-0.5 rounded-md">A favor: +${formatCurrency(pBalance)}</span>`;
-        } else if (pBalance < -0.01) {
-          balanceBadge = `<span class="text-[9px] font-extrabold text-rose-700 bg-rose-100 px-1.5 py-0.5 rounded-md">Debe: ${formatCurrency(pBalance)}</span>`;
-        } else {
-          balanceBadge = `<span class="text-[9px] font-bold text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded-md">Al día</span>`;
-        }
-
-        return `
-          <div class="bg-white border ${isMe ? 'border-indigo-400 ring-1 ring-indigo-500/20' : 'border-slate-200'} rounded-2xl p-3 space-y-2 shadow-2xs">
-            <!-- Fila Superior: Usuario & Saldo Disponible Principal -->
-            <div class="flex items-center justify-between">
-              <div class="flex items-center gap-2">
-                <div class="w-8 h-8 rounded-xl bg-slate-900 text-white flex items-center justify-center font-black text-xs">
-                  ${(p.name || 'U').substring(0, 2).toUpperCase()}
-                </div>
-                <div>
-                  <div class="flex items-center gap-1.5">
-                    <h4 class="font-extrabold text-xs text-slate-900">${p.name}</h4>
-                    ${isMe ? '<span class="text-[8px] font-black text-indigo-700 bg-indigo-50 px-1.5 py-0.5 rounded">TÚ</span>' : ''}
-                  </div>
-                  <div class="mt-0.5">${balanceBadge}</div>
-                </div>
-              </div>
-              <div class="text-right">
-                <span class="text-sm font-black ${isPositive ? 'text-slate-900' : 'text-rose-600'}">${formatCurrency(pRemaining)}</span>
-                <span class="text-[8px] text-slate-400 font-bold uppercase tracking-wider block">Disponible</span>
-              </div>
-            </div>
-
-            <!-- Barra de Progreso Fina -->
-            <div class="w-full bg-slate-100 h-1.5 rounded-full overflow-hidden">
-              <div class="h-full ${isPositive ? 'bg-indigo-500' : 'bg-rose-500'} rounded-full transition-all duration-500" style="width: ${pPercent}%"></div>
-            </div>
-
-            <!-- Fila Inferior de Datos Simplificada: Base | Gastado | Máx. Diario -->
-            <div class="flex items-center justify-between text-[10px] text-slate-500 pt-0.5">
-              <span>Base: <strong class="text-slate-800 font-bold">${formatCurrency(pBudget)}</strong></span>
-              <span>•</span>
-              <span>Gastado: <strong class="text-slate-800 font-bold">${formatCurrency(pSpent)}</strong></span>
-              <span>•</span>
-              <span>Máx/día: <strong class="text-indigo-600 font-bold">${formatCurrency(pDaily)}</strong></span>
-            </div>
-          </div>
-        `;
-      }).join('');
-    }
-
-    // 4B. Renderizar Modal de Liquidación y Deudas Cruzadas
-    let currentSettlementDebts = [];
-    function renderSettlementModal(summary) {
-      const containerTransfers = document.getElementById('settlement-transfers-list');
-      const containerBalances = document.getElementById('settlement-balances-list');
-      const countBadge = document.getElementById('settlement-count-badge');
-      if (!containerTransfers || !containerBalances) return;
-
-      const participantData = summary.participantData || [];
-      const guestList = summary.guestList || [];
-
-      // Unificar miembros registrados e invitados con actividad
-      const balances = [
-        ...participantData.map(p => ({
-          id: p.id,
-          name: p.name,
-          balance: p.balance || 0,
-          contributionPaid: p.contributionPaid || 0,
-          spent: p.spent || 0,
-          isGuest: false
-        })),
-        ...guestList.filter(g => (g.spent > 0.001 || g.contributionPaid > 0.001)).map(g => ({
-          id: g.id,
-          name: g.name,
-          balance: g.balance || 0,
-          contributionPaid: g.contributionPaid || 0,
-          spent: g.spent || 0,
-          isGuest: true
-        }))
-      ];
-
-      // A. Balance Neto por Persona (Registrados + Invitados)
-      containerBalances.innerHTML = balances.map(p => {
-        const isPositive = p.balance > 0.01;
-        const isNegative = p.balance < -0.01;
-        const statusClass = isPositive ? 'text-emerald-700 bg-emerald-50 border-emerald-200' : (isNegative ? 'text-rose-700 bg-rose-50 border-rose-200' : 'text-slate-600 bg-slate-50 border-slate-200');
-        const statusText = isPositive ? `A favor: +${formatCurrency(p.balance)}` : (isNegative ? `Debe pagar: ${formatCurrency(Math.abs(p.balance))}` : 'Cuentas al día');
-        const guestBadge = p.isGuest ? `<span class="text-[8px] font-black text-amber-700 bg-amber-100 px-1.5 py-0.5 rounded ml-1">INVITADO</span>` : '';
-
-        return `
-          <div class="bg-white border ${p.isGuest ? 'border-amber-200 bg-amber-50/20' : 'border-slate-200'} rounded-2xl p-3 flex items-center justify-between text-xs shadow-2xs">
-            <div class="flex items-center gap-2">
-              <div class="w-8 h-8 rounded-xl ${p.isGuest ? 'bg-amber-500' : 'bg-slate-900'} text-white flex items-center justify-center font-black text-xs shadow-xs">
-                ${(p.name || 'U').substring(0, 2).toUpperCase()}
-              </div>
-              <div>
-                <div class="flex items-center">
-                  <h4 class="font-extrabold text-xs text-slate-900">${p.name}</h4>
-                  ${guestBadge}
-                </div>
-                <p class="text-[10px] text-slate-400 font-medium">Aportó: ${formatCurrency(p.contributionPaid)} • Consumo: ${formatCurrency(p.spent)}</p>
-              </div>
-            </div>
-            <span class="text-[10px] font-black px-2 py-0.5 rounded-lg border ${statusClass}">${statusText}</span>
-          </div>
-        `;
-      }).join('');
-
-      // B. Algoritmo de Liquidación de Deudas Cruzadas (Greedy Debt Reconciliation)
-      const debtors = balances.filter(p => p.balance < -0.01).map(p => ({ ...p, remainingBalance: Math.abs(p.balance) })).sort((a, b) => b.remainingBalance - a.remainingBalance);
-      const creditors = balances.filter(p => p.balance > 0.01).map(p => ({ ...p, remainingBalance: p.balance })).sort((a, b) => b.remainingBalance - a.remainingBalance);
-
-      const transfers = [];
-      let i = 0, j = 0;
-      while (i < debtors.length && j < creditors.length) {
-        const debtor = debtors[i];
-        const creditor = creditors[j];
-        const amount = Math.min(debtor.remainingBalance, creditor.remainingBalance);
-
-        if (amount > 0.01) {
-          transfers.push({
-            debtorId: debtor.id,
-            from: debtor.name,
-            creditorId: creditor.id,
-            to: creditor.name,
-            amount: amount
-          });
-          debtor.remainingBalance -= amount;
-          creditor.remainingBalance -= amount;
-        }
-
-        if (debtor.remainingBalance < 0.01) i++;
-        if (creditor.remainingBalance < 0.01) j++;
-      }
-
-      currentSettlementDebts = transfers;
-      if (countBadge) countBadge.textContent = `${transfers.length} transferencia${transfers.length === 1 ? '' : 's'}`;
-
-      if (transfers.length === 0) {
-        containerTransfers.innerHTML = `
-          <div class="bg-emerald-50 border border-emerald-200 rounded-2xl p-4 text-center space-y-1 text-emerald-800">
-            <i class="fas fa-check-circle text-2xl text-emerald-500"></i>
-            <p class="text-xs font-black">¡Las cuentas están al día!</p>
-            <p class="text-[10px] text-emerald-600">No existen deudas pendientes entre los miembros para este mes.</p>
-          </div>
-        `;
-        document.getElementById('btn-execute-settlement')?.classList.add('hidden');
-      } else {
-        document.getElementById('btn-execute-settlement')?.classList.remove('hidden');
-        containerTransfers.innerHTML = transfers.map(t => `
-          <div class="bg-rose-50/50 border border-rose-200 rounded-2xl p-3 flex items-center justify-between shadow-2xs">
-            <div class="flex items-center gap-2.5">
-              <div class="w-8 h-8 rounded-xl bg-rose-600 text-white flex items-center justify-center text-xs font-black shadow-xs">
-                <i class="fas fa-arrow-right"></i>
-              </div>
-              <div>
-                <p class="text-xs font-extrabold text-slate-900"><strong class="text-rose-700 font-black">${t.from}</strong> ➔ <strong class="text-emerald-700 font-black">${t.to}</strong></p>
-                <p class="text-[10px] text-slate-400 font-medium">Transferencia directa sugerida</p>
-              </div>
-            </div>
-            <span class="text-sm font-black text-rose-600 bg-white px-2.5 py-1 rounded-xl border border-rose-100 shadow-2xs">
-              ${formatCurrency(t.amount)}
-            </span>
-          </div>
-        `).join('');
-      }
-    }
-
-    // 4C. Ejecutar Liquidación y Ajustes en Firestore
-    async function liquidateMonthMobile() {
-      if (!currentWalletId) return alert('No hay un monedero cargado.');
-      if (currentSettlementDebts.length === 0) return alert('Las cuentas ya están al día.');
-
-      if (!confirm(`Se crearán ${currentSettlementDebts.length} transacciones de ajuste para dejar las cuentas saldadas. ¿Deseas continuar?`)) {
-        return;
-      }
-
-      try {
-        const now = new Date().toISOString().split('T')[0];
-        const newExpenses = [...(appState.expenses || [])];
-
-        currentSettlementDebts.forEach(t => {
-          newExpenses.push({
-            id: 'settle_' + Date.now() + '_' + Math.random().toString(36).substring(2, 7),
-            type: 'personal',
-            description: `REEMBOLSO: ${t.from} a ${t.to}`,
-            amount: t.amount,
-            payerId: t.debtorId,
-            category: 'Liquidación',
-            paymentMethodId: 'm1',
-            date: now,
-            dateCreated: new Date().toISOString()
-          });
-        });
-
-        const walletRef = doc(db, 'wallets', currentWalletId);
-        await updateDoc(walletRef, { expenses: newExpenses });
-
-        closeModal('modal-settlement');
-        alert('🎉 ¡Liquidación completada con éxito! Cuentas saldadas.');
-      } catch (err) {
-        console.error('Error al liquidar cuentas:', err);
-        alert('Error al liquidar cuentas: ' + err.message);
-      }
-    }
-
-    // 5. Renderizar Historial de Transacciones (Con fecha idéntica a Desktop y sin fijos futuros)
-    function renderHistoryList(monthlyExpenses) {
-      const container = document.getElementById('mobile-history-list');
-      const today = new Date();
-      const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
-
-      let items = [];
-
-      // A. Gastos (Omitiendo gastos fijos proyectados si aún no llegó su fecha)
-      if (currentTab === 'all' || currentTab === 'expenses') {
-        monthlyExpenses.forEach(e => {
-          if (e.isProjected && e.date > todayStr) {
-            return; // No mostrar gastos fijos futuros
-          }
-
-          const hasItems = !!(e.items && Array.isArray(e.items) && e.items.length > 0);
-
-          items.push({
-            id: e.id,
-            type: 'expense',
-            description: e.description || 'Gasto sin concepto',
-            amount: parseFloat(e.amount) || 0,
-            date: e.date || '',
-            category: e.category || 'General',
-            payerId: e.payerId,
-            paymentMethod: e.paymentMethod || 'Efectivo',
-            isFixed: e.isFixed,
-            isShared: e.type === 'shared' || !e.type,
-            hasItems: hasItems,
-            items: e.items || [],
-            guests: e.guests || []
-          });
-        });
-      }
-
-      // B. Ingresos
-      if (currentTab === 'all' || currentTab === 'incomes') {
-        const curYear = filterDate.getFullYear();
-        const curMonth = filterDate.getMonth();
-
-        appState.participants.forEach(p => {
-          (p.incomes || []).forEach(inc => {
-            if (inc.date) {
-              const d = new Date(inc.date + 'T00:00:00');
-              if (d.getFullYear() === curYear && d.getMonth() === curMonth) {
-                items.push({
-                  id: inc.id,
-                  type: 'income',
-                  description: inc.name || inc.description || `Ingreso de ${p.name}`,
-                  amount: parseFloat(inc.amount) || 0,
-                  date: inc.date,
-                  category: 'Ingreso',
-                  payerName: p.name,
-                  paymentMethod: 'Depósito/Efectivo',
-                  hasItems: false
-                });
-              }
-            }
-          });
-        });
-      }
-
-      // Filtrar por término de búsqueda
-      if (searchTerm.trim()) {
-        const term = searchTerm.toLowerCase();
-        items = items.filter(i =>
-          i.description.toLowerCase().includes(term) ||
-          i.category.toLowerCase().includes(term)
-        );
-      }
-
-      // Ordenar por fecha descendente
-      items.sort((a, b) => new Date(b.date) - new Date(a.date));
-
-      document.getElementById('history-total-count').textContent = `${items.length} registros`;
-
-      if (items.length === 0) {
-        container.innerHTML = `
-          <div class="text-center py-8 bg-white rounded-2xl border border-slate-100">
-            <i class="fas fa-inbox text-slate-300 text-2xl mb-2"></i>
-            <p class="text-xs text-slate-400 font-medium">No se encontraron movimientos para este período.</p>
-          </div>
-        `;
-        return;
-      }
-
-      container.innerHTML = items.map(item => {
-        const isExpense = item.type === 'expense';
-        const payer = appState.participants.find(p => p.id === item.payerId)?.name || item.payerName || 'General';
-
-        // Formatear Fecha idéntica a la vista Desktop (Día en grande, Mes en pequeño)
-        const dateObj = new Date(item.date + "T00:00:00Z");
-        const dayNum = dateObj.getUTCDate() || 1;
-        const monthShort = dateObj.toLocaleString("es-ES", { month: "short", timeZone: "UTC" }).toUpperCase().replace(".", "");
-
-        let dateBoxClass = "bg-slate-50 border-slate-200 text-slate-600";
-        let typeBadge = "";
-
-        if (!isExpense) {
-          dateBoxClass = "bg-emerald-50 border-emerald-200 text-emerald-600";
-        } else if (item.isFixed) {
-          dateBoxClass = "bg-purple-50 border-purple-200 text-purple-600";
-          typeBadge = `<span class="ml-1.5 inline-flex items-center justify-center w-4 h-4 rounded-full bg-purple-100 text-purple-600 text-[8px]" title="Gasto Fijo"><i class="fas fa-sync-alt"></i></span>`;
-        } else if (item.hasItems) {
-          dateBoxClass = "bg-indigo-50 border-indigo-200 text-indigo-600";
-          typeBadge = `<span class="ml-1.5 inline-flex items-center justify-center w-4 h-4 rounded-full bg-indigo-100 text-indigo-600 text-[8px]" title="Lista de Ítems"><i class="fas fa-list-ul"></i></span>`;
-        } else if (item.isShared) {
-          dateBoxClass = "bg-orange-50 border-orange-200 text-orange-600";
-          typeBadge = `<span class="ml-1.5 inline-flex items-center justify-center w-4 h-4 rounded-full bg-orange-100 text-orange-600 text-[8px]" title="Compartido"><i class="fas fa-users"></i></span>`;
-        }
-
-        // Si tiene lista de ítems, abrir primero el modal de detalle read-only con botón de lápiz
-        const clickHandler = isExpense
-          ? (item.hasItems ? `onclick="openTransactionDetailModal('${item.id}')"` : `onclick="openEditExpenseModal('${item.id}')"`)
-          : `onclick="openEditIncomeModal('${item.id}')"`;
-
-        return `
-          <div ${clickHandler} class="bg-white p-3.5 rounded-2xl border border-slate-100 shadow-sm flex items-center justify-between gap-3 hover:border-slate-200 active:scale-98 transition-all cursor-pointer select-none">
-            <!-- Bloque de Fecha Tipo Desktop -->
-            <div class="flex items-center gap-3 min-w-0 flex-1">
-              <div class="shrink-0">
-                <div class="w-11 h-11 flex flex-col items-center justify-center rounded-xl border ${dateBoxClass} shadow-sm">
-                  <span class="text-[9px] font-bold uppercase leading-none opacity-80">${monthShort}</span>
-                  <span class="text-base font-black leading-tight">${dayNum}</span>
-                </div>
-              </div>
-              
-              <div class="min-w-0 flex-1">
-                <div class="flex items-center">
-                  <h4 class="font-extrabold text-xs text-slate-900 truncate leading-tight">${item.description}</h4>
-                  ${typeBadge}
-                </div>
-                <div class="flex items-center gap-1.5 text-[10px] text-slate-400 mt-1">
-                  <span class="text-slate-600 font-semibold bg-slate-100 px-1.5 py-0.2 rounded text-[9px]">${item.category}</span>
-                  <span>•</span>
-                  <span class="truncate max-w-[90px]">${payer}</span>
-                </div>
-              </div>
-            </div>
-
-            <div class="text-right shrink-0">
-              <span class="font-black text-xs ${isExpense ? 'text-slate-900' : 'text-emerald-600'} block">
-                ${isExpense ? '-' : '+'} ${formatCurrency(item.amount)}
-              </span>
-              <span class="text-[9px] text-slate-400 font-medium">${item.paymentMethod}</span>
-            </div>
-          </div>
-        `;
-      }).join('');
-    }
-
-    let currentDetailExpenseId = null; // ID del gasto en visualización read-only
-
-    // ================================================================
-    // MODAL DE DETALLE (READ-ONLY) CON BOTÓN DE LÁPIZ PARA EDITAR
-    // ================================================================
-    function openTransactionDetailModal(expenseId) {
-      const exp = appState.expenses.find(e => e.id === expenseId);
-      if (!exp) return;
-
-      currentDetailExpenseId = expenseId;
-
-      // 1. Header con Nombre del Gasto / Lista
-      const titleEl = document.getElementById('detail-modal-title');
-      const subtitleEl = document.getElementById('detail-modal-subtitle');
-      if (titleEl) titleEl.textContent = exp.description || 'Gasto';
-      if (subtitleEl) {
-        const typeLabel = exp.type === 'personal' ? 'Personal' : 'Compartido';
-        subtitleEl.textContent = `${typeLabel} • ${exp.date || '--'}`;
-      }
-
-      // 2. Tarjeta Resumen
-      const amountEl = document.getElementById('detail-amount');
-      const catBadge = document.getElementById('detail-category-badge');
-      const typeBadge = document.getElementById('detail-type-badge');
-      const itemsPill = document.getElementById('detail-items-pill-badge');
-      const payerEl = document.getElementById('detail-payer-info');
-      const dateEl = document.getElementById('detail-date-info');
-      const pmEl = document.getElementById('detail-pm-name');
-
-      const items = exp.items || [];
-      if (amountEl) amountEl.textContent = formatCurrency(exp.amount);
-      if (catBadge) catBadge.textContent = exp.category || 'General';
-      if (typeBadge) typeBadge.textContent = exp.type === 'personal' ? 'Personal' : 'Compartido';
-      if (itemsPill) itemsPill.textContent = items.length > 0 ? `${items.length} ítems` : 'Gasto simple';
-
-      const payerName = appState.participants.find(p => p.id === exp.payerId)?.name || 'Desconocido';
-      if (payerEl) payerEl.innerHTML = `Pagado por: <strong>${payerName}</strong>`;
-      if (dateEl) dateEl.textContent = exp.date || '--';
-      if (pmEl) pmEl.textContent = exp.paymentMethod || 'Efectivo';
-
-      // 3. Resolución de Invitados y Participantes
-      const expenseGuests = (exp.guests && Array.isArray(exp.guests)) ? exp.guests : (exp.guestName ? [exp.guestName] : []);
-      
-      const allMembersList = [
-        ...appState.participants.map(p => ({
-          id: p.id,
-          name: p.name,
-          initials: (p.name || 'U').substring(0, 2).toUpperCase(),
-          isGuest: false
-        })),
-        ...expenseGuests.map(g => {
-          const cleanName = g.trim();
-          const gKey = `guest_${cleanName.toLowerCase().replace(/\s+/g, '_')}`;
-          return {
-            id: gKey,
-            name: cleanName,
-            initials: cleanName.substring(0, 2).toUpperCase(),
-            isGuest: true
-          };
-        })
-      ];
-
-      function resolveMemberInfo(key) {
-        const found = allMembersList.find(m => m.id === key);
-        if (found) return found;
-
-        // Fallback por índice o prefijo
-        const numMatch = String(key).match(/\d+/);
-        if (numMatch && expenseGuests[parseInt(numMatch[0])]) {
-          const gName = expenseGuests[parseInt(numMatch[0])];
-          return { id: key, name: gName, initials: gName.substring(0, 2).toUpperCase(), isGuest: true };
-        }
-        if (String(key).startsWith('guest_') || String(key).startsWith('guest-')) {
-          const rawName = String(key).replace('guest_', '').replace('guest-', '').replace(/_/g, ' ');
-          const matched = expenseGuests.find(g => g.toLowerCase() === rawName.toLowerCase());
-          const gName = matched || rawName;
-          return { id: key, name: gName, initials: gName.substring(0, 2).toUpperCase(), isGuest: true };
-        }
-        return { id: key, name: key, initials: String(key).substring(0, 2).toUpperCase(), isGuest: true };
-      }
-
-      // 4. Calcular Consumo y Cantidad de Ítems por Participante
-      const memberStats = {}; // { [memberId]: { info, itemCount, totalCost } }
-      allMembersList.forEach(m => {
-        memberStats[m.id] = { info: m, itemCount: 0, totalCost: 0 };
-      });
-
-      if (items.length > 0) {
-        items.forEach(it => {
-          const qty = parseFloat(it.quantity) || 1;
-          const unitPrice = parseFloat(it.amount) || 0;
-          const itemTotalCost = qty * unitPrice;
-          const assignments = it.assignments || {};
-          const assignedKeys = Object.keys(assignments).filter(k => (parseFloat(assignments[k]) || 0) > 0);
-
-          if (assignedKeys.length > 0) {
-            assignedKeys.forEach(k => {
-              const uQty = parseFloat(assignments[k]) || 0;
-              const info = resolveMemberInfo(k);
-              if (!memberStats[info.id]) memberStats[info.id] = { info, itemCount: 0, totalCost: 0 };
-              memberStats[info.id].itemCount += 1;
-              memberStats[info.id].totalCost += uQty * unitPrice;
-            });
-          } else if (it.assignedTo && it.assignedTo !== 'all') {
-            const info = resolveMemberInfo(it.assignedTo);
-            if (!memberStats[info.id]) memberStats[info.id] = { info, itemCount: 0, totalCost: 0 };
-            memberStats[info.id].itemCount += 1;
-            memberStats[info.id].totalCost += itemTotalCost;
-          } else {
-            // Dividido equitativamente entre todos
-            const perMemberCost = itemTotalCost / (allMembersList.length || 1);
-            allMembersList.forEach(m => {
-              memberStats[m.id].itemCount += 1;
-              memberStats[m.id].totalCost += perMemberCost;
-            });
-          }
-        });
-      } else {
-        // Gasto simple sin lista
-        const perMemberCost = (parseFloat(exp.amount) || 0) / (allMembersList.length || 1);
-        allMembersList.forEach(m => {
-          memberStats[m.id].itemCount = 1;
-          memberStats[m.id].totalCost = perMemberCost;
-        });
-      }
-
-      // Renderizar Sección Participantes
-      const participantsContainer = document.getElementById('detail-participants-container');
-      const participantsCountBadge = document.getElementById('detail-participants-count-badge');
-      const activeMembersWithCosts = Object.values(memberStats).filter(st => st.totalCost > 0 || st.itemCount > 0);
-
-      if (participantsCountBadge) {
-        participantsCountBadge.textContent = `${activeMembersWithCosts.length} miembros`;
-      }
-
-      if (participantsContainer) {
-        participantsContainer.innerHTML = activeMembersWithCosts.map(st => `
-          <div class="flex items-center justify-between p-2.5 bg-slate-50/80 rounded-2xl border border-slate-100 hover:bg-slate-100/60 transition-all">
-            <div class="flex items-center gap-2 min-w-0">
-              <div class="w-8 h-8 rounded-xl ${st.info.isGuest ? 'bg-amber-500' : 'bg-slate-900'} text-white flex items-center justify-center font-black text-[10px] shrink-0">
-                ${st.info.initials}
-              </div>
-              <div class="truncate">
-                <h4 class="text-xs font-extrabold text-slate-900 truncate">${st.info.name}</h4>
-                <p class="text-[10px] text-slate-400 font-bold">${st.itemCount} ${st.itemCount === 1 ? 'ítem' : 'ítems'}</p>
-              </div>
-            </div>
-            <div class="text-right shrink-0">
-              <span class="text-xs font-black text-slate-900">${formatCurrency(st.totalCost)}</span>
-            </div>
-          </div>
-        `).join('');
-      }
-
-      // 5. Renderizar Desglose de Ítems (Limpio, sin bordes pesados, precio y cantidad a la derecha)
-      const itemsCountBadge = document.getElementById('detail-items-count-badge');
-      const itemsContainer = document.getElementById('detail-items-container');
-
-      if (itemsCountBadge) itemsCountBadge.textContent = `${items.length} ítems`;
-
-      if (itemsContainer) {
-        if (items.length > 0) {
-          itemsContainer.innerHTML = items.map((it, idx) => {
-            const qty = parseFloat(it.quantity) || 1;
-            const unitPrice = parseFloat(it.amount) || 0;
-            const totalItemCost = qty * unitPrice;
-
-            let assignBadgesHtml = '';
-            const assignments = it.assignments || {};
-            const assignedKeys = Object.keys(assignments).filter(k => (parseFloat(assignments[k]) || 0) > 0);
-
-            if (assignedKeys.length > 0) {
-              assignBadgesHtml = assignedKeys.map(k => {
-                const uQty = assignments[k];
-                const info = resolveMemberInfo(k);
-                return `<span class="inline-block px-1.5 py-0.5 rounded-md text-[9px] font-extrabold ${info.isGuest ? 'bg-amber-100/80 text-amber-900' : 'bg-slate-100 text-slate-700'}">${info.name} (${uQty} u.)</span>`;
-              }).join(' ');
-            } else if (it.assignedTo && it.assignedTo !== 'all') {
-              const info = resolveMemberInfo(it.assignedTo);
-              assignBadgesHtml = `<span class="inline-block px-1.5 py-0.5 rounded-md text-[9px] font-extrabold ${info.isGuest ? 'bg-amber-100/80 text-amber-900' : 'bg-slate-100 text-slate-700'}">${info.name} (${qty} u.)</span>`;
-            } else {
-              assignBadgesHtml = `<span class="inline-block px-1.5 py-0.5 rounded-md text-[9px] font-bold bg-slate-100 text-slate-500">Para todos</span>`;
-            }
-
-            return `
-              <div onclick="openDetailItemBreakdownModal(${idx})" class="bg-white p-3 rounded-2xl border border-slate-100 shadow-2xs flex items-center justify-between gap-2 cursor-pointer hover:border-emerald-300 hover:bg-slate-50/50 active:scale-98 transition-all group">
-                <div class="min-w-0 flex-1">
-                  <div class="flex items-center gap-1.5">
-                    <span class="w-4 h-4 rounded-full bg-slate-100 group-hover:bg-emerald-100 text-slate-600 group-hover:text-emerald-700 text-[9px] font-black flex items-center justify-center shrink-0 transition-colors">
-                      ${idx + 1}
-                    </span>
-                    <span class="text-xs font-extrabold text-slate-900 truncate">${it.desc || 'Ítem'}</span>
-                  </div>
-                  <div class="mt-1 pl-5">
-                    ${assignBadgesHtml}
-                  </div>
-                </div>
-
-                <!-- Lado Derecho: Monto Total arriba, Cantidad x Precio unitario abajo -->
-                <div class="text-right shrink-0 flex items-center gap-2">
-                  <div>
-                    <span class="text-xs font-black text-slate-900 block">${formatCurrency(totalItemCost)}</span>
-                    <span class="text-[10px] text-slate-400 font-semibold block">${qty} × ${formatCurrency(unitPrice)}</span>
-                  </div>
-                  <i class="fas fa-chevron-right text-[8px] text-slate-300 group-hover:text-emerald-600 transition-colors"></i>
-                </div>
-              </div>
-            `;
-          }).join('');
-        } else {
-          itemsContainer.innerHTML = `
-            <div class="text-center py-4 bg-slate-50 rounded-2xl text-xs text-slate-400 font-medium">
-              Gasto registrado como monto global.
-            </div>
-          `;
-        }
-      }
-
-      openModal('modal-transaction-detail');
-    }
-    window.openTransactionDetailModal = openTransactionDetailModal;
-
-    // Botón Lápiz desde el Detalle: Abre el modal de edición
-    document.getElementById('btn-edit-from-detail').addEventListener('click', () => {
-      if (currentDetailExpenseId) {
-        closeModal('modal-transaction-detail');
-        setTimeout(() => {
-          openEditExpenseModal(currentDetailExpenseId);
-        }, 150);
-      }
-    });
-    document.getElementById('close-modal-detail').addEventListener('click', () => {
-      closeModal('modal-transaction-detail');
-    });
-
-    // ================================================================
-    // FUNCIONES DE RESETEO LIMPIO PARA NUEVOS REGISTROS
-    // ================================================================
-    // Variables de Estado del Modal de Registro
-    let currentRegistrationType = 'shared'; // 'personal', 'shared', 'income'
-    let isFixedExpenseActive = false;
-    let isListExpenseActive = false;
-    let activeSharedMemberIds = new Set();
-    let mobileExpenseItems = [];
-    let mobileExpenseGuests = [];
-    let editingExpenseId = null;
-    let editingIncomeId = null;
-
-    function addMobileItemRow() {
-      const newItem = {
-        id: 'item_' + Date.now() + '_' + Math.random().toString(36).substring(2, 6),
-        desc: '',
-        quantity: 1,
-        amount: '',
-        assignedTo: 'all',
-        assignments: {}
-      };
-      mobileExpenseItems.push(newItem);
-      renderMobileItemsList();
-    }
-    window.addMobileItemRow = addMobileItemRow;
-
-    function removeMobileItemRow(id) {
-      mobileExpenseItems = mobileExpenseItems.filter(item => item.id !== id);
-      renderMobileItemsList();
-    }
-    window.removeMobileItemRow = removeMobileItemRow;
-
-    function updateMobileItemField(id, field, value) {
-      const item = mobileExpenseItems.find(i => i.id === id);
-      if (item) {
-        item[field] = value;
-        renderListTotalBadge();
-      }
-    }
-    window.updateMobileItemField = updateMobileItemField;
-
-    function renderListTotalBadge() {
-      let total = 0;
-      mobileExpenseItems.forEach(item => {
-        const q = parseFloat(item.quantity) || 1;
-        const p = parseFloat(item.amount) || 0;
-        total += (q * p);
-      });
-      const badge = document.getElementById('list-items-total-badge');
-      if (badge) badge.textContent = `Total: ${formatCurrency(total)}`;
-      return total;
-    }
-    window.renderListTotalBadge = renderListTotalBadge;
-
-    function updateDateChipLabel(dateStr) {
-      if (!dateStr) return;
-      const d = new Date(dateStr + 'T00:00:00Z');
-      const day = d.getUTCDate();
-      const month = d.toLocaleString('es-ES', { month: 'short', timeZone: 'UTC' });
-      const label = `${day}-${month.charAt(0).toUpperCase() + month.slice(1).replace('.', '')}`;
-      const chip = document.getElementById('chip-date-label');
-      if (chip) chip.textContent = label;
-    }
-
-    document.getElementById('exp-date').addEventListener('input', (e) => {
-      updateDateChipLabel(e.target.value);
-    });
-
-    function switchExpenseRegistrationType(type) {
-      currentRegistrationType = type;
-      const btnPersonal = document.getElementById('tab-type-personal');
-      const btnShared = document.getElementById('tab-type-shared');
-      const btnIncome = document.getElementById('tab-type-income');
-      const sharedSection = document.getElementById('section-shared-members');
-      const iconBox = document.getElementById('box-expense-visual-icon');
-
-      [btnPersonal, btnShared, btnIncome].forEach(b => {
-        if (b) b.className = 'flex-1 py-1.5 rounded-full text-slate-500 hover:text-slate-900 transition-all text-center';
-      });
-
-      if (type === 'personal') {
-        if (btnPersonal) btnPersonal.className = 'flex-1 py-1.5 rounded-full bg-[#c6f6b5] text-slate-950 shadow-xs font-black transition-all text-center';
-        if (sharedSection) {
-          sharedSection.classList.remove('m3-open');
-        }
-        if (iconBox) {
-          iconBox.className = 'w-[82px] h-[82px] min-w-[82px] bg-[#dcfce7] text-emerald-900 rounded-[14px] flex flex-col items-center justify-center shrink-0 p-1.5 shadow-2xs transition-all duration-300';
-          iconBox.innerHTML = '<i class="fas fa-user text-xl mb-0.5 opacity-80"></i><span class="text-[8px] font-black uppercase text-emerald-800/80">Personal</span>';
-        }
-      } else if (type === 'income') {
-        if (btnIncome) btnIncome.className = 'flex-1 py-1.5 rounded-full bg-emerald-200 text-emerald-950 shadow-xs font-black transition-all text-center';
-        if (sharedSection) {
-          sharedSection.classList.remove('m3-open');
-        }
-        if (iconBox) {
-          iconBox.className = 'w-[82px] h-[82px] min-w-[82px] bg-emerald-100 text-emerald-900 rounded-[14px] flex flex-col items-center justify-center shrink-0 p-1.5 shadow-2xs transition-all duration-300';
-          iconBox.innerHTML = '<i class="fas fa-coins text-xl mb-0.5 opacity-80"></i><span class="text-[8px] font-black uppercase text-emerald-800/80">Ingreso</span>';
-        }
-      } else {
-        if (btnShared) btnShared.className = 'flex-1 py-1.5 rounded-full bg-[#c6f6b5] text-slate-950 shadow-xs font-black transition-all text-center';
-        if (sharedSection) {
-          sharedSection.classList.add('m3-open');
-        }
-        if (iconBox) {
-          iconBox.className = 'w-[82px] h-[82px] min-w-[82px] bg-[#dcfce7] text-emerald-900 rounded-[14px] flex flex-col items-center justify-center shrink-0 p-1.5 shadow-2xs transition-all duration-300';
-          iconBox.innerHTML = '<i class="fas fa-receipt text-xl mb-0.5 opacity-80"></i><span class="text-[8px] font-black uppercase text-emerald-800/80">Gasto</span>';
-        }
-      }
-      renderSharedMembersAvatars();
-    }
-    window.switchExpenseRegistrationType = switchExpenseRegistrationType;
-
-    // ================================================================
-    // SELECTOR DE OPCIONES GENÉRICO M3 (MODAL BOTTOM SHEET PICKER)
-    // ================================================================
-    let currentPickerType = null;
-    function openOptionPicker(type) {
-      currentPickerType = type;
-      const titleEl = document.getElementById('option-picker-title');
-      const container = document.getElementById('option-picker-items-container');
-      if (!titleEl || !container) return;
-
-      let title = 'Seleccionar';
-      let options = [];
-      let currentValue = '';
-
-      if (type === 'category') {
-        title = 'Seleccionar Categoría';
-        currentValue = document.getElementById('exp-category')?.value || 'General';
-        const cats = (appState.categories && appState.categories.length > 0)
-          ? appState.categories
-          : [{ name: 'General', icon: 'fa-shapes' }, { name: 'Alimentación', icon: 'fa-utensils' }, { name: 'Transporte', icon: 'fa-car' }, { name: 'Servicios', icon: 'fa-bolt' }, { name: 'Entretenimiento', icon: 'fa-gamepad' }, { name: 'Salud', icon: 'fa-heartbeat' }, { name: 'Hogar', icon: 'fa-home' }];
-        options = cats.map(c => ({
-          value: c.name,
-          label: c.name,
-          icon: c.icon || 'fa-shapes',
-          subtitle: 'Categoría de gasto'
-        }));
-      } else if (type === 'payment-method') {
-        title = 'Seleccionar Método de Pago';
-        currentValue = document.getElementById('exp-payment-method')?.value || 'Efectivo';
-        const pms = (appState.paymentMethods && appState.paymentMethods.length > 0)
-          ? appState.paymentMethods
-          : [{ id: 'm1', name: 'Efectivo', type: 'cash' }, { id: 'm2', name: 'Tarjeta', type: 'card' }, { id: 'm3', name: 'Transferencia', type: 'transfer' }];
-        options = pms.map(pm => ({
-          value: pm.name,
-          label: pm.name,
-          extra: pm.id,
-          icon: pm.type === 'cash' ? 'fa-money-bill-wave' : (pm.type === 'card' ? 'fa-credit-card' : 'fa-exchange-alt'),
-          subtitle: pm.type ? pm.type.toUpperCase() : 'Método de pago'
-        }));
-      } else if (type === 'split-mode') {
-        title = 'Modo de División de Gasto';
-        currentValue = document.getElementById('exp-split-mode-select')?.value || 'equitativo';
-        options = [
-          { value: 'equitativo', label: 'Equitativo', icon: 'fa-balance-scale', subtitle: 'División en partes iguales entre los miembros' },
-          { value: 'porcentual', label: 'Porcentual', icon: 'fa-percentage', subtitle: 'Según el porcentaje de presupuesto de cada miembro' },
-          { value: 'detallado', label: 'Detallado', icon: 'fa-list-ol', subtitle: 'Permite asignar productos específicos por miembro' }
-        ];
-      } else if (type === 'fixed-frequency') {
-        title = 'Frecuencia de Gasto Fijo';
-        currentValue = document.getElementById('exp-fixed-frequency')?.value || 'monthly';
-        options = [
-          { value: 'monthly', label: 'Mensual', icon: 'fa-calendar-alt', subtitle: 'Se repite cada mes' },
-          { value: 'biweekly', label: 'Quincenal', icon: 'fa-calendar-check', subtitle: 'Se repite cada 15 días' },
-          { value: 'weekly', label: 'Semanal', icon: 'fa-calendar-week', subtitle: 'Se repite cada semana' },
-          { value: 'yearly', label: 'Anual', icon: 'fa-calendar', subtitle: 'Se repite cada año' }
-        ];
-      } else if (type === 'fixed-repeat') {
-        title = 'Repetición / Cuotas';
-        currentValue = document.getElementById('exp-fixed-repeat')?.value || 'indefinite';
-        options = [
-          { value: 'indefinite', label: 'Indefinido', icon: 'fa-infinity', subtitle: 'Sin límite de cuotas / recurrente continuo' },
-          { value: '2', label: '2 veces / cuotas', icon: 'fa-layer-group', subtitle: '2 meses' },
-          { value: '3', label: '3 veces / cuotas', icon: 'fa-layer-group', subtitle: '3 meses' },
-          { value: '6', label: '6 veces / cuotas', icon: 'fa-layer-group', subtitle: '6 meses' },
-          { value: '12', label: '12 veces / cuotas', icon: 'fa-layer-group', subtitle: '12 meses (1 año)' },
-          { value: '24', label: '24 veces / cuotas', icon: 'fa-layer-group', subtitle: '24 meses (2 años)' }
-        ];
-      }
-
-      titleEl.textContent = title;
-      container.innerHTML = options.map(opt => {
-        const isSelected = opt.value === currentValue;
-        return `
-          <button type="button" onclick="selectOptionPickerValue('${type}', '${opt.value}', '${opt.label.replace(/'/g, "\\'")}', '${opt.extra || ''}')"
-            class="w-full p-3.5 rounded-2xl flex items-center justify-between transition-all active:scale-98 ${isSelected ? 'bg-emerald-50 border-2 border-emerald-500 shadow-2xs' : 'bg-slate-50/80 border border-slate-200/70 hover:bg-slate-100'}">
-            <div class="flex items-center gap-3 text-left min-w-0 flex-1">
-              <div class="w-9 h-9 rounded-xl flex items-center justify-center text-sm shrink-0 ${isSelected ? 'bg-emerald-600 text-white shadow-xs' : 'bg-white text-slate-700 border border-slate-200'}">
-                <i class="fas ${opt.icon}"></i>
-              </div>
-              <div class="min-w-0 flex-1">
-                <h4 class="text-xs font-black ${isSelected ? 'text-emerald-950' : 'text-slate-900'} truncate">${opt.label}</h4>
-                ${opt.subtitle ? `<p class="text-[10px] ${isSelected ? 'text-emerald-700 font-semibold' : 'text-slate-400 font-medium'} truncate">${opt.subtitle}</p>` : ''}
-              </div>
-            </div>
-            <div class="w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 ml-2 ${isSelected ? 'border-emerald-600 bg-emerald-600' : 'border-slate-300 bg-white'}">
-              ${isSelected ? '<i class="fas fa-check text-[9px] text-white"></i>' : ''}
-            </div>
-          </button>
-        `;
-      }).join('');
-
-      openModal('modal-option-picker');
-    }
-    window.openOptionPicker = openOptionPicker;
-
-    function selectOptionPickerValue(type, value, label, extra) {
-      if (type === 'category') {
-        const input = document.getElementById('exp-category');
-        const chip = document.getElementById('chip-category-label');
-        if (input) input.value = value;
-        if (chip) chip.textContent = label;
-      } else if (type === 'payment-method') {
-        const input = document.getElementById('exp-payment-method');
-        const inputId = document.getElementById('exp-payment-method-id');
-        const chip = document.getElementById('chip-pm-label');
-        if (input) input.value = value;
-        if (inputId) inputId.value = extra || '';
-        if (chip) chip.textContent = label;
-      } else if (type === 'split-mode') {
-        const input = document.getElementById('exp-split-mode-select');
-        const chip = document.getElementById('chip-split-mode-label');
-        if (input) input.value = value;
-        if (chip) chip.textContent = label;
-        onSplitModeChange(value);
-      } else if (type === 'fixed-frequency') {
-        const input = document.getElementById('exp-fixed-frequency');
-        const chip = document.getElementById('chip-frequency-label');
-        if (input) input.value = value;
-        if (chip) chip.textContent = label;
-      } else if (type === 'fixed-repeat') {
-        const input = document.getElementById('exp-fixed-repeat');
-        const chip = document.getElementById('chip-repeat-label');
-        if (input) input.value = value;
-        if (chip) chip.textContent = label;
-      }
-      closeModal('modal-option-picker');
-    }
-    window.selectOptionPickerValue = selectOptionPickerValue;
-
-    // ================================================================
-    // CONTROLADORES DE MATERIAL 3 SEGMENTED BUTTONS (FIJO & LISTA)
-    // ================================================================
-    function updateSegmentedButtonsUI() {
-      const btnFixed = document.getElementById('btn-toggle-fixed');
-      const btnList = document.getElementById('btn-toggle-list');
-      const fixedCheck = document.getElementById('icon-fixed-check');
-      const fixedSymbol = document.getElementById('icon-fixed-symbol');
-      const listCheck = document.getElementById('icon-list-check');
-      const listSymbol = document.getElementById('icon-list-symbol');
-      const secFixed = document.getElementById('section-fixed-config');
-      const secList = document.getElementById('section-list-items');
-
-      // Fijo
-      if (btnFixed) {
-        if (isFixedExpenseActive) {
-          btnFixed.className = 'flex-1 h-full px-2 flex items-center justify-center gap-1.5 text-[11px] font-black text-slate-950 bg-[#c6f6b5] transition-all select-none active:scale-[0.98]';
-          if (fixedCheck) fixedCheck.classList.remove('hidden');
-          if (fixedSymbol) fixedSymbol.classList.add('hidden');
-          if (secFixed) secFixed.classList.add('m3-open');
-        } else {
-          btnFixed.className = 'flex-1 h-full px-2 flex items-center justify-center gap-1.5 text-[11px] font-bold text-slate-600 hover:bg-slate-50 transition-all select-none active:scale-[0.98]';
-          if (fixedCheck) fixedCheck.classList.add('hidden');
-          if (fixedSymbol) fixedSymbol.classList.remove('hidden');
-          if (secFixed) secFixed.classList.remove('m3-open');
-        }
-      }
-
-      // Lista
-      if (btnList) {
-        if (isListExpenseActive) {
-          btnList.className = 'flex-1 h-full px-2 flex items-center justify-center gap-1.5 text-[11px] font-black text-slate-950 bg-[#c6f6b5] transition-all select-none active:scale-[0.98]';
-          if (listCheck) listCheck.classList.remove('hidden');
-          if (listSymbol) listSymbol.classList.add('hidden');
-          if (secList) {
-            secList.classList.remove('m3-block-closed');
-            secList.classList.add('m3-block-open');
-          }
-        } else {
-          btnList.className = 'flex-1 h-full px-2 flex items-center justify-center gap-1.5 text-[11px] font-bold text-slate-600 hover:bg-slate-50 transition-all select-none active:scale-[0.98]';
-          if (listCheck) listCheck.classList.add('hidden');
-          if (listSymbol) listSymbol.classList.remove('hidden');
-          if (secList) {
-            secList.classList.remove('m3-block-open');
-            secList.classList.add('m3-block-closed');
-          }
-        }
-      }
-    }
-    window.updateSegmentedButtonsUI = updateSegmentedButtonsUI;
-
-    function toggleFixedExpenseSection() {
-      isFixedExpenseActive = !isFixedExpenseActive;
-      updateSegmentedButtonsUI();
-    }
-    window.toggleFixedExpenseSection = toggleFixedExpenseSection;
-
-    function toggleListExpenseSection() {
-      isListExpenseActive = !isListExpenseActive;
-      if (isListExpenseActive && mobileExpenseItems.length === 0) {
-        addMobileItemRow();
-      }
-      if (isListExpenseActive) {
-        renderMobileItemsList();
-      }
-      updateSegmentedButtonsUI();
-    }
-    window.toggleListExpenseSection = toggleListExpenseSection;
-
-    // ================================================================
-    // MODAL BOTTOM SHEET DE REPARTICIÓN Y DIVISIÓN DE GASTOS (M3)
-    // ================================================================
-    let currentSplitModalTab = 'equitativo';
-    let splitCustomPercentages = {}; // { memberId: pctNumber }
-
-    function getActiveSplitMembers() {
-      const allMembers = [
-        ...appState.participants.map(p => ({
-          id: p.id,
-          name: p.name,
-          initials: (p.name || 'U').substring(0, 2).toUpperCase(),
-          isGuest: false
-        })),
-        ...mobileExpenseGuests.map((g) => {
-          const cleanName = g.trim();
-          const gKey = `guest_${cleanName.toLowerCase().replace(/\s+/g, '_')}`;
-          return {
-            id: gKey,
-            name: cleanName,
-            initials: cleanName.substring(0, 2).toUpperCase(),
-            isGuest: true
-          };
-        })
-      ];
-
-      if (activeSharedMemberIds.size > 0) {
-        const filtered = allMembers.filter(m => activeSharedMemberIds.has(m.id));
-        return filtered.length > 0 ? filtered : allMembers;
-      }
-      return allMembers;
-    }
-
-    function getCurrentExpenseTotalForSplit() {
-      if (isListExpenseActive) {
-        return renderListTotalBadge();
-      }
-      return parseFloat(document.getElementById('exp-amount')?.value) || 0;
-    }
-
-    function openSplitBreakdownModal(initialMode) {
-      const mode = initialMode || document.getElementById('exp-split-mode-select')?.value || 'equitativo';
-      currentSplitModalTab = mode;
-
-      const desc = document.getElementById('exp-description')?.value.trim() || 'Nuevo Gasto';
-      const totalAmount = getCurrentExpenseTotalForSplit();
-
-      const titleEl = document.getElementById('split-modal-title');
-      const badgeEl = document.getElementById('split-modal-total-badge');
-      if (titleEl) titleEl.textContent = desc;
-      if (badgeEl) badgeEl.textContent = formatCurrency(totalAmount);
-
-      // Inicializar porcentajes si no están configurados
-      const members = getActiveSplitMembers();
-      if (members.length > 0) {
-        const hasExisting = members.some(m => splitCustomPercentages[m.id] !== undefined);
-        if (!hasExisting) {
-          const equalPct = Math.floor(100 / members.length);
-          const remainder = 100 - (equalPct * members.length);
-          members.forEach((m, idx) => {
-            splitCustomPercentages[m.id] = equalPct + (idx === 0 ? remainder : 0);
-          });
-        }
-      }
-
-      switchSplitModalTab(currentSplitModalTab);
-      openModal('modal-split-breakdown');
-    }
-    window.openSplitBreakdownModal = openSplitBreakdownModal;
-
-    function switchSplitModalTab(tab) {
-      currentSplitModalTab = tab;
-      const tabEquitativo = document.getElementById('tab-split-equitativo');
-      const tabPorcentual = document.getElementById('tab-split-porcentual');
-      const tabDetallado = document.getElementById('tab-split-detallado');
-
-      const activeClass = 'flex-1 py-1.5 rounded-full text-xs font-black bg-[#c6f6b5] text-slate-950 shadow-xs transition-all text-center';
-      const inactiveClass = 'flex-1 py-1.5 rounded-full text-xs font-bold text-slate-600 hover:text-slate-900 transition-all text-center';
-
-      if (tabEquitativo) tabEquitativo.className = tab === 'equitativo' ? activeClass : inactiveClass;
-      if (tabPorcentual) tabPorcentual.className = tab === 'porcentual' ? activeClass : inactiveClass;
-      if (tabDetallado) tabDetallado.className = tab === 'detallado' ? activeClass : inactiveClass;
-
-      renderSplitModalContent();
-    }
-    window.switchSplitModalTab = switchSplitModalTab;
-
-    function renderSplitModalContent() {
-      const headerEl = document.getElementById('split-modal-table-header');
-      const container = document.getElementById('split-modal-items-container');
-      const statusBar = document.getElementById('split-percentage-status-bar');
-      const members = getActiveSplitMembers();
-      const totalAmount = getCurrentExpenseTotalForSplit();
-
-      if (!headerEl || !container) return;
-
-      if (currentSplitModalTab === 'porcentual') {
-        // ==========================================
-        // VISTA 1: PORCENTAJE (Miembro | Monto | %)
-        // ==========================================
-        if (statusBar) statusBar.classList.remove('hidden');
-
-        headerEl.innerHTML = `
-          <span class="col-span-5">Miembro</span>
-          <span class="col-span-4 text-right">Monto</span>
-          <span class="col-span-3 text-right">%</span>
-        `;
-
-        let sumPct = 0;
-        container.innerHTML = members.map(m => {
-          const pct = splitCustomPercentages[m.id] !== undefined ? parseFloat(splitCustomPercentages[m.id]) || 0 : (100 / (members.length || 1));
-          sumPct += pct;
-          const memberAmount = (totalAmount * pct) / 100;
-
-          return `
-            <div class="grid grid-cols-12 gap-2 items-center bg-slate-50/80 border border-slate-100 rounded-2xl p-2.5 hover:bg-slate-100/60 transition-all">
-              <div class="col-span-5 flex items-center gap-2 min-w-0">
-                <div class="w-8 h-8 rounded-xl ${m.isGuest ? 'bg-amber-500' : 'bg-slate-900'} text-white flex items-center justify-center font-black text-[10px] shrink-0">
-                  ${m.initials}
-                </div>
-                <span class="text-xs font-extrabold text-slate-900 truncate">${m.name}</span>
-              </div>
-              <div class="col-span-4 text-right">
-                <span class="text-xs font-black text-slate-900">${formatCurrency(memberAmount)}</span>
-              </div>
-              <div class="col-span-3 flex items-center justify-end gap-1">
-                <input type="number" min="0" max="100" step="1" value="${pct}"
-                  oninput="updateMemberPercentage('${m.id}', this.value)"
-                  class="w-12 text-center bg-white border border-slate-200 rounded-xl py-1 text-xs font-black text-slate-900 focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500 outline-none" />
-                <span class="text-xs font-black text-slate-500">%</span>
-              </div>
-            </div>
-          `;
-        }).join('');
-
-        const totalBadge = document.getElementById('split-percentage-total-badge');
-        if (totalBadge) {
-          totalBadge.textContent = `${sumPct.toFixed(0)}%`;
-          if (Math.round(sumPct) === 100) {
-            totalBadge.className = 'text-xs font-black text-emerald-800 bg-emerald-100 px-2.5 py-1 rounded-xl';
-          } else {
-            totalBadge.className = 'text-xs font-black text-rose-800 bg-rose-100 px-2.5 py-1 rounded-xl';
-          }
-        }
-
-      } else if (currentSplitModalTab === 'equitativo') {
-        // ==========================================
-        // VISTA 2: EQUITATIVO (Miembro | Monto)
-        // ==========================================
-        if (statusBar) statusBar.classList.add('hidden');
-
-        headerEl.innerHTML = `
-          <span class="col-span-7">Miembro</span>
-          <span class="col-span-5 text-right">Monto</span>
-        `;
-
-        const numMembers = members.length || 1;
-        const equalAmount = totalAmount / numMembers;
-
-        container.innerHTML = members.map(m => `
-          <div class="grid grid-cols-12 gap-2 items-center bg-slate-50/80 border border-slate-100 rounded-2xl p-2.5 hover:bg-slate-100/60 transition-all">
-            <div class="col-span-7 flex items-center gap-2 min-w-0">
-              <div class="w-8 h-8 rounded-xl ${m.isGuest ? 'bg-amber-500' : 'bg-slate-900'} text-white flex items-center justify-center font-black text-[10px] shrink-0">
-                ${m.initials}
-              </div>
-              <div>
-                <h4 class="text-xs font-extrabold text-slate-900 truncate">${m.name}</h4>
-                <p class="text-[9px] text-emerald-700 font-bold">1 / ${numMembers} parte</p>
-              </div>
-            </div>
-            <div class="col-span-5 text-right">
-              <span class="text-xs font-black text-slate-900">${formatCurrency(equalAmount)}</span>
-            </div>
-          </div>
-        `).join('');
-
-      } else if (currentSplitModalTab === 'detallado') {
-        // ==========================================
-        // VISTA 3: DETALLADO (Producto | Miembros | Monto)
-        // ==========================================
-        if (statusBar) statusBar.classList.add('hidden');
-
-        headerEl.innerHTML = `
-          <span class="col-span-6">Producto</span>
-          <span class="col-span-3 text-center">Miembros</span>
-          <span class="col-span-3 text-right">Monto</span>
-        `;
-
-        if (mobileExpenseItems.length === 0) {
-          container.innerHTML = `
-            <div class="text-center py-6 bg-slate-50 rounded-2xl space-y-3">
-              <p class="text-xs text-slate-500 font-medium">No hay productos en la lista de compras aún.</p>
-              <button type="button" onclick="activateListAndAddItem()"
-                class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-black rounded-xl shadow-xs active:scale-95 transition-all">
-                + Agregar primer producto
-              </button>
-            </div>
-          `;
-        } else {
-          container.innerHTML = mobileExpenseItems.map((item, idx) => {
-            const qty = parseFloat(item.quantity) || 1;
-            const price = parseFloat(item.amount) || 0;
-            const itemTotal = qty * price;
-
-            // Calcular miembros asignados
-            let assignedCount = 0;
-            if (item.assignments && Object.keys(item.assignments).length > 0) {
-              assignedCount = Object.keys(item.assignments).filter(k => (parseFloat(item.assignments[k]) || 0) > 0).length;
-            } else if (item.assignedTo && item.assignedTo !== 'all') {
-              assignedCount = 1;
-            } else {
-              assignedCount = members.length;
-            }
-
-            return `
-              <div onclick="openItemAssignmentModal('${item.id}')"
-                class="grid grid-cols-12 gap-2 items-center bg-white border border-slate-100 hover:border-emerald-300 rounded-2xl p-2.5 cursor-pointer shadow-2xs active:scale-98 transition-all group">
-                <div class="col-span-6 flex items-center gap-2 min-w-0">
-                  <span class="w-5 h-5 rounded-full bg-slate-100 group-hover:bg-emerald-100 text-slate-600 group-hover:text-emerald-700 text-[10px] font-black flex items-center justify-center shrink-0">
-                    ${idx + 1}
-                  </span>
-                  <div class="truncate">
-                    <h4 class="text-xs font-extrabold text-slate-900 group-hover:text-emerald-950 truncate">${item.desc || 'Producto'}</h4>
-                    <p class="text-[10px] text-slate-400 font-medium">${qty} × ${formatCurrency(price)}</p>
-                  </div>
-                </div>
-                <div class="col-span-3 text-center">
-                  <span class="text-xs font-black text-slate-800 bg-slate-100 group-hover:bg-emerald-50 px-2.5 py-1 rounded-xl">
-                    ${assignedCount === members.length ? 'Todos' : `${assignedCount} pers.`}
-                  </span>
-                </div>
-                <div class="col-span-3 text-right flex items-center justify-end gap-1">
-                  <span class="text-xs font-black text-slate-900">${formatCurrency(itemTotal)}</span>
-                  <i class="fas fa-chevron-right text-[8px] text-slate-300 group-hover:text-emerald-600"></i>
-                </div>
-              </div>
-            `;
-          }).join('');
-        }
-      }
-    }
-
-    function updateMemberPercentage(memberId, val) {
-      const num = parseFloat(val) || 0;
-      splitCustomPercentages[memberId] = num;
-      renderSplitModalContent();
-    }
-    window.updateMemberPercentage = updateMemberPercentage;
-
-    function activateListAndAddItem() {
-      if (!isListExpenseActive) {
-        toggleListExpenseSection();
-      } else if (mobileExpenseItems.length === 0) {
-        addMobileItemRow();
-      }
-      renderSplitModalContent();
-    }
-    window.activateListAndAddItem = activateListAndAddItem;
-
-    function confirmSplitDistribution() {
-      const mode = currentSplitModalTab;
-      const input = document.getElementById('exp-split-mode-select');
-      const chip = document.getElementById('chip-split-mode-label');
-
-      if (input) input.value = mode;
-      if (chip) {
-        const labels = { equitativo: 'Equitativo', porcentual: 'Porcentual', detallado: 'Detallado' };
-        chip.textContent = labels[mode] || mode;
-      }
-
-      if (mode === 'detallado' && !isListExpenseActive) {
-        toggleListExpenseSection();
-      }
-
-      closeModal('modal-split-breakdown');
-    }
-    window.confirmSplitDistribution = confirmSplitDistribution;
-
-    function renderSharedMembersAvatars() {
-      const container = document.getElementById('shared-members-avatars-row');
-      if (!container) return;
-
-      const allMembers = [
-        ...appState.participants.map(p => ({
-          id: p.id,
-          name: p.name,
-          initials: (p.name || 'U').substring(0, 2).toUpperCase(),
-          isGuest: false
-        })),
-        ...mobileExpenseGuests.map((g, gIdx) => {
-          const cleanName = g.trim();
-          const gKey = `guest_${cleanName.toLowerCase().replace(/\s+/g, '_')}`;
-          return {
-            id: gKey,
-            name: cleanName,
-            initials: cleanName.substring(0, 2).toUpperCase(),
-            isGuest: true
-          };
-        })
-      ];
-
-      if (activeSharedMemberIds.size === 0) {
-        allMembers.forEach(m => activeSharedMemberIds.add(m.id));
-      }
-
-      container.innerHTML = allMembers.map(m => {
-        const isSelected = activeSharedMemberIds.has(m.id);
-        return `
-          <button type="button" onclick="toggleSharedMemberInclusion('${m.id}')"
-            class="w-11 h-11 rounded-xl flex items-center justify-center text-xs font-black transition-all shrink-0 active:scale-95 ${isSelected ? (m.isGuest ? 'bg-amber-200 text-amber-950 border-2 border-amber-400 shadow-2xs' : 'bg-[#c6f6b5] text-slate-950 border-2 border-emerald-400 shadow-2xs') : 'bg-slate-100 text-slate-400 opacity-60'}">
-            ${m.initials}
-          </button>
-        `;
-      }).join('');
-    }
-    window.renderSharedMembersAvatars = renderSharedMembersAvatars;
-
-    function toggleSharedMemberInclusion(memberId) {
-      if (activeSharedMemberIds.has(memberId)) {
-        if (activeSharedMemberIds.size > 1) {
-          activeSharedMemberIds.delete(memberId);
-        }
-      } else {
-        activeSharedMemberIds.add(memberId);
-      }
-      renderSharedMembersAvatars();
-    }
-    window.toggleSharedMemberInclusion = toggleSharedMemberInclusion;
-
-    function resetExpenseForm() {
-      editingExpenseId = null;
-      document.getElementById('form-mobile-expense').reset();
-      document.getElementById('exp-amount').value = '';
-      document.getElementById('exp-description').value = '';
-      const todayIso = new Date().toISOString().split('T')[0];
-      document.getElementById('exp-date').value = todayIso;
-      updateDateChipLabel(todayIso);
-
-      // Reset Chips Labels
-      const defaultCat = (appState.categories && appState.categories[0]?.name) || 'General';
-      const defaultPm = (appState.paymentMethods && appState.paymentMethods[0]?.name) || 'Efectivo';
-      const defaultPmId = (appState.paymentMethods && appState.paymentMethods[0]?.id) || '';
-
-      const expCat = document.getElementById('exp-category');
-      const chipCat = document.getElementById('chip-category-label');
-      if (expCat) expCat.value = defaultCat;
-      if (chipCat) chipCat.textContent = defaultCat;
-
-      const expPm = document.getElementById('exp-payment-method');
-      const expPmId = document.getElementById('exp-payment-method-id');
-      const chipPm = document.getElementById('chip-pm-label');
-      if (expPm) expPm.value = defaultPm;
-      if (expPmId) expPmId.value = defaultPmId;
-      if (chipPm) chipPm.textContent = defaultPm;
-
-      const splitSelect = document.getElementById('exp-split-mode-select');
-      const splitChip = document.getElementById('chip-split-mode-label');
-      if (splitSelect) splitSelect.value = 'equitativo';
-      if (splitChip) splitChip.textContent = 'Equitativo';
-
-      const freqSelect = document.getElementById('exp-fixed-frequency');
-      const freqChip = document.getElementById('chip-frequency-label');
-      if (freqSelect) freqSelect.value = 'monthly';
-      if (freqChip) freqChip.textContent = 'Mensual';
-
-      const repSelect = document.getElementById('exp-fixed-repeat');
-      const repChip = document.getElementById('chip-repeat-label');
-      if (repSelect) repSelect.value = 'indefinite';
-      if (repChip) repChip.textContent = 'Indefinido';
-
-      document.getElementById('label-submit-expense').textContent = 'Confirmar y Guardar Gasto';
-      document.getElementById('btn-delete-expense').classList.add('hidden');
-
-      mobileExpenseItems = [];
-      mobileExpenseGuests = [];
-      activeSharedMemberIds.clear();
-
-      // Restablecer toggles
-      isFixedExpenseActive = false;
-      isListExpenseActive = false;
-      updateSegmentedButtonsUI();
-
-      switchExpenseRegistrationType('shared');
-    }
-
-    function resetIncomeForm() {
-      editingIncomeId = null;
-      document.getElementById('form-mobile-income').reset();
-      document.getElementById('inc-amount').value = '';
-      document.getElementById('inc-description').value = '';
-      document.getElementById('inc-date').value = new Date().toISOString().split('T')[0];
-      document.getElementById('modal-income-title').textContent = 'Registrar Nuevo Ingreso';
-      document.getElementById('label-submit-income').textContent = 'Añadir Ingreso al Presupuesto';
-      document.getElementById('btn-delete-income').classList.add('hidden');
-    }
-    window.resetExpenseForm = resetExpenseForm;
-    window.resetIncomeForm = resetIncomeForm;
-
-    // Abrir Modal para Editar Gasto Existente
-    function openEditExpenseModal(expenseId) {
-      const exp = appState.expenses.find(e => e.id === expenseId);
-      if (!exp) return;
-
-      editingExpenseId = expenseId;
-      document.getElementById('label-submit-expense').textContent = 'Guardar Cambios';
-      document.getElementById('btn-delete-expense').classList.remove('hidden');
-
-      // Cargar Valores
-      document.getElementById('exp-amount').value = exp.amount || '';
-      document.getElementById('exp-description').value = exp.description || '';
-      const expDate = exp.date || new Date().toISOString().split('T')[0];
-      document.getElementById('exp-date').value = expDate;
-      updateDateChipLabel(expDate);
-
-      // Cargar Categoría
-      const catVal = exp.category || 'General';
-      const expCat = document.getElementById('exp-category');
-      const chipCat = document.getElementById('chip-category-label');
-      if (expCat) expCat.value = catVal;
-      if (chipCat) chipCat.textContent = catVal;
-
-      if (exp.payerId) document.getElementById('exp-payer').value = exp.payerId;
-
-      // Cargar Método de Pago
-      const pmVal = exp.paymentMethod || 'Efectivo';
-      const expPm = document.getElementById('exp-payment-method');
-      const expPmId = document.getElementById('exp-payment-method-id');
-      const chipPm = document.getElementById('chip-pm-label');
-      if (expPm) expPm.value = pmVal;
-      if (expPmId) expPmId.value = exp.paymentMethodId || '';
-      if (chipPm) chipPm.textContent = pmVal;
-
-      // Tipo
-      switchExpenseRegistrationType(exp.type || 'shared');
-
-      // Invitados
-      mobileExpenseGuests = (exp.guests && Array.isArray(exp.guests)) ? [...exp.guests] : (exp.guestName ? [exp.guestName] : []);
-      renderSharedMembersAvatars();
-
-      // Fijo
-      if (exp.isFixed) {
-        isFixedExpenseActive = true;
-        if (exp.fixedFrequency) {
-          document.getElementById('exp-fixed-frequency').value = exp.fixedFrequency;
-          const freqMap = { monthly: 'Mensual', biweekly: 'Quincenal', weekly: 'Semanal', yearly: 'Anual' };
-          document.getElementById('chip-frequency-label').textContent = freqMap[exp.fixedFrequency] || exp.fixedFrequency;
-        }
-        if (exp.fixedRepeat) {
-          document.getElementById('exp-fixed-repeat').value = exp.fixedRepeat;
-          document.getElementById('chip-repeat-label').textContent = exp.fixedRepeat === 'indefinite' ? 'Indefinido' : `${exp.fixedRepeat} cuotas`;
-        }
-      } else {
-        isFixedExpenseActive = false;
-      }
-
-      // Ítems
-      if (exp.items && exp.items.length > 0) {
-        isListExpenseActive = true;
-        mobileExpenseItems = exp.items.map(it => {
-          let assignments = normalizeItemAssignments(it.assignments, mobileExpenseGuests);
-          if (Object.keys(assignments).length === 0 && it.assignedTo && it.assignedTo !== 'all') {
-            const { key: gKey } = getGuestKeyAndName(it.assignedTo, mobileExpenseGuests);
-            assignments = { [gKey]: parseFloat(it.quantity) || 1 };
-          }
-
-          return {
-            id: 'item_' + Date.now() + '_' + Math.random().toString(36).substring(2, 6),
-            desc: it.desc || '',
-            quantity: it.quantity || 1,
-            amount: it.amount || '',
-            assignedTo: it.assignedTo || (Object.keys(assignments).length === 1 ? Object.keys(assignments)[0] : 'all'),
-            assignments: assignments
-          };
-        });
-        renderMobileItemsList();
-      } else {
-        isListExpenseActive = false;
-        mobileExpenseItems = [];
-      }
-
-      updateSegmentedButtonsUI();
-
-      openModal('modal-expense');
-    }
-    window.openEditExpenseModal = openEditExpenseModal;
-
-    // ================================================================
-    // NORMALIZADOR UNIVERSAL DE ASIGNACIONES (PARTICIPANTES E INVITADOS)
-    // ================================================================
-    function normalizeItemAssignments(rawAssignments, guestsList = []) {
-      if (!rawAssignments || typeof rawAssignments !== 'object') return {};
-      const normalized = {};
-
-      Object.keys(rawAssignments).forEach(key => {
-        const qty = parseFloat(rawAssignments[key]) || 0;
-        if (qty <= 0) return;
-
-        // 1. Participante registrado
-        const pUser = appState.participants.find(p => p.id === key);
-        if (pUser) {
-          normalized[pUser.id] = (normalized[pUser.id] || 0) + qty;
-          return;
-        }
-
-        // 2. Índice numérico o string numérico (ej: "0", "1", "guest_0", "guest-0")
-        const numMatch = String(key).match(/\d+/);
-        if (numMatch && guestsList[parseInt(numMatch[0])]) {
-          const gName = guestsList[parseInt(numMatch[0])].trim();
-          const gKey = `guest_${gName.toLowerCase().replace(/\s+/g, '_')}`;
-          normalized[gKey] = (normalized[gKey] || 0) + qty;
-          return;
-        }
-        if (guestsList[parseInt(key)]) {
-          const gName = guestsList[parseInt(key)].trim();
-          const gKey = `guest_${gName.toLowerCase().replace(/\s+/g, '_')}`;
-          normalized[gKey] = (normalized[gKey] || 0) + qty;
-          return;
-        }
-
-        // 3. Clave guest_nombre
-        if (String(key).startsWith('guest_') || String(key).startsWith('guest-')) {
-          const rawName = String(key).replace('guest_', '').replace('guest-', '').replace(/_/g, ' ').trim();
-          const matched = guestsList.find(g => g.toLowerCase() === rawName.toLowerCase());
-          const gName = matched || rawName;
-          const gKey = `guest_${gName.toLowerCase().replace(/\s+/g, '_')}`;
-          normalized[gKey] = (normalized[gKey] || 0) + qty;
-          return;
-        }
-
-        // 4. Fallback si solo hay 1 invitado en la lista
-        if (guestsList.length === 1) {
-          const gName = guestsList[0].trim();
-          const gKey = `guest_${gName.toLowerCase().replace(/\s+/g, '_')}`;
-          normalized[gKey] = (normalized[gKey] || 0) + qty;
-          return;
-        }
-
-        normalized[key] = (normalized[key] || 0) + qty;
-      });
-
-      return normalized;
-    }
-
-    // Helper para obtener label resumen de asignación en la fila del ítem
-    function getAssignmentSummaryLabel(item, guestsList = []) {
-      const assignments = normalizeItemAssignments(item.assignments, guestsList);
-      const assignedKeys = Object.keys(assignments).filter(k => (parseFloat(assignments[k]) || 0) > 0);
-
-      if (assignedKeys.length > 0) {
-        const parts = assignedKeys.map(k => {
-          const uQty = assignments[k];
-          const pUser = appState.participants.find(p => p.id === k);
-          if (pUser) return `${pUser.name} (${uQty} u.)`;
-          const gName = k.startsWith('guest_') ? k.substring(6).replace(/_/g, ' ') : k;
-          return `${gName} (${uQty} u.)`;
-        });
-        return parts.join(', ');
-      } else if (item.assignedTo && item.assignedTo !== 'all') {
-        const pAssigned = appState.participants.find(p => p.id === item.assignedTo);
-        if (pAssigned) return `${pAssigned.name} (${item.quantity || 1} u.)`;
-        const gName = item.assignedTo.startsWith('guest_') ? item.assignedTo.substring(6).replace(/_/g, ' ') : item.assignedTo;
-        return `${gName} (${item.quantity || 1} u.)`;
-      }
-      return 'Para todos por igual';
-    }
-
-    let itemPendingDeleteId = null;
-
-    function confirmDeleteMobileItem(itemId, desc) {
-      itemPendingDeleteId = itemId;
-      const descEl = document.getElementById('confirm-delete-item-desc');
-      if (descEl) descEl.textContent = desc || 'Producto';
-      openModal('modal-confirm-delete-item');
-    }
-    window.confirmDeleteMobileItem = confirmDeleteMobileItem;
-
-    document.getElementById('btn-execute-delete-item')?.addEventListener('click', () => {
-      if (itemPendingDeleteId) {
-        removeMobileItemRow(itemPendingDeleteId);
-        itemPendingDeleteId = null;
-      }
-      closeModal('modal-confirm-delete-item');
-    });
-
-    // Deslizamiento táctil para expandir botón de eliminar de derecha a izquierda
-    let swipeTouchStartX = 0;
-    let swipeTouchStartY = 0;
-    let swipeActiveItemId = null;
-    let swipeIsHorizontal = null;
-
-    function handleItemSwipeStart(e, itemId) {
-      swipeTouchStartX = e.touches[0].clientX;
-      swipeTouchStartY = e.touches[0].clientY;
-      swipeActiveItemId = itemId;
-      swipeIsHorizontal = null;
-    }
-    window.handleItemSwipeStart = handleItemSwipeStart;
-
-    function handleItemSwipeMove(e, itemId) {
-      if (swipeActiveItemId !== itemId) return;
-      const currentX = e.touches[0].clientX;
-      const currentY = e.touches[0].clientY;
-      const diffX = currentX - swipeTouchStartX;
-      const diffY = currentY - swipeTouchStartY;
-
-      if (swipeIsHorizontal === null) {
-        if (Math.abs(diffX) > 8 || Math.abs(diffY) > 8) {
-          swipeIsHorizontal = Math.abs(diffX) > Math.abs(diffY);
-        }
-      }
-
-      if (!swipeIsHorizontal) return;
-
-      const slot = document.getElementById(`delete-slot-${itemId}`);
-      if (!slot) return;
-
-      if (diffX < 0) {
-        // Deslizando a la izquierda: expandir botón
-        const progress = Math.min(42, Math.abs(diffX));
-        slot.style.width = `${progress}px`;
-        slot.style.opacity = `${progress / 42}`;
-      } else {
-        // Deslizando a la derecha: contraer botón
-        slot.style.width = '0px';
-        slot.style.opacity = '0';
-      }
-    }
-    window.handleItemSwipeMove = handleItemSwipeMove;
-
-    function handleItemSwipeEnd(e, itemId) {
-      if (swipeActiveItemId !== itemId) return;
-      const slot = document.getElementById(`delete-slot-${itemId}`);
-      if (slot) {
-        const currentWidth = parseFloat(slot.style.width) || 0;
-        if (currentWidth >= 20) {
-          slot.style.width = '42px';
-          slot.style.opacity = '1';
-        } else {
-          slot.style.width = '0px';
-          slot.style.opacity = '0';
-        }
-      }
-      swipeActiveItemId = null;
-      swipeIsHorizontal = null;
-    }
-    window.handleItemSwipeEnd = handleItemSwipeEnd;
-
-    function renderMobileItemsList() {
-      const container = document.getElementById('mobile-items-container');
-      if (!container) return;
-
-      if (mobileExpenseItems.length === 0) {
-        container.innerHTML = `
-          <div class="text-center py-4 bg-white/80 rounded-2xl shadow-2xs">
-            <p class="text-xs text-slate-800 font-extrabold">No hay productos en la lista.</p>
-            <p class="text-[10px] text-slate-500 mt-0.5">Toca "+ Agregar producto" para empezar.</p>
-          </div>
-        `;
-        renderListTotalBadge();
-        return;
-      }
-
-      container.innerHTML = mobileExpenseItems.map((item) => {
-        const qty = parseFloat(item.quantity) || 1;
-        const unitPrice = parseFloat(item.amount) || 0;
-        const totalCost = (qty * unitPrice).toFixed(2);
-        const assignLabel = getAssignmentSummaryLabel(item, mobileExpenseGuests);
-
-        return `
-          <div class="space-y-1.5 bg-transparent select-none" id="item-row-${item.id}"
-            ontouchstart="handleItemSwipeStart(event, '${item.id}')"
-            ontouchmove="handleItemSwipeMove(event, '${item.id}')"
-            ontouchend="handleItemSwipeEnd(event, '${item.id}')">
-
-            <!-- Fila Principal: Inputs + Botón de Eliminar Expandible hacia la Izquierda -->
-            <div class="flex items-center gap-2">
-              <!-- Inputs del Producto (se ajustan suavemente) -->
-              <div class="flex items-center gap-2 flex-1 min-w-0">
-                <!-- Nombre del Producto (Píldora Blanca) -->
-                <input type="text" placeholder="Producto" value="${item.desc || ''}"
-                  oninput="updateMobileItemField('${item.id}', 'desc', this.value)"
-                  class="flex-1 min-w-0 h-10 bg-white border-0 rounded-2xl px-4 text-xs font-black text-slate-900 placeholder:text-slate-400 focus:ring-2 focus:ring-emerald-700 outline-none shadow-2xs" />
-
-                <!-- Cantidad (Píldora Blanca, w-14, max 99) -->
-                <input type="number" min="1" max="99" step="1" value="${qty}"
-                  oninput="updateMobileItemField('${item.id}', 'quantity', this.value)"
-                  class="w-14 h-10 bg-white border-0 rounded-2xl text-xs font-black text-slate-900 text-center focus:ring-2 focus:ring-emerald-700 outline-none shadow-2xs shrink-0" />
-
-                <!-- Total / Monto (Píldora Blanca, w-24) -->
-                <input type="number" min="0.01" step="0.01" placeholder="0.00" value="${unitPrice > 0 ? unitPrice : ''}"
-                  oninput="updateMobileItemField('${item.id}', 'amount', this.value)"
-                  class="w-24 h-10 bg-white border-0 rounded-2xl text-xs font-black text-slate-900 text-center focus:ring-2 focus:ring-emerald-700 outline-none shadow-2xs shrink-0" />
-              </div>
-
-              <!-- Botón Eliminar Expandible (Aparece de derecha a izquierda) -->
-              <div id="delete-slot-${item.id}"
-                class="flex items-center justify-end overflow-hidden transition-all duration-200 shrink-0"
-                style="width: 0px; opacity: 0;">
-                <button type="button"
-                  onclick="confirmDeleteMobileItem('${item.id}', '${(item.desc || 'este producto').replace(/'/g, "\\'")}')"
-                  class="w-10 h-10 bg-rose-500 hover:bg-rose-600 active:scale-90 text-white rounded-2xl flex items-center justify-center text-xs shadow-2xs shrink-0">
-                  <i class="fas fa-trash-alt"></i>
-                </button>
-              </div>
-            </div>
-
-            <!-- Fila inferior: Chip de Miembros y Monto Subtotal perfectamente alineados -->
-            <div class="flex items-center justify-between px-1 text-[10px] text-slate-800 font-bold">
-              <button type="button" onclick="openItemAssignmentModal('${item.id}')"
-                class="px-2.5 py-1 rounded-lg text-[10px] font-extrabold bg-white text-emerald-950 shadow-2xs flex items-center gap-1.5 active:scale-95 transition-all">
-                <i class="fas fa-user-friends text-[9px] text-emerald-700"></i>
-                <span class="truncate max-w-[190px]">${assignLabel}</span>
-                <i class="fas fa-chevron-right text-[7px] opacity-60"></i>
-              </button>
-              <span class="font-bold text-slate-900 bg-white/70 px-2 py-0.5 rounded-lg shadow-2xs">
-                Subtotal: S/ ${totalCost}
-              </span>
-            </div>
-          </div>
-        `;
-      }).join('');
-
-      renderListTotalBadge();
-    }
-
-    // ================================================================
-    // MODAL BOTTOM SHEET DE ASIGNACIÓN Y DESGLOSE (DISEÑO PANTALLA 4)
-    // ================================================================
-    let currentAssigningItemId = null;
-    let currentAssigningItem = null;
-    let isAssignmentReadOnly = false;
-    let currentAssignModalGuests = [];
-    let tempItemAssignments = {};
-
-    function openItemAssignmentModal(itemId) {
-      const item = mobileExpenseItems.find(i => i.id === itemId);
-      if (!item) return;
-
-      currentAssigningItemId = itemId;
-      currentAssigningItem = item;
-      isAssignmentReadOnly = false;
-      currentAssignModalGuests = [...mobileExpenseGuests];
-
-      const itemQty = parseFloat(item.quantity) || 1;
-      const rawAssignments = normalizeItemAssignments(item.assignments, currentAssignModalGuests);
-      tempItemAssignments = { ...rawAssignments };
-
-      if (Object.keys(tempItemAssignments).length === 0 && item.assignedTo && item.assignedTo !== 'all') {
-        const { key: gKey } = getGuestKeyAndName(item.assignedTo, currentAssignModalGuests);
-        tempItemAssignments = { [gKey]: itemQty };
-      }
-
-      // Si no tiene asignaciones aún, inicializar con los miembros activos
-      if (Object.keys(tempItemAssignments).length === 0) {
-        const allM = [
-          ...appState.participants.map(p => p.id),
-          ...currentAssignModalGuests.map(g => `guest_${g.trim().toLowerCase().replace(/\s+/g, '_')}`)
-        ];
-        const activeM = activeSharedMemberIds.size > 0 ? allM.filter(id => activeSharedMemberIds.has(id)) : allM;
-        const count = activeM.length || 1;
-        const share = itemQty / count;
-        activeM.forEach(id => {
-          tempItemAssignments[id] = parseFloat(share.toFixed(2));
-        });
-      }
-
-      renderItemAssignmentModalUI();
-      openModal('modal-item-assignment');
-    }
-    window.openItemAssignmentModal = openItemAssignmentModal;
-
-    // Abrir desglose detallado en modo consulta (desde el Detalle del Gasto)
-    function openDetailItemBreakdownModal(itemIndex) {
-      const exp = appState.expenses.find(e => e.id === currentDetailExpenseId);
-      if (!exp || !exp.items || !exp.items[itemIndex]) return;
-
-      const item = exp.items[itemIndex];
-      currentAssigningItemId = null;
-      currentAssigningItem = item;
-      isAssignmentReadOnly = true;
-      currentAssignModalGuests = (exp.guests && Array.isArray(exp.guests)) ? [...exp.guests] : (exp.guestName ? [exp.guestName] : []);
-
-      const itemQty = parseFloat(item.quantity) || 1;
-      const rawAssignments = normalizeItemAssignments(item.assignments, currentAssignModalGuests);
-      tempItemAssignments = { ...rawAssignments };
-
-      if (Object.keys(tempItemAssignments).length === 0 && item.assignedTo && item.assignedTo !== 'all') {
-        const { key: gKey } = getGuestKeyAndName(item.assignedTo, currentAssignModalGuests);
-        tempItemAssignments = { [gKey]: itemQty };
-      }
-
-      renderItemAssignmentModalUI();
-      openModal('modal-item-assignment');
-    }
-    window.openDetailItemBreakdownModal = openDetailItemBreakdownModal;
-
-    // Renderizador UI del Bottom Sheet de Asignación (Pantalla 4)
-    function renderItemAssignmentModalUI() {
-      const item = currentAssigningItem;
-      if (!item) return;
-
-      const itemQty = parseFloat(item.quantity) || 1;
-      const unitPrice = parseFloat(item.amount) || 0;
-      const totalCost = itemQty * unitPrice;
-
-      // 1. Header (Nombre | Cantidad | Monto)
-      const titleEl = document.getElementById('assign-modal-item-title');
-      const qtyEl = document.getElementById('assign-modal-total-qty-badge');
-      const costEl = document.getElementById('assign-modal-total-cost-badge');
-      if (titleEl) titleEl.textContent = item.desc || 'Producto';
-      if (qtyEl) qtyEl.textContent = `${itemQty} und`;
-      if (costEl) costEl.textContent = formatCurrency(totalCost);
-
-      // 2. Lista de Miembros Disponibles (Participantes + Invitados)
-      const members = [
-        ...appState.participants.map(p => ({
-          id: p.id,
-          name: p.name,
-          initials: (p.name || 'U').substring(0, 2).toUpperCase(),
-          isGuest: false,
-          isMe: p.firebaseUid === currentUserId
-        })),
-        ...currentAssignModalGuests.map((g) => {
-          const cleanName = g.trim();
-          const gKey = `guest_${cleanName.toLowerCase().replace(/\s+/g, '_')}`;
-          return {
-            id: gKey,
-            name: cleanName,
-            initials: cleanName.substring(0, 2).toUpperCase(),
-            isGuest: true,
-            isMe: false
-          };
-        })
-      ];
-
-      // 3. Renderizar Avatares Rápidos con Checkmarks (Pantalla 4)
-      const avatarRow = document.getElementById('assign-avatar-chips-row');
-      if (avatarRow) {
-        avatarRow.innerHTML = members.map(m => {
-          const isAssigned = (parseFloat(tempItemAssignments[m.id]) || 0) > 0;
-          return `
-            <button type="button" onclick="toggleMemberAssignment('${m.id}')"
-              class="relative flex flex-col items-center justify-center p-1 rounded-2xl transition-all ${isAssigned ? 'scale-105' : 'opacity-60 hover:opacity-100'} ${isAssignmentReadOnly ? 'pointer-events-none' : 'cursor-pointer'}">
-              <div class="w-12 h-12 rounded-[14px] flex items-center justify-center text-sm font-black shadow-xs transition-colors ${isAssigned ? 'bg-[#c6f6b5] text-slate-950 ring-2 ring-emerald-500' : 'bg-slate-100 text-slate-600 border border-slate-200'}">
-                ${m.initials}
-              </div>
-              <span class="text-[9px] font-bold text-slate-700 mt-1 truncate max-w-[52px] text-center">${m.name}</span>
-              ${isAssigned ? `
-                <div class="absolute top-0 right-0 w-4 h-4 rounded-full bg-emerald-600 text-white text-[8px] font-black flex items-center justify-center shadow-xs border border-white">
-                  ✓
-                </div>
-              ` : ''}
-            </button>
-          `;
-        }).join('');
-      }
-
-      // 4. Renderizar Tabla de Asignación por Miembro (Miembro | Und. | Monto)
-      const container = document.getElementById('assign-members-list');
-      if (container) {
-        const selectedMembers = members.filter(m => (parseFloat(tempItemAssignments[m.id]) || 0) > 0);
-
-        if (selectedMembers.length === 0) {
-          container.innerHTML = `
-            <div class="text-center py-4 bg-slate-50 rounded-2xl text-xs text-slate-400 font-medium">
-              Toca los avatares arriba para asignar a los miembros que consumen este producto.
-            </div>
-          `;
-        } else {
-          container.innerHTML = selectedMembers.map(m => {
-            const assignedQty = parseFloat(tempItemAssignments[m.id]) || 0;
-            const cost = assignedQty * unitPrice;
-
-            return `
-              <div class="grid grid-cols-12 gap-2 items-center bg-[#dcfce7] border border-emerald-300/80 rounded-2xl p-2.5 shadow-2xs transition-all">
-                <div class="col-span-5 flex items-center gap-2 min-w-0">
-                  <div class="w-8 h-8 rounded-xl ${m.isGuest ? 'bg-amber-500' : 'bg-slate-900'} text-white flex items-center justify-center font-black text-[10px] shrink-0">
-                    ${m.initials}
-                  </div>
-                  <div class="truncate">
-                    <h4 class="font-extrabold text-xs text-slate-900 truncate">${m.name}</h4>
-                    ${m.isMe ? '<span class="text-[8px] font-black text-emerald-800">TÚ</span>' : ''}
-                  </div>
-                </div>
-
-                <!-- Input Unidades Directo (Pantalla 4) -->
-                <div class="col-span-3 flex items-center justify-center">
-                  ${!isAssignmentReadOnly ? `
-                    <input type="number" min="0.1" step="any" value="${assignedQty}"
-                      oninput="setMemberExactUnits('${m.id}', this.value)"
-                      class="w-12 text-center bg-white border border-emerald-300 rounded-lg py-1 text-xs font-black text-slate-900 outline-none focus:ring-2 focus:ring-emerald-600 shadow-2xs" />
-                  ` : `
-                    <span class="text-xs font-black text-slate-900 bg-white px-2 py-0.5 rounded-lg border border-emerald-200">${assignedQty}</span>
-                  `}
-                </div>
-
-                <!-- Monto Calculado -->
-                <div class="col-span-4 text-right">
-                  <span class="text-xs font-black text-slate-900">${formatCurrency(cost)}</span>
-                </div>
-              </div>
-            `;
-          }).join('');
-        }
-      }
-
-      // 5. Barra de Estado
-      const totalAssigned = Object.keys(tempItemAssignments).reduce((sum, k) => sum + (parseFloat(tempItemAssignments[k]) || 0), 0);
-      const badge = document.getElementById('assign-units-badge');
-
-      if (badge) {
-        if (totalAssigned === itemQty) {
-          badge.textContent = `✓ Todo asignado (${totalAssigned} / ${itemQty} und.)`;
-          badge.className = 'text-xs font-black text-emerald-800 bg-emerald-100 px-2.5 py-1 rounded-xl shadow-2xs border border-emerald-200';
-        } else if (totalAssigned < itemQty) {
-          badge.textContent = `Pendiente: ${(itemQty - totalAssigned).toFixed(2)} und.`;
-          badge.className = 'text-xs font-black text-amber-800 bg-amber-100 px-2.5 py-1 rounded-xl shadow-2xs border border-amber-200';
-        } else {
-          badge.textContent = `Excede por ${(totalAssigned - itemQty).toFixed(2)} und.`;
-          badge.className = 'text-xs font-black text-rose-800 bg-rose-100 px-2.5 py-1 rounded-xl shadow-2xs border border-rose-200';
-        }
-      }
-
-      // 6. Botón de Acción Inferior
-      const confirmBtn = document.getElementById('btn-confirm-item-assignment');
-      if (confirmBtn) {
-        if (isAssignmentReadOnly) {
-          confirmBtn.innerHTML = `<i class="fas fa-check"></i><span>Cerrar Desglose</span>`;
-        } else {
-          confirmBtn.innerHTML = `<i class="fas fa-check-circle text-sm text-emerald-400"></i><span>Confirmar Asignación</span>`;
-        }
-      }
-    }
-
-    // Toggle de participante mediante avatar: distribuye proporcionalmente las unidades
-    function toggleMemberAssignment(memberId) {
-      if (isAssignmentReadOnly || !currentAssigningItem) return;
-
-      const totalItemQty = parseFloat(currentAssigningItem.quantity) || 1;
-      const currentQty = parseFloat(tempItemAssignments[memberId]) || 0;
-
-      if (currentQty > 0) {
-        delete tempItemAssignments[memberId];
-        const remainingKeys = Object.keys(tempItemAssignments).filter(k => (parseFloat(tempItemAssignments[k]) || 0) > 0);
-        if (remainingKeys.length > 0) {
-          const share = totalItemQty / remainingKeys.length;
-          remainingKeys.forEach(k => {
-            tempItemAssignments[k] = parseFloat(share.toFixed(2));
-          });
-        }
-      } else {
-        tempItemAssignments[memberId] = 1;
-        const allSelectedKeys = Object.keys(tempItemAssignments);
-        const share = totalItemQty / allSelectedKeys.length;
-        allSelectedKeys.forEach(k => {
-          tempItemAssignments[k] = parseFloat(share.toFixed(2));
-        });
-      }
-
-      renderItemAssignmentModalUI();
-    }
-    window.toggleMemberAssignment = toggleMemberAssignment;
-
-    // Asignar unidades exactas directamente desde el input
-    function setMemberExactUnits(memberId, val) {
-      if (isAssignmentReadOnly || !currentAssigningItem) return;
-      const num = parseFloat(val);
-      if (isNaN(num) || num <= 0) {
-        delete tempItemAssignments[memberId];
-      } else {
-        tempItemAssignments[memberId] = num;
-      }
-      renderItemAssignmentModalUI();
-    }
-    window.setMemberExactUnits = setMemberExactUnits;
-
-    // Confirmar asignación desde el botón inferior
-    document.getElementById('btn-confirm-item-assignment')?.addEventListener('click', () => {
-      if (!isAssignmentReadOnly && currentAssigningItemId) {
-        const item = mobileExpenseItems.find(i => i.id === currentAssigningItemId);
-        if (item) {
-          item.assignments = { ...tempItemAssignments };
-          const keys = Object.keys(item.assignments).filter(k => (parseFloat(item.assignments[k]) || 0) > 0);
-          item.assignedTo = keys.length === 1 ? keys[0] : (keys.length > 1 ? 'custom' : 'all');
-          renderMobileItemsList();
-          if (typeof renderSplitModalContent === 'function') {
-            renderSplitModalContent();
-          }
-        }
-      }
-      closeModal('modal-item-assignment');
-    });
-
-    document.getElementById('btn-add-item-row')?.addEventListener('click', addMobileItemRow);
-
-    // 8. Gestión de Invitados
-    const boxAddGuest = document.getElementById('box-add-guest');
-    const inputGuestName = document.getElementById('input-guest-name');
-
-    document.getElementById('btn-toggle-add-guest')?.addEventListener('click', () => {
-      if (boxAddGuest) {
-        boxAddGuest.classList.toggle('hidden');
-        if (!boxAddGuest.classList.contains('hidden') && inputGuestName) {
-          inputGuestName.focus();
-        }
-      }
-    });
-
-    document.getElementById('btn-confirm-add-guest')?.addEventListener('click', () => {
-      if (!inputGuestName) return;
-      const gName = inputGuestName.value.trim();
-      if (gName) {
-        if (!mobileExpenseGuests.includes(gName)) {
-          mobileExpenseGuests.push(gName);
-          renderSharedMembersAvatars();
-          inputGuestName.value = '';
-          if (boxAddGuest) boxAddGuest.classList.add('hidden');
-          if (isListExpenseActive) {
-            renderMobileItemsList();
-          }
-        }
-      }
-    });
-
-    function removeGuestChip(index) {
-      mobileExpenseGuests.splice(index, 1);
-      renderSharedMembersAvatars();
-      if (isListExpenseActive) {
-        renderMobileItemsList();
-      }
-    }
-    window.removeGuestChip = removeGuestChip;
-
-    // 9. Poblar Opciones de Selectores
-    function populateSelectOptions() {
-      // Participantes
-      const payerSelect = document.getElementById('exp-payer');
-      const incParticipantSelect = document.getElementById('inc-participant');
-      const participantsHtml = appState.participants.map(p => `<option value="${p.id}">${p.name}</option>`).join('');
-      if (payerSelect) payerSelect.innerHTML = participantsHtml || `<option value="default">Principal</option>`;
-      if (incParticipantSelect) incParticipantSelect.innerHTML = participantsHtml || `<option value="default">Principal</option>`;
-    }
-
-    // 10. Guardar Registro (Gasto o Ingreso según la pestaña seleccionada)
-    document.getElementById('form-mobile-expense').addEventListener('submit', async (e) => {
-      e.preventDefault();
-
-      // Si la pestaña superior está en Ingreso:
-      if (currentRegistrationType === 'income') {
-        const incAmount = parseFloat(document.getElementById('exp-amount').value) || 0;
-        const incDesc = document.getElementById('exp-description').value.trim() || 'Ingreso';
-        const incDate = document.getElementById('exp-date').value || new Date().toISOString().split('T')[0];
-        const participantId = appState.participants[0]?.id || 'default';
-
-        if (incAmount <= 0) {
-          alert('Por favor ingresa un monto válido.');
-          return;
-        }
-
-        const incomeData = {
-          id: editingExpenseId || ('inc_' + Date.now()),
-          amount: incAmount,
-          name: incDesc,
-          description: incDesc,
-          date: incDate,
-          createdAt: new Date().toISOString()
-        };
-
-        try {
-          const updatedParticipants = JSON.parse(JSON.stringify(appState.participants));
-          const targetP = updatedParticipants.find(p => p.id === participantId) || updatedParticipants[0];
-          if (targetP) {
-            if (!targetP.incomes) targetP.incomes = [];
-            targetP.incomes.push(incomeData);
-            targetP.budget = targetP.incomes.reduce((s, inc) => s + (parseFloat(inc.amount) || 0), 0);
-          }
-
-          const walletRef = doc(db, "artifacts", appId, "public/data/wallets", currentWalletId);
-          await updateDoc(walletRef, { participants: updatedParticipants });
-
-          closeModal('modal-expense');
-          resetExpenseForm();
-        } catch (err) {
-          console.error('Error al guardar ingreso:', err);
-          alert('Error al guardar el ingreso.');
-        }
-        return;
-      }
-
-      // Proceso de Gasto (Personal o Compartido)
-      const type = currentRegistrationType;
-      const category = document.getElementById('exp-category')?.value || 'General';
-      const payerId = document.getElementById('exp-payer')?.value || appState.participants[0]?.id;
-
-      const paymentMethod = document.getElementById('exp-payment-method')?.value || 'Efectivo';
-      const paymentMethodId = document.getElementById('exp-payment-method-id')?.value || null;
-
-      const date = document.getElementById('exp-date').value || new Date().toISOString().split('T')[0];
-      const isFixed = isFixedExpenseActive;
-      const fixedFrequency = isFixed ? document.getElementById('exp-fixed-frequency').value : null;
-      const fixedRepeat = isFixed ? document.getElementById('exp-fixed-repeat').value : null;
-
-      let finalAmount = 0;
-      let finalDescription = document.getElementById('exp-description').value.trim();
-      let finalItems = [];
-
-      if (!isListExpenseActive) {
-        finalAmount = parseFloat(document.getElementById('exp-amount').value) || 0;
-        if (finalAmount <= 0 || !finalDescription) {
-          alert('Por favor ingresa un concepto y un monto válido.');
-          return;
-        }
-      } else {
-        // Modo Lista
-        finalAmount = renderListTotalBadge();
-        if (finalAmount <= 0) {
-          alert('Por favor añade al menos un producto con precio mayor a cero.');
-          return;
-        }
-
-        finalItems = mobileExpenseItems.map(item => {
-          const itemQty = parseFloat(item.quantity) || 1;
-          const itemPrice = parseFloat(item.amount) || 0;
-          const itemObj = {
-            desc: item.desc || 'Producto',
-            quantity: itemQty,
-            amount: itemPrice
-          };
-
-          if (item.assignments && Object.keys(item.assignments).length > 0) {
-            itemObj.assignments = { ...item.assignments };
-            const keys = Object.keys(item.assignments);
-            itemObj.assignedTo = keys.length === 1 ? keys[0] : 'custom';
-          } else if (item.assignedTo && item.assignedTo !== 'all') {
-            itemObj.assignedTo = item.assignedTo;
-            itemObj.assignments = { [item.assignedTo]: itemQty };
-          } else {
-            itemObj.assignedTo = 'all';
-            itemObj.assignments = {};
-          }
-          return itemObj;
-        });
-
-        if (!finalDescription) {
-          finalDescription = `Lista de ${finalItems.length} ítems (${finalItems[0]?.desc || 'Compra'})`;
-        }
-      }
-
-      const expenseData = {
-        id: editingExpenseId || ('exp_' + Date.now() + '_' + Math.random().toString(36).substring(2, 7)),
-        amount: finalAmount,
-        description: finalDescription,
-        type,
-        category,
-        payerId,
-        paymentMethod,
-        paymentMethodId,
-        date,
-        isFixed,
-        createdAt: new Date().toISOString()
-      };
-
-      if (isFixed) {
-        expenseData.fixedFrequency = fixedFrequency;
-        expenseData.fixedRepeat = fixedRepeat;
-      }
-
-      if (mobileExpenseGuests.length > 0) {
-        expenseData.guests = [...mobileExpenseGuests];
-      }
-
-      if (finalItems.length > 0) {
-        expenseData.items = finalItems;
-      }
-
-      try {
-        let updatedExpenses = [];
-        if (editingExpenseId) {
-          updatedExpenses = appState.expenses.map(e => e.id === editingExpenseId ? expenseData : e);
-        } else {
-          updatedExpenses = [...appState.expenses, expenseData];
-        }
-
-        const walletRef = doc(db, "artifacts", appId, "public/data/wallets", currentWalletId);
-        await updateDoc(walletRef, { expenses: updatedExpenses });
-
-        closeModal('modal-expense');
-        resetExpenseForm();
-      } catch (err) {
-        console.error('Error al guardar gasto:', err);
-        alert('Ocurrió un error al guardar el gasto.');
-      }
-    });
-
-
-    // Eliminar Gasto
-    document.getElementById('btn-delete-expense')?.addEventListener('click', async () => {
-      if (!editingExpenseId) return;
-      if (!confirm('¿Estás seguro de eliminar este gasto definitivamente?')) return;
-
-      try {
-        const updatedExpenses = appState.expenses.filter(e => e.id !== editingExpenseId);
-        const walletRef = doc(db, "artifacts", appId, "public/data/wallets", currentWalletId);
-        await updateDoc(walletRef, { expenses: updatedExpenses });
-        closeModal('modal-expense');
-        resetExpenseForm();
-      } catch (err) {
-        console.error('Error al eliminar gasto:', err);
-        alert('Error al eliminar el gasto.');
-      }
-    });
-
-    // 11. Guardar Ingreso Rápido (Crear o Actualizar)
-    document.getElementById('form-mobile-income')?.addEventListener('submit', async (e) => {
-      e.preventDefault();
-      const amount = parseFloat(document.getElementById('inc-amount').value) || 0;
-      const description = document.getElementById('inc-description').value.trim();
-      const participantId = document.getElementById('inc-participant').value;
-      const date = document.getElementById('inc-date').value || new Date().toISOString().split('T')[0];
-
-      if (amount <= 0) return;
-
-      const incomeData = {
-        id: editingIncomeId || ('inc_' + Date.now()),
-        amount,
-        name: description,
-        description,
-        date,
-        createdAt: new Date().toISOString()
-      };
-
-      try {
-        const updatedParticipants = JSON.parse(JSON.stringify(appState.participants));
-
-        if (editingIncomeId) {
-          // Remover ingreso de cualquier participante anterior
-          updatedParticipants.forEach(p => {
-            if (p.incomes) {
-              p.incomes = p.incomes.filter(inc => inc.id !== editingIncomeId);
-            }
-          });
-        }
-
-        // Agregar al participante asignado
-        const targetP = updatedParticipants.find(p => p.id === participantId);
-        if (targetP) {
-          if (!targetP.incomes) targetP.incomes = [];
-          targetP.incomes.push(incomeData);
-        }
-
-        // Recalcular presupuestos base
-        updatedParticipants.forEach(p => {
-          p.budget = (p.incomes || []).reduce((s, inc) => s + (parseFloat(inc.amount) || 0), 0);
-        });
-
-        const walletRef = doc(db, "artifacts", appId, "public/data/wallets", currentWalletId);
-        await updateDoc(walletRef, { participants: updatedParticipants });
-
-        closeModal('modal-income');
-        document.getElementById('form-mobile-income').reset();
-        editingIncomeId = null;
-        document.getElementById('btn-delete-income').classList.add('hidden');
-        document.getElementById('modal-income-title').textContent = 'Registrar Nuevo Ingreso';
-        document.getElementById('label-submit-income').textContent = 'Añadir Ingreso al Presupuesto';
-      } catch (err) {
-        console.error('Error al guardar ingreso:', err);
-        alert('Ocurrió un error al guardar el ingreso.');
-      }
-    });
-
-    // Eliminar Ingreso
-    document.getElementById('btn-delete-income')?.addEventListener('click', async () => {
-      if (!editingIncomeId) return;
-      if (!confirm('¿Estás seguro de eliminar este ingreso definitivamente?')) return;
-
-      try {
-        const updatedParticipants = JSON.parse(JSON.stringify(appState.participants));
-        updatedParticipants.forEach(p => {
-          if (p.incomes) {
-            p.incomes = p.incomes.filter(inc => inc.id !== editingIncomeId);
-            p.budget = p.incomes.reduce((s, inc) => s + (parseFloat(inc.amount) || 0), 0);
-          }
-        });
-
-        const walletRef = doc(db, "artifacts", appId, "public/data/wallets", currentWalletId);
-        await updateDoc(walletRef, { participants: updatedParticipants });
-        closeModal('modal-income');
-      } catch (err) {
-        console.error('Error al eliminar ingreso:', err);
-        alert('Error al eliminar el ingreso.');
-      }
-    });
-
-    // 9. Control de Pestañas de Historial
-    const tabAll = document.getElementById('tab-filter-all');
-    const tabExp = document.getElementById('tab-filter-expenses');
-    const tabInc = document.getElementById('tab-filter-incomes');
-
-    const updateTabStyles = (activeTab) => {
-      currentTab = activeTab;
-      [tabAll, tabExp, tabInc].forEach(tab => {
-        tab.className = 'flex-1 py-1.5 text-xs font-bold rounded-xl text-slate-500 hover:text-slate-800 transition-all text-center';
-      });
-      if (activeTab === 'all') tabAll.className = 'flex-1 py-1.5 text-xs font-extrabold rounded-xl bg-white text-slate-900 shadow-sm transition-all text-center';
-      if (activeTab === 'expenses') tabExp.className = 'flex-1 py-1.5 text-xs font-extrabold rounded-xl bg-white text-slate-900 shadow-sm transition-all text-center';
-      if (activeTab === 'incomes') tabInc.className = 'flex-1 py-1.5 text-xs font-extrabold rounded-xl bg-white text-slate-900 shadow-sm transition-all text-center';
-      renderMobileUI();
-    };
-
-    tabAll.addEventListener('click', () => updateTabStyles('all'));
-    tabExp.addEventListener('click', () => updateTabStyles('expenses'));
-    tabInc.addEventListener('click', () => updateTabStyles('incomes'));
-
-    // Buscador
-    document.getElementById('mobile-search-input').addEventListener('input', (e) => {
-      searchTerm = e.target.value;
-      renderMobileUI();
-    });
-
-    // Control de Mes
-    document.getElementById('btn-month-prev').addEventListener('click', () => {
-      filterDate.setMonth(filterDate.getMonth() - 1);
-      renderMobileUI();
-    });
-    document.getElementById('btn-month-next').addEventListener('click', () => {
-      filterDate.setMonth(filterDate.getMonth() + 1);
-      renderMobileUI();
-    });
-
-    // Cerrar al tocar fuera (Backdrop scrim touch)
-    ['modal-expense', 'modal-income', 'modal-settings', 'modal-transaction-detail', 'modal-participants-balances', 'modal-settlement', 'modal-item-assignment', 'modal-split-breakdown', 'modal-option-picker'].forEach(modalId => {
-      const modalEl = document.getElementById(modalId);
-      if (modalEl) {
-        modalEl.addEventListener('click', (e) => {
-          if (e.target === modalEl) {
-            closeModal(modalId);
-          }
-        });
-      }
-    });
-
-    // ================================================================
-    // CONTROL DEL MENÚ FAB SPEED-DIAL Y BARRA CÁPSULA INFERIOR
-    // ================================================================
-    let isFabMenuOpen = false;
-    const fabMainBtn = document.getElementById('fab-main-btn');
-    const fabIcon = document.getElementById('fab-icon');
-    const fabBackdrop = document.getElementById('fab-backdrop');
-    const fabMenuOptions = document.getElementById('fab-menu-options');
-
-    function toggleFabMenu() {
-      isFabMenuOpen = !isFabMenuOpen;
-      if (isFabMenuOpen) {
-        fabIcon.classList.add('rotate-45');
-        fabBackdrop.classList.remove('hidden');
-        fabMenuOptions.classList.remove('opacity-0', 'translate-y-4', 'pointer-events-none');
-        fabMenuOptions.classList.add('opacity-100', 'translate-y-0', 'pointer-events-auto');
-      } else {
-        closeFabMenu();
-      }
-    }
-
-    function closeFabMenu() {
-      isFabMenuOpen = false;
-      fabIcon.classList.remove('rotate-45');
-      fabBackdrop.classList.add('hidden');
-      fabMenuOptions.classList.add('opacity-0', 'translate-y-4', 'pointer-events-none');
-      fabMenuOptions.classList.remove('opacity-100', 'translate-y-0', 'pointer-events-auto');
-    }
-
-    fabMainBtn?.addEventListener('click', (e) => {
-      e.stopPropagation();
-      toggleFabMenu();
-    });
-
-    fabBackdrop?.addEventListener('click', closeFabMenu);
-
-    // Opciones del Menú FAB
-    document.getElementById('fab-opt-simple-expense')?.addEventListener('click', () => {
-      closeFabMenu();
-      resetExpenseForm();
-      switchExpenseRegistrationType('shared');
-      openModal('modal-expense');
-    });
-
-    document.getElementById('fab-opt-list-expense')?.addEventListener('click', () => {
-      closeFabMenu();
-      resetExpenseForm();
-      switchExpenseRegistrationType('shared');
-      toggleListExpenseSection();
-      openModal('modal-expense');
-    });
-
-    document.getElementById('fab-opt-income')?.addEventListener('click', () => {
-      closeFabMenu();
-      resetExpenseForm();
-      switchExpenseRegistrationType('income');
-      openModal('modal-expense');
-    });
-
-    document.getElementById('fab-opt-settlement')?.addEventListener('click', () => {
-      closeFabMenu();
-      openModal('modal-settlement');
-    });
-
-    document.getElementById('fab-opt-settings')?.addEventListener('click', () => {
-      closeFabMenu();
-      openModal('modal-settings');
-    });
-
-    // Botón de Ejecutar Liquidación en Firestore
-    document.getElementById('btn-execute-settlement')?.addEventListener('click', () => {
-      liquidateMonthMobile();
-    });
-
-    // Navegación de Iconos en la Barra Cápsula (60px)
-    document.getElementById('nav-btn-wallet')?.addEventListener('click', () => {
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-    });
-
-    document.getElementById('nav-btn-stats')?.addEventListener('click', () => {
-      const budgetSection = document.getElementById('top-budget-section');
-      if (budgetSection) budgetSection.scrollIntoView({ behavior: 'smooth' });
-    });
-
-    document.getElementById('nav-btn-voice')?.addEventListener('click', () => {
-      // Activar dictado por voz si el navegador lo soporta
-      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-      if (SpeechRecognition) {
-        const recognition = new SpeechRecognition();
-        recognition.lang = 'es-PE';
-        recognition.onstart = () => alert('🎙️ Escuchando... Di el monto y concepto del gasto (ej: 25 soles almuerzo)');
-        recognition.onresult = (event) => {
-          const transcript = event.results[0][0].transcript;
-          resetExpenseForm();
-          document.getElementById('exp-description').value = transcript;
-          openModal('modal-expense');
-        };
-        recognition.onerror = () => {
-          resetExpenseForm();
-          openModal('modal-expense');
-        };
-        recognition.start();
-      } else {
-        resetExpenseForm();
-        openModal('modal-expense');
-      }
-    });
-
-    document.getElementById('nav-btn-search')?.addEventListener('click', () => {
-      const searchInput = document.getElementById('mobile-search-input');
-      const historySection = document.getElementById('bottom-history-section');
-      if (historySection) historySection.scrollIntoView({ behavior: 'smooth' });
-      if (searchInput) {
-        setTimeout(() => searchInput.focus(), 300);
-      }
-    });
-
-    // Sincronizar / Cerrar sesión
-    document.getElementById('btn-mobile-sync-refresh').addEventListener('click', () => renderMobileUI());
-    document.getElementById('btn-mobile-logout').addEventListener('click', () => signOut(auth));
-
-    // ================================================================
-    // PWA: SERVICE WORKER & INSTALACIÓN COMO APLICACIÓN
-    // ================================================================
-    if ('serviceWorker' in navigator) {
-      window.addEventListener('load', () => {
-        navigator.serviceWorker.register('./sw.js')
-          .then(reg => console.log('Service Worker PWA registrado con éxito:', reg.scope))
-          .catch(err => console.warn('Error al registrar Service Worker:', err));
-      });
-    }
-
-    let deferredPrompt = null;
-    window.addEventListener('beforeinstallprompt', (e) => {
-      e.preventDefault();
-      deferredPrompt = e;
-      const installBtn = document.getElementById('btn-mobile-install-pwa');
-      if (installBtn) installBtn.classList.remove('hidden');
-    });
-
-    document.getElementById('btn-mobile-install-pwa')?.addEventListener('click', async () => {
-      if (deferredPrompt) {
-        deferredPrompt.prompt();
-        const { outcome } = await deferredPrompt.userChoice;
-        console.log(`PWA Prompt Outcome: ${outcome}`);
-        deferredPrompt = null;
-      } else {
-        alert('Para instalar Qipu en tu teléfono:\n\n• En Android/Chrome: Toca los 3 puntos (⋮) y selecciona "Instalar aplicación" o "Añadir a pantalla de inicio".\n• En iPhone/Safari: Toca el botón Compartir (cuadrado con flecha) y selecciona "Añadir a la pantalla de inicio".');
-      }
-    });
-  </script>
+  <script type="module" src="js/mobile/mobile-main.js"></script>
 </body>
 
 </html>
