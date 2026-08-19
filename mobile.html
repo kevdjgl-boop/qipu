@@ -581,14 +581,14 @@
               </div>
 
               <!-- Fila de Avatares Rápidos + Botón Añadir Invitado -->
-              <div class="flex items-center gap-2 overflow-x-auto pb-0.5 scrollbar-none">
+              <div class="flex items-center gap-2 overflow-x-auto py-1 px-0.5 scrollbar-none">
                 <div id="shared-members-avatars-row" class="flex items-center gap-2">
                   <!-- Inyectado por JS -->
                 </div>
 
                 <!-- Botón (+) para Añadir Invitado -->
                 <button type="button" id="btn-toggle-add-guest"
-                  class="w-9 h-9 rounded-2xl border-2 border-dashed border-slate-300 hover:border-emerald-500 hover:bg-emerald-50 text-slate-600 hover:text-emerald-700 flex items-center justify-center text-sm font-black transition-all shrink-0 active:scale-95">
+                  class="w-11 h-11 rounded-xl border-2 border-dashed border-slate-300 hover:border-emerald-500 hover:bg-emerald-50 text-slate-600 hover:text-emerald-700 flex items-center justify-center text-sm font-black transition-all shrink-0 active:scale-95">
                   +
                 </button>
               </div>
@@ -3013,7 +3013,7 @@
         const isSelected = activeSharedMemberIds.has(m.id);
         return `
           <button type="button" onclick="toggleSharedMemberInclusion('${m.id}')"
-            class="w-11 h-11 rounded-2xl flex items-center justify-center text-xs font-black transition-all shrink-0 active:scale-95 ${isSelected ? (m.isGuest ? 'bg-amber-200 text-amber-950 ring-2 ring-amber-400' : 'bg-[#c6f6b5] text-slate-950 ring-2 ring-emerald-400') : 'bg-slate-100 text-slate-400 opacity-60'}">
+            class="w-11 h-11 rounded-xl flex items-center justify-center text-xs font-black transition-all shrink-0 active:scale-95 ${isSelected ? (m.isGuest ? 'bg-amber-200 text-amber-950 border-2 border-amber-400 shadow-2xs' : 'bg-[#c6f6b5] text-slate-950 border-2 border-emerald-400 shadow-2xs') : 'bg-slate-100 text-slate-400 opacity-60'}">
             ${m.initials}
           </button>
         `;
