@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="es">
 
 <head>
@@ -710,8 +710,8 @@
 
           <!-- BLOQUE LISTA DE PRODUCTOS (FUERA DEL BLOQUE PRINCIPAL, COLOR #ECF9E1) -->
           <div id="section-list-items"
-            class="w-full bg-[#ECF9E1] rounded-[28px] p-3.5 m3-slide-sheet-block m3-block-closed">
-            <div class="space-y-2.5">
+            class="w-full bg-[#ECF9E1] rounded-b-[28px] overflow-hidden m3-slide-sheet-block m3-block-closed">
+            <div class="p-3.5 space-y-2.5">
               <!-- Cabecera de la Tabla (Píldoras Blancas) -->
               <div class="flex items-center gap-2 text-xs font-black text-slate-900">
                 <div class="flex-1 bg-white rounded-2xl py-2 px-4 text-left shadow-2xs">Producto</div>
@@ -723,18 +723,18 @@
               <div id="mobile-items-container" class="space-y-2">
                 <!-- Inyectado por JS -->
               </div>
+            </div>
 
-              <!-- Pie del Bloque: Botón Agregar Producto e Indicadores -->
-              <div class="pt-2 flex items-center justify-between px-1">
-                <button type="button" id="btn-add-item-row"
-                  class="text-xs font-black text-slate-950 flex items-center gap-2 hover:opacity-80 active:scale-95 py-1">
-                  <i class="fas fa-plus text-sm"></i>
-                  <span>Agregar producto</span>
-                </button>
-                <div class="flex items-center gap-2 opacity-60">
-                  <span class="w-10 h-2 rounded-full bg-emerald-800/30"></span>
-                  <span class="w-10 h-2 rounded-full bg-emerald-800/30"></span>
-                </div>
+            <!-- Pie del Bloque: Botón Agregar Producto e Indicadores (Color Verde #a4e775) -->
+            <div class="bg-[#a4e775] px-4 py-3 flex items-center justify-between">
+              <button type="button" id="btn-add-item-row"
+                class="text-xs font-black text-slate-950 flex items-center gap-2 hover:opacity-80 active:scale-95 py-0.5">
+                <i class="fas fa-plus text-sm"></i>
+                <span>Agregar producto</span>
+              </button>
+              <div class="flex items-center gap-2 opacity-80">
+                <span class="w-10 h-2.5 rounded-full bg-[#7ec44f]"></span>
+                <span class="w-10 h-2.5 rounded-full bg-[#7ec44f]"></span>
               </div>
             </div>
           </div>
