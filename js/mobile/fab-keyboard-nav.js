@@ -4,90 +4,111 @@
 // ================================================================
 
 let currentFocusedInput = null;
+let navBarEl = null;
+let btnNextEl = null;
+let btnAddItemEl = null;
 
 export function setupKeyboardNavFab() {
-  const navBar = document.getElementById('keyboard-nav-bar');
-  const btnNext = document.getElementById('btn-next-input-fab');
-  const btnAddItem = document.getElementById('btn-fab-add-item');
-  if (!navBar || !btnNext || !btnAddItem) return;
+  navBarEl = document.getElementById('keyboard-nav-bar');
+  btnNextEl = document.getElementById('btn-next-input-fab');
+  btnAddItemEl = document.getElementById('btn-fab-add-item');
+  if (!navBarEl || !btnNextEl || !btnAddItemEl) return;
 
   function updateNavPosition() {
+    if (!navBarEl) return;
     if (window.visualViewport) {
       const vv = window.visualViewport;
-      // Altura real ocupada por el teclado virtual del smartphone
-      const keyboardHeight = window.innerHeight - (vv.offsetTop + vv.height);
-      const bottomPos = Math.max(16, keyboardHeight + 14);
-      navBar.style.bottom = `${bottomPos}px`;
+      // Altura ocupada por el teclado virtual del smartphone
+      const keyboardHeight = Math.max(0, window.innerHeight - (vv.offsetTop + vv.height));
+      const bottomPos = keyboardHeight > 0 ? (keyboardHeight + 12) : 16;
+      navBarEl.style.bottom = `${bottomPos}px`;
     } else {
-      navBar.style.bottom = '20px';
+      navBarEl.style.bottom = '16px';
     }
   }
 
   function checkAddItemButtonVisibility(target) {
-    if (!btnAddItem) return;
+    if (!btnAddItemEl) return;
     const isTotalField = target && target.getAttribute('data-item-field') === 'amount';
     if (isTotalField) {
-      btnAddItem.classList.remove('scale-0', 'opacity-0', 'pointer-events-none');
-      btnAddItem.classList.add('scale-100', 'opacity-100', 'pointer-events-auto');
+      btnAddItemEl.classList.remove('scale-0', 'opacity-0', 'pointer-events-none');
+      btnAddItemEl.classList.add('scale-100', 'opacity-100', 'pointer-events-auto');
     } else {
-      btnAddItem.classList.add('scale-0', 'opacity-0', 'pointer-events-none');
-      btnAddItem.classList.remove('scale-100', 'opacity-100', 'pointer-events-auto');
+      btnAddItemEl.classList.add('scale-0', 'opacity-0', 'pointer-events-none');
+      btnAddItemEl.classList.remove('scale-100', 'opacity-100', 'pointer-events-auto');
     }
   }
 
+  function showNavBar(targetInput) {
+    currentFocusedInput = targetInput;
+    updateNavPosition();
+    checkAddItemButtonVisibility(targetInput);
+
+    navBarEl.classList.remove('opacity-0', 'pointer-events-none', 'translate-y-4');
+    navBarEl.classList.add('opacity-100', 'pointer-events-auto', 'translate-y-0');
+  }
+
+  function hideNavBar() {
+    setTimeout(() => {
+      const active = document.activeElement;
+      if (!active || (active.tagName !== 'INPUT' && active.tagName !== 'TEXTAREA')) {
+        if (navBarEl) {
+          navBarEl.classList.add('opacity-0', 'pointer-events-none', 'translate-y-4');
+          navBarEl.classList.remove('opacity-100', 'pointer-events-auto', 'translate-y-0');
+        }
+        checkAddItemButtonVisibility(null);
+      }
+    }, 180);
+  }
+
+  // Soporte para visualViewport (redimensionamiento por teclado virtual en móviles)
   if (window.visualViewport) {
     window.visualViewport.addEventListener('resize', updateNavPosition);
     window.visualViewport.addEventListener('scroll', updateNavPosition);
   }
+  window.addEventListener('resize', updateNavPosition);
 
-  document.addEventListener('focusin', (e) => {
-    if (e.target.tagName === 'INPUT' && e.target.type !== 'hidden' && e.target.type !== 'date') {
-      currentFocusedInput = e.target;
-      updateNavPosition();
-      checkAddItemButtonVisibility(e.target);
-
-      navBar.classList.remove('opacity-0', 'scale-90', 'pointer-events-none');
-      navBar.classList.add('opacity-100', 'scale-100', 'pointer-events-auto');
+  // Captura global de foco (Fase de captura 'true' para 100% compatibilidad en iOS y Android)
+  document.addEventListener('focus', (e) => {
+    if (e.target && e.target.tagName === 'INPUT' && e.target.type !== 'hidden' && e.target.type !== 'date') {
+      showNavBar(e.target);
     }
-  });
+  }, true);
 
-  document.addEventListener('focusout', (e) => {
-    setTimeout(() => {
-      if (!document.activeElement || (document.activeElement.tagName !== 'INPUT' && document.activeElement.tagName !== 'TEXTAREA')) {
-        navBar.classList.add('opacity-0', 'scale-90', 'pointer-events-none');
-        navBar.classList.remove('opacity-100', 'scale-100', 'pointer-events-auto');
-        checkAddItemButtonVisibility(null);
-      }
-    }, 150);
-  });
+  document.addEventListener('blur', (e) => {
+    hideNavBar();
+  }, true);
 
-  // Prevenir que tocar los botones cierre el teclado
-  navBar.addEventListener('pointerdown', (e) => {
+  // Prevenir que tocar la barra flotante des-enfoque el input y cierre el teclado
+  navBarEl.addEventListener('pointerdown', (e) => {
+    e.preventDefault();
+  });
+  navBarEl.addEventListener('mousedown', (e) => {
     e.preventDefault();
   });
 
   // 1. Botón Flecha (Avanzar siguiente input)
-  btnNext.addEventListener('click', (e) => {
+  btnNextEl.addEventListener('click', (e) => {
     e.preventDefault();
     advanceToNextInput();
   });
 
-  // 2. Botón "+ Agregar ítem" (Aparece sólo en el campo Total)
-  btnAddItem.addEventListener('click', (e) => {
+  // 2. Botón "+ Agregar ítem" (Aparece sólo al enfocar el campo Total)
+  btnAddItemEl.addEventListener('click', (e) => {
     e.preventDefault();
     if (typeof window.addMobileItemRow === 'function') {
       window.addMobileItemRow();
-      // Al agregar ítem, ocultamos el botón inmediatamente
+      // Ocultar botón inmediatamente al crearse la nueva fila
       checkAddItemButtonVisibility(null);
       setTimeout(() => {
         const updatedInputs = Array.from(document.querySelectorAll('input:not([type="hidden"]):not([type="date"]):not([disabled])'))
           .filter(el => el.offsetParent !== null && !el.closest('.hidden'));
-        // Enfocar la descripción del nuevo producto agregado
+        // El primer campo de la nueva fila (descripción del producto)
         const target = updatedInputs[updatedInputs.length - 3] || updatedInputs[updatedInputs.length - 1];
         if (target) {
           target.focus();
           target.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-          checkAddItemButtonVisibility(target);
+          showNavBar(target);
         }
       }, 100);
     }

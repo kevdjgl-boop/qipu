@@ -136,8 +136,8 @@ function listenToWallet(walletId) {
 // ================================================================
 // EVENT LISTENERS DE LA APLICACIÓN
 // ================================================================
-document.addEventListener('DOMContentLoaded', () => {
-  // Inicializar navegación por teclado con botón flotante
+function initMobileEventListeners() {
+  // Inicializar navegación por teclado con barra flotante dinámica
   setupKeyboardNavFab();
 
   // 1. Formulario Principal de Gasto / Ingreso
@@ -428,7 +428,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
   document.getElementById('btn-mobile-sync-refresh')?.addEventListener('click', () => renderMobileUI());
   document.getElementById('btn-mobile-logout')?.addEventListener('click', () => signOut(auth));
-});
+}
+
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', initMobileEventListeners);
+} else {
+  initMobileEventListeners();
+}
 
 // ================================================================
 // PWA: SERVICE WORKER & INSTALACIÓN
