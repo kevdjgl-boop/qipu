@@ -477,45 +477,57 @@
   <!-- MODALES TIPO BOTTOM-SHEET PARA MOBILE -->
   <!-- ========================================== -->
 
-  <!-- 1. Modal Añadir / Editar Gasto (True Native M3 Bottom Sheet - Rediseño Modular) -->
+  <!-- 1. Pantalla Completa Registrar / Editar Gasto o Ingreso (Diseño Full-Screen Verde M3) -->
   <div id="modal-expense"
-    class="fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-sm hidden items-end justify-center p-0 m3-bottom-sheet-backdrop">
-    <div
-      class="w-full max-w-lg bg-white rounded-t-[32px] max-h-[92vh] overflow-y-auto overscroll-contain flex flex-col shadow-2xl scrollbar-none m3-bottom-sheet-surface transition-[height] duration-300 ease-[cubic-bezier(0.16,1,0.3,1)]">
+    class="fixed inset-0 z-50 bg-[#c6f6b5] overflow-y-auto overscroll-contain hidden transition-all duration-300 scrollbar-none">
+    <div class="w-full max-w-md mx-auto min-h-screen flex flex-col justify-between p-4 pt-5 pb-6">
 
-      <!-- Drag Handle Indicator -->
-      <div class="w-12 h-1 bg-slate-300 rounded-full mx-auto mt-2.5 mb-1 shrink-0"></div>
+      <!-- Cabecera Superior: [ ← Volver ] + Título & Subtítulo + [ ⋮ Opciones ] -->
+      <div class="flex items-center justify-between gap-3 pb-3 shrink-0">
+        <button type="button" onclick="closeModal('modal-expense'); resetExpenseForm();"
+          class="w-11 h-11 rounded-full bg-white text-slate-800 flex items-center justify-center text-sm shadow-xs hover:bg-slate-50 active:scale-95 transition-all">
+          <i class="fas fa-arrow-left"></i>
+        </button>
 
-      <!-- Pestañas Superiores Tipo de Registro: Personal | Compartido | Ingreso -->
-      <div class="px-4 pt-1.5 pb-1 shrink-0">
-        <div class="w-full bg-slate-100/90 p-1 rounded-full flex items-center gap-1 text-xs font-black">
+        <div class="flex-1 min-w-0">
+          <h2 id="modal-expense-main-title" class="text-2xl font-black text-slate-900 leading-tight">Registrar</h2>
+          <p id="modal-expense-sub-title" class="text-xs font-semibold text-slate-800/80 truncate">Detalla y clasifica tu movimiento</p>
+        </div>
+
+        <button type="button" onclick="openOptionPicker('category')"
+          class="w-11 h-11 rounded-full bg-white text-slate-800 flex items-center justify-center text-sm shadow-xs hover:bg-slate-50 active:scale-95 transition-all">
+          <i class="fas fa-ellipsis-vertical"></i>
+        </button>
+      </div>
+
+      <!-- Pestañas Superiores Tipo de Registro: Personal | Compartido | Ingreso (Píldora Blanca) -->
+      <div class="pb-3 shrink-0">
+        <div class="w-full bg-white p-1 rounded-full flex items-center gap-1 text-xs font-black shadow-xs">
           <button type="button" id="tab-type-personal" onclick="switchExpenseRegistrationType('personal')"
-            class="flex-1 py-1.5 rounded-full text-slate-500 hover:text-slate-900 transition-all text-center">
+            class="flex-1 py-2 rounded-full text-slate-600 hover:text-slate-900 transition-all text-center">
             Personal
           </button>
           <button type="button" id="tab-type-shared" onclick="switchExpenseRegistrationType('shared')"
-            class="flex-1 py-1.5 rounded-full bg-[#c6f6b5] text-slate-950 shadow-xs transition-all text-center">
+            class="flex-1 py-2 rounded-full bg-[#c6f6b5] text-slate-950 shadow-xs transition-all text-center">
             Compartido
           </button>
           <button type="button" id="tab-type-income" onclick="switchExpenseRegistrationType('income')"
-            class="flex-1 py-1.5 rounded-full text-slate-500 hover:text-slate-900 transition-all text-center">
+            class="flex-1 py-2 rounded-full text-slate-600 hover:text-slate-900 transition-all text-center">
             Ingreso
           </button>
         </div>
       </div>
 
-      <form id="form-mobile-expense" class="flex flex-col">
+      <form id="form-mobile-expense" class="flex flex-col flex-1 justify-between">
 
-        <!-- CONTENIDO DEL FORMULARIO -->
-        <div class="px-4 pt-0.5 pb-1 space-y-2.5">
-
-          <!-- BLOQUE PRINCIPAL SUPERIOR (Card blanca, radius 24px, sin bordes ni sombras, z-10) -->
-          <div class="w-full bg-white rounded-[24px] p-2.5 space-y-2 relative z-10 border-0 shadow-none">
-            <!-- Fila de Chips de Metadatos: Ancho completo repartido equitativo -->
+        <div class="space-y-3">
+          <!-- BLOQUE PRINCIPAL SUPERIOR (Card blanca, radius 30px, shadow-xs) -->
+          <div class="w-full bg-white rounded-[30px] p-4 space-y-3.5 shadow-sm relative z-10">
+            <!-- Fila de Chips de Metadatos (Fondo verde claro #c6f6b5) -->
             <div class="grid grid-cols-3 gap-2 pb-0.5">
               <!-- Chip Fecha -->
-              <div class="relative bg-[#dcfce7] hover:bg-[#bbf7d0] text-emerald-950 px-2 h-[32px] rounded-full flex items-center justify-center gap-1.5 text-xs font-black cursor-pointer transition-colors shadow-2xs overflow-hidden">
-                <i class="far fa-calendar-alt text-xs text-emerald-800 shrink-0"></i>
+              <div class="relative bg-[#c6f6b5] hover:opacity-90 text-emerald-950 px-2 h-[34px] rounded-full flex items-center justify-center gap-1.5 text-xs font-black cursor-pointer transition-colors shadow-2xs overflow-hidden">
+                <i class="far fa-calendar-alt text-xs text-emerald-900 shrink-0"></i>
                 <span id="chip-date-label" class="truncate">26-Jun</span>
                 <input type="date" id="exp-date"
                   class="absolute inset-0 opacity-0 cursor-pointer w-full h-full" />
@@ -523,134 +535,134 @@
 
               <!-- Chip Categoría (Abre Bottom Sheet M3) -->
               <button type="button" onclick="openOptionPicker('category')"
-                class="relative bg-[#dcfce7] hover:bg-[#bbf7d0] active:scale-95 text-emerald-950 px-2 h-[32px] rounded-full flex items-center justify-center gap-1 text-xs font-black transition-all shadow-2xs overflow-hidden">
-                <i class="fas fa-shapes text-[11px] text-emerald-800 shrink-0"></i>
+                class="relative bg-[#c6f6b5] hover:opacity-90 active:scale-95 text-emerald-950 px-2 h-[34px] rounded-full flex items-center justify-center gap-1 text-xs font-black transition-all shadow-2xs overflow-hidden">
                 <span id="chip-category-label" class="truncate max-w-[70px]">General</span>
-                <i class="fas fa-chevron-down text-[8px] text-emerald-800/70 shrink-0"></i>
+                <i class="fas fa-caret-down text-xs text-emerald-900 shrink-0"></i>
                 <input type="hidden" id="exp-category" value="General" />
               </button>
 
               <!-- Chip Método de Pago (Abre Bottom Sheet M3) -->
               <button type="button" onclick="openOptionPicker('payment-method')"
-                class="relative bg-[#dcfce7] hover:bg-[#bbf7d0] active:scale-95 text-emerald-950 px-2 h-[32px] rounded-full flex items-center justify-center gap-1 text-xs font-black transition-all shadow-2xs overflow-hidden">
-                <i class="far fa-credit-card text-[11px] text-emerald-800 shrink-0"></i>
+                class="relative bg-[#c6f6b5] hover:opacity-90 active:scale-95 text-emerald-950 px-2 h-[34px] rounded-full flex items-center justify-center gap-1 text-xs font-black transition-all shadow-2xs overflow-hidden">
                 <span id="chip-pm-label" class="truncate max-w-[70px]">Efectivo</span>
-                <i class="fas fa-chevron-down text-[8px] text-emerald-800/70 shrink-0"></i>
+                <i class="fas fa-caret-down text-xs text-emerald-900 shrink-0"></i>
                 <input type="hidden" id="exp-payment-method" value="Efectivo" />
                 <input type="hidden" id="exp-payment-method-id" value="" />
               </button>
             </div>
 
-            <!-- Bloque: Icono + Concepto + Monto -->
+            <!-- Bloque: Icono 86x86 + Concepto + Monto -->
             <div class="flex gap-2.5 items-center">
               <!-- Icono Ilustrativo -->
               <div id="box-expense-visual-icon"
-                style="width: 82px; height: 82px; min-width: 82px; min-height: 82px; border-radius: 14px;"
-                class="w-[82px] h-[82px] min-w-[82px] bg-[#dcfce7] text-emerald-900 rounded-[14px] flex flex-col items-center justify-center shrink-0 p-1.5 shadow-2xs">
-                <i class="fas fa-receipt text-xl mb-0.5 opacity-80"></i>
-                <span class="text-[8px] font-black uppercase text-emerald-800/80">Gasto</span>
+                style="width: 86px; height: 86px; min-width: 86px; min-height: 86px; border-radius: 18px;"
+                class="w-[86px] h-[86px] min-w-[86px] bg-[#c6f6b5] text-emerald-950 rounded-[18px] flex flex-col items-center justify-center shrink-0 p-1.5 shadow-2xs transition-all duration-300">
+                <i class="fas fa-receipt text-2xl mb-0.5 opacity-90"></i>
+                <span class="text-[8px] font-black uppercase text-emerald-900">Gasto</span>
               </div>
 
-              <!-- Inputs Concepto y Monto (ambos de 38px de alto, radio 8px, texto alineado a la derecha) -->
-              <div class="flex-1 flex flex-col justify-between h-[82px]">
+              <!-- Inputs Concepto y Monto (ambos de 40px de alto, radio 12px, fondo verde claro #c6f6b5, texto alineado a la derecha) -->
+              <div class="flex-1 flex flex-col justify-between h-[86px]">
                 <input type="text" id="exp-description" required placeholder="Nombre"
-                  style="height: 38px; border-radius: 8px;"
-                  class="w-full h-[38px] bg-[#dcfce7] border-0 rounded-[8px] px-3 text-xs sm:text-sm font-black text-slate-900 placeholder:text-emerald-900/40 focus:ring-2 focus:ring-emerald-500 focus:bg-white text-right transition-all outline-none" />
+                  style="height: 40px; border-radius: 12px;"
+                  class="w-full h-[40px] bg-[#c6f6b5] border-0 rounded-[12px] px-3.5 text-sm font-black text-slate-900 placeholder:text-emerald-900/40 focus:ring-2 focus:ring-emerald-700 focus:bg-white text-right transition-all outline-none" />
 
                 <div class="relative">
                   <input type="number" step="0.01" min="0.01" id="exp-amount" required placeholder="Monto"
-                    style="height: 38px; border-radius: 8px;"
-                    class="w-full h-[38px] bg-[#dcfce7] border-0 rounded-[8px] px-3 text-sm sm:text-base font-black text-slate-900 placeholder:text-emerald-900/40 focus:ring-2 focus:ring-emerald-500 focus:bg-white text-right transition-all outline-none" />
+                    style="height: 40px; border-radius: 12px;"
+                    class="w-full h-[40px] bg-[#c6f6b5] border-0 rounded-[12px] px-3.5 text-base font-black text-slate-900 placeholder:text-emerald-900/40 focus:ring-2 focus:ring-emerald-700 focus:bg-white text-right transition-all outline-none" />
                 </div>
               </div>
             </div>
 
-            <!-- SECCIÓN MIEMBROS (Dentro del Bloque Principal con Acordeón M3 Suave) -->
-            <div id="section-shared-members" class="w-full space-y-1.5 pt-0.5 border-t border-slate-100 m3-accordion-collapse m3-open">
-              <div class="flex items-center justify-between pt-0.5">
-                <h4 class="font-black text-xs text-slate-900">Miembros</h4>
-                
-                <!-- Dropdown de Modo de División (Abre Bottom Sheet M3 de Repartición) -->
-                <button type="button" onclick="openSplitBreakdownModal()"
-                  class="flex items-center gap-1.5 bg-[#dcfce7] hover:bg-[#bbf7d0] px-2.5 py-1 rounded-xl text-xs font-black text-emerald-950 active:scale-95 transition-all shadow-2xs">
-                  <i class="fas fa-balance-scale text-xs text-emerald-800"></i>
-                  <span id="chip-split-mode-label">Equitativo</span>
-                  <i class="fas fa-chevron-down text-[8px] text-emerald-800/70"></i>
-                  <input type="hidden" id="exp-split-mode-select" value="equitativo" />
-                </button>
-              </div>
-
-              <!-- Fila de Avatares Rápidos + Botón Añadir Invitado -->
-              <div class="flex items-center gap-2 overflow-x-auto py-1 px-0.5 scrollbar-none">
-                <div id="shared-members-avatars-row" class="flex items-center gap-2">
-                  <!-- Inyectado por JS -->
+            <!-- SECCIÓN MIEMBROS (Dentro del Bloque Principal) -->
+            <div id="section-shared-members" class="w-full space-y-2 pt-1 border-t border-slate-100 m3-accordion-collapse m3-open">
+              <div>
+                <div class="flex items-center justify-between pt-0.5">
+                  <h4 class="font-black text-sm text-slate-900">Miembros</h4>
+                  
+                  <!-- Dropdown de Modo de División -->
+                  <button type="button" onclick="openSplitBreakdownModal()"
+                    class="flex items-center gap-1.5 bg-[#c6f6b5] hover:opacity-90 px-3 py-1 rounded-full text-xs font-black text-emerald-950 active:scale-95 transition-all shadow-2xs">
+                    <i class="fas fa-balance-scale text-xs"></i>
+                    <span id="chip-split-mode-label">Equitativo</span>
+                    <i class="fas fa-caret-down text-xs"></i>
+                    <input type="hidden" id="exp-split-mode-select" value="equitativo" />
+                  </button>
                 </div>
 
-                <!-- Botón (+) para Añadir Invitado -->
-                <button type="button" id="btn-toggle-add-guest"
-                  class="w-11 h-11 rounded-xl border-2 border-dashed border-slate-300 hover:border-emerald-500 hover:bg-emerald-50 text-slate-600 hover:text-emerald-700 flex items-center justify-center text-sm font-black transition-all shrink-0 active:scale-95">
-                  +
-                </button>
-              </div>
+                <!-- Fila de Avatares Rápidos + Botón Añadir Invitado -->
+                <div class="flex items-center gap-2 overflow-x-auto py-1 px-0.5 scrollbar-none mt-1">
+                  <div id="shared-members-avatars-row" class="flex items-center gap-2">
+                    <!-- Inyectado por JS -->
+                  </div>
 
-              <!-- Mini Input Añadir Invitado -->
-              <div id="box-add-guest" class="hidden flex gap-2 pt-1">
-                <input type="text" id="input-guest-name" placeholder="Nombre del invitado..."
-                  class="flex-1 bg-slate-50 border border-slate-200 rounded-xl px-3 py-1.5 text-xs font-bold text-slate-800 focus:outline-none focus:border-emerald-500" />
-                <button type="button" id="btn-confirm-add-guest"
-                  class="px-3 py-1.5 bg-slate-900 text-white rounded-xl text-xs font-black active:scale-95">
-                  Agregar
-                </button>
+                  <!-- Botón (+) para Añadir Invitado -->
+                  <button type="button" id="btn-toggle-add-guest"
+                    class="w-11 h-11 rounded-xl border-2 border-dashed border-emerald-600/70 hover:border-emerald-700 hover:bg-emerald-50 text-slate-800 flex items-center justify-center text-lg font-black transition-all shrink-0 active:scale-95">
+                    +
+                  </button>
+                </div>
+
+                <!-- Mini Input Añadir Invitado -->
+                <div id="box-add-guest" class="hidden flex gap-2 pt-1">
+                  <input type="text" id="input-guest-name" placeholder="Nombre del invitado..."
+                    class="flex-1 bg-slate-50 border border-slate-200 rounded-xl px-3 py-1.5 text-xs font-bold text-slate-800 focus:outline-none focus:border-emerald-500" />
+                  <button type="button" id="btn-confirm-add-guest"
+                    class="px-3 py-1.5 bg-slate-900 text-white rounded-xl text-xs font-black active:scale-95">
+                    Agregar
+                  </button>
+                </div>
               </div>
             </div>
 
-            <!-- BOTONERA MATERIAL DESIGN 3 SEGMENTED BUTTON: [ 🔁 Fijo ] | [ ☷ Lista ] (240px de ancho) -->
-            <div class="w-full max-w-[240px] mx-auto pt-0.5">
-              <div class="w-full h-[26px] rounded-full border border-slate-300 overflow-hidden flex divide-x divide-slate-300 bg-transparent">
+            <!-- BOTONERA MATERIAL DESIGN 3 SEGMENTED BUTTON: [ 🔁 Fijo ] | [ ☷ Lista ] -->
+            <div class="w-full max-w-[260px] mx-auto pt-0.5">
+              <div class="w-full h-[32px] rounded-full bg-[#c6f6b5] p-0.5 flex divide-x divide-emerald-600/30 overflow-hidden shadow-2xs">
                 <!-- Segmento 1: Fijo -->
                 <button type="button" id="btn-toggle-fixed" onclick="toggleFixedExpenseSection()"
-                  class="flex-1 h-full px-2 flex items-center justify-center gap-1.5 text-[11px] font-bold text-slate-600 hover:bg-slate-50 transition-all select-none active:scale-[0.98]">
-                  <i id="icon-fixed-check" class="fas fa-check text-[10px] text-emerald-900 hidden"></i>
-                  <i id="icon-fixed-symbol" class="fas fa-sync-alt text-[10px] opacity-75"></i>
+                  class="flex-1 h-full px-2 flex items-center justify-center gap-1.5 text-xs font-black text-slate-800 rounded-full transition-all select-none active:scale-[0.98]">
+                  <i id="icon-fixed-check" class="fas fa-check text-[10px] hidden"></i>
+                  <i id="icon-fixed-symbol" class="fas fa-sync-alt text-[11px] opacity-75"></i>
                   <span>Fijo</span>
                 </button>
 
                 <!-- Segmento 2: Lista -->
                 <button type="button" id="btn-toggle-list" onclick="toggleListExpenseSection()"
-                  class="flex-1 h-full px-2 flex items-center justify-center gap-1.5 text-[11px] font-bold text-slate-600 hover:bg-slate-50 transition-all select-none active:scale-[0.98]">
-                  <i id="icon-list-check" class="fas fa-check text-[10px] text-emerald-900 hidden"></i>
-                  <i id="icon-list-symbol" class="fas fa-list-ul text-[10px] opacity-75"></i>
+                  class="flex-1 h-full px-2 flex items-center justify-center gap-1.5 text-xs font-black text-slate-800 rounded-full transition-all select-none active:scale-[0.98]">
+                  <i id="icon-list-check" class="fas fa-check text-[10px] hidden"></i>
+                  <i id="icon-list-symbol" class="fas fa-list-ul text-[11px] opacity-75"></i>
                   <span>Lista</span>
                 </button>
               </div>
             </div>
 
-            <!-- SECCIÓN CONDICIONAL: Gasto Fijo Recurrente (Dentro del Bloque Principal con Acordeón M3 Suave) -->
+            <!-- SECCIÓN CONDICIONAL: Gasto Fijo Recurrente (Dentro del Bloque Principal) -->
             <div id="section-fixed-config" class="w-full m3-accordion-collapse">
-              <div class="space-y-2 pt-2 pb-0.5">
-                <div class="grid grid-cols-2 gap-[10px]">
-                  <!-- Selector Frecuencia (Abre Bottom Sheet M3) -->
+              <div class="space-y-2 pt-1.5 pb-0.5">
+                <div class="grid grid-cols-2 gap-2">
+                  <!-- Selector Frecuencia -->
                   <div>
                     <button type="button" onclick="openOptionPicker('fixed-frequency')"
-                      class="w-full h-[38px] bg-[#dcfce7] hover:bg-[#bbf7d0] active:scale-98 text-emerald-950 rounded-[12px] px-3 font-bold text-xs flex items-center justify-between shadow-2xs transition-all">
+                      class="w-full h-[40px] bg-[#c6f6b5] hover:opacity-90 active:scale-98 text-emerald-950 rounded-2xl px-3.5 font-black text-xs flex items-center justify-between shadow-2xs transition-all">
                       <span id="chip-frequency-label" class="truncate">Frecuencia</span>
-                      <i class="fas fa-chevron-down text-[9px] text-emerald-800 shrink-0"></i>
+                      <i class="fas fa-caret-down text-xs text-emerald-900 shrink-0"></i>
                     </button>
                     <input type="hidden" id="exp-fixed-frequency" value="monthly" />
                   </div>
 
-                  <!-- Selector Repetir / Cuotas (Abre Bottom Sheet M3) -->
+                  <!-- Selector Repetir / Cuotas -->
                   <div>
                     <button type="button" onclick="openOptionPicker('fixed-repeat')"
-                      class="w-full h-[38px] bg-[#dcfce7] hover:bg-[#bbf7d0] active:scale-98 text-emerald-950 rounded-[12px] px-3 font-bold text-xs flex items-center justify-between shadow-2xs transition-all">
-                      <span id="chip-repeat-label" class="truncate">Repetir</span>
-                      <i class="fas fa-chevron-down text-[9px] text-emerald-800 shrink-0"></i>
+                      class="w-full h-[40px] bg-[#c6f6b5] hover:opacity-90 active:scale-98 text-emerald-950 rounded-2xl px-3.5 font-black text-xs flex items-center justify-between shadow-2xs transition-all">
+                      <span id="chip-repeat-label" class="truncate">Fecha</span>
+                      <i class="fas fa-caret-down text-xs text-emerald-900 shrink-0"></i>
                     </button>
                     <input type="hidden" id="exp-fixed-repeat" value="indefinite" />
                   </div>
                 </div>
-                <p class="text-[10px] text-slate-500 font-medium px-0.5 pt-0.5 text-center">
-                  Los gastos fijos sin cuotas se registran como: <span class="font-bold text-emerald-700">Indefinidos</span>
+                <p class="text-[10px] text-slate-600 font-medium px-0.5 pt-0.5 text-center">
+                  Los gastos fijos sin cuotas se registran como: <span class="font-bold text-emerald-900">Indefinidos</span>
                 </p>
               </div>
             </div>
@@ -663,52 +675,49 @@
             </select>
           </div>
 
-          <!-- BLOQUE LISTA DE PRODUCTOS (Fondo verde distintivo, parte superior plana y solapada, border-radius inferior 24px) -->
+          <!-- BLOQUE LISTA DE PRODUCTOS (FUERA DEL BLOQUE PRINCIPAL, DIRECTAMENTE SOBRE EL FONDO VERDE) -->
           <div id="section-list-items"
-            class="w-full bg-[#c6f6b5] rounded-b-[24px] rounded-t-none relative -mt-6 z-0 m3-slide-sheet-block m3-block-closed border-0 shadow-none">
-            <div class="p-3.5 pt-9 space-y-2.5">
+            class="w-full pt-1 pb-1 m3-slide-sheet-block m3-block-closed">
+            <div class="space-y-2.5">
               <!-- Cabecera de la Tabla (Píldoras Blancas) -->
-              <div class="flex items-center gap-2 text-xs font-black text-slate-800">
-                <div class="flex-1 bg-white rounded-xl py-1.5 px-3.5 text-left shadow-2xs">Producto</div>
-                <div class="w-12 bg-white rounded-xl py-1.5 text-center shadow-2xs">Cant.</div>
-                <div class="w-20 bg-white rounded-xl py-1.5 text-center shadow-2xs">Total</div>
+              <div class="flex items-center gap-2 text-xs font-black text-slate-900">
+                <div class="flex-1 bg-white rounded-2xl py-2 px-4 text-left shadow-2xs">Producto</div>
+                <div class="w-14 bg-white rounded-2xl py-2 text-center shadow-2xs">Cant.</div>
+                <div class="w-24 bg-white rounded-2xl py-2 text-center shadow-2xs">Total</div>
               </div>
 
               <!-- Filas de Productos Dinámicas -->
-              <div id="mobile-items-container" class="space-y-2.5">
+              <div id="mobile-items-container" class="space-y-2">
                 <!-- Inyectado por JS -->
               </div>
 
-              <!-- Pie del Bloque: Solo Botón Agregar Producto e Indicadores sutiles -->
-              <div class="pt-1 flex items-center justify-between">
+              <!-- Pie del Bloque: Botón Agregar Producto e Indicadores -->
+              <div class="pt-2 flex items-center justify-between px-1">
                 <button type="button" id="btn-add-item-row"
-                  class="text-xs font-black text-slate-900 flex items-center gap-1.5 hover:opacity-80 active:scale-95 py-1 px-1">
-                  <i class="fas fa-plus"></i>
+                  class="text-xs font-black text-slate-950 flex items-center gap-2 hover:opacity-80 active:scale-95 py-1">
+                  <i class="fas fa-plus text-sm"></i>
                   <span>Agregar producto</span>
                 </button>
-                <div class="flex items-center gap-1.5 opacity-60">
-                  <span class="w-8 h-1.5 rounded-full bg-emerald-700/40"></span>
-                  <span class="w-8 h-1.5 rounded-full bg-emerald-700/40"></span>
+                <div class="flex items-center gap-2 opacity-60">
+                  <span class="w-10 h-2 rounded-full bg-emerald-800/30"></span>
+                  <span class="w-10 h-2 rounded-full bg-emerald-800/30"></span>
                 </div>
               </div>
             </div>
           </div>
         </div>
 
-        <!-- BOTÓN GUARDAR GASTO FIJO EN EL FONDO (Sticky bottom) -->
-        <div class="sticky bottom-0 bg-white/95 backdrop-blur-sm px-4 py-2 pb-5 border-t border-slate-100/80 z-30 w-full mt-2">
-          <div class="w-full space-y-1.5">
-            <button type="submit" id="btn-submit-expense"
-              class="w-full py-3 bg-slate-900 hover:bg-slate-800 active:scale-98 text-white font-black text-xs rounded-2xl shadow-lg transition-all flex items-center justify-center gap-2">
-              <i class="fas fa-check-circle text-sm text-emerald-400"></i>
-              <span id="label-submit-expense">Confirmar y Guardar Gasto</span>
-            </button>
-            <button type="button" id="btn-delete-expense"
-              class="w-full py-2 bg-rose-50 hover:bg-rose-100 text-rose-600 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 hidden active:scale-98">
-              <i class="fas fa-trash-alt text-xs"></i>
-              <span>Eliminar Gasto</span>
-            </button>
-          </div>
+        <!-- BOTÓN GUARDAR EN EL FONDO (Píldora Verde Viva #86d952) -->
+        <div class="pt-4 pb-2 sticky bottom-0 z-30 w-full mt-auto">
+          <button type="submit" id="btn-submit-expense"
+            class="w-full py-4 bg-[#86d952] hover:bg-[#7bc94b] active:scale-98 text-slate-950 font-black text-sm rounded-full shadow-md transition-all flex items-center justify-center gap-2">
+            <span id="label-submit-expense">Guardar</span>
+          </button>
+          <button type="button" id="btn-delete-expense"
+            class="w-full mt-2 py-2.5 bg-rose-100 hover:bg-rose-200 text-rose-700 font-bold text-xs rounded-full transition-all flex items-center justify-center gap-1.5 hidden active:scale-98">
+            <i class="fas fa-trash-alt text-xs"></i>
+            <span>Eliminar Gasto</span>
+          </button>
         </div>
       </form>
     </div>
@@ -3385,17 +3394,17 @@
                 <!-- Nombre del Producto (Píldora Blanca) -->
                 <input type="text" placeholder="Producto" value="${item.desc || ''}"
                   oninput="updateMobileItemField('${item.id}', 'desc', this.value)"
-                  class="flex-1 min-w-0 h-9 bg-white border-0 rounded-xl px-3.5 text-xs font-bold text-slate-900 placeholder:text-slate-400 focus:ring-2 focus:ring-emerald-700 outline-none shadow-2xs" />
+                  class="flex-1 min-w-0 h-10 bg-white border-0 rounded-2xl px-4 text-xs font-black text-slate-900 placeholder:text-slate-400 focus:ring-2 focus:ring-emerald-700 outline-none shadow-2xs" />
 
-                <!-- Cantidad (Píldora Blanca, w-12, max 99) -->
+                <!-- Cantidad (Píldora Blanca, w-14, max 99) -->
                 <input type="number" min="1" max="99" step="1" value="${qty}"
                   oninput="updateMobileItemField('${item.id}', 'quantity', this.value)"
-                  class="w-12 h-9 bg-white border-0 rounded-xl text-xs font-bold text-slate-900 text-center focus:ring-2 focus:ring-emerald-700 outline-none shadow-2xs shrink-0" />
+                  class="w-14 h-10 bg-white border-0 rounded-2xl text-xs font-black text-slate-900 text-center focus:ring-2 focus:ring-emerald-700 outline-none shadow-2xs shrink-0" />
 
-                <!-- Total / Monto (Píldora Blanca, w-20) -->
+                <!-- Total / Monto (Píldora Blanca, w-24) -->
                 <input type="number" min="0.01" step="0.01" placeholder="0.00" value="${unitPrice > 0 ? unitPrice : ''}"
                   oninput="updateMobileItemField('${item.id}', 'amount', this.value)"
-                  class="w-20 h-9 bg-white border-0 rounded-xl text-xs font-bold text-slate-900 text-center focus:ring-2 focus:ring-emerald-700 outline-none shadow-2xs shrink-0" />
+                  class="w-24 h-10 bg-white border-0 rounded-2xl text-xs font-black text-slate-900 text-center focus:ring-2 focus:ring-emerald-700 outline-none shadow-2xs shrink-0" />
               </div>
 
               <!-- Botón Eliminar Expandible (Aparece de derecha a izquierda) -->
@@ -3404,7 +3413,7 @@
                 style="width: 0px; opacity: 0;">
                 <button type="button"
                   onclick="confirmDeleteMobileItem('${item.id}', '${(item.desc || 'este producto').replace(/'/g, "\\'")}')"
-                  class="w-9 h-9 bg-rose-500 hover:bg-rose-600 active:scale-90 text-white rounded-xl flex items-center justify-center text-xs shadow-2xs shrink-0">
+                  class="w-10 h-10 bg-rose-500 hover:bg-rose-600 active:scale-90 text-white rounded-2xl flex items-center justify-center text-xs shadow-2xs shrink-0">
                   <i class="fas fa-trash-alt"></i>
                 </button>
               </div>
