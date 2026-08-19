@@ -149,6 +149,8 @@
 
     .m3-slide-sheet-block.m3-block-closed {
       grid-template-rows: 0fr !important;
+      flex: 0 0 0px !important;
+      max-height: 0px !important;
       opacity: 0 !important;
       overflow: hidden !important;
       transform: translateY(-20px) scale(0.99) !important;
@@ -160,6 +162,8 @@
 
     .m3-slide-sheet-block.m3-block-open {
       grid-template-rows: 1fr !important;
+      flex: 1 1 0% !important;
+      max-height: 100% !important;
       opacity: 1 !important;
       transform: translateY(0px) scale(1) !important;
       pointer-events: auto !important;
@@ -503,11 +507,11 @@
 
   <!-- 1. Pantalla Completa Registrar / Editar Gasto o Ingreso (Diseño Full-Screen Fondo #F8FAFC) -->
   <div id="modal-expense"
-    class="fixed inset-0 z-50 bg-[#F8FAFC] overflow-y-auto overscroll-contain hidden transition-all duration-300 scrollbar-none">
-    <div class="w-full max-w-md mx-auto min-h-screen flex flex-col justify-between p-4 pt-5 pb-6">
+    class="fixed inset-0 z-50 bg-[#F8FAFC] h-[100dvh] overflow-hidden hidden transition-all duration-300">
+    <div class="w-full max-w-md mx-auto h-full flex flex-col justify-between p-4 pt-4 pb-4">
 
       <!-- Cabecera Superior: [ ← Volver ] + Título & Subtítulo + [ ⋮ Opciones ] -->
-      <div class="flex items-center justify-between gap-3 pb-3 shrink-0">
+      <div class="flex items-center justify-between gap-3 pb-2 shrink-0">
         <button type="button" onclick="closeModal('modal-expense'); resetExpenseForm();"
           class="w-11 h-11 rounded-full bg-white text-slate-800 flex items-center justify-center text-sm shadow-xs hover:bg-slate-50 active:scale-95 transition-all">
           <i class="fas fa-arrow-left"></i>
@@ -526,7 +530,7 @@
       </div>
 
       <!-- Pestañas Superiores Tipo de Registro: Personal | Compartido | Ingreso (Píldora Blanca) -->
-      <div class="pb-3 shrink-0">
+      <div class="pb-2.5 shrink-0">
         <div class="w-full bg-white p-1 rounded-full flex items-center gap-1 text-xs font-black shadow-xs">
           <button type="button" id="tab-type-personal" onclick="switchExpenseRegistrationType('personal')"
             class="flex-1 py-2 rounded-full text-slate-600 hover:text-slate-900 transition-all text-center">
@@ -543,11 +547,11 @@
         </div>
       </div>
 
-      <form id="form-mobile-expense" class="flex flex-col flex-1 justify-between">
+      <form id="form-mobile-expense" class="flex flex-col flex-1 justify-between min-h-0">
 
-        <div class="space-y-3">
-          <!-- BLOQUE PRINCIPAL SUPERIOR (Card blanca, radius 30px, shadow-xs) -->
-          <div class="w-full bg-white rounded-[30px] p-4 space-y-3.5 shadow-sm relative z-10">
+        <div class="flex flex-col flex-1 min-h-0">
+          <!-- BLOQUE PRINCIPAL SUPERIOR (Card blanca, radius 30px, shadow-xs, Fija) -->
+          <div class="w-full bg-white rounded-[30px] p-4 space-y-3.5 shadow-sm relative z-10 shrink-0">
             <!-- Fila de Chips de Metadatos (Fondo verde claro #c6f6b5) -->
             <div class="grid grid-cols-3 gap-2 pb-0.5">
               <!-- Chip Fecha -->
@@ -715,8 +719,8 @@
 
           <!-- BLOQUE LISTA DE PRODUCTOS (SALE DESDE ATRÁS DEL BLOQUE PRINCIPAL, COLOR #ECF9E1) -->
           <div id="section-list-items"
-            class="w-full bg-[#ECF9E1] rounded-b-[28px] overflow-hidden m3-slide-sheet-block m3-block-closed relative z-0">
-            <div class="min-h-0 flex flex-col justify-between pt-9">
+            class="w-full bg-[#ECF9E1] rounded-b-[28px] overflow-hidden m3-slide-sheet-block m3-block-closed relative z-0 flex-1 min-h-0">
+            <div id="section-list-items-scroll" class="h-full min-h-0 overflow-y-auto overscroll-contain scrollbar-none flex flex-col justify-between pt-9">
               <!-- Contenido Superior de la Lista -->
               <div class="p-3.5 pt-1 space-y-2.5">
                 <!-- Cabecera de la Tabla (Píldoras Blancas con rounded-lg) -->
@@ -726,8 +730,8 @@
                   <div class="bg-white rounded-lg py-2 text-center shadow-2xs">Total</div>
                 </div>
 
-                <!-- Filas de Productos Dinámicas con Scroll Independiente -->
-                <div id="mobile-items-container" class="space-y-2 max-h-[34vh] overflow-y-auto overscroll-contain scrollbar-none pr-0.5">
+                <!-- Filas de Productos Dinámicas (Flujo continuo dentro del bloque con scroll) -->
+                <div id="mobile-items-container" class="space-y-2 pr-0.5">
                   <!-- Inyectado por JS -->
                 </div>
               </div>
@@ -748,8 +752,8 @@
           </div>
         </div>
 
-        <!-- BOTÓN GUARDAR EN EL FONDO (Sticky fijo con fondo #F8FAFC para visibilidad garantizada) -->
-        <div class="pt-3 pb-3 sticky bottom-0 z-30 w-full bg-[#F8FAFC]/95 backdrop-blur-sm mt-auto">
+        <!-- BOTÓN GUARDAR EN EL FONDO (Fijo en la parte inferior, shrink-0) -->
+        <div class="pt-2.5 pb-1 shrink-0 w-full">
           <button type="submit" id="btn-submit-expense"
             class="w-full py-4 bg-[#86d952] hover:bg-[#7bc94b] active:scale-98 text-slate-950 font-black text-sm rounded-full shadow-md transition-all flex items-center justify-center gap-2 cursor-pointer">
             <span id="label-submit-expense">Guardar</span>
