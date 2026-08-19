@@ -89,6 +89,8 @@ export function renderMobileItemsList() {
           <div class="grid grid-cols-[1fr_48px_72px] gap-2 flex-1 min-w-0">
             <!-- Nombre del Producto (Píldora Blanca) -->
             <input type="text" placeholder="Producto" value="${item.desc || ''}"
+              name="item_desc_${item.id}"
+              autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" data-lpignore="true" data-form-type="other"
               data-item-field="desc"
               data-item-id="${item.id}"
               oninput="updateMobileItemField('${item.id}', 'desc', this.value)"
@@ -96,6 +98,8 @@ export function renderMobileItemsList() {
 
             <!-- Cantidad (Píldora Blanca, 48px) -->
             <input type="number" min="1" max="99" step="1" value="${qty}"
+              name="item_qty_${item.id}" inputmode="numeric"
+              autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" data-lpignore="true" data-form-type="other"
               data-item-field="quantity"
               data-item-id="${item.id}"
               oninput="updateMobileItemField('${item.id}', 'quantity', this.value)"
@@ -103,6 +107,8 @@ export function renderMobileItemsList() {
 
             <!-- Total / Monto (Píldora Blanca, 72px) -->
             <input type="number" min="0.01" step="0.01" placeholder="0.00" value="${unitPrice > 0 ? unitPrice : ''}"
+              name="item_amount_${item.id}" inputmode="decimal"
+              autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" data-lpignore="true" data-form-type="other"
               data-item-field="amount"
               data-item-id="${item.id}"
               oninput="updateMobileItemField('${item.id}', 'amount', this.value)"

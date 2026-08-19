@@ -14,9 +14,10 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <!-- PWA Meta Tags -->
   <link rel="manifest" href="manifest.json" />
-  <meta name="theme-color" content="#0f172a" />
+  <meta name="theme-color" id="theme-color-meta" content="#f8fafc" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+  <meta name="msapplication-navbutton-color" content="#f8fafc" />
   <meta name="apple-mobile-web-app-title" content="Qipu" />
   <link rel="apple-touch-icon"
     href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Crect width='512' height='512' rx='128' fill='%234f46e5'/%3E%3Cpath d='M120 180h272c22 0 40 18 40 40v140c0 22-18 40-40 40H120c-22 0-40-18-40-40V220c0-22 18-40 40-40z' fill='%23ffffff' opacity='0.9'/%3E%3Cpath d='M120 140h220c11 0 20 9 20 20v20H100v-20c0-11 9-20 20-20z' fill='%23c7d2fe'/%3E%3Ccircle cx='360' cy='290' r='20' fill='%234f46e5'/%3E%3C/svg%3E" />
@@ -545,7 +546,7 @@
         </div>
       </div>
 
-      <form id="form-mobile-expense" class="flex flex-col flex-1 justify-between min-h-0">
+      <form id="form-mobile-expense" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" data-lpignore="true" class="flex flex-col flex-1 justify-between min-h-0">
 
         <div class="flex flex-col flex-1 min-h-0">
           <!-- BLOQUE PRINCIPAL SUPERIOR (Card blanca, radius 30px, shadow-xs, Fija) -->
@@ -592,7 +593,7 @@
               <div class="flex-1 flex flex-col justify-between h-[86px]">
                 <!-- Input Nombre / Concepto -->
                 <div class="relative w-full h-[40px] rounded-b-[2px] rounded-t-[12px] bg-[#c6f6b5] border-b-2 border-b-[#90CE59] border-t-0 border-x-0 focus-within:bg-[#b5f0a0] transition-colors overflow-hidden">
-                  <input type="text" id="exp-description" required placeholder=" "
+                  <input type="text" id="exp-description" name="qipu_desc_field" required placeholder=" " autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" data-lpignore="true" data-form-type="other"
                     class="peer w-full h-full bg-transparent border-0 px-3.5 pt-2.5 pb-0 text-xs font-black text-slate-900 text-left leading-tight transition-all outline-none focus:outline-none focus:ring-0" />
                   <label for="exp-description"
                     class="absolute left-3.5 top-1/2 -translate-y-1/2 text-xs font-black text-emerald-900/60 transition-all pointer-events-none origin-left peer-focus:top-1.5 peer-focus:-translate-y-0 peer-focus:text-[8px] peer-focus:text-emerald-800 peer-[:not(:placeholder-shown)]:top-1.5 peer-[:not(:placeholder-shown)]:-translate-y-0 peer-[:not(:placeholder-shown)]:text-[8px] peer-[:not(:placeholder-shown)]:text-emerald-800">
@@ -602,7 +603,7 @@
 
                 <!-- Input Monto -->
                 <div class="relative w-full h-[40px] rounded-b-[2px] rounded-t-[12px] bg-[#c6f6b5] border-b-2 border-b-[#90CE59] border-t-0 border-x-0 focus-within:bg-[#b5f0a0] transition-colors overflow-hidden">
-                  <input type="number" step="0.01" min="0.01" id="exp-amount" required placeholder=" "
+                  <input type="number" step="0.01" min="0.01" id="exp-amount" name="qipu_amount_field" inputmode="decimal" required placeholder=" " autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" data-lpignore="true" data-form-type="other"
                     class="peer w-full h-full bg-transparent border-0 px-3.5 pt-2.5 pb-0 text-xs font-black text-slate-900 text-left leading-tight transition-all outline-none focus:outline-none focus:ring-0 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none" />
                   <label for="exp-amount"
                     class="absolute left-3.5 top-1/2 -translate-y-1/2 text-xs font-black text-emerald-900/60 transition-all pointer-events-none origin-left peer-focus:top-1.5 peer-focus:-translate-y-0 peer-focus:text-[8px] peer-focus:text-emerald-800 peer-[:not(:placeholder-shown)]:top-1.5 peer-[:not(:placeholder-shown)]:-translate-y-0 peer-[:not(:placeholder-shown)]:text-[8px] peer-[:not(:placeholder-shown)]:text-emerald-800">
