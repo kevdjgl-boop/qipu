@@ -1,65 +1,102 @@
 // ================================================================
-// GESTIÓN DEL BOTÓN FLOTANTE PARA AVANZAR ENTRE INPUTS
-// (ADAPTACIÓN AL TECLADO VIRTUAL DE SMARTPHONES CON VISUALVIEWPORT)
+// GESTIÓN DE LA BARRA FLOTANTE DE ACCIONES SOBRE EL TECLADO
+// (AVANZAR INPUTS Y AGREGAR ÍTEM DINÁMICO EN TOTAL)
 // ================================================================
 
 let currentFocusedInput = null;
 
 export function setupKeyboardNavFab() {
-  const fab = document.getElementById('btn-next-input-fab');
-  if (!fab) return;
+  const navBar = document.getElementById('keyboard-nav-bar');
+  const btnNext = document.getElementById('btn-next-input-fab');
+  const btnAddItem = document.getElementById('btn-fab-add-item');
+  if (!navBar || !btnNext || !btnAddItem) return;
 
-  function updateFabPosition() {
+  function updateNavPosition() {
     if (window.visualViewport) {
       const vv = window.visualViewport;
-      // Calcula la altura real ocupada por el teclado virtual del smartphone
+      // Altura real ocupada por el teclado virtual del smartphone
       const keyboardHeight = window.innerHeight - (vv.offsetTop + vv.height);
       const bottomPos = Math.max(16, keyboardHeight + 14);
-      fab.style.bottom = `${bottomPos}px`;
+      navBar.style.bottom = `${bottomPos}px`;
     } else {
-      fab.style.bottom = '20px';
+      navBar.style.bottom = '20px';
+    }
+  }
+
+  function checkAddItemButtonVisibility(target) {
+    if (!btnAddItem) return;
+    const isTotalField = target && target.getAttribute('data-item-field') === 'amount';
+    if (isTotalField) {
+      btnAddItem.classList.remove('scale-0', 'opacity-0', 'pointer-events-none');
+      btnAddItem.classList.add('scale-100', 'opacity-100', 'pointer-events-auto');
+    } else {
+      btnAddItem.classList.add('scale-0', 'opacity-0', 'pointer-events-none');
+      btnAddItem.classList.remove('scale-100', 'opacity-100', 'pointer-events-auto');
     }
   }
 
   if (window.visualViewport) {
-    window.visualViewport.addEventListener('resize', updateFabPosition);
-    window.visualViewport.addEventListener('scroll', updateFabPosition);
+    window.visualViewport.addEventListener('resize', updateNavPosition);
+    window.visualViewport.addEventListener('scroll', updateNavPosition);
   }
 
   document.addEventListener('focusin', (e) => {
     if (e.target.tagName === 'INPUT' && e.target.type !== 'hidden' && e.target.type !== 'date') {
       currentFocusedInput = e.target;
-      updateFabPosition();
-      fab.classList.remove('opacity-0', 'scale-75', 'pointer-events-none');
-      fab.classList.add('opacity-100', 'scale-100', 'pointer-events-auto');
+      updateNavPosition();
+      checkAddItemButtonVisibility(e.target);
+
+      navBar.classList.remove('opacity-0', 'scale-90', 'pointer-events-none');
+      navBar.classList.add('opacity-100', 'scale-100', 'pointer-events-auto');
     }
   });
 
   document.addEventListener('focusout', (e) => {
     setTimeout(() => {
       if (!document.activeElement || (document.activeElement.tagName !== 'INPUT' && document.activeElement.tagName !== 'TEXTAREA')) {
-        fab.classList.add('opacity-0', 'scale-75', 'pointer-events-none');
-        fab.classList.remove('opacity-100', 'scale-100', 'pointer-events-auto');
+        navBar.classList.add('opacity-0', 'scale-90', 'pointer-events-none');
+        navBar.classList.remove('opacity-100', 'scale-100', 'pointer-events-auto');
+        checkAddItemButtonVisibility(null);
       }
     }, 150);
   });
 
-  fab.addEventListener('pointerdown', (e) => {
-    e.preventDefault(); // Evita que el navegador cierre el teclado al tocar el botón
+  // Prevenir que tocar los botones cierre el teclado
+  navBar.addEventListener('pointerdown', (e) => {
+    e.preventDefault();
   });
 
-  fab.addEventListener('click', (e) => {
+  // 1. Botón Flecha (Avanzar siguiente input)
+  btnNext.addEventListener('click', (e) => {
     e.preventDefault();
     advanceToNextInput();
+  });
+
+  // 2. Botón "+ Agregar ítem" (Aparece sólo en el campo Total)
+  btnAddItem.addEventListener('click', (e) => {
+    e.preventDefault();
+    if (typeof window.addMobileItemRow === 'function') {
+      window.addMobileItemRow();
+      // Al agregar ítem, ocultamos el botón inmediatamente
+      checkAddItemButtonVisibility(null);
+      setTimeout(() => {
+        const updatedInputs = Array.from(document.querySelectorAll('input:not([type="hidden"]):not([type="date"]):not([disabled])'))
+          .filter(el => el.offsetParent !== null && !el.closest('.hidden'));
+        // Enfocar la descripción del nuevo producto agregado
+        const target = updatedInputs[updatedInputs.length - 3] || updatedInputs[updatedInputs.length - 1];
+        if (target) {
+          target.focus();
+          target.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+          checkAddItemButtonVisibility(target);
+        }
+      }, 100);
+    }
   });
 }
 
 export function advanceToNextInput() {
   const allInputs = Array.from(document.querySelectorAll('input:not([type="hidden"]):not([type="date"]):not([disabled])'))
-    .filter(el => {
-      // Filtrar sólo los inputs visibles en pantalla
-      return el.offsetParent !== null && !el.closest('.hidden');
-    });
+    .filter(el => el.offsetParent !== null && !el.closest('.hidden'));
 
   if (!allInputs.length) return;
 
@@ -71,19 +108,18 @@ export function advanceToNextInput() {
     nextInput.focus();
     nextInput.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
   } else {
-    // Si estamos en el último input visible y la lista está activa, creamos una nueva fila y saltamos a ella
+    // Si estamos en el último input visible y la lista está activa
     if (window.isListExpenseActive && typeof window.addMobileItemRow === 'function') {
       window.addMobileItemRow();
       setTimeout(() => {
         const updatedInputs = Array.from(document.querySelectorAll('input:not([type="hidden"]):not([type="date"]):not([disabled])'))
           .filter(el => el.offsetParent !== null && !el.closest('.hidden'));
-        // El primer campo de la nueva fila (descripción del producto)
         const target = updatedInputs[updatedInputs.length - 3] || updatedInputs[updatedInputs.length - 1];
         if (target) {
           target.focus();
           target.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
         }
-      }, 120);
+      }, 100);
     } else {
       if (document.activeElement) document.activeElement.blur();
     }
