@@ -711,31 +711,34 @@
           <!-- BLOQUE LISTA DE PRODUCTOS (FUERA DEL BLOQUE PRINCIPAL, COLOR #ECF9E1) -->
           <div id="section-list-items"
             class="w-full bg-[#ECF9E1] rounded-b-[28px] overflow-hidden m3-slide-sheet-block m3-block-closed">
-            <div class="p-3.5 space-y-2.5">
-              <!-- Cabecera de la Tabla (Píldoras Blancas) -->
-              <div class="flex items-center gap-2 text-xs font-black text-slate-900">
-                <div class="flex-1 bg-white rounded-2xl py-2 px-4 text-left shadow-2xs">Producto</div>
-                <div class="w-14 bg-white rounded-2xl py-2 text-center shadow-2xs">Cant.</div>
-                <div class="w-24 bg-white rounded-2xl py-2 text-center shadow-2xs">Total</div>
+            <div class="min-h-0 flex flex-col justify-between">
+              <!-- Contenido Superior de la Lista -->
+              <div class="p-3.5 space-y-2.5">
+                <!-- Cabecera de la Tabla (Píldoras Blancas) -->
+                <div class="flex items-center gap-2 text-xs font-black text-slate-900">
+                  <div class="flex-1 bg-white rounded-2xl py-2 px-4 text-left shadow-2xs">Producto</div>
+                  <div class="w-14 bg-white rounded-2xl py-2 text-center shadow-2xs">Cant.</div>
+                  <div class="w-24 bg-white rounded-2xl py-2 text-center shadow-2xs">Total</div>
+                </div>
+
+                <!-- Filas de Productos Dinámicas -->
+                <div id="mobile-items-container" class="space-y-2">
+                  <!-- Inyectado por JS -->
+                </div>
               </div>
 
-              <!-- Filas de Productos Dinámicas -->
-              <div id="mobile-items-container" class="space-y-2">
-                <!-- Inyectado por JS -->
-              </div>
-            </div>
-
-            <!-- Pie del Bloque: Botón Agregar Producto e Indicadores (Color Verde #a4e775) -->
-            <div class="bg-[#a4e775] px-4 py-3 flex items-center justify-between">
-              <button type="button" id="btn-add-item-row"
-                class="text-xs font-black text-slate-950 flex items-center gap-2 hover:opacity-80 active:scale-95 py-0.5">
-                <i class="fas fa-plus text-sm"></i>
-                <span>Agregar producto</span>
+              <!-- Pie del Bloque: Toda la barra verde es el Botón Agregar Producto -->
+              <button type="button" id="btn-add-item-row" onclick="addMobileItemRow()"
+                class="w-full bg-[#a4e775] hover:bg-[#97e163] active:brightness-95 transition-all px-4 py-3.5 flex items-center justify-between cursor-pointer rounded-b-[28px] select-none text-left shrink-0">
+                <div class="text-xs font-black text-slate-950 flex items-center gap-2">
+                  <i class="fas fa-plus text-sm"></i>
+                  <span>Agregar producto</span>
+                </div>
+                <div class="flex items-center gap-2 opacity-80 pointer-events-none">
+                  <span class="w-10 h-2.5 rounded-full bg-[#7ec44f]"></span>
+                  <span class="w-10 h-2.5 rounded-full bg-[#7ec44f]"></span>
+                </div>
               </button>
-              <div class="flex items-center gap-2 opacity-80">
-                <span class="w-10 h-2.5 rounded-full bg-[#7ec44f]"></span>
-                <span class="w-10 h-2.5 rounded-full bg-[#7ec44f]"></span>
-              </div>
             </div>
           </div>
         </div>
