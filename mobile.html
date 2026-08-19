@@ -605,6 +605,34 @@
                 </button>
               </div>
             </div>
+
+            <!-- SECCIÓN CONDICIONAL: Gasto Fijo Recurrente (Dentro del Bloque Principal con Acordeón M3 Suave) -->
+            <div id="section-fixed-config" class="w-full space-y-2 m3-accordion-collapse pt-1">
+              <div class="grid grid-cols-2 gap-[10px]">
+                <!-- Selector Frecuencia (Abre Bottom Sheet M3) -->
+                <div>
+                  <button type="button" onclick="openOptionPicker('fixed-frequency')"
+                    class="w-full h-[38px] bg-[#dcfce7] hover:bg-[#bbf7d0] active:scale-98 text-emerald-950 rounded-[12px] px-3 font-bold text-xs flex items-center justify-between shadow-2xs transition-all">
+                    <span id="chip-frequency-label" class="truncate">Frecuencia</span>
+                    <i class="fas fa-chevron-down text-[9px] text-emerald-800 shrink-0"></i>
+                  </button>
+                  <input type="hidden" id="exp-fixed-frequency" value="monthly" />
+                </div>
+
+                <!-- Selector Repetir / Cuotas (Abre Bottom Sheet M3) -->
+                <div>
+                  <button type="button" onclick="openOptionPicker('fixed-repeat')"
+                    class="w-full h-[38px] bg-[#dcfce7] hover:bg-[#bbf7d0] active:scale-98 text-emerald-950 rounded-[12px] px-3 font-bold text-xs flex items-center justify-between shadow-2xs transition-all">
+                    <span id="chip-repeat-label" class="truncate">Repetir</span>
+                    <i class="fas fa-chevron-down text-[9px] text-emerald-800 shrink-0"></i>
+                  </button>
+                  <input type="hidden" id="exp-fixed-repeat" value="indefinite" />
+                </div>
+              </div>
+              <p class="text-[10px] text-slate-500 font-medium px-0.5 pt-0.5 text-center">
+                Los gastos fijos sin cuotas se registran como: <span class="font-bold text-emerald-700">Indefinidos</span>
+              </p>
+            </div>
           </div>
 
           <!-- Pagador (Invisible o Seleccionable) -->
@@ -612,34 +640,6 @@
             <select id="exp-payer">
               <!-- Dinámico -->
             </select>
-          </div>
-
-          <!-- SECCIÓN CONDICIONAL: Gasto Fijo Recurrente (Acordeón M3 Suave) -->
-          <div id="section-fixed-config" class="w-full space-y-2 m3-accordion-collapse">
-            <div class="grid grid-cols-2 gap-[10px]">
-              <!-- Selector Frecuencia (Abre Bottom Sheet M3) -->
-              <div>
-                <button type="button" onclick="openOptionPicker('fixed-frequency')"
-                  class="w-full h-[38px] bg-[#dcfce7] hover:bg-[#bbf7d0] active:scale-98 text-emerald-950 rounded-[12px] px-3 font-bold text-xs flex items-center justify-between shadow-2xs transition-all">
-                  <span id="chip-frequency-label" class="truncate">Frecuencia</span>
-                  <i class="fas fa-chevron-down text-[9px] text-emerald-800 shrink-0"></i>
-                </button>
-                <input type="hidden" id="exp-fixed-frequency" value="monthly" />
-              </div>
-
-              <!-- Selector Repetir / Cuotas (Abre Bottom Sheet M3) -->
-              <div>
-                <button type="button" onclick="openOptionPicker('fixed-repeat')"
-                  class="w-full h-[38px] bg-[#dcfce7] hover:bg-[#bbf7d0] active:scale-98 text-emerald-950 rounded-[12px] px-3 font-bold text-xs flex items-center justify-between shadow-2xs transition-all">
-                  <span id="chip-repeat-label" class="truncate">Repetir</span>
-                  <i class="fas fa-chevron-down text-[9px] text-emerald-800 shrink-0"></i>
-                </button>
-                <input type="hidden" id="exp-fixed-repeat" value="indefinite" />
-              </div>
-            </div>
-            <p class="text-[10px] text-slate-500 font-medium px-0.5 pt-0.5">
-              Los gastos fijos sin cuotas se registran como: <span class="font-bold text-emerald-700">Indefinidos</span>
-            </p>
           </div>
 
           <!-- BLOQUE LISTA DE PRODUCTOS (Fondo verde distintivo, parte superior plana y solapada, border-radius inferior 24px) -->
