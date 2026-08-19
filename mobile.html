@@ -462,7 +462,7 @@
   <div id="modal-expense"
     class="fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-sm hidden items-end justify-center p-0 m3-bottom-sheet-backdrop">
     <div
-      class="w-full max-w-lg bg-white rounded-t-[32px] h-fit max-h-[92vh] flex flex-col shadow-2xl overflow-hidden m3-bottom-sheet-surface transition-[height] duration-300 ease-[cubic-bezier(0.16,1,0.3,1)]">
+      class="w-full max-w-lg bg-white rounded-t-[32px] max-h-[92vh] overflow-y-auto overscroll-contain flex flex-col shadow-2xl scrollbar-none m3-bottom-sheet-surface transition-[height] duration-300 ease-[cubic-bezier(0.16,1,0.3,1)]">
 
       <!-- Drag Handle Indicator -->
       <div class="w-12 h-1 bg-slate-300 rounded-full mx-auto mt-2.5 mb-1 shrink-0"></div>
@@ -485,10 +485,10 @@
         </div>
       </div>
 
-      <form id="form-mobile-expense" class="flex flex-col flex-1 min-h-0 overflow-hidden">
+      <form id="form-mobile-expense" class="flex flex-col">
 
-        <!-- CONTENIDO DESPLAZABLE (Solo scrollea si sobrepasa 92vh) -->
-        <div class="px-4 pt-0.5 pb-1 overflow-y-auto overscroll-contain space-y-2.5 flex-1 scrollbar-none">
+        <!-- CONTENIDO DEL FORMULARIO -->
+        <div class="px-4 pt-0.5 pb-1 space-y-2.5">
 
           <!-- BLOQUE PRINCIPAL SUPERIOR (Card blanca, radius 24px, sin bordes ni sombras, z-10) -->
           <div class="w-full bg-white rounded-[24px] p-2.5 space-y-2 relative z-10 border-0 shadow-none">
@@ -672,8 +672,8 @@
           </div>
         </div>
 
-        <!-- BOTÓN GUARDAR GASTO FIJO EN EL FONDO (FUERA DEL CONTENEDOR CON SCROLL) -->
-        <div class="px-4 py-2 pb-4 bg-white border-t border-slate-100 shrink-0 z-30 w-full">
+        <!-- BOTÓN GUARDAR GASTO FIJO EN EL FONDO (Sticky bottom) -->
+        <div class="sticky bottom-0 bg-white/95 backdrop-blur-sm px-4 py-2 pb-5 border-t border-slate-100/80 z-30 w-full mt-2">
           <div class="w-full space-y-1.5">
             <button type="submit" id="btn-submit-expense"
               class="w-full py-3 bg-slate-900 hover:bg-slate-800 active:scale-98 text-white font-black text-xs rounded-2xl shadow-lg transition-all flex items-center justify-center gap-2">
@@ -1363,6 +1363,80 @@
     }
 
     // ================================================================
+    // CÁLCULO DE CICLOS Y FACTURACIÓN (IDÉNTICO A APP.HTML)
+    // ================================================================
+    function getCycleDates(method, referenceDate) {
+      if (!method || method.type !== "credit") {
+        return { startDate: null, closingDate: null, paymentDate: null };
+      }
+
+      const closingDay = parseInt(method.closingDay) || 20;
+      const paymentDay = parseInt(method.paymentDay) || 5;
+
+      const refYear = referenceDate.getUTCFullYear();
+      const refMonth = referenceDate.getUTCMonth();
+
+      // 1. Fecha de cierre tentativa para el mes de referencia
+      let activeClosingDate = new Date(Date.UTC(refYear, refMonth, closingDay));
+
+      // 2. Normalizar 'hoy' para comparar sin horas
+      const todayCheck = new Date(referenceDate);
+      todayCheck.setUTCHours(0, 0, 0, 0);
+
+      // 3. REGLA DE ORO: Si hoy es mayor al cierre, saltamos al mes siguiente
+      if (todayCheck.getTime() > activeClosingDate.getTime()) {
+        activeClosingDate.setUTCMonth(activeClosingDate.getUTCMonth() + 1);
+      }
+
+      // 4. Calcular Inicio (Cierre anterior + 1 día)
+      const prevClosingDate = new Date(activeClosingDate);
+      prevClosingDate.setUTCMonth(prevClosingDate.getUTCMonth() - 1);
+
+      const activeStartDate = new Date(prevClosingDate);
+      activeStartDate.setUTCDate(activeStartDate.getUTCDate() + 1);
+
+      // 5. Calcular Pago
+      let paymentDateObj = new Date(activeClosingDate);
+      if (paymentDay <= closingDay) {
+        paymentDateObj.setUTCMonth(paymentDateObj.getUTCMonth() + 1);
+      }
+      paymentDateObj.setUTCDate(paymentDay);
+
+      // 6. Verificar cierres manuales
+      const paymentDateString = paymentDateObj.toISOString().split("T")[0];
+      const isManual = method.manualClosures && method.manualClosures[paymentDateString];
+
+      return {
+        startDate: activeStartDate.toISOString().split("T")[0],
+        closingDate: activeClosingDate.toISOString().split("T")[0],
+        paymentDate: paymentDateString,
+        isManual: !!isManual,
+      };
+    }
+
+    // --- Helper: Determinar si un gasto entra en el mes de facturación ---
+    function isExpenseInBillingMonth(e, filterMonthString, filterDate, paymentMethods) {
+      if (!e.date) return false;
+
+      if (e.paymentMethodId && !e.isFixed && !e.isProjected) {
+        const method = (paymentMethods || []).find((m) => m.id === e.paymentMethodId);
+        // Si es tarjeta de crédito, se agrupa según su ciclo de facturación
+        if (method && method.type === "credit") {
+          const refDate = new Date(Date.UTC(filterDate.getFullYear(), filterDate.getMonth(), 15));
+          const cycle = getCycleDates(method, refDate);
+          if (cycle && cycle.startDate && cycle.closingDate) {
+            const expTime = new Date(e.date + "T00:00:00Z").getTime();
+            const startMs = new Date(cycle.startDate + "T00:00:00Z").getTime();
+            const endMs = new Date(cycle.closingDate + "T00:00:00Z").getTime();
+            return expTime >= startMs && expTime <= endMs;
+          }
+        }
+      }
+      // Para todo lo demás, agrupamos por el mes calendario exacto
+      return e.date.startsWith(filterMonthString);
+    }
+
+    // ================================================================
     // MOTOR DE CÁLCULO EXACTO (IDÉNTICO A APP.HTML)
     // ================================================================
     function calculateSummary(state, filteredExpenses) {
@@ -1627,7 +1701,7 @@
         }
       });
 
-      let expensesForMonth = allExpenses.filter((e) => e.date && e.date.startsWith(filterMonthString));
+      let expensesForMonth = allExpenses.filter((e) => isExpenseInBillingMonth(e, filterMonthString, filterDate, appState.paymentMethods));
       expensesForMonth = [...expensesForMonth, ...projectedFixedExpenses];
 
       // Ejecutar motor de cálculo maestro
