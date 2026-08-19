@@ -451,10 +451,10 @@
   <div id="modal-expense"
     class="fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-sm hidden items-end justify-center p-0 m3-bottom-sheet-backdrop">
     <div
-      class="w-full max-w-lg bg-white rounded-t-[32px] max-h-[94vh] flex flex-col shadow-2xl overflow-hidden m3-bottom-sheet-surface">
+      class="w-full max-w-lg bg-white rounded-t-[32px] max-h-[96vh] min-h-[580px] flex flex-col shadow-2xl overflow-hidden m3-bottom-sheet-surface">
 
       <!-- Drag Handle Indicator -->
-      <div class="w-12 h-1.5 bg-slate-300 rounded-full mx-auto mt-3 mb-1 shrink-0"></div>
+      <div class="w-12 h-1.5 bg-slate-300 rounded-full mx-auto mt-2.5 mb-1 shrink-0"></div>
 
       <!-- Pestañas Superiores Tipo de Registro: Personal | Compartido | Ingreso -->
       <div class="px-4 pt-2 pb-1 shrink-0">
@@ -535,8 +535,8 @@
               </div>
             </div>
 
-            <!-- SECCIÓN MIEMBROS (Dentro del Bloque Principal) -->
-            <div id="section-shared-members" class="w-full space-y-1.5 pt-0.5 border-t border-slate-100">
+            <!-- SECCIÓN MIEMBROS (Dentro del Bloque Principal con Acordeón M3 Suave) -->
+            <div id="section-shared-members" class="w-full space-y-1.5 pt-0.5 border-t border-slate-100 m3-accordion-collapse m3-open">
               <div class="flex items-center justify-between pt-0.5">
                 <h4 class="font-black text-xs text-slate-900">Miembros</h4>
                 
@@ -603,8 +603,8 @@
             </select>
           </div>
 
-          <!-- SECCIÓN CONDICIONAL: Gasto Fijo Recurrente -->
-          <div id="section-fixed-config" class="w-full hidden pt-1 space-y-2">
+          <!-- SECCIÓN CONDICIONAL: Gasto Fijo Recurrente (Acordeón M3 Suave) -->
+          <div id="section-fixed-config" class="w-full space-y-2 m3-accordion-collapse">
             <div class="grid grid-cols-2 gap-[10px]">
               <!-- Selector Frecuencia (Abre Bottom Sheet M3) -->
               <div>
@@ -2363,29 +2363,35 @@
       const iconBox = document.getElementById('box-expense-visual-icon');
 
       [btnPersonal, btnShared, btnIncome].forEach(b => {
-        if (b) b.className = 'flex-1 py-2 rounded-full text-slate-500 hover:text-slate-900 transition-all text-center';
+        if (b) b.className = 'flex-1 py-1.5 rounded-full text-slate-500 hover:text-slate-900 transition-all text-center';
       });
 
       if (type === 'personal') {
-        if (btnPersonal) btnPersonal.className = 'flex-1 py-2 rounded-full bg-[#c6f6b5] text-slate-950 shadow-xs font-black transition-all text-center';
-        if (sharedSection) sharedSection.classList.add('hidden');
+        if (btnPersonal) btnPersonal.className = 'flex-1 py-1.5 rounded-full bg-[#c6f6b5] text-slate-950 shadow-xs font-black transition-all text-center';
+        if (sharedSection) {
+          sharedSection.classList.remove('m3-open');
+        }
         if (iconBox) {
-          iconBox.className = 'w-20 bg-[#dcfce7] text-emerald-900 rounded-3xl flex flex-col items-center justify-center shrink-0 p-2 shadow-2xs';
-          iconBox.innerHTML = '<i class="fas fa-user text-2xl mb-1 opacity-80"></i><span class="text-[9px] font-black uppercase text-emerald-800/80">Personal</span>';
+          iconBox.className = 'w-[82px] h-[82px] min-w-[82px] bg-[#dcfce7] text-emerald-900 rounded-[14px] flex flex-col items-center justify-center shrink-0 p-1.5 shadow-2xs transition-all duration-300';
+          iconBox.innerHTML = '<i class="fas fa-user text-xl mb-0.5 opacity-80"></i><span class="text-[8px] font-black uppercase text-emerald-800/80">Personal</span>';
         }
       } else if (type === 'income') {
-        if (btnIncome) btnIncome.className = 'flex-1 py-2 rounded-full bg-emerald-200 text-emerald-950 shadow-xs font-black transition-all text-center';
-        if (sharedSection) sharedSection.classList.add('hidden');
+        if (btnIncome) btnIncome.className = 'flex-1 py-1.5 rounded-full bg-emerald-200 text-emerald-950 shadow-xs font-black transition-all text-center';
+        if (sharedSection) {
+          sharedSection.classList.remove('m3-open');
+        }
         if (iconBox) {
-          iconBox.className = 'w-20 bg-emerald-100 text-emerald-900 rounded-3xl flex flex-col items-center justify-center shrink-0 p-2 shadow-2xs';
-          iconBox.innerHTML = '<i class="fas fa-coins text-2xl mb-1 opacity-80"></i><span class="text-[9px] font-black uppercase text-emerald-800/80">Ingreso</span>';
+          iconBox.className = 'w-[82px] h-[82px] min-w-[82px] bg-emerald-100 text-emerald-900 rounded-[14px] flex flex-col items-center justify-center shrink-0 p-1.5 shadow-2xs transition-all duration-300';
+          iconBox.innerHTML = '<i class="fas fa-coins text-xl mb-0.5 opacity-80"></i><span class="text-[8px] font-black uppercase text-emerald-800/80">Ingreso</span>';
         }
       } else {
-        if (btnShared) btnShared.className = 'flex-1 py-2 rounded-full bg-[#c6f6b5] text-slate-950 shadow-xs font-black transition-all text-center';
-        if (sharedSection) sharedSection.classList.remove('hidden');
+        if (btnShared) btnShared.className = 'flex-1 py-1.5 rounded-full bg-[#c6f6b5] text-slate-950 shadow-xs font-black transition-all text-center';
+        if (sharedSection) {
+          sharedSection.classList.add('m3-open');
+        }
         if (iconBox) {
-          iconBox.className = 'w-20 bg-[#dcfce7] text-emerald-900 rounded-3xl flex flex-col items-center justify-center shrink-0 p-2 shadow-2xs';
-          iconBox.innerHTML = '<i class="fas fa-receipt text-2xl mb-1 opacity-80"></i><span class="text-[9px] font-black uppercase text-emerald-800/80">Gasto</span>';
+          iconBox.className = 'w-[82px] h-[82px] min-w-[82px] bg-[#dcfce7] text-emerald-900 rounded-[14px] flex flex-col items-center justify-center shrink-0 p-1.5 shadow-2xs transition-all duration-300';
+          iconBox.innerHTML = '<i class="fas fa-receipt text-xl mb-0.5 opacity-80"></i><span class="text-[8px] font-black uppercase text-emerald-800/80">Gasto</span>';
         }
       }
       renderSharedMembersAvatars();
@@ -2527,12 +2533,12 @@
     function updateSegmentedButtonsUI() {
       const btnFixed = document.getElementById('btn-toggle-fixed');
       const btnList = document.getElementById('btn-toggle-list');
-      const secFixed = document.getElementById('section-fixed-config');
-      const secList = document.getElementById('section-list-items');
       const fixedCheck = document.getElementById('icon-fixed-check');
       const fixedSymbol = document.getElementById('icon-fixed-symbol');
       const listCheck = document.getElementById('icon-list-check');
       const listSymbol = document.getElementById('icon-list-symbol');
+      const secFixed = document.getElementById('section-fixed-config');
+      const secList = document.getElementById('section-list-items');
 
       // Fijo
       if (btnFixed) {
@@ -2540,12 +2546,12 @@
           btnFixed.className = 'flex-1 h-full px-2 flex items-center justify-center gap-1.5 text-[11px] font-black text-slate-950 bg-[#c6f6b5] transition-all select-none active:scale-[0.98]';
           if (fixedCheck) fixedCheck.classList.remove('hidden');
           if (fixedSymbol) fixedSymbol.classList.add('hidden');
-          if (secFixed) secFixed.classList.remove('hidden');
+          if (secFixed) secFixed.classList.add('m3-open');
         } else {
           btnFixed.className = 'flex-1 h-full px-2 flex items-center justify-center gap-1.5 text-[11px] font-bold text-slate-600 hover:bg-slate-50 transition-all select-none active:scale-[0.98]';
           if (fixedCheck) fixedCheck.classList.add('hidden');
           if (fixedSymbol) fixedSymbol.classList.remove('hidden');
-          if (secFixed) secFixed.classList.add('hidden');
+          if (secFixed) secFixed.classList.remove('m3-open');
         }
       }
 
@@ -2556,7 +2562,7 @@
           if (listCheck) listCheck.classList.remove('hidden');
           if (listSymbol) listSymbol.classList.add('hidden');
           if (secList) {
-            secList.classList.remove('m3-block-closed', 'hidden');
+            secList.classList.remove('m3-block-closed');
             secList.classList.add('m3-block-open');
           }
         } else {
