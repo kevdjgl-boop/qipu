@@ -23,6 +23,12 @@ export function addMobileItemRow() {
   };
   mobileExpenseItems.push(newItem);
   renderMobileItemsList();
+  setTimeout(() => {
+    const container = document.getElementById('mobile-items-container');
+    if (container) {
+      container.scrollTo({ top: container.scrollHeight, behavior: 'smooth' });
+    }
+  }, 60);
 }
 
 export function removeMobileItemRow(id) {
