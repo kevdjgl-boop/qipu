@@ -145,6 +145,17 @@
       padding-top: 36px !important;
       padding-bottom: 20px !important;
     }
+    /* Ocultar barra de scroll nativa */
+    .scrollbar-none::-webkit-scrollbar {
+      display: none !important;
+      width: 0px !important;
+      height: 0px !important;
+      background: transparent !important;
+    }
+    .scrollbar-none {
+      -ms-overflow-style: none !important;
+      scrollbar-width: none !important;
+    }
   </style>
 </head>
 
