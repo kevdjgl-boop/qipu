@@ -24,7 +24,7 @@ export function addMobileItemRow() {
   mobileExpenseItems.push(newItem);
   renderMobileItemsList();
   setTimeout(() => {
-    const container = document.getElementById('section-list-items-scroll') || document.getElementById('mobile-items-container');
+    const container = document.getElementById('mobile-items-scroll-wrapper') || document.getElementById('mobile-items-container');
     if (container) {
       container.scrollTo({ top: container.scrollHeight, behavior: 'smooth' });
     }
