@@ -78,20 +78,20 @@ export function renderMobileItemsList() {
         ontouchend="handleItemSwipeEnd(event, '${item.id}')">
 
         <!-- Fila Principal: Inputs + Botón de Eliminar Expandible hacia la Izquierda -->
-        <div class="flex items-center gap-2">
-          <!-- Inputs del Producto (Grid idéntico a la cabecera para alineación milimétrica) -->
-          <div class="grid grid-cols-[1fr_56px_96px] gap-2 flex-1 min-w-0">
+        <div class="flex items-center">
+          <!-- Inputs del Producto (Grid exacto a la cabecera para alineación 100% milimétrica) -->
+          <div class="grid grid-cols-[1fr_48px_72px] gap-2 flex-1 min-w-0">
             <!-- Nombre del Producto (Píldora Blanca) -->
             <input type="text" placeholder="Producto" value="${item.desc || ''}"
               oninput="updateMobileItemField('${item.id}', 'desc', this.value)"
-              class="w-full h-10 bg-white border-0 rounded-lg px-4 text-xs font-black text-slate-900 placeholder:text-slate-400 focus:ring-2 focus:ring-emerald-700 outline-none shadow-2xs" />
+              class="w-full h-10 bg-white border-0 rounded-lg px-3 text-xs font-black text-slate-900 placeholder:text-slate-400 focus:ring-2 focus:ring-emerald-700 outline-none shadow-2xs" />
 
-            <!-- Cantidad (Píldora Blanca, 56px) -->
+            <!-- Cantidad (Píldora Blanca, 48px) -->
             <input type="number" min="1" max="99" step="1" value="${qty}"
               oninput="updateMobileItemField('${item.id}', 'quantity', this.value)"
               class="w-full h-10 bg-white border-0 rounded-lg text-xs font-black text-slate-900 text-center focus:ring-2 focus:ring-emerald-700 outline-none shadow-2xs" />
 
-            <!-- Total / Monto (Píldora Blanca, 96px) -->
+            <!-- Total / Monto (Píldora Blanca, 72px) -->
             <input type="number" min="0.01" step="0.01" placeholder="0.00" value="${unitPrice > 0 ? unitPrice : ''}"
               oninput="updateMobileItemField('${item.id}', 'amount', this.value)"
               class="w-full h-10 bg-white border-0 rounded-lg text-xs font-black text-slate-900 text-center focus:ring-2 focus:ring-emerald-700 outline-none shadow-2xs" />
@@ -103,7 +103,7 @@ export function renderMobileItemsList() {
             style="width: 0px; opacity: 0;">
             <button type="button"
               onclick="confirmDeleteMobileItem('${item.id}', '${(item.desc || 'este producto').replace(/'/g, "\\'")}')"
-              class="w-10 h-10 bg-rose-500 hover:bg-rose-600 active:scale-90 text-white rounded-lg flex items-center justify-center text-xs shadow-2xs shrink-0">
+              class="w-10 h-10 ml-2 bg-rose-500 hover:bg-rose-600 active:scale-90 text-white rounded-lg flex items-center justify-center text-xs shadow-2xs shrink-0">
               <i class="fas fa-trash-alt"></i>
             </button>
           </div>
