@@ -1,51 +1,46 @@
 // ================================================================
-// MÓDULO DE RESUMEN DE MÉTODOS DE PAGO Y TARJETAS (VISTA DEDICADA MOBILE)
+// MÓDULO DE RESUMEN DE MÉTODOS DE PAGO Y TARJETAS (CUADRÍCULA 2 COLUMNAS)
 // ================================================================
 
 import { appState, filterDate, formatCurrency, getFilterMonthString, getCycleDates, MONTHS } from "./core-state.js";
 import { openModal, closeModal } from "./modal-system.js";
 
-// Paleta de gradientes y estilos para los métodos de pago
-const METHOD_THEMES = {
+// Estilos limpios y minimalistas por tipo de método para cuadrícula de 2 columnas
+const METHOD_STYLES = {
   credit: {
     badge: "Crédito",
     icon: "fa-credit-card",
-    gradient: "from-slate-900 via-indigo-950 to-slate-900 border-indigo-500/30 text-white",
-    chipBg: "bg-indigo-500/20 text-indigo-300 border-indigo-500/30",
-    glow: "bg-indigo-500/20",
-    accent: "text-indigo-400"
+    iconBg: "bg-indigo-50 text-indigo-600",
+    badgeBg: "bg-indigo-50 text-indigo-700 border-indigo-100",
+    amountColor: "text-slate-900",
   },
   debit: {
     badge: "Débito",
     icon: "fa-credit-card",
-    gradient: "from-slate-900 via-cyan-950 to-slate-900 border-cyan-500/30 text-white",
-    chipBg: "bg-cyan-500/20 text-cyan-300 border-cyan-500/30",
-    glow: "bg-cyan-500/20",
-    accent: "text-cyan-400"
+    iconBg: "bg-cyan-50 text-cyan-600",
+    badgeBg: "bg-cyan-50 text-cyan-700 border-cyan-100",
+    amountColor: "text-slate-900",
   },
   cash: {
     badge: "Efectivo",
     icon: "fa-money-bill-wave",
-    gradient: "from-slate-900 via-emerald-950 to-slate-900 border-emerald-500/30 text-white",
-    chipBg: "bg-emerald-500/20 text-emerald-300 border-emerald-500/30",
-    glow: "bg-emerald-500/20",
-    accent: "text-emerald-400"
+    iconBg: "bg-emerald-50 text-emerald-600",
+    badgeBg: "bg-emerald-50 text-emerald-700 border-emerald-100",
+    amountColor: "text-slate-900",
   },
   transfer: {
-    badge: "Transferencia",
+    badge: "Transfer",
     icon: "fa-arrow-right-arrow-left",
-    gradient: "from-slate-900 via-purple-950 to-slate-900 border-purple-500/30 text-white",
-    chipBg: "bg-purple-500/20 text-purple-300 border-purple-500/30",
-    glow: "bg-purple-500/20",
-    accent: "text-purple-400"
+    iconBg: "bg-purple-50 text-purple-600",
+    badgeBg: "bg-purple-50 text-purple-700 border-purple-100",
+    amountColor: "text-slate-900",
   },
   other: {
     badge: "Cuenta",
     icon: "fa-wallet",
-    gradient: "from-slate-900 via-slate-800 to-slate-900 border-slate-700/50 text-white",
-    chipBg: "bg-slate-700/50 text-slate-300 border-slate-600/50",
-    glow: "bg-slate-500/10",
-    accent: "text-slate-300"
+    iconBg: "bg-slate-100 text-slate-700",
+    badgeBg: "bg-slate-100 text-slate-700 border-slate-200",
+    amountColor: "text-slate-900",
   }
 };
 
@@ -59,7 +54,7 @@ export function getAllPaymentMethodsData() {
   let totalCombinedSpent = 0;
   let totalCreditDebt = 0;
 
-  const methodsData = paymentMethods.map((method, idx) => {
+  const methodsData = paymentMethods.map((method) => {
     const isCredit = method.type === "credit";
     let dateRangeLabel = "";
     let paymentDateLabel = "";
@@ -75,7 +70,7 @@ export function getAllPaymentMethodsData() {
         const cStr = `${c.getUTCDate()} ${c.toLocaleString('es-ES', { month: 'short', timeZone: 'UTC' })}`;
         dateRangeLabel = `${sStr} - ${cStr}`;
       } else {
-        dateRangeLabel = "Ciclo no configurado";
+        dateRangeLabel = "Ciclo no conf.";
       }
 
       if (cycle.paymentDate) {
@@ -91,7 +86,7 @@ export function getAllPaymentMethodsData() {
         return true;
       });
     } else {
-      dateRangeLabel = `${MONTHS[filterDate.getMonth()]} ${filterDate.getFullYear()}`;
+      dateRangeLabel = `${MONTHS[filterDate.getMonth()]}`;
       paymentDateLabel = "Mes en curso";
       methodExpenses = allExpenses.filter(e => {
         if (e.paymentMethodId !== method.id || e.isFixed || e.isProjected || !e.date) return false;
@@ -112,7 +107,7 @@ export function getAllPaymentMethodsData() {
       if (owner) ownerName = owner.name;
     }
 
-    const theme = METHOD_THEMES[method.type] || METHOD_THEMES.other;
+    const style = METHOD_STYLES[method.type] || METHOD_STYLES.other;
 
     return {
       method,
@@ -123,7 +118,7 @@ export function getAllPaymentMethodsData() {
       ownerName,
       totalSpent,
       methodExpenses,
-      theme
+      style
     };
   });
 
@@ -145,7 +140,7 @@ export function openPaymentMethodsSummaryModal() {
   if (listContainer) {
     if (methodsData.length === 0) {
       listContainer.innerHTML = `
-        <div class="text-center py-10 text-slate-400 italic space-y-2">
+        <div class="col-span-2 text-center py-10 text-slate-400 italic space-y-2 bg-white rounded-2xl border border-slate-100">
           <i class="fas fa-credit-card text-3xl opacity-30"></i>
           <p class="text-xs">No hay métodos de pago configurados en este monedero.</p>
         </div>
@@ -153,59 +148,33 @@ export function openPaymentMethodsSummaryModal() {
     } else {
       listContainer.innerHTML = methodsData.map(item => `
         <div onclick="openCreditCardDetailModal('${item.method.id}')"
-          class="w-full bg-gradient-to-br ${item.theme.gradient} rounded-3xl p-4.5 border shadow-lg cursor-pointer active:scale-98 transition-all relative overflow-hidden select-none group">
+          class="bg-white rounded-2xl p-3.5 border border-slate-200/80 shadow-2xs hover:shadow-md active:scale-95 transition-all flex flex-col justify-between cursor-pointer min-h-[136px] relative group select-none">
           
-          <!-- Decoración resplandor -->
-          <div class="absolute -right-6 -bottom-6 w-28 h-28 ${item.theme.glow} rounded-full blur-xl"></div>
-
-          <div class="relative z-10 space-y-3">
-            <!-- Fila Superior: Tipo / Chip + Nombre del Método -->
-            <div class="flex items-center justify-between">
-              <div class="flex items-center gap-2">
-                ${item.isCredit ? `
-                  <div class="w-7 h-5 rounded bg-gradient-to-br from-amber-200 via-yellow-400 to-amber-500 border border-yellow-600/60 shadow-xs flex items-center justify-center p-0.5">
-                    <div class="w-full h-[1px] bg-amber-800/30"></div>
-                  </div>
-                  <i class="fas fa-wifi text-slate-400 rotate-90 text-[10px]"></i>
-                ` : `
-                  <div class="w-7 h-7 rounded-xl bg-white/10 flex items-center justify-center text-xs text-white">
-                    <i class="fas ${item.theme.icon}"></i>
-                  </div>
-                `}
-                <span class="font-extrabold text-sm text-white">${item.method.name}</span>
-              </div>
-              <span class="text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full ${item.theme.chipBg}">
-                ${item.theme.badge}
-              </span>
+          <!-- Encabezado de la Tarjeta en Cuadrícula -->
+          <div class="flex items-center justify-between">
+            <div class="w-8 h-8 rounded-xl ${item.style.iconBg} flex items-center justify-center text-xs shrink-0 shadow-2xs">
+              <i class="fas ${item.style.icon}"></i>
             </div>
+            <span class="text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full border ${item.style.badgeBg}">
+              ${item.style.badge}
+            </span>
+          </div>
 
-            <!-- Fila Central: Monto Consumido -->
-            <div class="pt-0.5">
-              <span class="text-[9px] font-bold text-slate-400 uppercase tracking-wider block">
-                ${item.isCredit ? 'Consumo del Ciclo' : 'Consumo del Mes'}
-              </span>
-              <span class="text-2xl font-black tracking-tight text-white block mt-0.5">
-                ${formatCurrency(item.totalSpent)}
-              </span>
-            </div>
+          <!-- Nombre y Consumo -->
+          <div class="my-2">
+            <span class="text-xs font-black text-slate-900 truncate block">${item.method.name}</span>
+            <span class="text-base sm:text-lg font-black ${item.style.amountColor} tracking-tight block mt-0.5">
+              ${formatCurrency(item.totalSpent)}
+            </span>
+          </div>
 
-            <!-- Fila Inferior: Rango de Fechas + Titular -->
-            <div class="pt-2 border-t border-white/10 flex items-center justify-between text-[10px]">
-              <div>
-                <span class="text-slate-400 block text-[8px] font-bold uppercase">${item.isCredit ? 'Ciclo Corte' : 'Período'}</span>
-                <span class="font-bold text-slate-200">${item.dateRangeLabel}</span>
-              </div>
-              <div class="text-right">
-                <span class="text-slate-400 block text-[8px] font-bold uppercase">Titular</span>
-                <span class="font-black text-slate-200 truncate max-w-[110px] block">${item.ownerName}</span>
-              </div>
-            </div>
-
-            <!-- Enlace inferior: Ver detalle de compras -->
-            <div class="pt-1 flex items-center justify-between text-[10px] text-slate-300 font-bold group-hover:text-white transition-colors">
-              <span>Ver ${item.methodExpenses.length} consumo(s) ${item.paymentDateLabel ? '• ' + item.paymentDateLabel : ''}</span>
-              <i class="fas fa-chevron-right text-[8px] opacity-70"></i>
-            </div>
+          <!-- Pie de Tarjeta: Titular y Cantidad de Movimientos -->
+          <div class="pt-1.5 border-t border-slate-100 flex items-center justify-between text-[9px]">
+            <span class="text-slate-400 font-bold truncate max-w-[65px]">${item.ownerName}</span>
+            <span class="font-extrabold text-slate-600 group-hover:text-indigo-600 flex items-center gap-0.5 transition-colors">
+              <span>${item.methodExpenses.length}</span>
+              <i class="fas fa-chevron-right text-[7px]"></i>
+            </span>
           </div>
         </div>
       `).join('');
@@ -288,7 +257,7 @@ export function openCreditCardDetailModal(methodId) {
       const owed = debtPerPerson[p.id] || 0;
       const isOwner = p.id === cardData.method.ownerId;
       return `
-        <div class="flex items-center justify-between p-2.5 rounded-xl bg-slate-50 border border-slate-100">
+        <div class="flex items-center justify-between p-2.5 rounded-xl bg-white border border-slate-100 shadow-2xs">
           <div class="flex items-center gap-2">
             <div class="w-7 h-7 rounded-full bg-slate-900 text-white font-black text-[10px] flex items-center justify-center">
               ${p.name.substring(0, 2).toUpperCase()}
@@ -326,8 +295,8 @@ export function openCreditCardDetailModal(methodId) {
         <div onclick="closeModal('modal-card-detail'); openTransactionDetailModal('${e.id}');"
           class="flex items-center justify-between p-3 rounded-2xl bg-white border border-slate-100 shadow-2xs cursor-pointer active:scale-98 transition-all">
           <div class="flex items-center gap-2.5 min-w-0 flex-1">
-            <div class="w-8 h-8 rounded-xl bg-slate-100 text-slate-700 flex items-center justify-center text-xs shrink-0">
-              <i class="fas ${cardData.theme.icon}"></i>
+            <div class="w-8 h-8 rounded-xl ${cardData.style.iconBg} flex items-center justify-center text-xs shrink-0">
+              <i class="fas ${cardData.style.icon}"></i>
             </div>
             <div class="min-w-0 flex-1">
               <span class="text-xs font-black text-slate-900 truncate block">${e.description || e.name || 'Gasto'}</span>
