@@ -1,5 +1,6 @@
 // ================================================================
 // MÓDULO DE RESUMEN DE MÉTODOS DE PAGO Y TARJETAS (CUADRÍCULA 2 COLUMNAS)
+// CON SOPORTE COMPLETO DE GASTOS FIJOS Y PROYECCIONES (PARIDAD TOTAL CON DESKTOP)
 // ================================================================
 
 import { appState, filterDate, formatCurrency, getFilterMonthString, getCycleDates, MONTHS } from "./core-state.js";
@@ -44,32 +45,115 @@ const METHOD_STYLES = {
   }
 };
 
+// HELPER IDÉNTICO AL MOTOR DESKTOP: Cálculo de gastos reales + fijos proyectados en el rango
+export function getExpensesForMethodRange(allExpenses, methodId, range) {
+  if (!range || !range.startDate || !range.closingDate) {
+    return { total: 0, expenses: [] };
+  }
+
+  const startObj = new Date(range.startDate + "T00:00:00Z");
+  const endObj = new Date(range.closingDate + "T00:00:00Z");
+  const startMs = startObj.getTime();
+  const endMs = endObj.getTime();
+
+  // 1. Filtrar gastos REALES
+  let filtered = allExpenses.filter((exp) => {
+    if (exp.isFixed) return false;
+    if (exp.paymentMethodId !== methodId || !exp.date) return false;
+    const expDate = new Date(exp.date + "T00:00:00Z").getTime();
+    return expDate >= startMs && expDate <= endMs;
+  });
+
+  // 2. PROYECTAR GASTOS FIJOS
+  const fixedDefinitions = allExpenses.filter((e) => e.isFixed && e.paymentMethodId === methodId);
+
+  fixedDefinitions.forEach((base) => {
+    const baseDate = new Date(base.date + "T00:00:00Z");
+    const baseTime = baseDate.getTime();
+    const dayOfExpense = baseDate.getUTCDate();
+    const recurrenceMonths = base.fixedRecurrenceMonths || 12;
+
+    let iterYear = startObj.getUTCFullYear();
+    let iterMonth = startObj.getUTCMonth();
+    const endYear = endObj.getUTCFullYear();
+    const endMonth = endObj.getUTCMonth();
+
+    while (iterYear * 12 + iterMonth <= endYear * 12 + endMonth) {
+      let projectedDate = new Date(Date.UTC(iterYear, iterMonth, dayOfExpense));
+      if (projectedDate.getUTCMonth() !== iterMonth) {
+        projectedDate = new Date(Date.UTC(iterYear, iterMonth + 1, 0));
+      }
+      const projStr = projectedDate.toISOString().split("T")[0];
+      const projTime = projectedDate.getTime();
+
+      if (base.cancelledAt) {
+        const cancelledMs = new Date(base.cancelledAt + "T00:00:00Z").getTime();
+        if (projTime >= cancelledMs) {
+          break;
+        }
+      }
+
+      const isInsideCycle = projTime >= startMs && projTime <= endMs;
+      const isAfterCreation = projTime >= baseTime;
+      const monthsDiff = (iterYear - baseDate.getUTCFullYear()) * 12 + (iterMonth - baseDate.getUTCMonth());
+      const isWithinRecurrence = monthsDiff >= 0 && monthsDiff < recurrenceMonths;
+
+      if (isInsideCycle && isAfterCreation && isWithinRecurrence) {
+        const manualEntryExists = allExpenses.some(
+          (e) => !e.isFixed && e.date === projStr && e.description.toLowerCase().trim() === base.description.toLowerCase().trim()
+        );
+
+        if (!manualEntryExists) {
+          filtered.push({
+            ...base,
+            id: `proj_${base.id}_${projStr}`,
+            date: projStr,
+            isProjected: true,
+            payerId: base.payerId,
+          });
+        }
+      }
+      iterMonth++;
+      if (iterMonth > 11) {
+        iterMonth = 0;
+        iterYear++;
+      }
+    }
+  });
+
+  filtered.sort((a, b) => new Date(b.date) - new Date(a.date));
+  const total = filtered.reduce((sum, exp) => sum + (parseFloat(exp.amount) || 0), 0);
+
+  return { total, expenses: filtered };
+}
+
 export function getAllPaymentMethodsData() {
   const paymentMethods = appState.paymentMethods || [];
   const allExpenses = appState.expenses || [];
   const participants = appState.participants || [];
   const today = new Date();
-  const filterMonthString = getFilterMonthString(filterDate);
 
   let totalCombinedSpent = 0;
   let totalCreditDebt = 0;
 
   const methodsData = paymentMethods.map((method) => {
     const isCredit = method.type === "credit";
+    let range = {};
     let dateRangeLabel = "";
     let paymentDateLabel = "";
     let cycle = null;
-    let methodExpenses = [];
 
     if (isCredit) {
       cycle = getCycleDates(method, today);
-      const s = cycle.startDate ? new Date(cycle.startDate + "T00:00:00Z") : null;
-      const c = cycle.closingDate ? new Date(cycle.closingDate + "T00:00:00Z") : null;
-      if (s && c) {
+      if (cycle.closingDate) {
+        range = cycle;
+        const s = new Date(range.startDate + "T00:00:00Z");
+        const c = new Date(range.closingDate + "T00:00:00Z");
         const sStr = `${s.getUTCDate()} ${s.toLocaleString('es-ES', { month: 'short', timeZone: 'UTC' })}`;
         const cStr = `${c.getUTCDate()} ${c.toLocaleString('es-ES', { month: 'short', timeZone: 'UTC' })}`;
         dateRangeLabel = `${sStr} - ${cStr}`;
       } else {
+        range = { startDate: null, closingDate: null };
         dateRangeLabel = "Ciclo no conf.";
       }
 
@@ -77,24 +161,22 @@ export function getAllPaymentMethodsData() {
         const p = new Date(cycle.paymentDate + "T00:00:00Z");
         paymentDateLabel = `Paga: ${p.getUTCDate()} ${p.toLocaleString('es-ES', { month: 'short', timeZone: 'UTC' })}`;
       }
-
-      methodExpenses = allExpenses.filter(e => {
-        if (e.paymentMethodId !== method.id || e.isFixed || e.isProjected || !e.date) return false;
-        if (cycle.startDate && cycle.closingDate) {
-          return e.date >= cycle.startDate && e.date <= cycle.closingDate;
-        }
-        return true;
-      });
     } else {
-      dateRangeLabel = `${MONTHS[filterDate.getMonth()]}`;
+      const y = filterDate.getFullYear();
+      const m = filterDate.getMonth();
+      range = {
+        startDate: new Date(Date.UTC(y, m, 1)).toISOString().split("T")[0],
+        closingDate: new Date(Date.UTC(y, m + 1, 0)).toISOString().split("T")[0],
+      };
+      dateRangeLabel = `${MONTHS[m]}`;
       paymentDateLabel = "Mes en curso";
-      methodExpenses = allExpenses.filter(e => {
-        if (e.paymentMethodId !== method.id || e.isFixed || e.isProjected || !e.date) return false;
-        return e.date.startsWith(filterMonthString);
-      });
     }
 
-    const totalSpent = methodExpenses.reduce((sum, e) => sum + (parseFloat(e.amount) || 0), 0);
+    // Cálculo maestro con gastos fijos proyectados
+    const calculation = getExpensesForMethodRange(allExpenses, method.id, range);
+    const methodExpenses = calculation.expenses;
+    const totalSpent = calculation.total;
+
     totalCombinedSpent += totalSpent;
     if (isCredit) {
       totalCreditDebt += totalSpent;
@@ -201,7 +283,7 @@ export function openCreditCardDetailModal(methodId) {
   if (modalTotal) modalTotal.textContent = formatCurrency(cardData.totalSpent);
   if (modalOwner) modalOwner.textContent = `Titular: ${cardData.ownerName}`;
 
-  // Desglose de Deuda por Miembro dentro de este método / ciclo
+  // Desglose de Deuda por Miembro dentro de este método / ciclo (respetando gastos reales y fijos)
   const participants = appState.participants || [];
   const debtPerPerson = {};
   participants.forEach(p => { debtPerPerson[p.id] = 0; });
@@ -286,26 +368,32 @@ export function openCreditCardDetailModal(methodId) {
     ` : '');
   }
 
-  // Lista de Movimientos
+  // Lista de Movimientos con soporte visual de Fijos/Proyectados
   if (listContainer) {
     if (cardData.methodExpenses.length === 0) {
       listContainer.innerHTML = `<p class="text-center text-xs text-slate-400 italic py-6">Sin consumos en este período</p>`;
     } else {
-      listContainer.innerHTML = cardData.methodExpenses.map(e => `
-        <div onclick="closeModal('modal-card-detail'); openTransactionDetailModal('${e.id}');"
-          class="flex items-center justify-between p-3 rounded-2xl bg-white border border-slate-100 shadow-2xs cursor-pointer active:scale-98 transition-all">
-          <div class="flex items-center gap-2.5 min-w-0 flex-1">
-            <div class="w-8 h-8 rounded-xl ${cardData.style.iconBg} flex items-center justify-center text-xs shrink-0">
-              <i class="fas ${cardData.style.icon}"></i>
+      listContainer.innerHTML = cardData.methodExpenses.map(e => {
+        const isFixed = e.isFixed || e.isProjected;
+        return `
+          <div onclick="${isFixed ? '' : `closeModal('modal-card-detail'); openTransactionDetailModal('${e.id}');`}"
+            class="flex items-center justify-between p-3 rounded-2xl bg-white border ${isFixed ? 'border-dashed border-indigo-200 bg-indigo-50/20' : 'border-slate-100 shadow-2xs'} ${isFixed ? '' : 'cursor-pointer active:scale-98'} transition-all">
+            <div class="flex items-center gap-2.5 min-w-0 flex-1">
+              <div class="w-8 h-8 rounded-xl ${cardData.style.iconBg} flex items-center justify-center text-xs shrink-0">
+                <i class="fas ${isFixed ? 'fa-repeat' : cardData.style.icon}"></i>
+              </div>
+              <div class="min-w-0 flex-1">
+                <div class="flex items-center gap-1.5">
+                  <span class="text-xs font-black text-slate-900 truncate">${e.description || e.name || 'Gasto'}</span>
+                  ${isFixed ? '<span class="text-[8px] font-black uppercase text-indigo-700 bg-indigo-100/80 px-1.5 py-0.2 rounded shrink-0">Fijo</span>' : ''}
+                </div>
+                <span class="text-[10px] text-slate-400 font-medium block">${e.date} • ${e.category || 'General'}</span>
+              </div>
             </div>
-            <div class="min-w-0 flex-1">
-              <span class="text-xs font-black text-slate-900 truncate block">${e.description || e.name || 'Gasto'}</span>
-              <span class="text-[10px] text-slate-400 font-medium">${e.date} • ${e.category || 'General'}</span>
-            </div>
+            <span class="text-xs font-black text-slate-900 ml-2 shrink-0">${formatCurrency(parseFloat(e.amount) || 0)}</span>
           </div>
-          <span class="text-xs font-black text-slate-900 ml-2 shrink-0">${formatCurrency(parseFloat(e.amount) || 0)}</span>
-        </div>
-      `).join('');
+        `;
+      }).join('');
     }
   }
 
