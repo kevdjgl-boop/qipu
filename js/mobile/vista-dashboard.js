@@ -2,6 +2,7 @@ import { appState, currentUserId, currentWalletId, filterDate, formatCurrency, g
 import { openModal, closeModal } from "./modal-system.js";
 import { renderHistoryList } from "./vista-historial.js";
 import { populateSelectOptions } from "./modal-pickers.js";
+import { renderCreditCardsSummary } from "./modulo-tarjetas.js";
 import { doc, updateDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
 export let currentSettlementDebts = [];
@@ -107,6 +108,9 @@ export function renderMobileUI() {
 
   // Actualizar Bloque 2B: Modal de Liquidación y Deudas
   renderSettlementModal(summary);
+
+  // Actualizar Bloque 2C: Resumen y Carrusel de Tarjetas de Crédito
+  renderCreditCardsSummary();
 
   // Actualizar Bloque 3: Historial de Transacciones
   renderHistoryList(expensesForMonth);

@@ -6,6 +6,7 @@ import {
 
 import { openModal, closeModal, setAppThemeColor } from "./modal-system.js";
 import { setupKeyboardNavFab, advanceToNextInput } from "./fab-keyboard-nav.js";
+import { openCreditCardDetailModal, renderCreditCardsSummary } from "./modulo-tarjetas.js";
 
 import {
   renderMobileUI, renderParticipantsModalList, renderSettlementModal,
@@ -86,6 +87,7 @@ window.toggleMemberAssignment = toggleMemberAssignment;
 window.setMemberExactUnits = setMemberExactUnits;
 window.setAppThemeColor = setAppThemeColor;
 window.advanceToNextInput = advanceToNextInput;
+window.openCreditCardDetailModal = openCreditCardDetailModal;
 
 // ================================================================
 // AUTENTICACIÓN Y SUSCRIPCIÓN EN TIEMPO REAL

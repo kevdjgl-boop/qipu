@@ -365,6 +365,27 @@
     </section>
 
     <!-- ========================================== -->
+    <!-- 💳 SECCIÓN: RESUMEN DE TARJETAS DE CRÉDITO -->
+    <!-- ========================================== -->
+    <section id="section-credit-cards-summary" class="space-y-2 pt-1 hidden">
+      <div class="flex items-center justify-between px-1">
+        <div class="flex items-center gap-2">
+          <div class="w-2 h-2 rounded-full bg-indigo-600"></div>
+          <h3 class="text-xs font-black uppercase tracking-wider text-slate-900">Tarjetas de Crédito</h3>
+        </div>
+        <span id="cards-total-debt-badge"
+          class="text-[10px] font-extrabold px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-700 border border-slate-200">
+          Deuda activa: S/ 0.00
+        </span>
+      </div>
+
+      <!-- Carrusel Horizontal Táctil de Tarjetas -->
+      <div id="mobile-cards-carousel" class="flex overflow-x-auto snap-x scrollbar-none gap-3 pb-2 -mx-4 px-4 pt-1">
+        <!-- Inyectado dinámicamente por modulo-tarjetas.js -->
+      </div>
+    </section>
+
+    <!-- ========================================== -->
     <!-- 2️⃣ BLOQUE PRINCIPAL: HISTORIAL DE TRANSACCIONES -->
     <!-- ========================================== -->
     <section id="bottom-history-section" class="space-y-3 pt-2">
@@ -1122,6 +1143,66 @@
           </button>
           <p class="text-[10px] text-center text-slate-400">Crea transacciones de reembolso para dejar los saldos en S/
             0.00</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 6B. Modal de Detalle de Tarjeta de Crédito (M3 Bottom Sheet) -->
+  <div id="modal-card-detail"
+    class="fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-sm hidden items-end justify-center p-0 m3-bottom-sheet-backdrop">
+    <div
+      class="w-full max-w-lg bg-white rounded-t-[32px] max-h-[92vh] flex flex-col shadow-2xl overflow-hidden m3-bottom-sheet-surface">
+
+      <!-- Drag Handle Indicator -->
+      <div class="w-12 h-1.5 bg-slate-300 rounded-full mx-auto mt-3 mb-1 shrink-0"></div>
+
+      <!-- Header del Bottom Sheet -->
+      <div class="px-5 py-3.5 border-b border-slate-100 flex items-center justify-between shrink-0">
+        <div class="flex items-center gap-2.5 min-w-0">
+          <div
+            class="w-9 h-9 rounded-2xl bg-indigo-50 text-indigo-600 flex items-center justify-center text-base font-bold shadow-xs shrink-0">
+            <i class="fas fa-credit-card"></i>
+          </div>
+          <div class="min-w-0">
+            <h3 id="modal-card-detail-title" class="font-extrabold text-sm text-slate-900 truncate">Tarjeta</h3>
+            <p id="modal-card-detail-cycle" class="text-[10px] text-slate-400 font-medium truncate">Ciclo activo</p>
+          </div>
+        </div>
+        <button onclick="closeModal('modal-card-detail');" type="button"
+          class="w-8 h-8 rounded-full bg-slate-100 text-slate-400 hover:text-slate-600 flex items-center justify-center text-xs active:scale-90 transition-transform cursor-pointer shrink-0">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+
+      <div class="p-5 space-y-4 overflow-y-auto flex-1 custom-scrollbar">
+        <!-- Banner Resumen de Consumo -->
+        <div class="p-4 rounded-2xl bg-gradient-to-br from-slate-900 via-indigo-950 to-slate-900 text-white shadow-md relative overflow-hidden">
+          <div class="flex items-center justify-between mb-1">
+            <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Total Consumo en Ciclo</span>
+            <span id="modal-card-detail-owner" class="text-[10px] font-black px-2 py-0.5 rounded-full bg-white/10 text-indigo-300 border border-white/10">Titular</span>
+          </div>
+          <span id="modal-card-detail-total" class="text-3xl font-black tracking-tight text-white block">S/ 0.00</span>
+        </div>
+
+        <!-- Desglose de Deuda por Miembro -->
+        <div class="space-y-2">
+          <div class="flex items-center justify-between px-1">
+            <span class="text-xs font-black uppercase tracking-wider text-slate-900">Deuda por Persona en este Ciclo</span>
+          </div>
+          <div id="modal-card-detail-debt-breakdown" class="space-y-1.5">
+            <!-- Inyectado por JS -->
+          </div>
+        </div>
+
+        <!-- Lista de Consumos Registrados -->
+        <div class="space-y-2 pt-2">
+          <div class="flex items-center justify-between px-1">
+            <span class="text-xs font-black uppercase tracking-wider text-slate-900">Consumos del Ciclo</span>
+          </div>
+          <div id="modal-card-detail-expenses-list" class="space-y-2">
+            <!-- Inyectado por JS -->
+          </div>
         </div>
       </div>
     </div>
