@@ -1,168 +1,223 @@
 // ================================================================
-// MÓDULO DE RESUMEN DE TARJETAS DE CRÉDITO MOBILE
+// MÓDULO DE RESUMEN DE MÉTODOS DE PAGO Y TARJETAS (VISTA DEDICADA MOBILE)
 // ================================================================
 
-import { appState, filterDate, formatCurrency, getCycleDates } from "./core-state.js";
+import { appState, filterDate, formatCurrency, getFilterMonthString, getCycleDates, MONTHS } from "./core-state.js";
 import { openModal, closeModal } from "./modal-system.js";
 
-// Paleta de gradientes elegantes para las tarjetas mobile
-const CARD_GRADIENTS = [
-  "from-slate-900 via-indigo-950 to-slate-900 border-indigo-500/30 text-white",
-  "from-slate-900 via-emerald-950 to-slate-900 border-emerald-500/30 text-white",
-  "from-slate-900 via-purple-950 to-slate-900 border-purple-500/30 text-white",
-  "from-slate-900 via-rose-950 to-slate-900 border-rose-500/30 text-white",
-  "from-slate-900 via-amber-950 to-slate-900 border-amber-500/30 text-white",
-  "from-slate-900 via-cyan-950 to-slate-900 border-cyan-500/30 text-white",
-];
+// Paleta de gradientes y estilos para los métodos de pago
+const METHOD_THEMES = {
+  credit: {
+    badge: "Crédito",
+    icon: "fa-credit-card",
+    gradient: "from-slate-900 via-indigo-950 to-slate-900 border-indigo-500/30 text-white",
+    chipBg: "bg-indigo-500/20 text-indigo-300 border-indigo-500/30",
+    glow: "bg-indigo-500/20",
+    accent: "text-indigo-400"
+  },
+  debit: {
+    badge: "Débito",
+    icon: "fa-credit-card",
+    gradient: "from-slate-900 via-cyan-950 to-slate-900 border-cyan-500/30 text-white",
+    chipBg: "bg-cyan-500/20 text-cyan-300 border-cyan-500/30",
+    glow: "bg-cyan-500/20",
+    accent: "text-cyan-400"
+  },
+  cash: {
+    badge: "Efectivo",
+    icon: "fa-money-bill-wave",
+    gradient: "from-slate-900 via-emerald-950 to-slate-900 border-emerald-500/30 text-white",
+    chipBg: "bg-emerald-500/20 text-emerald-300 border-emerald-500/30",
+    glow: "bg-emerald-500/20",
+    accent: "text-emerald-400"
+  },
+  transfer: {
+    badge: "Transferencia",
+    icon: "fa-arrow-right-arrow-left",
+    gradient: "from-slate-900 via-purple-950 to-slate-900 border-purple-500/30 text-white",
+    chipBg: "bg-purple-500/20 text-purple-300 border-purple-500/30",
+    glow: "bg-purple-500/20",
+    accent: "text-purple-400"
+  },
+  other: {
+    badge: "Cuenta",
+    icon: "fa-wallet",
+    gradient: "from-slate-900 via-slate-800 to-slate-900 border-slate-700/50 text-white",
+    chipBg: "bg-slate-700/50 text-slate-300 border-slate-600/50",
+    glow: "bg-slate-500/10",
+    accent: "text-slate-300"
+  }
+};
 
-const CARD_ACCENTS = [
-  "bg-indigo-500/20 text-indigo-300 border-indigo-500/30",
-  "bg-emerald-500/20 text-emerald-300 border-emerald-500/30",
-  "bg-purple-500/20 text-purple-300 border-purple-500/30",
-  "bg-rose-500/20 text-rose-300 border-rose-500/30",
-  "bg-amber-500/20 text-amber-300 border-amber-500/30",
-  "bg-cyan-500/20 text-cyan-300 border-cyan-500/30",
-];
-
-export function getCreditCardsData() {
-  const paymentMethods = (appState.paymentMethods || []).filter(m => m.type === "credit");
+export function getAllPaymentMethodsData() {
+  const paymentMethods = appState.paymentMethods || [];
   const allExpenses = appState.expenses || [];
   const participants = appState.participants || [];
   const today = new Date();
+  const filterMonthString = getFilterMonthString(filterDate);
 
-  let globalTotalCardDebt = 0;
+  let totalCombinedSpent = 0;
+  let totalCreditDebt = 0;
 
-  const cards = paymentMethods.map((method, idx) => {
-    const cycle = getCycleDates(method, today);
-    const startDate = cycle.startDate;
-    const closingDate = cycle.closingDate;
-    const paymentDate = cycle.paymentDate;
+  const methodsData = paymentMethods.map((method, idx) => {
+    const isCredit = method.type === "credit";
+    let dateRangeLabel = "";
+    let paymentDateLabel = "";
+    let cycle = null;
+    let methodExpenses = [];
 
-    // Filtrar consumos del ciclo
-    const cycleExpenses = allExpenses.filter(e => {
-      if (e.paymentMethodId !== method.id || e.isFixed || e.isProjected || !e.date) return false;
-      if (startDate && closingDate) {
-        return e.date >= startDate && e.date <= closingDate;
+    if (isCredit) {
+      cycle = getCycleDates(method, today);
+      const s = cycle.startDate ? new Date(cycle.startDate + "T00:00:00Z") : null;
+      const c = cycle.closingDate ? new Date(cycle.closingDate + "T00:00:00Z") : null;
+      if (s && c) {
+        const sStr = `${s.getUTCDate()} ${s.toLocaleString('es-ES', { month: 'short', timeZone: 'UTC' })}`;
+        const cStr = `${c.getUTCDate()} ${c.toLocaleString('es-ES', { month: 'short', timeZone: 'UTC' })}`;
+        dateRangeLabel = `${sStr} - ${cStr}`;
+      } else {
+        dateRangeLabel = "Ciclo no configurado";
       }
-      return true;
-    });
 
-    const totalSpent = cycleExpenses.reduce((sum, e) => sum + (parseFloat(e.amount) || 0), 0);
-    globalTotalCardDebt += totalSpent;
+      if (cycle.paymentDate) {
+        const p = new Date(cycle.paymentDate + "T00:00:00Z");
+        paymentDateLabel = `Paga: ${p.getUTCDate()} ${p.toLocaleString('es-ES', { month: 'short', timeZone: 'UTC' })}`;
+      }
+
+      methodExpenses = allExpenses.filter(e => {
+        if (e.paymentMethodId !== method.id || e.isFixed || e.isProjected || !e.date) return false;
+        if (cycle.startDate && cycle.closingDate) {
+          return e.date >= cycle.startDate && e.date <= cycle.closingDate;
+        }
+        return true;
+      });
+    } else {
+      dateRangeLabel = `${MONTHS[filterDate.getMonth()]} ${filterDate.getFullYear()}`;
+      paymentDateLabel = "Mes en curso";
+      methodExpenses = allExpenses.filter(e => {
+        if (e.paymentMethodId !== method.id || e.isFixed || e.isProjected || !e.date) return false;
+        return e.date.startsWith(filterMonthString);
+      });
+    }
+
+    const totalSpent = methodExpenses.reduce((sum, e) => sum + (parseFloat(e.amount) || 0), 0);
+    totalCombinedSpent += totalSpent;
+    if (isCredit) {
+      totalCreditDebt += totalSpent;
+    }
 
     // Titular
-    let ownerName = "Sin titular";
+    let ownerName = "Compartido";
     if (method.ownerId) {
       const owner = participants.find(p => p.id === method.ownerId);
       if (owner) ownerName = owner.name;
     }
 
-    // Formatear fechas cortas (ej. 18 Jun - 17 Jul)
-    let dateRangeLabel = "Ciclo no configurado";
-    if (startDate && closingDate) {
-      const s = new Date(startDate + "T00:00:00Z");
-      const c = new Date(closingDate + "T00:00:00Z");
-      const sStr = `${s.getUTCDate()} ${s.toLocaleString('es-ES', { month: 'short', timeZone: 'UTC' })}`;
-      const cStr = `${c.getUTCDate()} ${c.toLocaleString('es-ES', { month: 'short', timeZone: 'UTC' })}`;
-      dateRangeLabel = `${sStr} - ${cStr}`;
-    }
-
-    let paymentDateLabel = "";
-    if (paymentDate) {
-      const p = new Date(paymentDate + "T00:00:00Z");
-      paymentDateLabel = `Paga: ${p.getUTCDate()} ${p.toLocaleString('es-ES', { month: 'short', timeZone: 'UTC' })}`;
-    }
+    const theme = METHOD_THEMES[method.type] || METHOD_THEMES.other;
 
     return {
       method,
+      isCredit,
       cycle,
       dateRangeLabel,
       paymentDateLabel,
       ownerName,
       totalSpent,
-      cycleExpenses,
-      gradientClass: CARD_GRADIENTS[idx % CARD_GRADIENTS.length],
-      accentClass: CARD_ACCENTS[idx % CARD_ACCENTS.length],
+      methodExpenses,
+      theme
     };
   });
 
-  return { cards, globalTotalCardDebt };
+  return { methodsData, totalCombinedSpent, totalCreditDebt };
 }
 
-export function renderCreditCardsSummary() {
-  const section = document.getElementById('section-credit-cards-summary');
-  const carousel = document.getElementById('mobile-cards-carousel');
-  const globalDebtBadge = document.getElementById('cards-total-debt-badge');
-  if (!section || !carousel) return;
+export function openPaymentMethodsSummaryModal() {
+  const { methodsData, totalCombinedSpent, totalCreditDebt } = getAllPaymentMethodsData();
 
-  const { cards, globalTotalCardDebt } = getCreditCardsData();
+  const totalGlobalEl = document.getElementById('modal-pm-summary-total-global');
+  const creditDebtEl = document.getElementById('modal-pm-summary-credit-debt');
+  const countBadgeEl = document.getElementById('modal-pm-summary-count-badge');
+  const listContainer = document.getElementById('modal-pm-summary-cards-list');
 
-  if (cards.length === 0) {
-    section.classList.add('hidden');
-    return;
-  }
+  if (totalGlobalEl) totalGlobalEl.textContent = formatCurrency(totalCombinedSpent);
+  if (creditDebtEl) creditDebtEl.textContent = `Deuda tarjetas: ${formatCurrency(totalCreditDebt)}`;
+  if (countBadgeEl) countBadgeEl.textContent = `${methodsData.length} métodos`;
 
-  section.classList.remove('hidden');
+  if (listContainer) {
+    if (methodsData.length === 0) {
+      listContainer.innerHTML = `
+        <div class="text-center py-10 text-slate-400 italic space-y-2">
+          <i class="fas fa-credit-card text-3xl opacity-30"></i>
+          <p class="text-xs">No hay métodos de pago configurados en este monedero.</p>
+        </div>
+      `;
+    } else {
+      listContainer.innerHTML = methodsData.map(item => `
+        <div onclick="openCreditCardDetailModal('${item.method.id}')"
+          class="w-full bg-gradient-to-br ${item.theme.gradient} rounded-3xl p-4.5 border shadow-lg cursor-pointer active:scale-98 transition-all relative overflow-hidden select-none group">
+          
+          <!-- Decoración resplandor -->
+          <div class="absolute -right-6 -bottom-6 w-28 h-28 ${item.theme.glow} rounded-full blur-xl"></div>
 
-  if (globalDebtBadge) {
-    globalDebtBadge.textContent = `Deuda activa: ${formatCurrency(globalTotalCardDebt)}`;
-  }
-
-  carousel.innerHTML = cards.map(c => `
-    <div onclick="openCreditCardDetailModal('${c.method.id}')"
-      class="w-[260px] sm:w-[280px] shrink-0 snap-start bg-gradient-to-br ${c.gradientClass} rounded-3xl p-4.5 border shadow-xl cursor-pointer active:scale-98 transition-all relative overflow-hidden select-none group">
-      
-      <!-- Decoración fondo -->
-      <div class="absolute -right-6 -bottom-6 w-28 h-28 bg-white/5 rounded-full blur-xl"></div>
-      
-      <div class="relative z-10 space-y-3">
-        <!-- Cabecera de la Tarjeta: Chip bancario + Logo Contactless -->
-        <div class="flex items-center justify-between">
-          <div class="flex items-center gap-2">
-            <!-- Chip Dorado Visual -->
-            <div class="w-7 h-5 rounded bg-gradient-to-br from-amber-200 via-yellow-400 to-amber-500 border border-yellow-600/60 shadow-xs flex items-center justify-center p-0.5">
-              <div class="w-full h-[1px] bg-amber-800/30"></div>
+          <div class="relative z-10 space-y-3">
+            <!-- Fila Superior: Tipo / Chip + Nombre del Método -->
+            <div class="flex items-center justify-between">
+              <div class="flex items-center gap-2">
+                ${item.isCredit ? `
+                  <div class="w-7 h-5 rounded bg-gradient-to-br from-amber-200 via-yellow-400 to-amber-500 border border-yellow-600/60 shadow-xs flex items-center justify-center p-0.5">
+                    <div class="w-full h-[1px] bg-amber-800/30"></div>
+                  </div>
+                  <i class="fas fa-wifi text-slate-400 rotate-90 text-[10px]"></i>
+                ` : `
+                  <div class="w-7 h-7 rounded-xl bg-white/10 flex items-center justify-center text-xs text-white">
+                    <i class="fas ${item.theme.icon}"></i>
+                  </div>
+                `}
+                <span class="font-extrabold text-sm text-white">${item.method.name}</span>
+              </div>
+              <span class="text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full ${item.theme.chipBg}">
+                ${item.theme.badge}
+              </span>
             </div>
-            <i class="fas fa-wifi text-slate-400 rotate-90 text-[10px]"></i>
-          </div>
-          <span class="text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full ${c.accentClass}">
-            ${c.method.name}
-          </span>
-        </div>
 
-        <!-- Consumo y Monto -->
-        <div class="pt-1">
-          <span class="text-[9px] font-bold text-slate-400 uppercase tracking-wider block">Consumo del Ciclo</span>
-          <span class="text-2xl font-black tracking-tight text-white block mt-0.5">
-            ${formatCurrency(c.totalSpent)}
-          </span>
-        </div>
+            <!-- Fila Central: Monto Consumido -->
+            <div class="pt-0.5">
+              <span class="text-[9px] font-bold text-slate-400 uppercase tracking-wider block">
+                ${item.isCredit ? 'Consumo del Ciclo' : 'Consumo del Mes'}
+              </span>
+              <span class="text-2xl font-black tracking-tight text-white block mt-0.5">
+                ${formatCurrency(item.totalSpent)}
+              </span>
+            </div>
 
-        <!-- Fechas de Corte y Titular -->
-        <div class="pt-2 border-t border-white/10 flex items-center justify-between text-[10px]">
-          <div>
-            <span class="text-slate-400 block text-[8px] font-bold uppercase">Ciclo</span>
-            <span class="font-bold text-slate-200">${c.dateRangeLabel}</span>
-          </div>
-          <div class="text-right">
-            <span class="text-slate-400 block text-[8px] font-bold uppercase">Titular</span>
-            <span class="font-black text-slate-200 truncate max-w-[80px] block">${c.ownerName}</span>
-          </div>
-        </div>
+            <!-- Fila Inferior: Rango de Fechas + Titular -->
+            <div class="pt-2 border-t border-white/10 flex items-center justify-between text-[10px]">
+              <div>
+                <span class="text-slate-400 block text-[8px] font-bold uppercase">${item.isCredit ? 'Ciclo Corte' : 'Período'}</span>
+                <span class="font-bold text-slate-200">${item.dateRangeLabel}</span>
+              </div>
+              <div class="text-right">
+                <span class="text-slate-400 block text-[8px] font-bold uppercase">Titular</span>
+                <span class="font-black text-slate-200 truncate max-w-[110px] block">${item.ownerName}</span>
+              </div>
+            </div>
 
-        <!-- Botón Ver Detalles -->
-        <div class="pt-1 flex items-center justify-between text-[10px] text-slate-300 font-bold group-hover:text-white transition-colors">
-          <span>Ver consumos (${c.cycleExpenses.length})</span>
-          <i class="fas fa-chevron-right text-[8px] opacity-70"></i>
+            <!-- Enlace inferior: Ver detalle de compras -->
+            <div class="pt-1 flex items-center justify-between text-[10px] text-slate-300 font-bold group-hover:text-white transition-colors">
+              <span>Ver ${item.methodExpenses.length} consumo(s) ${item.paymentDateLabel ? '• ' + item.paymentDateLabel : ''}</span>
+              <i class="fas fa-chevron-right text-[8px] opacity-70"></i>
+            </div>
+          </div>
         </div>
-      </div>
-    </div>
-  `).join('');
+      `).join('');
+    }
+  }
+
+  openModal('modal-payment-methods-summary');
 }
 
 export function openCreditCardDetailModal(methodId) {
-  const { cards } = getCreditCardsData();
-  const cardData = cards.find(c => c.method.id === methodId);
+  const { methodsData } = getAllPaymentMethodsData();
+  const cardData = methodsData.find(c => c.method.id === methodId);
   if (!cardData) return;
 
   const modalTitle = document.getElementById('modal-card-detail-title');
@@ -177,13 +232,13 @@ export function openCreditCardDetailModal(methodId) {
   if (modalTotal) modalTotal.textContent = formatCurrency(cardData.totalSpent);
   if (modalOwner) modalOwner.textContent = `Titular: ${cardData.ownerName}`;
 
-  // Desglose de Deuda por Miembro dentro de este ciclo
+  // Desglose de Deuda por Miembro dentro de este método / ciclo
   const participants = appState.participants || [];
   const debtPerPerson = {};
   participants.forEach(p => { debtPerPerson[p.id] = 0; });
   let guestDebt = 0;
 
-  cardData.cycleExpenses.forEach(e => {
+  cardData.methodExpenses.forEach(e => {
     const amount = parseFloat(e.amount) || 0;
     const guests = (e.guests && Array.isArray(e.guests) && e.guests.length > 0)
       ? e.guests
@@ -191,7 +246,7 @@ export function openCreditCardDetailModal(methodId) {
     const totalPeople = participants.length + guests.length;
 
     if (e.type === "personal") {
-      const payerId = e.paidBy || cardData.method.ownerId;
+      const payerId = e.paidBy || cardData.method.ownerId || (participants[0]?.id);
       if (debtPerPerson[payerId] !== undefined) {
         debtPerPerson[payerId] += amount;
       }
@@ -215,7 +270,6 @@ export function openCreditCardDetailModal(methodId) {
               }
             });
           } else {
-            // Reparto proporcional del ítem
             const share = (qty * unitPrice) / (totalPeople || 1);
             participants.forEach(p => { debtPerPerson[p.id] += share; });
             guestDebt += share * guests.length;
@@ -241,7 +295,7 @@ export function openCreditCardDetailModal(methodId) {
             </div>
             <div>
               <span class="text-xs font-black text-slate-800 block">${p.name} ${isOwner ? '<span class="text-[9px] text-indigo-600 font-bold">(Titular)</span>' : ''}</span>
-              <span class="text-[10px] text-slate-400 font-medium">Consumo en tarjeta</span>
+              <span class="text-[10px] text-slate-400 font-medium">Consumo total</span>
             </div>
           </div>
           <span class="text-xs font-black text-slate-900">${formatCurrency(owed)}</span>
@@ -263,17 +317,17 @@ export function openCreditCardDetailModal(methodId) {
     ` : '');
   }
 
-  // Lista de Movimientos en el Ciclo
+  // Lista de Movimientos
   if (listContainer) {
-    if (cardData.cycleExpenses.length === 0) {
-      listContainer.innerHTML = `<p class="text-center text-xs text-slate-400 italic py-6">Sin consumos en este ciclo</p>`;
+    if (cardData.methodExpenses.length === 0) {
+      listContainer.innerHTML = `<p class="text-center text-xs text-slate-400 italic py-6">Sin consumos en este período</p>`;
     } else {
-      listContainer.innerHTML = cardData.cycleExpenses.map(e => `
+      listContainer.innerHTML = cardData.methodExpenses.map(e => `
         <div onclick="closeModal('modal-card-detail'); openTransactionDetailModal('${e.id}');"
           class="flex items-center justify-between p-3 rounded-2xl bg-white border border-slate-100 shadow-2xs cursor-pointer active:scale-98 transition-all">
           <div class="flex items-center gap-2.5 min-w-0 flex-1">
             <div class="w-8 h-8 rounded-xl bg-slate-100 text-slate-700 flex items-center justify-center text-xs shrink-0">
-              <i class="fas fa-credit-card"></i>
+              <i class="fas ${cardData.theme.icon}"></i>
             </div>
             <div class="min-w-0 flex-1">
               <span class="text-xs font-black text-slate-900 truncate block">${e.description || e.name || 'Gasto'}</span>
@@ -289,4 +343,5 @@ export function openCreditCardDetailModal(methodId) {
   openModal('modal-card-detail');
 }
 
+window.openPaymentMethodsSummaryModal = openPaymentMethodsSummaryModal;
 window.openCreditCardDetailModal = openCreditCardDetailModal;
