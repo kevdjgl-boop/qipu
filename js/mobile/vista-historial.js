@@ -28,6 +28,7 @@ export function renderHistoryList(monthlyExpenses) {
         description: e.description || 'Gasto sin concepto',
         amount: parseFloat(e.amount) || 0,
         date: e.date || '',
+        createdAt: e.createdAt || e.dateCreated || '',
         category: e.category || 'General',
         payerId: e.payerId,
         paymentMethod: e.paymentMethod || 'Efectivo',
@@ -50,6 +51,7 @@ export function renderHistoryList(monthlyExpenses) {
             description: inc.name || inc.description || `Ingreso de ${p.name}`,
             amount: parseFloat(inc.amount) || 0,
             date: inc.date,
+            createdAt: inc.createdAt || inc.dateCreated || '',
             category: 'Ingreso',
             payerName: p.name,
             paymentMethod: 'Depósito/Efectivo',
@@ -68,7 +70,22 @@ export function renderHistoryList(monthlyExpenses) {
     );
   }
 
-  items.sort((a, b) => new Date(b.date) - new Date(a.date));
+  // Ordenamiento cronológico estricto: por fecha y hora de creación (más reciente primero)
+  items.sort((a, b) => {
+    if (b.date !== a.date) return b.date.localeCompare(a.date);
+    const getTimestamp = (item) => {
+      if (item.createdAt) {
+        const t = new Date(item.createdAt).getTime();
+        if (!isNaN(t) && t > 0) return t;
+      }
+      if (item.id) {
+        const num = item.id.replace(/^\D+/g, '');
+        if (num && !isNaN(Number(num))) return Number(num);
+      }
+      return 0;
+    };
+    return getTimestamp(b) - getTimestamp(a);
+  });
 
   const countBadge = document.getElementById('history-total-count');
   if (countBadge) countBadge.textContent = `${items.length} registros`;

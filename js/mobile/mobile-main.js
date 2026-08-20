@@ -46,7 +46,7 @@ import {
   updateDateChipLabel, switchExpenseRegistrationType, updateSegmentedButtonsUI,
   toggleFixedExpenseSection, toggleListExpenseSection, renderSharedMembersAvatars,
   toggleSharedMemberInclusion, resetExpenseForm, resetIncomeForm,
-  openEditExpenseModal, openEditIncomeModal, saveExpenseForm, deleteExpense
+  openEditExpenseModal, openEditIncomeModal, saveExpenseForm, deleteExpense, deleteIncome
 } from "./vista-registro.js";
 
 import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
@@ -89,6 +89,8 @@ window.setAppThemeColor = setAppThemeColor;
 window.advanceToNextInput = advanceToNextInput;
 window.openCreditCardDetailModal = openCreditCardDetailModal;
 window.openPaymentMethodsSummaryModal = openPaymentMethodsSummaryModal;
+window.deleteIncome = deleteIncome;
+window.deleteExpense = deleteExpense;
 
 // ================================================================
 // AUTENTICACIÓN Y SUSCRIPCIÓN EN TIEMPO REAL
@@ -152,6 +154,11 @@ function initMobileEventListeners() {
   const btnDeleteExpense = document.getElementById('btn-delete-expense');
   if (btnDeleteExpense) {
     btnDeleteExpense.addEventListener('click', deleteExpense);
+  }
+
+  const btnDeleteIncome = document.getElementById('btn-delete-income');
+  if (btnDeleteIncome) {
+    btnDeleteIncome.addEventListener('click', deleteIncome);
   }
 
   // 2. Formulario de Ingreso Rápido

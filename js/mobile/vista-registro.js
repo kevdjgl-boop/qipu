@@ -540,6 +540,9 @@ export async function saveExpenseForm(e) {
 }
 
 export async function deleteExpense() {
+  if (editingIncomeId) {
+    return deleteIncome();
+  }
   if (!editingExpenseId) return;
   if (!confirm('¿Estás seguro de eliminar este gasto definitivamente?')) return;
 
@@ -552,5 +555,31 @@ export async function deleteExpense() {
   } catch (err) {
     console.error('Error al eliminar gasto:', err);
     alert('Error al eliminar el gasto.');
+  }
+}
+
+export async function deleteIncome() {
+  if (!editingIncomeId) return;
+  if (!confirm('¿Estás seguro de eliminar este ingreso definitivamente?')) return;
+
+  try {
+    const updatedParticipants = JSON.parse(JSON.stringify(appState.participants || []));
+    updatedParticipants.forEach(p => {
+      if (p.incomes) {
+        p.incomes = p.incomes.filter(inc => inc.id !== editingIncomeId);
+      }
+      p.budget = (p.incomes || []).reduce((s, inc) => s + (parseFloat(inc.amount) || 0), 0);
+    });
+
+    const walletRef = doc(db, "artifacts", appId, "public/data/wallets", currentWalletId);
+    await updateDoc(walletRef, { participants: updatedParticipants });
+
+    closeModal('modal-income');
+    closeModal('modal-expense');
+    resetIncomeForm();
+    resetExpenseForm();
+  } catch (err) {
+    console.error('Error al eliminar ingreso:', err);
+    alert('Error al eliminar el ingreso.');
   }
 }
