@@ -127,6 +127,9 @@ export function advanceToNextInput() {
   if (currentIndex !== -1 && currentIndex < allInputs.length - 1) {
     const nextInput = allInputs[currentIndex + 1];
     nextInput.focus();
+    if (typeof nextInput.select === 'function') {
+      nextInput.select();
+    }
     nextInput.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
   } else {
     // Si estamos en el último input visible y la lista está activa
@@ -138,6 +141,7 @@ export function advanceToNextInput() {
         const target = updatedInputs[updatedInputs.length - 3] || updatedInputs[updatedInputs.length - 1];
         if (target) {
           target.focus();
+          if (typeof target.select === 'function') target.select();
           target.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
         }
       }, 100);

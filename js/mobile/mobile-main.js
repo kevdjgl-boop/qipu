@@ -6,7 +6,7 @@ import {
 
 import { openModal, closeModal, setAppThemeColor } from "./modal-system.js";
 import { setupKeyboardNavFab, advanceToNextInput } from "./fab-keyboard-nav.js";
-import { openCreditCardDetailModal, openPaymentMethodsSummaryModal } from "./modulo-tarjetas.js";
+import { openCreditCardDetailModal, openPaymentMethodsSummaryModal, openCardStatementsHistoryModal, restoreCurrentCardCycle, selectStatementCycle } from "./modulo-tarjetas.js";
 
 import {
   renderMobileUI, renderParticipantsModalList, renderSettlementModal,
@@ -20,6 +20,11 @@ import {
 import {
   openOptionPicker, selectOptionPickerValue, populateSelectOptions, currentPickerType
 } from "./modal-pickers.js";
+
+import {
+  openDatePickerBottomSheet, toggleCalendarExpandMode, navigateCalendarMonth, navigateCalendarWeek,
+  selectCalendarToday, handleCalendarDaySelect, handleCalTouchStart, handleCalTouchMove, handleCalTouchEnd
+} from "./modal-calendario.js";
 
 import {
   mobileExpenseItems, addMobileItemRow, removeMobileItemRow, updateMobileItemField,
@@ -43,7 +48,7 @@ import {
 import {
   currentRegistrationType, isFixedExpenseActive, isListExpenseActive,
   activeSharedMemberIds, mobileExpenseGuests, editingExpenseId, editingIncomeId,
-  updateDateChipLabel, switchExpenseRegistrationType, updateSegmentedButtonsUI,
+  updateDateChipLabel, openExpenseDatePicker, switchExpenseRegistrationType, updateSegmentedButtonsUI,
   toggleFixedExpenseSection, toggleListExpenseSection, renderSharedMembersAvatars,
   toggleSharedMemberInclusion, resetExpenseForm, resetIncomeForm,
   openEditExpenseModal, openEditIncomeModal, saveExpenseForm, deleteExpense, deleteIncome
@@ -89,6 +94,19 @@ window.setAppThemeColor = setAppThemeColor;
 window.advanceToNextInput = advanceToNextInput;
 window.openCreditCardDetailModal = openCreditCardDetailModal;
 window.openPaymentMethodsSummaryModal = openPaymentMethodsSummaryModal;
+window.openCardStatementsHistoryModal = openCardStatementsHistoryModal;
+window.restoreCurrentCardCycle = restoreCurrentCardCycle;
+window.selectStatementCycle = selectStatementCycle;
+window.openExpenseDatePicker = openDatePickerBottomSheet;
+window.openDatePickerBottomSheet = openDatePickerBottomSheet;
+window.toggleCalendarExpandMode = toggleCalendarExpandMode;
+window.navigateCalendarMonth = navigateCalendarMonth;
+window.navigateCalendarWeek = navigateCalendarWeek;
+window.selectCalendarToday = selectCalendarToday;
+window.handleCalendarDaySelect = handleCalendarDaySelect;
+window.handleCalTouchStart = handleCalTouchStart;
+window.handleCalTouchMove = handleCalTouchMove;
+window.handleCalTouchEnd = handleCalTouchEnd;
 window.deleteIncome = deleteIncome;
 window.deleteExpense = deleteExpense;
 
@@ -268,9 +286,12 @@ function initMobileEventListeners() {
   });
 
   // 6. Fecha en Tiempo Real
-  document.getElementById('exp-date')?.addEventListener('input', (e) => {
-    updateDateChipLabel(e.target.value);
-  });
+  const dateInput = document.getElementById('exp-date');
+  if (dateInput) {
+    const handleDateChange = (e) => updateDateChipLabel(e.target.value);
+    dateInput.addEventListener('input', handleDateChange);
+    dateInput.addEventListener('change', handleDateChange);
+  }
 
   // 7. Filtros de Pestañas
   const tabAll = document.getElementById('tab-filter-all');
@@ -309,7 +330,7 @@ function initMobileEventListeners() {
   });
 
   // 9. Cierre con Backdrop
-  ['modal-expense', 'modal-income', 'modal-settings', 'modal-transaction-detail', 'modal-participants-balances', 'modal-settlement', 'modal-item-assignment', 'modal-split-breakdown', 'modal-option-picker'].forEach(modalId => {
+  ['modal-expense', 'modal-income', 'modal-settings', 'modal-transaction-detail', 'modal-participants-balances', 'modal-settlement', 'modal-item-assignment', 'modal-split-breakdown', 'modal-option-picker', 'modal-date-picker'].forEach(modalId => {
     const modalEl = document.getElementById(modalId);
     if (modalEl) {
       modalEl.addEventListener('click', (e) => {
@@ -361,14 +382,14 @@ function initMobileEventListeners() {
   document.getElementById('fab-opt-simple-expense')?.addEventListener('click', () => {
     closeFabMenu();
     resetExpenseForm();
-    switchExpenseRegistrationType('shared');
+    switchExpenseRegistrationType('personal');
     openModal('modal-expense');
   });
 
   document.getElementById('fab-opt-list-expense')?.addEventListener('click', () => {
     closeFabMenu();
     resetExpenseForm();
-    switchExpenseRegistrationType('shared');
+    switchExpenseRegistrationType('personal');
     toggleListExpenseSection();
     openModal('modal-expense');
   });
@@ -452,7 +473,9 @@ if (document.readyState === 'loading') {
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
     navigator.serviceWorker.register('./sw.js')
-      .then(reg => console.log('Service Worker PWA registrado con éxito:', reg.scope))
+      .then(reg => {
+        reg.update().catch(() => {});
+      })
       .catch(err => console.warn('Error al registrar Service Worker:', err));
   });
 }

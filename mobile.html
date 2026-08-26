@@ -9,30 +9,125 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <!-- Font Awesome -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
-  <!-- Google Fonts Inter -->
+  <!-- Google Fonts Google Sans Flex & Google Material Symbols Variable -->
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Google+Sans+Flex:opsz,wght,slnt,wdth,GRAD,ROND@8..144,100..1000,0,100,0,50&display=swap"
+    rel="stylesheet" />
+  <link rel="stylesheet"
+    href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
+  <link rel="stylesheet"
+    href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
+
   <!-- PWA Meta Tags -->
   <link rel="manifest" href="manifest.json" />
-  <meta name="theme-color" id="theme-color-meta" content="#f8fafc" />
+  <meta name="theme-color" id="theme-color-meta" content="#FBFCFA" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="default" />
-  <meta name="msapplication-navbutton-color" content="#f8fafc" />
+  <meta name="msapplication-navbutton-color" content="#FBFCFA" />
   <meta name="apple-mobile-web-app-title" content="Qipu" />
   <link rel="apple-touch-icon"
     href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Crect width='512' height='512' rx='128' fill='%234f46e5'/%3E%3Cpath d='M120 180h272c22 0 40 18 40 40v140c0 22-18 40-40 40H120c-22 0-40-18-40-40V220c0-22 18-40 40-40z' fill='%23ffffff' opacity='0.9'/%3E%3Cpath d='M120 140h220c11 0 20 9 20 20v20H100v-20c0-11 9-20 20-20z' fill='%23c7d2fe'/%3E%3Ccircle cx='360' cy='290' r='20' fill='%234f46e5'/%3E%3C/svg%3E" />
 
   <style>
+    /* Google Material Symbols base rules */
+    .material-symbols-rounded,
+    .material-symbols-outlined {
+      font-family: 'Material Symbols Rounded', 'Material Symbols Outlined' !important;
+      font-weight: normal;
+      font-style: normal;
+      line-height: 1;
+      letter-spacing: normal;
+      text-transform: none;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      white-space: nowrap;
+      word-wrap: normal;
+      direction: ltr;
+      -webkit-font-smoothing: antialiased;
+      vertical-align: middle;
+      user-select: none;
+      pad: 0;
+    }
+
     * {
       -webkit-tap-highlight-color: transparent;
       box-sizing: border-box;
+      font-family: "Google Sans Flex", sans-serif;
+      font-optical-sizing: auto;
+      font-style: normal;
+      font-variation-settings: "slnt" 0, "wdth" 100, "GRAD" 0, "ROND" 50;
     }
 
-    body {
-      font-family: 'Inter', sans-serif;
-      background-color: #f8fafc;
+    body,
+    input,
+    button,
+    select,
+    textarea {
+      font-family: "Google Sans Flex", sans-serif;
+      font-optical-sizing: auto;
+      font-style: normal;
+      font-variation-settings: "slnt" 0, "wdth" 100, "GRAD" 0, "ROND" 50;
+      background-color: #FBFCFA;
       color: #0f172a;
       overflow-x: hidden;
+    }
+
+    /* ============================================================ */
+    /* JERARQUÍA TIPOGRÁFICA GOOGLE SANS FLEX (ROND: 50)             */
+    /* ============================================================ */
+
+    /* 1. TÍTULOS: Weight 1000 */
+    h1,
+    h2,
+    h3,
+    .font-title,
+    .google-sans-title,
+    .font-black {
+      font-weight: 1000 !important;
+      font-variation-settings: "wght" 1000, "slnt" 0, "wdth" 100, "GRAD" 0, "ROND" 50 !important;
+    }
+
+    /* 2. SUBTÍTULOS Y NÚMEROS PRINCIPALES: Weight 800 */
+    h4,
+    h5,
+    .font-subtitle,
+    .font-number,
+    .google-sans-subtitle,
+    .google-sans-number,
+    .font-extrabold {
+      font-weight: 800 !important;
+      font-variation-settings: "wght" 800, "slnt" 0, "wdth" 100, "GRAD" 0, "ROND" 50 !important;
+    }
+
+    /* 3. NÚMEROS SECUNDARIOS: Weight 600 */
+    .font-number-sec,
+    .google-sans-number-sec,
+    .font-semibold,
+    .font-bold {
+      font-weight: 600 !important;
+      font-variation-settings: "wght" 600, "slnt" 0, "wdth" 100, "GRAD" 0, "ROND" 50 !important;
+    }
+
+    /* 4. TEXTOS PEQUEÑOS: Weight 300 */
+    .text-small,
+    .google-sans-small,
+    .font-light,
+    .font-small {
+      font-weight: 300 !important;
+      font-variation-settings: "wght" 300, "slnt" 0, "wdth" 100, "GRAD" 0, "ROND" 50 !important;
+    }
+
+    /* Textos pequeños auxiliares con weight 300 por defecto */
+    .text-xs:not(.font-black):not(.font-extrabold):not(.font-bold):not(.font-semibold),
+    .text-\[10px\]:not(.font-black):not(.font-extrabold):not(.font-bold):not(.font-semibold),
+    .text-\[8px\]:not(.font-black):not(.font-extrabold):not(.font-bold):not(.font-semibold),
+    .text-\[9px\]:not(.font-black):not(.font-extrabold):not(.font-bold):not(.font-semibold) {
+      font-weight: 300 !important;
+      font-variation-settings: "wght" 300, "slnt" 0, "wdth" 100, "GRAD" 0, "ROND" 50 !important;
     }
 
     /* Ocultar scrollbars */
@@ -59,11 +154,162 @@
       --md-sys-motion-duration-extra-long4: 500ms;
     }
 
-    /* Fondo Backdrop con suave presencia */
+    /* ============================================================ */
+    /* M3 CALENDARIO DESLIZABLE (SLIDE & ACCORDION PURO SIN ESCALA)  */
+    /* ============================================================ */
+    #calendar-days-container {
+      overflow: hidden;
+    }
+
+    .m3-calendar-carousel {
+      width: 100%;
+      position: relative;
+      overflow: hidden;
+      touch-action: pan-y pinch-zoom;
+    }
+
+    .m3-calendar-track {
+      width: 100%;
+      will-change: transform;
+    }
+
+    .m3-calendar-slide-left-in {
+      animation: m3CalSlideLeft 280ms cubic-bezier(0.2, 0.0, 0, 1.0) forwards;
+    }
+
+    .m3-calendar-slide-right-in {
+      animation: m3CalSlideRight 280ms cubic-bezier(0.2, 0.0, 0, 1.0) forwards;
+    }
+
+    /* ============================================================ */
+    /* M3 EMPHASIZED MOTION: ANIMACIÓN DE DÍGITOS INDIVIDUALES      */
+    /* Duration: 600ms | Easing: cubic-bezier(0.05, 0.7, 0.1, 1.0)  */
+    /* ============================================================ */
+    @keyframes digitGrowBase {
+      0% {
+        transform: translateY(8px) scaleY(0.4) scaleX(0.85);
+        opacity: 0.1;
+      }
+
+      45% {
+        transform: translateY(-2px) scaleY(1.12) scaleX(1.04);
+        opacity: 0.95;
+      }
+
+      75% {
+        transform: translateY(0.5px) scaleY(0.98) scaleX(0.99);
+        opacity: 1;
+      }
+
+      100% {
+        transform: translateY(0px) scaleY(1) scaleX(1);
+        opacity: 1;
+      }
+    }
+
+    .animate-digit-grow {
+      display: inline-block;
+      transform-origin: bottom center;
+      animation: digitGrowBase 600ms cubic-bezier(0.05, 0.7, 0.1, 1.0) backwards;
+    }
+
+    /* Expansión tipo acordeón pura por altura (sin deformar números) */
+    .m3-cal-accordion {
+      display: grid !important;
+      grid-template-rows: 0fr;
+      opacity: 0;
+      transition: grid-template-rows 280ms cubic-bezier(0.2, 0.0, 0, 1.0),
+        opacity 200ms ease-out !important;
+      will-change: grid-template-rows, opacity;
+    }
+
+    .m3-cal-accordion.m3-cal-expanded {
+      grid-template-rows: 1fr !important;
+      opacity: 1 !important;
+    }
+
+    .m3-cal-accordion-inner {
+      overflow: hidden;
+      min-height: 0;
+    }
+
+    /* ============================================================ */
+    /* CALENDARIO CLEAN M3 & ANIMACIONES DE SELECCIÓN DE DÍAS       */
+    /* ============================================================ */
+    #modal-date-picker,
+    #modal-date-picker *,
+    #calendar-days-container,
+    .m3-calendar-carousel,
+    .m3-calendar-track {
+      scrollbar-width: none !important;
+      -ms-overflow-style: none !important;
+    }
+    #modal-date-picker *::-webkit-scrollbar {
+      display: none !important;
+      width: 0 !important;
+      height: 0 !important;
+    }
+
+    .cal-day-btn {
+      width: 60px !important;
+      min-width: 60px !important;
+      max-width: 60px !important;
+      height: 40px !important;
+      min-height: 40px !important;
+      max-height: 40px !important;
+      border-radius: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.875rem;
+      position: relative;
+      user-select: none;
+      cursor: pointer;
+      margin: 0 auto;
+      transition: transform 220ms cubic-bezier(0.34, 1.56, 0.64, 1), background-color 220ms ease, color 150ms ease;
+    }
+
+    .cal-day-btn.cal-day-selected {
+      background-color: #BEEB9F !important;
+      color: #222818 !important;
+      font-weight: 800 !important;
+      transform: scale(1);
+    }
+
+    .cal-day-btn.cal-day-shrinking {
+      background-color: rgba(190, 235, 159, 0.25) !important;
+      color: #334155 !important;
+      transform: scale(0.72) !important;
+      transition: transform 220ms cubic-bezier(0.4, 0, 0.2, 1), background-color 220ms ease, color 150ms ease !important;
+    }
+
+    .cal-day-btn.cal-day-expanding {
+      animation: calPillExpand 220ms cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+      background-color: #BEEB9F !important;
+      color: #222818 !important;
+      font-weight: 800 !important;
+    }
+
+    @keyframes calPillExpand {
+      0% {
+        transform: scale(0.35);
+        opacity: 0.6;
+      }
+      100% {
+        transform: scale(1);
+        opacity: 1;
+      }
+    }
+
+    /* Fondo Backdrop con suave presencia y padding 8px abajo y a ambos lados */
     .m3-bottom-sheet-backdrop {
       opacity: 0;
-      transition: opacity 280ms cubic-bezier(0.16, 1, 0.3, 1);
+      transition: opacity 280ms cubic-bezier(0.2, 0.0, 0, 1.0);
       pointer-events: none;
+      padding-left: 8px;
+      padding-right: 8px;
+      padding-bottom: 8px;
+      padding-top: 0;
     }
 
     .m3-bottom-sheet-backdrop.m3-visible {
@@ -71,12 +317,13 @@
       pointer-events: auto;
     }
 
-    /* Bottom Sheet Surface: 100% Desplazamiento Físico desde el fondo (sin fades en el modal) */
+    /* Bottom Sheet Surface: 100% Desplazamiento Físico directo a posición final sin rebotes */
     .m3-bottom-sheet-surface {
       transform: translateY(100%) !important;
       opacity: 1 !important;
       will-change: transform;
-      transition: transform 380ms cubic-bezier(0.16, 1, 0.3, 1) !important;
+      border-radius: 28px !important;
+      transition: transform 320ms cubic-bezier(0.2, 0.0, 0, 1.0) !important;
     }
 
     .m3-bottom-sheet-backdrop.m3-visible .m3-bottom-sheet-surface {
@@ -509,16 +756,16 @@
   <!-- MODALES TIPO BOTTOM-SHEET PARA MOBILE -->
   <!-- ========================================== -->
 
-  <!-- 1. Pantalla Completa Registrar / Editar Gasto o Ingreso (Diseño Full-Screen Fondo #F8FAFC) -->
+  <!-- 1. Pantalla Completa Registrar / Editar Gasto o Ingreso (Diseño Full-Screen Fondo #FBFCFA) -->
   <div id="modal-expense"
-    class="fixed inset-0 z-50 bg-[#F8FAFC] h-[100dvh] overflow-hidden hidden transition-all duration-300">
-    <div class="w-full max-w-md mx-auto h-full flex flex-col justify-between p-4 pt-4 pb-4">
+    class="fixed inset-0 z-50 bg-[#FBFCFA] h-[100dvh] overflow-hidden hidden transition-all duration-300">
+    <div class="w-full h-full flex flex-col justify-between pt-4 pb-4">
 
       <!-- Cabecera Superior: [ ← Volver ] + Título & Subtítulo + [ 🗑 Eliminar Gasto ] -->
-      <div class="flex items-center justify-between gap-3 pb-2 shrink-0">
+      <div class="flex items-center justify-between gap-3 px-4 pb-2 shrink-0">
         <button type="button" onclick="closeModal('modal-expense'); resetExpenseForm();"
           class="w-11 h-11 rounded-full bg-white text-slate-800 flex items-center justify-center text-sm shadow-xs hover:bg-slate-50 active:scale-95 transition-all">
-          <i class="fas fa-arrow-left"></i>
+          <span class="material-symbols-rounded text-2xl">arrow_back</span>
         </button>
 
         <div class="flex-1 min-w-0">
@@ -531,56 +778,64 @@
         <button type="button" id="btn-delete-expense"
           class="w-11 h-11 rounded-full bg-rose-100 hover:bg-rose-200 text-rose-700 flex items-center justify-center text-sm shadow-xs active:scale-95 transition-all hidden"
           title="Eliminar Gasto">
-          <i class="fas fa-trash-alt"></i>
+          <span class="material-symbols-rounded text-xl">delete</span>
         </button>
       </div>
 
-      <!-- Pestañas Superiores Tipo de Registro: Personal | Compartido | Ingreso (Píldora Blanca) -->
-      <div class="pb-2.5 shrink-0">
-        <div class="w-full bg-white p-1 rounded-full flex items-center gap-1 text-xs font-black shadow-xs">
+      <!-- Pestañas Superiores Tipo de Registro: Personal | Compartido | Ingreso (Fondo #ECF9E1) -->
+      <div class="px-4 pb-2.5 shrink-0">
+        <div
+          class="relative w-full bg-[#ECF9E1] p-1 rounded-full flex items-center text-xs font-black shadow-2xs select-none">
+          <!-- Píldora Deslizante Activa con Física M3 Expressive -->
+          <div id="segment-sliding-pill"
+            class="absolute top-1 bottom-1 rounded-full bg-[#C3F1B3] shadow-xs pointer-events-none"
+            style="width: calc((100% - 8px) / 3); left: 4px; transform: translateX(0%); transition: transform 320ms cubic-bezier(0.05, 0.7, 0.1, 1.0), background-color 80ms ease;">
+          </div>
+
           <button type="button" id="tab-type-personal" onclick="switchExpenseRegistrationType('personal')"
-            class="flex-1 py-2 rounded-full text-slate-600 hover:text-slate-900 transition-all text-center">
+            class="relative z-10 flex-1 py-2 rounded-full text-[#273019] transition-colors duration-200 text-center font-black">
             Personal
           </button>
           <button type="button" id="tab-type-shared" onclick="switchExpenseRegistrationType('shared')"
-            class="flex-1 py-2 rounded-full bg-[#c6f6b5] text-slate-950 shadow-xs transition-all text-center">
+            class="relative z-10 flex-1 py-2 rounded-full text-slate-500 hover:text-slate-800 transition-colors duration-200 text-center font-bold">
             Compartido
           </button>
           <button type="button" id="tab-type-income" onclick="switchExpenseRegistrationType('income')"
-            class="flex-1 py-2 rounded-full text-slate-600 hover:text-slate-900 transition-all text-center">
+            class="relative z-10 flex-1 py-2 rounded-full text-slate-500 hover:text-slate-800 transition-colors duration-200 text-center font-bold">
             Ingreso
           </button>
         </div>
       </div>
 
-      <form id="form-mobile-expense" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" data-lpignore="true" class="flex flex-col flex-1 justify-between min-h-0">
+      <form id="form-mobile-expense" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"
+        data-lpignore="true" class="flex flex-col flex-1 justify-between min-h-0">
 
         <div class="flex flex-col flex-1 min-h-0">
-          <!-- BLOQUE PRINCIPAL SUPERIOR (Card blanca, radius 30px, shadow-xs, Fija) -->
-          <div class="w-full bg-white rounded-[30px] p-4 space-y-3.5 shadow-sm relative z-10 shrink-0">
-            <!-- Fila de Chips de Metadatos (Fondo verde claro #c6f6b5) -->
+          <!-- BLOQUE PRINCIPAL SUPERIOR (Fondo #FBFCFA del mismo color de la vista, Ancho Total, Bordes 24px) -->
+          <div class="w-full bg-[#FBFCFA] rounded-[24px] px-4 py-1 space-y-3 relative z-10 shrink-0">
+            <!-- Fila de Chips de Metadatos (Fondo #ECF9E1) -->
             <div class="grid grid-cols-3 gap-2 pb-0.5">
-              <!-- Chip Fecha -->
-              <div
-                class="relative bg-[#c6f6b5] hover:opacity-90 text-emerald-950 px-2 h-[34px] rounded-full flex items-center justify-center gap-1.5 text-xs font-black cursor-pointer transition-colors shadow-2xs overflow-hidden">
-                <i class="far fa-calendar-alt text-xs text-emerald-900 shrink-0"></i>
-                <span id="chip-date-label" class="truncate">26-Jun</span>
-                <input type="date" id="exp-date" class="absolute inset-0 opacity-0 cursor-pointer w-full h-full" />
-              </div>
+              <!-- Chip Fecha (Abre Bottom Sheet de Calendario) -->
+              <button type="button" onclick="openDatePickerBottomSheet()"
+                class="relative bg-[#ECF9E1] hover:opacity-90 active:scale-95 text-emerald-950 px-2 h-[26px] rounded-full flex items-center justify-center gap-1.5 text-xs font-black cursor-pointer transition-all shadow-2xs border border-emerald-200/60 overflow-hidden">
+                <span class="material-symbols-rounded text-sm text-emerald-900 shrink-0">calendar_today</span>
+                <span id="chip-date-label" class="truncate">26-Ago</span>
+                <input type="hidden" id="exp-date" value="" />
+              </button>
 
               <!-- Chip Categoría (Abre Bottom Sheet M3) -->
               <button type="button" onclick="openOptionPicker('category')"
-                class="relative bg-[#c6f6b5] hover:opacity-90 active:scale-95 text-emerald-950 px-2 h-[34px] rounded-full flex items-center justify-center gap-1 text-xs font-black transition-all shadow-2xs overflow-hidden">
+                class="relative bg-[#ECF9E1] hover:opacity-90 active:scale-95 text-emerald-950 px-2 h-[26px] rounded-full flex items-center justify-center gap-1 text-xs font-black transition-all shadow-2xs border border-emerald-200/60 overflow-hidden">
                 <span id="chip-category-label" class="truncate max-w-[70px]">General</span>
-                <i class="fas fa-caret-down text-xs text-emerald-900 shrink-0"></i>
+                <span class="material-symbols-rounded text-base text-emerald-900 shrink-0">arrow_drop_down</span>
                 <input type="hidden" id="exp-category" value="General" />
               </button>
 
               <!-- Chip Método de Pago (Abre Bottom Sheet M3) -->
               <button type="button" onclick="openOptionPicker('payment-method')"
-                class="relative bg-[#c6f6b5] hover:opacity-90 active:scale-95 text-emerald-950 px-2 h-[34px] rounded-full flex items-center justify-center gap-1 text-xs font-black transition-all shadow-2xs overflow-hidden">
+                class="relative bg-[#ECF9E1] hover:opacity-90 active:scale-95 text-emerald-950 px-2 h-[26px] rounded-full flex items-center justify-center gap-1 text-xs font-black transition-all shadow-2xs border border-emerald-200/60 overflow-hidden">
                 <span id="chip-pm-label" class="truncate max-w-[70px]">Efectivo</span>
-                <i class="fas fa-caret-down text-xs text-emerald-900 shrink-0"></i>
+                <span class="material-symbols-rounded text-base text-emerald-900 shrink-0">arrow_drop_down</span>
                 <input type="hidden" id="exp-payment-method" value="Efectivo" />
                 <input type="hidden" id="exp-payment-method-id" value="" />
               </button>
@@ -591,48 +846,59 @@
               <!-- Icono Ilustrativo -->
               <div id="box-expense-visual-icon"
                 style="width: 86px; height: 86px; min-width: 86px; min-height: 86px; border-radius: 18px;"
-                class="w-[86px] h-[86px] min-w-[86px] bg-[#c6f6b5] text-emerald-950 rounded-[18px] flex flex-col items-center justify-center shrink-0 p-1.5 shadow-2xs transition-all duration-300">
-                <i class="fas fa-receipt text-2xl mb-0.5 opacity-90"></i>
-                <span class="text-[8px] font-black uppercase text-emerald-900">Gasto</span>
+                class="w-[86px] h-[86px] min-w-[86px] bg-[#dcfce7] text-emerald-900 rounded-[18px] flex flex-col items-center justify-center shrink-0 p-1.5 shadow-2xs transition-all duration-300">
+                <span class="material-symbols-rounded text-3xl mb-0.5 opacity-90">person</span>
+                <span class="text-[8px] font-black uppercase text-emerald-800/80">Personal</span>
               </div>
 
               <!-- Inputs Concepto y Monto con Floating Label y alineación a la izquierda -->
-              <div class="flex-1 flex flex-col justify-between h-[86px]">
-                <!-- Input Nombre / Concepto -->
-                <div class="relative w-full h-[40px] rounded-b-[2px] rounded-t-[12px] bg-[#c6f6b5] border-b-2 border-b-[#90CE59] border-t-0 border-x-0 focus-within:bg-[#b5f0a0] transition-colors overflow-hidden">
-                  <input type="text" id="exp-description" name="qipu_desc_field" required placeholder=" " autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" data-lpignore="true" data-form-type="other"
-                    class="peer w-full h-full bg-transparent border-0 px-3.5 pt-2.5 pb-0 text-xs font-black text-slate-900 text-left leading-tight transition-all outline-none focus:outline-none focus:ring-0" />
+              <div class="flex-1 flex flex-col justify-between h-[94px]">
+                <!-- Input Nombre / Concepto (Fondo #90CE59 al 25%) -->
+                <div
+                  class="relative w-full h-[44px] rounded-b-[2px] rounded-t-[12px] bg-[#90CE59]/25 border-b-2 border-b-[#90CE59] border-t-0 border-x-0 focus-within:bg-[#90CE59]/35 transition-colors overflow-hidden">
+                  <input type="text" id="exp-description" name="qipu_desc_field" required placeholder=" "
+                    autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" data-lpignore="true"
+                    data-form-type="other"
+                    class="peer w-full h-full bg-transparent border-0 px-3.5 pt-2.5 pb-0 text-lg font-black text-slate-900 text-left leading-tight transition-all outline-none focus:outline-none focus:ring-0" />
                   <label for="exp-description"
-                    class="absolute left-3.5 top-1/2 -translate-y-1/2 text-xs font-black text-emerald-900/60 transition-all pointer-events-none origin-left peer-focus:top-1.5 peer-focus:-translate-y-0 peer-focus:text-[8px] peer-focus:text-emerald-800 peer-[:not(:placeholder-shown)]:top-1.5 peer-[:not(:placeholder-shown)]:-translate-y-0 peer-[:not(:placeholder-shown)]:text-[8px] peer-[:not(:placeholder-shown)]:text-emerald-800">
+                    class="absolute left-3.5 top-1/2 -translate-y-1/2 text-xs font-black text-emerald-950/60 transition-all pointer-events-none origin-left peer-focus:top-0.5 peer-focus:-translate-y-0 peer-focus:text-[8px] peer-focus:text-emerald-900 peer-[:not(:placeholder-shown)]:top-0.5 peer-[:not(:placeholder-shown)]:-translate-y-0 peer-[:not(:placeholder-shown)]:text-[8px] peer-[:not(:placeholder-shown)]:text-emerald-900">
                     Nombre
                   </label>
                 </div>
 
-                <!-- Input Monto -->
-                <div class="relative w-full h-[40px] rounded-b-[2px] rounded-t-[12px] bg-[#c6f6b5] border-b-2 border-b-[#90CE59] border-t-0 border-x-0 focus-within:bg-[#b5f0a0] transition-colors overflow-hidden">
-                  <input type="number" step="0.01" min="0.01" id="exp-amount" name="qipu_amount_field" inputmode="decimal" required placeholder=" " autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" data-lpignore="true" data-form-type="other"
-                    class="peer w-full h-full bg-transparent border-0 px-3.5 pt-2.5 pb-0 text-xs font-black text-slate-900 text-left leading-tight transition-all outline-none focus:outline-none focus:ring-0 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none" />
+                <!-- Input Monto con Visualizador Animado de Dígitos (Fondo #90CE59 al 25%) -->
+                <div
+                  class="relative w-full h-[44px] rounded-b-[2px] rounded-t-[12px] bg-[#90CE59]/25 border-b-2 border-b-[#90CE59] border-t-0 border-x-0 focus-within:bg-[#90CE59]/35 transition-colors overflow-hidden">
+                  <input type="number" step="0.01" min="0.01" id="exp-amount" name="qipu_amount_field"
+                    inputmode="decimal" required placeholder=" " autocomplete="off" autocorrect="off"
+                    autocapitalize="off" spellcheck="false" data-lpignore="true" data-form-type="other"
+                    class="peer w-full h-full bg-transparent border-0 px-3.5 pt-2.5 pb-0 text-lg font-black text-slate-900 text-left leading-tight transition-all outline-none focus:outline-none focus:ring-0 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none" />
+
+                  <!-- Capa de visualización de dígitos animados para Monto -->
+                  <div id="exp-amount-animated-display"
+                    class="hidden absolute left-3.5 top-[14px] pointer-events-none text-lg font-black text-slate-900 leading-tight select-none z-10">
+                  </div>
+
                   <label for="exp-amount"
-                    class="absolute left-3.5 top-1/2 -translate-y-1/2 text-xs font-black text-emerald-900/60 transition-all pointer-events-none origin-left peer-focus:top-1.5 peer-focus:-translate-y-0 peer-focus:text-[8px] peer-focus:text-emerald-800 peer-[:not(:placeholder-shown)]:top-1.5 peer-[:not(:placeholder-shown)]:-translate-y-0 peer-[:not(:placeholder-shown)]:text-[8px] peer-[:not(:placeholder-shown)]:text-emerald-800">
+                    class="absolute left-3.5 top-1/2 -translate-y-1/2 text-xs font-black text-emerald-950/60 transition-all pointer-events-none origin-left peer-focus:top-0.5 peer-focus:-translate-y-0 peer-focus:text-[8px] peer-focus:text-emerald-900 peer-[:not(:placeholder-shown)]:top-0.5 peer-[:not(:placeholder-shown)]:-translate-y-0 peer-[:not(:placeholder-shown)]:text-[8px] peer-[:not(:placeholder-shown)]:text-emerald-900">
                     Monto
                   </label>
                 </div>
               </div>
             </div>
 
-            <!-- SECCIÓN MIEMBROS (Dentro del Bloque Principal) -->
-            <div id="section-shared-members"
-              class="w-full space-y-2 pt-1 border-t border-slate-100 m3-accordion-collapse m3-open">
+            <!-- SECCIÓN MIEMBROS (Dentro del Bloque Principal, Sin línea separadora) -->
+            <div id="section-shared-members" class="w-full space-y-2 pt-0.5 m3-accordion-collapse">
               <div>
                 <div class="flex items-center justify-between pt-0.5">
                   <h4 class="font-black text-sm text-slate-900">Miembros</h4>
 
                   <!-- Dropdown de Modo de División -->
                   <button type="button" onclick="openSplitBreakdownModal()"
-                    class="flex items-center gap-1.5 bg-[#c6f6b5] hover:opacity-90 px-3 py-1 rounded-full text-xs font-black text-emerald-950 active:scale-95 transition-all shadow-2xs">
-                    <i class="fas fa-balance-scale text-xs"></i>
+                    class="flex items-center gap-1 bg-[#ECF9E1] hover:opacity-90 px-2.5 py-1 rounded-full text-xs font-black text-emerald-950 active:scale-95 transition-all shadow-2xs border border-emerald-200/60">
+                    <span class="material-symbols-rounded text-sm">balance</span>
                     <span id="chip-split-mode-label">Equitativo</span>
-                    <i class="fas fa-caret-down text-xs"></i>
+                    <span class="material-symbols-rounded text-base">arrow_drop_down</span>
                     <input type="hidden" id="exp-split-mode-select" value="equitativo" />
                   </button>
                 </div>
@@ -645,18 +911,18 @@
 
                   <!-- Botón (+) para Añadir Invitado -->
                   <button type="button" id="btn-toggle-add-guest"
-                    class="w-11 h-11 rounded-xl border-2 border-dashed border-emerald-600/70 hover:border-emerald-700 hover:bg-emerald-50 text-slate-800 flex items-center justify-center text-lg font-black transition-all shrink-0 active:scale-95">
-                    +
+                    class="w-11 h-11 rounded-xl border-2 border-dashed border-emerald-600/70 hover:border-emerald-700 hover:bg-[#ECF9E1] text-slate-800 flex items-center justify-center transition-all shrink-0 active:scale-95">
+                    <span class="material-symbols-rounded text-2xl font-bold">add</span>
                   </button>
                 </div>
 
                 <!-- Mini Input Añadir Invitado -->
                 <div id="box-add-guest" class="hidden flex gap-2 pt-1">
-                  <input type="text" id="input-guest-name" placeholder="Nombre del invitado..."
-                    class="flex-1 bg-slate-50 border border-slate-200 rounded-xl px-3 py-1.5 text-xs font-bold text-slate-800 focus:outline-none focus:border-emerald-500" />
-                  <button type="button" id="btn-confirm-add-guest"
-                    class="px-3 py-1.5 bg-slate-900 text-white rounded-xl text-xs font-black active:scale-95">
-                    Agregar
+                  <input type="text" id="input-new-guest-name" placeholder="Nombre de invitado..."
+                    class="flex-1 px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs font-bold text-slate-800 outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500" />
+                  <button type="button" id="btn-save-new-guest"
+                    class="px-3 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-black shadow-xs active:scale-95 transition-all">
+                    Añadir
                   </button>
                 </div>
               </div>
@@ -665,20 +931,23 @@
             <!-- BOTONERA MATERIAL DESIGN 3 OFICIAL (https://m3.material.io/components/segmented-buttons/overview) -->
             <div class="w-full max-w-[260px] mx-auto pt-1">
               <div
-                class="w-full h-[24px] rounded-full border border-slate-300 overflow-hidden flex divide-x divide-slate-300 bg-white">
+                class="w-full h-[24px] rounded-full border border-slate-300 overflow-hidden flex divide-x divide-slate-300 bg-white shadow-2xs">
                 <!-- Segmento 1: Fijo -->
                 <button type="button" id="btn-toggle-fixed" onclick="toggleFixedExpenseSection()"
-                  class="flex-1 h-full px-3 flex items-center justify-center gap-2 text-xs font-bold text-slate-700 hover:bg-slate-50 transition-all select-none active:scale-[0.98]">
-                  <i id="icon-fixed-check" class="fas fa-check text-xs text-emerald-900 hidden"></i>
-                  <i id="icon-fixed-symbol" class="fas fa-sync-alt text-xs opacity-75"></i>
+                  class="flex-1 h-full px-3 flex items-center justify-center gap-1.5 text-xs font-bold text-slate-800 hover:bg-slate-50 transition-all select-none active:scale-[0.98]">
+                  <span id="icon-fixed-check"
+                    class="material-symbols-rounded text-sm text-[#273019] hidden">check</span>
+                  <span id="icon-fixed-symbol"
+                    class="material-symbols-rounded text-sm text-slate-600 opacity-75">sync</span>
                   <span>Fijo</span>
                 </button>
 
                 <!-- Segmento 2: Lista -->
                 <button type="button" id="btn-toggle-list" onclick="toggleListExpenseSection()"
-                  class="flex-1 h-full px-3 flex items-center justify-center gap-2 text-xs font-bold text-slate-700 hover:bg-slate-50 transition-all select-none active:scale-[0.98]">
-                  <i id="icon-list-check" class="fas fa-check text-xs text-emerald-900 hidden"></i>
-                  <i id="icon-list-symbol" class="fas fa-list-ul text-xs opacity-75"></i>
+                  class="flex-1 h-full px-3 flex items-center justify-center gap-1.5 text-xs font-bold text-slate-800 hover:bg-slate-50 transition-all select-none active:scale-[0.98]">
+                  <span id="icon-list-check" class="material-symbols-rounded text-sm text-[#273019] hidden">check</span>
+                  <span id="icon-list-symbol"
+                    class="material-symbols-rounded text-sm text-slate-600 opacity-75">format_list_bulleted</span>
                   <span>Lista</span>
                 </button>
               </div>
@@ -691,9 +960,9 @@
                   <!-- Selector Frecuencia -->
                   <div>
                     <button type="button" onclick="openOptionPicker('fixed-frequency')"
-                      class="w-full h-[40px] bg-[#c6f6b5] hover:opacity-90 active:scale-98 text-emerald-950 rounded-2xl px-3.5 font-black text-xs flex items-center justify-between shadow-2xs transition-all">
+                      class="w-full h-[40px] bg-white border border-slate-200/80 hover:bg-slate-50 active:scale-98 text-slate-900 rounded-2xl px-3.5 font-black text-xs flex items-center justify-between shadow-2xs transition-all">
                       <span id="chip-frequency-label" class="truncate">Frecuencia</span>
-                      <i class="fas fa-caret-down text-xs text-emerald-900 shrink-0"></i>
+                      <span class="material-symbols-rounded text-lg text-slate-700 shrink-0">arrow_drop_down</span>
                     </button>
                     <input type="hidden" id="exp-fixed-frequency" value="monthly" />
                   </div>
@@ -701,14 +970,14 @@
                   <!-- Selector Repetir / Cuotas -->
                   <div>
                     <button type="button" onclick="openOptionPicker('fixed-repeat')"
-                      class="w-full h-[40px] bg-[#c6f6b5] hover:opacity-90 active:scale-98 text-emerald-950 rounded-2xl px-3.5 font-black text-xs flex items-center justify-between shadow-2xs transition-all">
+                      class="w-full h-[40px] bg-white border border-slate-200/80 hover:bg-slate-50 active:scale-98 text-slate-900 rounded-2xl px-3.5 font-black text-xs flex items-center justify-between shadow-2xs transition-all">
                       <span id="chip-repeat-label" class="truncate">Fecha</span>
-                      <i class="fas fa-caret-down text-xs text-emerald-900 shrink-0"></i>
+                      <span class="material-symbols-rounded text-lg text-slate-700 shrink-0">arrow_drop_down</span>
                     </button>
                     <input type="hidden" id="exp-fixed-repeat" value="indefinite" />
                   </div>
                 </div>
-                <p class="text-[10px] text-slate-600 font-medium px-0.5 pt-0.5 text-center">
+                <p class="text-[10px] text-slate-500 font-medium px-0.5 pt-0.5 text-center">
                   Los gastos fijos sin cuotas se registran como: <span
                     class="font-bold text-emerald-900">Indefinidos</span>
                 </p>
@@ -723,18 +992,20 @@
             </select>
           </div>
 
-          <!-- BLOQUE LISTA DE PRODUCTOS (SALE DESDE ATRÁS DEL BLOQUE PRINCIPAL, COLOR #ECF9E1) -->
+          <!-- BLOQUE LISTA DE PRODUCTOS (FONDO VERDE #BCEAA8, ANCHO 405px, CABECERA #ECF9E1) -->
           <div id="section-list-items"
-            class="w-full bg-[#ECF9E1] rounded-b-[28px] overflow-hidden m3-slide-sheet-block m3-block-closed relative z-0">
+            class="w-[405px] max-w-full mx-auto bg-[#BCEAA8] rounded-b-[28px] overflow-hidden m3-slide-sheet-block m3-block-closed relative z-0">
             <div class="pt-8 flex flex-col">
 
-              <!-- Contenedor con Scroll: Cabecera + Filas Dinámicas (Ajuste justo, crece hasta max-h-[36vh]) -->
-              <div id="mobile-items-scroll-wrapper" class="max-h-[36vh] overflow-y-auto overscroll-contain scrollbar-none px-3.5 pt-1 pb-2 space-y-2.5">
-                <!-- Cabecera de la Tabla (Se desplaza junto con la lista) -->
-                <div class="grid grid-cols-[1fr_48px_72px] gap-2 text-xs font-black text-slate-900">
-                  <div class="bg-white rounded-lg py-2 px-4 text-left shadow-2xs">Producto</div>
-                  <div class="bg-white rounded-lg py-2 text-center shadow-2xs">Cant.</div>
-                  <div class="bg-white rounded-lg py-2 text-center shadow-2xs">Total</div>
+              <!-- Contenedor con Scroll: Cabecera + Filas Dinámicas -->
+              <div id="mobile-items-scroll-wrapper"
+                class="max-h-[36vh] overflow-y-auto overscroll-contain scrollbar-none px-3.5 pt-1 pb-2 space-y-2">
+                <!-- Cabecera de la Tabla (Color #ECF9E1: Producto | Cant. | P. Und, Altura 36px, Bordes 8px) -->
+                <div
+                  class="grid grid-cols-[1fr_56px_90px] items-center h-[36px] text-xs font-black text-slate-950 bg-[#ECF9E1] rounded-[8px] px-3.5 shadow-2xs">
+                  <div class="text-left font-black">Producto</div>
+                  <div class="text-center font-black">Cant.</div>
+                  <div class="text-right font-black pr-1">P. Und</div>
                 </div>
 
                 <!-- Filas de Productos Dinámicas -->
@@ -747,7 +1018,7 @@
               <button type="button" id="btn-add-item-row" onclick="addMobileItemRow()"
                 class="w-full bg-[#a4e775] hover:bg-[#97e163] active:brightness-95 transition-all px-4 py-3.5 flex items-center justify-between cursor-pointer rounded-b-[28px] select-none text-left shrink-0">
                 <div class="text-xs font-black text-slate-950 flex items-center gap-2">
-                  <i class="fas fa-plus text-sm"></i>
+                  <span class="material-symbols-rounded text-base">add</span>
                   <span>Agregar producto</span>
                 </div>
                 <div class="flex items-center gap-2 opacity-80 pointer-events-none">
@@ -759,8 +1030,8 @@
           </div>
         </div>
 
-        <!-- BOTÓN GUARDAR EN EL FONDO (Fijo en la parte inferior, shrink-0) -->
-        <div class="pt-2.5 pb-1 shrink-0 w-full">
+        <!-- BOTÓN GUARDAR EN EL FONDO (Fijo en la parte inferior, shrink-0, Margen px-4) -->
+        <div class="pt-2.5 pb-1 shrink-0 w-full px-4">
           <button type="submit" id="btn-submit-expense"
             class="w-full py-4 bg-[#86d952] hover:bg-[#7bc94b] active:scale-98 text-slate-950 font-black text-sm rounded-full shadow-md transition-all flex items-center justify-center gap-2 cursor-pointer">
             <span id="label-submit-expense">Guardar</span>
@@ -772,14 +1043,14 @@
 
   <!-- 2. Modal Ingreso Rápido (True Native M3 Bottom Sheet) -->
   <div id="modal-income"
-    class="fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-sm hidden items-end justify-center p-0 m3-bottom-sheet-backdrop">
+    class="fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-sm hidden items-end justify-center px-2 pb-2 m3-bottom-sheet-backdrop">
     <div
-      class="w-full max-w-lg bg-white rounded-t-[32px] max-h-[92vh] flex flex-col shadow-2xl overflow-hidden m3-bottom-sheet-surface">
+      class="w-full max-w-lg bg-white rounded-[28px] max-h-[92vh] flex flex-col shadow-2xl overflow-hidden m3-bottom-sheet-surface">
 
       <!-- Drag Handle Indicator -->
       <div class="w-12 h-1.5 bg-slate-300 rounded-full mx-auto mt-3 mb-1 shrink-0"></div>
 
-      <div class="px-5 py-3 border-b border-slate-100 flex items-center justify-between shrink-0">
+      <div class="px-4 py-3 border-b border-slate-100 flex items-center justify-between shrink-0">
         <div class="flex items-center gap-2.5">
           <div
             class="w-9 h-9 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center text-base font-bold shadow-xs">
@@ -797,7 +1068,7 @@
         </button>
       </div>
 
-      <form id="form-mobile-income" class="p-5 overflow-y-auto space-y-4 flex-1">
+      <form id="form-mobile-income" class="p-4 overflow-y-auto space-y-3.5 flex-1">
         <div>
           <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1">Monto del
             Ingreso</label>
@@ -848,15 +1119,15 @@
 
   <!-- 3. Modal Detalle de Movimiento / Lista de Ítems (Diseño Minimalista M3) -->
   <div id="modal-transaction-detail"
-    class="fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-sm hidden items-end justify-center p-0 m3-bottom-sheet-backdrop">
+    class="fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-sm hidden items-end justify-center px-2 pb-2 m3-bottom-sheet-backdrop">
     <div
-      class="w-full max-w-lg bg-white rounded-t-[32px] max-h-[92vh] flex flex-col shadow-2xl overflow-hidden m3-bottom-sheet-surface">
+      class="w-full max-w-lg bg-white rounded-[28px] max-h-[92vh] flex flex-col shadow-2xl overflow-hidden m3-bottom-sheet-surface">
 
       <!-- Drag Handle Indicator -->
       <div class="w-12 h-1.5 bg-slate-300 rounded-full mx-auto mt-3 mb-1 shrink-0"></div>
 
       <!-- Header con Nombre del Gasto / Lista, Botón Lápiz Editar y Cerrar -->
-      <div class="px-5 py-3 border-b border-slate-100 flex items-center justify-between shrink-0">
+      <div class="px-4 py-3 border-b border-slate-100 flex items-center justify-between shrink-0">
         <div class="flex items-center gap-2.5 min-w-0 flex-1">
           <div
             class="w-9 h-9 rounded-2xl bg-[#dcfce7] text-emerald-900 flex items-center justify-center text-base font-black shadow-xs shrink-0">
@@ -884,7 +1155,7 @@
       </div>
 
       <!-- Contenido Read-Only del Detalle -->
-      <div class="p-5 overflow-y-auto space-y-4 flex-1 custom-scrollbar">
+      <div class="p-4 overflow-y-auto space-y-3.5 flex-1 custom-scrollbar">
 
         <!-- Tarjeta Resumen del Gasto (Sin nombre repetido) -->
         <div
@@ -947,14 +1218,14 @@
 
   <!-- 4. Drawer / Modal de Ajustes (True Native M3 Bottom Sheet) -->
   <div id="modal-settings"
-    class="fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-sm hidden items-end justify-center p-0 m3-bottom-sheet-backdrop">
+    class="fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-sm hidden items-end justify-center px-2 pb-2 m3-bottom-sheet-backdrop">
     <div
-      class="w-full max-w-lg bg-white rounded-t-[32px] max-h-[92vh] flex flex-col shadow-2xl overflow-hidden m3-bottom-sheet-surface">
+      class="w-full max-w-lg bg-white rounded-[28px] max-h-[92vh] flex flex-col shadow-2xl overflow-hidden m3-bottom-sheet-surface">
 
       <!-- Drag Handle Indicator -->
       <div class="w-12 h-1.5 bg-slate-300 rounded-full mx-auto mt-3 mb-1 shrink-0"></div>
 
-      <div class="px-5 py-3 border-b border-slate-100 flex items-center justify-between shrink-0">
+      <div class="px-4 py-3 border-b border-slate-100 flex items-center justify-between shrink-0">
         <h3 class="font-extrabold text-sm text-slate-900">Ajustes & Opciones</h3>
         <button id="close-modal-settings" onclick="closeModal('modal-settings');" type="button"
           class="w-8 h-8 rounded-full bg-slate-100 text-slate-400 hover:text-slate-600 flex items-center justify-center text-xs active:scale-90 transition-transform cursor-pointer">
@@ -962,7 +1233,7 @@
         </button>
       </div>
 
-      <div class="p-5 space-y-3 overflow-y-auto">
+      <div class="p-4 space-y-2.5 overflow-y-auto">
         <a href="app.html"
           class="flex items-center justify-between p-3.5 bg-indigo-50/50 hover:bg-indigo-50 border border-indigo-100 rounded-2xl text-indigo-900 transition-colors">
           <div class="flex items-center gap-3">
@@ -1023,14 +1294,14 @@
 
   <!-- 5. Modal de Saldos Individuales por Usuario (M3 Bottom Sheet) -->
   <div id="modal-participants-balances"
-    class="fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-sm hidden items-end justify-center p-0 m3-bottom-sheet-backdrop">
+    class="fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-sm hidden items-end justify-center px-2 pb-2 m3-bottom-sheet-backdrop">
     <div
-      class="w-full max-w-lg bg-white rounded-t-[32px] max-h-[92vh] flex flex-col shadow-2xl overflow-hidden m3-bottom-sheet-surface">
+      class="w-full max-w-lg bg-white rounded-[28px] max-h-[92vh] flex flex-col shadow-2xl overflow-hidden m3-bottom-sheet-surface">
 
       <!-- Drag Handle Indicator -->
       <div class="w-12 h-1.5 bg-slate-300 rounded-full mx-auto mt-3 mb-1 shrink-0"></div>
 
-      <div class="px-5 py-3.5 border-b border-slate-100 flex items-center justify-between shrink-0">
+      <div class="px-4 py-3.5 border-b border-slate-100 flex items-center justify-between shrink-0">
         <div class="flex items-center gap-2.5">
           <div
             class="w-9 h-9 rounded-2xl bg-indigo-50 text-indigo-600 flex items-center justify-center text-base font-bold shadow-xs">
@@ -1048,7 +1319,7 @@
       </div>
 
       <!-- Barra de Acción Rápida: Liquidación & Deudas -->
-      <div class="px-5 pt-3 shrink-0">
+      <div class="px-4 pt-2.5 shrink-0">
         <button type="button" id="btn-open-settlement-modal"
           onclick="closeModal('modal-participants-balances'); setTimeout(() => openModal('modal-settlement'), 270);"
           class="w-full py-2.5 px-4 bg-gradient-to-r from-rose-500 to-pink-600 hover:from-rose-600 hover:to-pink-700 active:scale-98 text-white font-extrabold text-xs rounded-2xl shadow-md shadow-rose-500/20 flex items-center justify-between transition-all">
@@ -1063,7 +1334,7 @@
         </button>
       </div>
 
-      <div id="mobile-participants-modal-list" class="p-5 pt-3 overflow-y-auto space-y-2.5 flex-1 custom-scrollbar">
+      <div id="mobile-participants-modal-list" class="p-4 pt-2.5 overflow-y-auto space-y-2.5 flex-1 custom-scrollbar">
         <!-- Tarjetas simplificadas inyectadas dinámicamente por JS -->
       </div>
     </div>
@@ -1071,14 +1342,14 @@
 
   <!-- 6. Modal de Liquidación / Deudas entre Miembros (M3 Bottom Sheet) -->
   <div id="modal-settlement"
-    class="fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-sm hidden items-end justify-center p-0 m3-bottom-sheet-backdrop">
+    class="fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-sm hidden items-end justify-center px-2 pb-2 m3-bottom-sheet-backdrop">
     <div
-      class="w-full max-w-lg bg-white rounded-t-[32px] max-h-[92vh] flex flex-col shadow-2xl overflow-hidden m3-bottom-sheet-surface">
+      class="w-full max-w-lg bg-white rounded-[28px] max-h-[92vh] flex flex-col shadow-2xl overflow-hidden m3-bottom-sheet-surface">
 
       <!-- Drag Handle Indicator -->
       <div class="w-12 h-1.5 bg-slate-300 rounded-full mx-auto mt-3 mb-1 shrink-0"></div>
 
-      <div class="px-5 py-3.5 border-b border-slate-100 flex items-center justify-between shrink-0">
+      <div class="px-4 py-3.5 border-b border-slate-100 flex items-center justify-between shrink-0">
         <div class="flex items-center gap-2.5">
           <div
             class="w-9 h-9 rounded-2xl bg-rose-50 text-rose-600 flex items-center justify-center text-base font-bold shadow-xs">
@@ -1095,7 +1366,7 @@
         </button>
       </div>
 
-      <div class="p-5 overflow-y-auto space-y-4 flex-1 custom-scrollbar">
+      <div class="p-4 overflow-y-auto space-y-3.5 flex-1 custom-scrollbar">
         <!-- Sección 1: Transferencias Sugeridas (Quién paga a Quién) -->
         <div class="space-y-2">
           <div class="flex items-center justify-between px-1">
@@ -1136,15 +1407,15 @@
 
   <!-- 6A. Modal Resumen de Tarjetas y Métodos de Pago (M3 Bottom Sheet Vista Dedicada) -->
   <div id="modal-payment-methods-summary"
-    class="fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-sm hidden items-end justify-center p-0 m3-bottom-sheet-backdrop">
+    class="fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-sm hidden items-end justify-center px-2 pb-2 m3-bottom-sheet-backdrop">
     <div
-      class="w-full max-w-lg bg-[#F8FAFC] rounded-t-[32px] max-h-[94vh] flex flex-col shadow-2xl overflow-hidden m3-bottom-sheet-surface">
+      class="w-full max-w-lg bg-[#F8FAFC] rounded-[28px] max-h-[94vh] flex flex-col shadow-2xl overflow-hidden m3-bottom-sheet-surface">
 
       <!-- Drag Handle Indicator -->
       <div class="w-12 h-1.5 bg-slate-300 rounded-full mx-auto mt-3 mb-1 shrink-0"></div>
 
       <!-- Header del Bottom Sheet -->
-      <div class="px-5 py-3.5 border-b border-slate-200/80 bg-white flex items-center justify-between shrink-0">
+      <div class="px-4 py-3.5 border-b border-slate-200/80 bg-white flex items-center justify-between shrink-0">
         <div class="flex items-center gap-2.5 min-w-0">
           <div
             class="w-9 h-9 rounded-2xl bg-indigo-50 text-indigo-600 flex items-center justify-center text-base font-bold shadow-xs shrink-0">
@@ -1157,7 +1428,8 @@
         </div>
         <div class="flex items-center gap-2">
           <span id="modal-pm-summary-count-badge"
-            class="text-[10px] font-black px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-700 border border-slate-200">5 métodos</span>
+            class="text-[10px] font-black px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-700 border border-slate-200">5
+            métodos</span>
           <button onclick="closeModal('modal-payment-methods-summary');" type="button"
             class="w-8 h-8 rounded-full bg-slate-100 text-slate-400 hover:text-slate-600 flex items-center justify-center text-xs active:scale-90 transition-transform cursor-pointer shrink-0">
             <i class="fas fa-times"></i>
@@ -1167,13 +1439,16 @@
 
       <div class="p-4 space-y-3.5 overflow-y-auto flex-1 custom-scrollbar">
         <!-- Banner Global -->
-        <div class="p-4 rounded-3xl bg-gradient-to-br from-slate-900 via-indigo-950 to-slate-900 text-white shadow-xl border border-slate-800 relative overflow-hidden">
+        <div
+          class="p-4 rounded-3xl bg-gradient-to-br from-slate-900 via-indigo-950 to-slate-900 text-white shadow-xl border border-slate-800 relative overflow-hidden">
           <div class="flex items-center justify-between mb-1">
             <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Total Consolidado Métodos</span>
             <span id="modal-pm-summary-credit-debt"
-              class="text-[10px] font-black px-2 py-0.5 rounded-full bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">Deuda tarjetas: S/ 0.00</span>
+              class="text-[10px] font-black px-2 py-0.5 rounded-full bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">Deuda
+              tarjetas: S/ 0.00</span>
           </div>
-          <span id="modal-pm-summary-total-global" class="text-3xl font-black tracking-tight text-white block">S/ 0.00</span>
+          <span id="modal-pm-summary-total-global" class="text-3xl font-black tracking-tight text-white block">S/
+            0.00</span>
         </div>
 
         <!-- Cuadrícula 2 Columnas de Tarjetas y Métodos -->
@@ -1186,15 +1461,15 @@
 
   <!-- 6B. Modal de Detalle de Tarjeta de Crédito (M3 Bottom Sheet) -->
   <div id="modal-card-detail"
-    class="fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-sm hidden items-end justify-center p-0 m3-bottom-sheet-backdrop">
+    class="fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-sm hidden items-end justify-center px-2 pb-2 m3-bottom-sheet-backdrop">
     <div
-      class="w-full max-w-lg bg-white rounded-t-[32px] max-h-[92vh] flex flex-col shadow-2xl overflow-hidden m3-bottom-sheet-surface">
+      class="w-full max-w-lg bg-white rounded-[28px] max-h-[92vh] flex flex-col shadow-2xl overflow-hidden m3-bottom-sheet-surface">
 
       <!-- Drag Handle Indicator -->
       <div class="w-12 h-1.5 bg-slate-300 rounded-full mx-auto mt-3 mb-1 shrink-0"></div>
 
       <!-- Header del Bottom Sheet -->
-      <div class="px-5 py-3.5 border-b border-slate-100 flex items-center justify-between shrink-0">
+      <div class="px-4 py-3.5 border-b border-slate-100 flex items-center justify-between shrink-0">
         <div class="flex items-center gap-2.5 min-w-0">
           <div
             class="w-9 h-9 rounded-2xl bg-indigo-50 text-indigo-600 flex items-center justify-center text-base font-bold shadow-xs shrink-0">
@@ -1211,12 +1486,54 @@
         </button>
       </div>
 
-      <div class="p-5 space-y-4 overflow-y-auto flex-1 custom-scrollbar">
+      <div class="p-4 space-y-3.5 overflow-y-auto flex-1 custom-scrollbar">
+        <!-- Banner de Estado de Cuenta Histórico (Activo solo si no es el actual) -->
+        <div id="modal-card-detail-history-banner"
+          class="hidden p-3 rounded-2xl bg-gradient-to-r from-amber-500/10 to-orange-500/10 border border-amber-300/60 text-amber-950 flex items-center justify-between gap-2 shadow-2xs">
+          <div class="flex items-center gap-2 min-w-0">
+            <div class="w-7 h-7 rounded-xl bg-amber-500 text-white flex items-center justify-center text-xs shrink-0">
+              <i class="fas fa-history"></i>
+            </div>
+            <div class="min-w-0">
+              <span class="text-xs font-black block text-amber-950">Estado de Cuenta Anterior</span>
+              <span id="modal-card-detail-history-banner-label"
+                class="text-[10px] text-amber-800/80 font-medium block truncate">Período</span>
+            </div>
+          </div>
+          <button type="button" onclick="restoreCurrentCardCycle()"
+            class="px-3 py-1.5 bg-amber-500 hover:bg-amber-600 active:scale-95 text-white rounded-xl text-[10px] font-black shrink-0 shadow-2xs transition-all flex items-center gap-1">
+            <i class="fas fa-rotate-left text-[9px]"></i>
+            <span>Volver a Actual</span>
+          </button>
+        </div>
+
+        <!-- Botón para Ver Estados de Cuenta Anteriores -->
+        <button type="button" id="btn-open-card-statements" onclick="openCardStatementsHistoryModal()"
+          class="w-full py-3 px-4 rounded-2xl bg-indigo-50 hover:bg-indigo-100 active:scale-98 text-indigo-700 font-extrabold text-xs transition-all flex items-center justify-between border border-indigo-100 shadow-2xs group">
+          <div class="flex items-center gap-2.5">
+            <div
+              class="w-7 h-7 rounded-xl bg-indigo-600 text-white flex items-center justify-center text-xs shadow-2xs">
+              <i class="fas fa-file-invoice-dollar"></i>
+            </div>
+            <div class="text-left">
+              <span class="text-xs font-black text-indigo-950 block">Ver estados de cuenta anteriores</span>
+              <span class="text-[10px] text-indigo-600/80 font-medium block">Historial de ciclos y consumos
+                pasados</span>
+            </div>
+          </div>
+          <div
+            class="w-7 h-7 rounded-full bg-white text-indigo-600 flex items-center justify-center text-xs shadow-2xs group-hover:translate-x-0.5 transition-transform">
+            <i class="fas fa-chevron-right text-[10px]"></i>
+          </div>
+        </button>
+
         <!-- Banner Resumen de Consumo -->
-        <div class="p-4 rounded-2xl bg-gradient-to-br from-slate-900 via-indigo-950 to-slate-900 text-white shadow-md relative overflow-hidden">
+        <div
+          class="p-4 rounded-2xl bg-gradient-to-br from-slate-900 via-indigo-950 to-slate-900 text-white shadow-md relative overflow-hidden">
           <div class="flex items-center justify-between mb-1">
             <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Total Consumo en Ciclo</span>
-            <span id="modal-card-detail-owner" class="text-[10px] font-black px-2 py-0.5 rounded-full bg-white/10 text-indigo-300 border border-white/10">Titular</span>
+            <span id="modal-card-detail-owner"
+              class="text-[10px] font-black px-2 py-0.5 rounded-full bg-white/10 text-indigo-300 border border-white/10">Titular</span>
           </div>
           <span id="modal-card-detail-total" class="text-3xl font-black tracking-tight text-white block">S/ 0.00</span>
         </div>
@@ -1224,7 +1541,8 @@
         <!-- Desglose de Deuda por Miembro -->
         <div class="space-y-2">
           <div class="flex items-center justify-between px-1">
-            <span class="text-xs font-black uppercase tracking-wider text-slate-900">Deuda por Persona en este Ciclo</span>
+            <span class="text-xs font-black uppercase tracking-wider text-slate-900">Deuda por Persona en este
+              Ciclo</span>
           </div>
           <div id="modal-card-detail-debt-breakdown" class="space-y-1.5">
             <!-- Inyectado por JS -->
@@ -1244,17 +1562,55 @@
     </div>
   </div>
 
+  <!-- 6C. Modal Historial de Estados de Cuenta de Tarjeta (M3 Bottom Sheet) -->
+  <div id="modal-card-statements-history"
+    class="fixed inset-0 z-[60] bg-slate-950/70 backdrop-blur-sm hidden items-end justify-center px-2 pb-2 m3-bottom-sheet-backdrop">
+    <div
+      class="w-full max-w-lg bg-[#F8FAFC] rounded-[28px] max-h-[88vh] flex flex-col shadow-2xl overflow-hidden m3-bottom-sheet-surface">
+
+      <!-- Drag Handle Indicator -->
+      <div class="w-12 h-1.5 bg-slate-300 rounded-full mx-auto mt-3 mb-1 shrink-0"></div>
+
+      <!-- Header del Bottom Sheet -->
+      <div class="px-4 py-3.5 border-b border-slate-200/80 bg-white flex items-center justify-between shrink-0">
+        <div class="flex items-center gap-2.5 min-w-0">
+          <div
+            class="w-9 h-9 rounded-2xl bg-indigo-50 text-indigo-600 flex items-center justify-center text-base font-bold shadow-xs shrink-0">
+            <i class="fas fa-file-invoice-dollar"></i>
+          </div>
+          <div class="min-w-0">
+            <h3 id="modal-statements-history-title" class="font-extrabold text-sm text-slate-900 truncate">Estados de
+              Cuenta</h3>
+            <p id="modal-statements-history-subtitle" class="text-[10px] text-slate-400 font-medium truncate">Historial
+              de ciclos y facturación</p>
+          </div>
+        </div>
+        <button onclick="closeModal('modal-card-statements-history');" type="button"
+          class="w-8 h-8 rounded-full bg-slate-100 text-slate-400 hover:text-slate-600 flex items-center justify-center text-xs active:scale-90 transition-transform cursor-pointer shrink-0">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+
+      <!-- Lista de Estados de Cuenta / Ciclos -->
+      <div class="p-4 space-y-2.5 overflow-y-auto flex-1 custom-scrollbar">
+        <div id="modal-statements-history-list" class="space-y-2 pb-4">
+          <!-- Inyectado dinámicamente por JS -->
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- 7. Modal Asignación y Desglose de Ítem (True Native M3 Bottom Sheet - Diseño Pantalla 4) -->
   <div id="modal-item-assignment"
-    class="fixed inset-0 z-[80] bg-slate-950/70 backdrop-blur-sm hidden items-end justify-center p-0 m3-bottom-sheet-backdrop">
+    class="fixed inset-0 z-[80] bg-slate-950/70 backdrop-blur-sm hidden items-end justify-center px-2 pb-2 m3-bottom-sheet-backdrop">
     <div
-      class="w-full max-w-lg bg-white rounded-t-[32px] max-h-[92vh] flex flex-col shadow-2xl overflow-hidden m3-bottom-sheet-surface">
+      class="w-full max-w-lg bg-white rounded-[28px] max-h-[92vh] flex flex-col shadow-2xl overflow-hidden m3-bottom-sheet-surface">
 
       <!-- Drag Handle Indicator -->
       <div class="w-12 h-1.5 bg-slate-300 rounded-full mx-auto mt-3 mb-1 shrink-0"></div>
 
       <!-- Header del Bottom Sheet (Nombre | Cantidad | Monto | X) -->
-      <div class="px-5 py-3 border-b border-slate-100 flex items-center justify-between shrink-0">
+      <div class="px-4 py-3 border-b border-slate-100 flex items-center justify-between shrink-0">
         <div class="flex items-center gap-2 min-w-0 flex-1">
           <h3 id="assign-modal-item-title" class="font-black text-base text-slate-900 truncate">Producto</h3>
           <span id="assign-modal-total-qty-badge"
@@ -1269,7 +1625,7 @@
       </div>
 
       <!-- Contenido Scrollable -->
-      <div class="p-5 pt-3 overflow-y-auto space-y-4 flex-1 custom-scrollbar">
+      <div class="p-4 pt-2.5 overflow-y-auto space-y-3.5 flex-1 custom-scrollbar">
 
         <!-- Selector Rápido de Avatares con Checkmark (Horizontal) -->
         <div class="space-y-1.5">
@@ -1320,8 +1676,8 @@
 
   <!-- Modal Confirmación Eliminar Ítem -->
   <div id="modal-confirm-delete-item"
-    class="fixed inset-0 z-[85] bg-slate-950/70 backdrop-blur-sm hidden items-center justify-center p-4 m3-bottom-sheet-backdrop">
-    <div class="w-full max-w-xs bg-white rounded-3xl p-5 text-center space-y-4 shadow-2xl m3-dialog-card">
+    class="fixed inset-0 z-[85] bg-slate-950/70 backdrop-blur-sm hidden items-center justify-center p-2 m3-bottom-sheet-backdrop">
+    <div class="w-full max-w-xs bg-white rounded-3xl p-4 text-center space-y-3.5 shadow-2xl m3-dialog-card">
       <div
         class="w-12 h-12 rounded-2xl bg-rose-100 text-rose-600 flex items-center justify-center text-xl font-black mx-auto shadow-2xs">
         <i class="fas fa-trash-alt"></i>
@@ -1346,15 +1702,15 @@
 
   <!-- 8. Modal Repartición y Desglose Completo (Equitativo, Porcentaje, Detallado - M3 Bottom Sheet) -->
   <div id="modal-split-breakdown"
-    class="fixed inset-0 z-[65] bg-slate-950/70 backdrop-blur-sm hidden items-end justify-center p-0 m3-bottom-sheet-backdrop">
+    class="fixed inset-0 z-[65] bg-slate-950/70 backdrop-blur-sm hidden items-end justify-center px-2 pb-2 m3-bottom-sheet-backdrop">
     <div
-      class="w-full max-w-lg bg-white rounded-t-[32px] max-h-[92vh] flex flex-col shadow-2xl overflow-hidden m3-bottom-sheet-surface">
+      class="w-full max-w-lg bg-white rounded-[28px] max-h-[92vh] flex flex-col shadow-2xl overflow-hidden m3-bottom-sheet-surface">
 
       <!-- Drag Handle Indicator -->
       <div class="w-12 h-1.5 bg-slate-300 rounded-full mx-auto mt-3 mb-1 shrink-0"></div>
 
       <!-- Header: Concepto | Monto Total | Cerrar -->
-      <div class="px-5 py-3 border-b border-slate-100 flex items-center justify-between shrink-0">
+      <div class="px-4 py-3 border-b border-slate-100 flex items-center justify-between shrink-0">
         <div class="min-w-0 flex-1">
           <h3 id="split-modal-title" class="font-black text-base text-slate-900 truncate">Concepto</h3>
         </div>
@@ -1369,7 +1725,7 @@
       </div>
 
       <!-- Píldoras de Selección de Modo (Segmented Tabs): [ Equitativo ] [ Porcentaje ] [ Detallado ] -->
-      <div class="px-5 pt-3 shrink-0">
+      <div class="px-4 pt-2.5 shrink-0">
         <div class="w-full max-w-[340px] mx-auto bg-slate-100 p-1 rounded-full flex gap-1 items-center">
           <button type="button" id="tab-split-equitativo" onclick="switchSplitModalTab('equitativo')"
             class="flex-1 py-1.5 rounded-full text-xs font-bold text-slate-600 hover:text-slate-900 transition-all text-center">
@@ -1387,7 +1743,7 @@
       </div>
 
       <!-- Contenido Dinámico de la Repartición -->
-      <div class="p-5 pt-3 overflow-y-auto space-y-3 flex-1 custom-scrollbar">
+      <div class="p-4 pt-2.5 overflow-y-auto space-y-2.5 flex-1 custom-scrollbar">
         <!-- Cabecera de Columnas Dinámica -->
         <div id="split-modal-table-header"
           class="grid grid-cols-12 gap-2 px-2 text-[11px] font-black text-slate-800 uppercase tracking-wider border-b border-slate-100 pb-1.5">
@@ -1421,26 +1777,98 @@
     </div>
   </div>
 
-  <!-- 9. Modal Selector de Opciones Genérico (True Native M3 Bottom Sheet) -->
-  <div id="modal-option-picker"
-    class="fixed inset-0 z-[70] bg-slate-950/70 backdrop-blur-sm hidden items-end justify-center p-0 m3-bottom-sheet-backdrop">
+  <!-- 9. Modal Selector de Fecha Calendario (True Native M3 Bottom Sheet Semana / Mes) -->
+  <div id="modal-date-picker"
+    class="fixed inset-0 z-[75] bg-slate-950/70 backdrop-blur-sm hidden items-end justify-center px-2 pb-2 m3-bottom-sheet-backdrop">
     <div
-      class="w-full max-w-lg bg-white rounded-t-[32px] max-h-[85vh] flex flex-col shadow-2xl overflow-hidden m3-bottom-sheet-surface">
+      class="w-full max-w-md bg-white rounded-[28px] max-h-[90vh] flex flex-col shadow-2xl overflow-hidden m3-bottom-sheet-surface">
 
       <!-- Drag Handle Indicator -->
       <div class="w-12 h-1.5 bg-slate-300 rounded-full mx-auto mt-3 mb-1 shrink-0"></div>
 
-      <!-- Header del Picker -->
-      <div class="px-5 py-3 border-b border-slate-100 flex items-center justify-between shrink-0">
+      <!-- Header del Calendario: Mes y Año + Navegación + Hoy + Cerrar (Diseño Clean) -->
+      <div class="px-4 pt-3 pb-1 flex items-center justify-between shrink-0">
+        <div class="flex items-center gap-1.5">
+          <button type="button" onclick="navigateCalendarMonth(-1)"
+            class="w-6 h-6 flex items-center justify-center text-slate-800 hover:text-slate-950 active:scale-90 transition-transform cursor-pointer"
+            title="Mes anterior">
+            <span class="material-symbols-rounded text-base">arrow_left</span>
+          </button>
+
+          <h3 id="cal-month-year-title"
+            class="font-black text-sm text-slate-900 capitalize tracking-tight min-w-[105px] text-center select-none">
+            Agosto 2026
+          </h3>
+
+          <button type="button" onclick="navigateCalendarMonth(1)"
+            class="w-6 h-6 flex items-center justify-center text-slate-800 hover:text-slate-950 active:scale-90 transition-transform cursor-pointer"
+            title="Mes siguiente">
+            <span class="material-symbols-rounded text-base">arrow_right</span>
+          </button>
+        </div>
+
+        <div class="flex items-center gap-2">
+          <button type="button" onclick="selectCalendarToday()"
+            class="px-3.5 h-[26px] rounded-[10px] bg-[#222818] text-white text-[11px] font-black hover:opacity-90 active:scale-95 transition-all shadow-2xs flex items-center justify-center cursor-pointer">
+            Hoy
+          </button>
+          <button onclick="closeModal('modal-date-picker')" type="button"
+            class="w-[26px] h-[26px] rounded-[10px] bg-[#9BD95D] hover:opacity-90 active:scale-95 text-[#222818] flex items-center justify-center text-xs font-black transition-transform cursor-pointer shadow-2xs">
+            <span class="material-symbols-rounded text-sm">close</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Cabecera Días de la Semana: DOM LUN MAR MIÉ JUE VIE SÁB -->
+      <div id="calendar-weekdays-header"
+        class="grid grid-cols-7 gap-1 px-4 pt-2.5 pb-1 text-center text-[11px] font-bold text-slate-400 uppercase tracking-wider shrink-0">
+        <div id="cal-wd-0">Dom</div>
+        <div id="cal-wd-1">Lun</div>
+        <div id="cal-wd-2">Mar</div>
+        <div id="cal-wd-3">Mié</div>
+        <div id="cal-wd-4">Jue</div>
+        <div id="cal-wd-5">Vie</div>
+        <div id="cal-wd-6">Sáb</div>
+      </div>
+
+      <!-- Grid de Días (Dinámico por JS: 1 fila en vista semana, 5-6 filas en vista mes) -->
+      <div id="calendar-days-container" class="px-4 pt-1 pb-1 transition-all duration-300">
+        <!-- Inyectado por JS -->
+      </div>
+
+      <!-- Botón Inferior: Alternar Vista Semana / Mes Completo (Píldora minimalista centrada) -->
+      <div class="px-4 pb-4 pt-1 bg-white flex items-center justify-center shrink-0">
+        <button type="button" id="btn-toggle-cal-expand" onclick="toggleCalendarExpandMode()"
+          class="w-12 h-6 rounded-full border border-[#BEEB9F] bg-white hover:bg-slate-50 active:scale-95 text-[#222818] text-xs font-bold transition-all flex items-center justify-center shadow-2xs cursor-pointer overflow-hidden select-none"
+          title="Expandir / Contraer mes">
+          <span id="icon-toggle-cal-expand"
+            class="material-symbols-rounded text-lg leading-none select-none pointer-events-none transition-transform duration-200">arrow_drop_up</span>
+        </button>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- 10. Modal Selector de Opciones Genérico (True Native M3 Bottom Sheet) -->
+  <div id="modal-option-picker"
+    class="fixed inset-0 z-[70] bg-slate-950/70 backdrop-blur-sm hidden items-end justify-center px-2 pb-2 m3-bottom-sheet-backdrop">
+    <div
+      class="w-full max-w-lg bg-white rounded-[28px] max-h-[85vh] flex flex-col shadow-2xl overflow-hidden m3-bottom-sheet-surface">
+
+      <!-- Drag Handle Indicator -->
+      <div class="w-12 h-1.5 bg-slate-300 rounded-full mx-auto mt-3 mb-1 shrink-0"></div>
+
+      <!-- Header del Picker (Sin línea separadora) -->
+      <div class="px-4 pt-3 pb-1 flex items-center justify-between shrink-0">
         <h3 id="option-picker-title" class="font-black text-base text-slate-900 truncate">Seleccionar Opción</h3>
         <button onclick="closeModal('modal-option-picker')" type="button"
-          class="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 active:scale-90 text-slate-600 flex items-center justify-center text-xs transition-transform cursor-pointer shrink-0">
-          <i class="fas fa-times"></i>
+          class="w-[24px] h-[24px] min-w-[24px] min-h-[24px] rounded-[4px] bg-slate-100 hover:bg-slate-200 active:scale-90 text-slate-600 flex items-center justify-center transition-transform cursor-pointer shrink-0">
+          <span class="material-symbols-rounded text-sm">close</span>
         </button>
       </div>
 
       <!-- Lista de Opciones -->
-      <div id="option-picker-items-container" class="p-4 space-y-1.5 overflow-y-auto max-h-[60vh] custom-scrollbar">
+      <div id="option-picker-items-container" class="px-4 pb-4 pt-1 overflow-y-auto max-h-[60vh] custom-scrollbar">
         <!-- Inyectado por JS -->
       </div>
     </div>
@@ -1449,7 +1877,7 @@
   <!-- Barra Flotante de Teclado (Posicionada dinámicamente sobre el teclado virtual) -->
   <div id="keyboard-nav-bar"
     class="fixed right-4 z-[99999] flex items-center gap-2 transition-all duration-150 opacity-0 scale-90 pointer-events-none">
-    
+
     <!-- Botón Agregar Ítem (Visible únicamente cuando se enfoca el campo Total de un producto) -->
     <button type="button" id="btn-fab-add-item"
       class="h-11 px-4 rounded-full bg-white hover:bg-slate-50 text-slate-900 font-black text-xs shadow-[0_8px_30px_rgba(0,0,0,0.18)] border border-slate-100 flex items-center gap-1.5 transition-all duration-150 transform scale-0 opacity-0 pointer-events-none active:scale-95 select-none shrink-0"
@@ -1470,6 +1898,29 @@
   <!-- MODULOS JAVASCRIPT MOBILE (ARQUITECTURA MODULAR) -->
   <!-- ========================================== -->
   <script type="module" src="js/mobile/mobile-main.js"></script>
+
+  <!-- MODO DISEÑO: Auto-abrir vista de registro al recargar automáticamente -->
+  <script>
+    window.addEventListener('load', () => {
+      setTimeout(() => {
+        if (typeof window.resetExpenseForm === 'function') {
+          window.resetExpenseForm();
+        }
+        if (typeof window.switchExpenseRegistrationType === 'function') {
+          window.switchExpenseRegistrationType('personal');
+        }
+        if (typeof window.openModal === 'function') {
+          window.openModal('modal-expense');
+        } else {
+          const el = document.getElementById('modal-expense');
+          if (el) {
+            el.classList.remove('hidden');
+            el.classList.add('flex', 'm3-visible');
+          }
+        }
+      }, 100);
+    });
+  </script>
 </body>
 
 </html>

@@ -51,7 +51,7 @@ export const getFilterMonthString = (date) => {
 };
 
 // ================================================================
-// CÁLCULO DE CICLOS Y FACTURACIÓN (IDÉNTICO A APP.HTML)
+// CÁLCULO DE CICLOS Y FACTURACIÓN (PARIDAD TOTAL CON DESKTOP)
 // ================================================================
 export function getCycleDates(method, referenceDate) {
   if (!method || method.type !== "credit") {
@@ -61,17 +61,20 @@ export function getCycleDates(method, referenceDate) {
   const closingDay = parseInt(method.closingDay) || 20;
   const paymentDay = parseInt(method.paymentDay) || 5;
 
-  const refYear = referenceDate.getUTCFullYear();
-  const refMonth = referenceDate.getUTCMonth();
+  const currentYear = referenceDate.getFullYear();
+  const currentMonth = referenceDate.getMonth();
+  const currentDay = referenceDate.getDate();
 
-  let activeClosingDate = new Date(Date.UTC(refYear, refMonth, closingDay));
-  const todayCheck = new Date(referenceDate);
-  todayCheck.setUTCHours(0, 0, 0, 0);
+  let closingDateEpoch = Date.UTC(currentYear, currentMonth, closingDay);
+  const referenceDateEpoch = Date.UTC(currentYear, currentMonth, currentDay);
 
-  if (todayCheck.getTime() > activeClosingDate.getTime()) {
-    activeClosingDate.setUTCMonth(activeClosingDate.getUTCMonth() + 1);
+  if (referenceDateEpoch > closingDateEpoch) {
+    const nextMonth = new Date(closingDateEpoch);
+    nextMonth.setUTCMonth(nextMonth.getUTCMonth() + 1);
+    closingDateEpoch = nextMonth.getTime();
   }
 
+  const activeClosingDate = new Date(closingDateEpoch);
   const prevClosingDate = new Date(activeClosingDate);
   prevClosingDate.setUTCMonth(prevClosingDate.getUTCMonth() - 1);
 
@@ -93,6 +96,74 @@ export function getCycleDates(method, referenceDate) {
     paymentDate: paymentDateString,
     isManual: !!isManual,
   };
+}
+
+export function getCardStatementCycles(method, count = 12) {
+  if (!method) return [];
+  const cycles = [];
+  const today = new Date();
+
+  if (method.type === "credit") {
+    let refDate = today;
+    let activeCycle = getCycleDates(method, refDate);
+    if (activeCycle && activeCycle.startDate) {
+      const s0 = new Date(activeCycle.startDate + "T00:00:00Z");
+      const c0 = new Date(activeCycle.closingDate + "T00:00:00Z");
+      const s0Str = `${s0.getUTCDate()} ${s0.toLocaleString('es-ES', { month: 'short', timeZone: 'UTC' })}`;
+      const c0Str = `${c0.getUTCDate()} ${c0.toLocaleString('es-ES', { month: 'short', timeZone: 'UTC' })}`;
+
+      cycles.push({
+        ...activeCycle,
+        index: 0,
+        isCurrent: true,
+        label: "Ciclo Actual",
+        dateRangeLabel: `${s0Str} - ${c0Str}`,
+      });
+
+      for (let i = 1; i < count; i++) {
+        const currentStartObj = new Date(activeCycle.startDate + "T00:00:00Z");
+        const prevDateRef = new Date(currentStartObj.getTime() - 5 * 24 * 60 * 60 * 1000);
+        activeCycle = getCycleDates(method, prevDateRef);
+        if (!activeCycle || !activeCycle.startDate) break;
+
+        const s = new Date(activeCycle.startDate + "T00:00:00Z");
+        const c = new Date(activeCycle.closingDate + "T00:00:00Z");
+        const sStr = `${s.getUTCDate()} ${s.toLocaleString('es-ES', { month: 'short', timeZone: 'UTC' })}`;
+        const cStr = `${c.getUTCDate()} ${c.toLocaleString('es-ES', { month: 'short', timeZone: 'UTC' })}`;
+        const monthName = c.toLocaleString('es-ES', { month: 'short', timeZone: 'UTC' }).toUpperCase();
+        const year = c.getUTCFullYear();
+
+        cycles.push({
+          ...activeCycle,
+          index: i,
+          isCurrent: false,
+          label: i === 1 ? `Ciclo Anterior (${monthName} ${year})` : `Ciclo ${monthName} ${year}`,
+          dateRangeLabel: `${sStr} - ${cStr}`,
+        });
+      }
+    }
+  } else {
+    // Para efectivo / cuentas: Meses calendario históricos
+    for (let i = 0; i < count; i++) {
+      const d = new Date(today.getFullYear(), today.getMonth() - i, 1);
+      const y = d.getFullYear();
+      const m = d.getMonth();
+      const start = new Date(Date.UTC(y, m, 1)).toISOString().split("T")[0];
+      const end = new Date(Date.UTC(y, m + 1, 0)).toISOString().split("T")[0];
+      const monthName = MONTHS[m];
+      cycles.push({
+        startDate: start,
+        closingDate: end,
+        paymentDate: end,
+        isManual: false,
+        index: i,
+        isCurrent: i === 0,
+        label: i === 0 ? "Mes Actual" : `${monthName} ${y}`,
+        dateRangeLabel: `${monthName} ${y}`,
+      });
+    }
+  }
+  return cycles;
 }
 
 export function isExpenseInBillingMonth(e, filterMonthString, filterDate, paymentMethods) {

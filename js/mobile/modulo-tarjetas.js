@@ -1,9 +1,9 @@
 // ================================================================
 // MÓDULO DE RESUMEN DE MÉTODOS DE PAGO Y TARJETAS (CUADRÍCULA 2 COLUMNAS)
-// CON SOPORTE COMPLETO DE GASTOS FIJOS Y PROYECCIONES (PARIDAD TOTAL CON DESKTOP)
+// CON SOPORTE COMPLETO DE GASTOS FIJOS, PROYECCIONES Y ESTADOS DE CUENTA ANTERIORES
 // ================================================================
 
-import { appState, filterDate, formatCurrency, getFilterMonthString, getCycleDates, MONTHS } from "./core-state.js";
+import { appState, filterDate, formatCurrency, getFilterMonthString, getCycleDates, getCardStatementCycles, MONTHS } from "./core-state.js";
 import { openModal, closeModal } from "./modal-system.js";
 
 // Estilos limpios y minimalistas por tipo de método para cuadrícula de 2 columnas
@@ -45,7 +45,13 @@ const METHOD_STYLES = {
   }
 };
 
-// HELPER IDÉNTICO AL MOTOR DESKTOP: Cálculo de gastos reales + fijos proyectados en el rango
+// Variables de estado del módulo
+let currentActiveMethodId = null;
+let currentActiveCycle = null;
+
+// ================================================================
+// HELPER MAESTRO: Cálculo de gastos reales + fijos proyectados en el rango
+// ================================================================
 export function getExpensesForMethodRange(allExpenses, methodId, range) {
   if (!range || !range.startDate || !range.closingDate) {
     return { total: 0, expenses: [] };
@@ -127,6 +133,111 @@ export function getExpensesForMethodRange(allExpenses, methodId, range) {
   return { total, expenses: filtered };
 }
 
+// ================================================================
+// HELPER MAESTRO: Desglose de Deuda por Miembro e Invitados
+// (Paridad Matemática Total con Desktop)
+// ================================================================
+export function calculateMethodDebtBreakdown(expenses, method, participants) {
+  const debtPerPerson = {};
+  participants.forEach(p => { debtPerPerson[p.id] = 0; });
+  let guestDebt = 0;
+
+  expenses.forEach(e => {
+    const amount = parseFloat(e.amount) || 0;
+    const expenseGuests = (e.guests && Array.isArray(e.guests) && e.guests.length > 0)
+      ? e.guests
+      : (e.guestName ? [e.guestName] : []);
+    const totalPeople = participants.length + expenseGuests.length;
+
+    if (e.type === "personal") {
+      const payerId = e.payerId || e.paidBy || (method ? method.ownerId : null) || (participants[0]?.id);
+      if (debtPerPerson[payerId] !== undefined) {
+        debtPerPerson[payerId] += amount;
+      } else if (payerId && (payerId.startsWith("guest_") || payerId.startsWith("guest-") || payerId.startsWith("guest"))) {
+        guestDebt += amount;
+      } else if (method && method.ownerId && debtPerPerson[method.ownerId] !== undefined) {
+        debtPerPerson[method.ownerId] += amount;
+      }
+    } else {
+      // Gasto Compartido
+      if (e.items && e.items.length > 0 && totalPeople > 0) {
+        let itemsTotalCost = 0;
+        let itemShares = {};
+        participants.forEach(p => { itemShares[p.id] = 0; });
+        let guestItemShares = 0;
+
+        e.items.forEach(item => {
+          const qty = parseFloat(item.quantity) || 1;
+          const unitPrice = parseFloat(item.amount) || 0;
+          const itemTotal = qty * unitPrice;
+          itemsTotalCost += itemTotal;
+
+          const assignments = item.assignments || {};
+          let assignedUnitsSum = 0;
+
+          Object.keys(assignments).forEach(pId => {
+            const assignedQty = parseFloat(assignments[pId]) || 0;
+            if (assignedQty > 0) {
+              assignedUnitsSum += assignedQty;
+              const cost = assignedQty * unitPrice;
+              if (itemShares[pId] !== undefined) {
+                itemShares[pId] += cost;
+              } else if (pId.startsWith("guest_") || pId.startsWith("guest-") || pId.startsWith("guest")) {
+                guestItemShares += cost;
+              }
+            }
+          });
+
+          if (assignedUnitsSum === 0 && item.assignedTo) {
+            assignedUnitsSum = qty;
+            const cost = itemTotal;
+            if (itemShares[item.assignedTo] !== undefined) {
+              itemShares[item.assignedTo] += cost;
+            } else if (item.assignedTo.startsWith("guest_") || item.assignedTo.startsWith("guest-") || item.assignedTo.startsWith("guest")) {
+              guestItemShares += cost;
+            }
+          }
+
+          const unassignedUnits = Math.max(0, qty - assignedUnitsSum);
+          if (unassignedUnits > 0) {
+            const unassignedCost = unassignedUnits * unitPrice;
+            const sharePerPerson = unassignedCost / totalPeople;
+            participants.forEach(p => {
+              itemShares[p.id] += sharePerPerson;
+            });
+            guestItemShares += sharePerPerson * expenseGuests.length;
+          }
+        });
+
+        const remainingAmount = Math.max(0, amount - itemsTotalCost);
+        const remainingSharePerPerson = totalPeople > 0 ? remainingAmount / totalPeople : 0;
+
+        participants.forEach(p => {
+          if (debtPerPerson[p.id] !== undefined) {
+            debtPerPerson[p.id] += (itemShares[p.id] || 0) + remainingSharePerPerson;
+          }
+        });
+        guestDebt += guestItemShares + (remainingSharePerPerson * expenseGuests.length);
+      } else {
+        const splitAmount = totalPeople > 0 ? amount / totalPeople : 0;
+        participants.forEach(p => {
+          if (debtPerPerson[p.id] !== undefined) {
+            debtPerPerson[p.id] += splitAmount;
+          }
+        });
+        if (expenseGuests.length > 0) {
+          guestDebt += splitAmount * expenseGuests.length;
+        }
+      }
+    }
+  });
+
+  return { debtPerPerson, guestDebt };
+}
+
+// ================================================================
+// RECOPILAR DATOS CONSOLIDADOS DE TODOS LOS MÉTODOS DE PAGO
+// ================================================================
 export function getAllPaymentMethodsData() {
   const paymentMethods = appState.paymentMethods || [];
   const allExpenses = appState.expenses || [];
@@ -207,6 +318,9 @@ export function getAllPaymentMethodsData() {
   return { methodsData, totalCombinedSpent, totalCreditDebt };
 }
 
+// ================================================================
+// ABRIR MODAL RESUMEN GLOBAL DE MÉTODOS DE PAGO
+// ================================================================
 export function openPaymentMethodsSummaryModal() {
   const { methodsData, totalCombinedSpent, totalCreditDebt } = getAllPaymentMethodsData();
 
@@ -266,78 +380,113 @@ export function openPaymentMethodsSummaryModal() {
   openModal('modal-payment-methods-summary');
 }
 
-export function openCreditCardDetailModal(methodId) {
-  const { methodsData } = getAllPaymentMethodsData();
-  const cardData = methodsData.find(c => c.method.id === methodId);
-  if (!cardData) return;
+// ================================================================
+// ABRIR MODAL DETALLE DE TARJETA (ACTUAL O CICLO HISTÓRICO SELECCIONADO)
+// ================================================================
+export function openCreditCardDetailModal(methodId, targetCycle = null) {
+  const paymentMethods = appState.paymentMethods || [];
+  const allExpenses = appState.expenses || [];
+  const participants = appState.participants || [];
 
+  const method = paymentMethods.find(m => m.id === methodId);
+  if (!method) return;
+
+  currentActiveMethodId = methodId;
+  currentActiveCycle = targetCycle;
+
+  const isCredit = method.type === "credit";
+  const today = new Date();
+  let range = {};
+  let dateRangeLabel = "";
+  let paymentDateLabel = "";
+  let isHistorical = false;
+
+  if (targetCycle && targetCycle.startDate && targetCycle.closingDate) {
+    range = targetCycle;
+    isHistorical = !targetCycle.isCurrent;
+    const s = new Date(range.startDate + "T00:00:00Z");
+    const c = new Date(range.closingDate + "T00:00:00Z");
+    const sStr = `${s.getUTCDate()} ${s.toLocaleString('es-ES', { month: 'short', timeZone: 'UTC' })}`;
+    const cStr = `${c.getUTCDate()} ${c.toLocaleString('es-ES', { month: 'short', timeZone: 'UTC' })}`;
+    dateRangeLabel = targetCycle.label || `${sStr} - ${cStr}`;
+
+    if (range.paymentDate) {
+      const p = new Date(range.paymentDate + "T00:00:00Z");
+      paymentDateLabel = `Paga: ${p.getUTCDate()} ${p.toLocaleString('es-ES', { month: 'short', timeZone: 'UTC' })}`;
+    }
+  } else if (isCredit) {
+    const cycle = getCycleDates(method, today);
+    if (cycle.closingDate) {
+      range = cycle;
+      const s = new Date(range.startDate + "T00:00:00Z");
+      const c = new Date(range.closingDate + "T00:00:00Z");
+      const sStr = `${s.getUTCDate()} ${s.toLocaleString('es-ES', { month: 'short', timeZone: 'UTC' })}`;
+      const cStr = `${c.getUTCDate()} ${c.toLocaleString('es-ES', { month: 'short', timeZone: 'UTC' })}`;
+      dateRangeLabel = `${sStr} - ${cStr}`;
+    } else {
+      range = { startDate: null, closingDate: null };
+      dateRangeLabel = "Ciclo no configurado";
+    }
+
+    if (cycle.paymentDate) {
+      const p = new Date(cycle.paymentDate + "T00:00:00Z");
+      paymentDateLabel = `Paga: ${p.getUTCDate()} ${p.toLocaleString('es-ES', { month: 'short', timeZone: 'UTC' })}`;
+    }
+  } else {
+    const y = filterDate.getFullYear();
+    const m = filterDate.getMonth();
+    range = {
+      startDate: new Date(Date.UTC(y, m, 1)).toISOString().split("T")[0],
+      closingDate: new Date(Date.UTC(y, m + 1, 0)).toISOString().split("T")[0],
+    };
+    dateRangeLabel = `${MONTHS[m]}`;
+    paymentDateLabel = "Mes en curso";
+  }
+
+  // Cálculo de gastos y totales
+  const calculation = getExpensesForMethodRange(allExpenses, method.id, range);
+  const methodExpenses = calculation.expenses;
+  const totalSpent = calculation.total;
+
+  let ownerName = "Compartido";
+  if (method.ownerId) {
+    const owner = participants.find(p => p.id === method.ownerId);
+    if (owner) ownerName = owner.name;
+  }
+
+  const style = METHOD_STYLES[method.type] || METHOD_STYLES.other;
+
+  // Actualización del DOM
   const modalTitle = document.getElementById('modal-card-detail-title');
   const modalCycle = document.getElementById('modal-card-detail-cycle');
   const modalTotal = document.getElementById('modal-card-detail-total');
   const modalOwner = document.getElementById('modal-card-detail-owner');
   const listContainer = document.getElementById('modal-card-detail-expenses-list');
   const debtContainer = document.getElementById('modal-card-detail-debt-breakdown');
+  const historyBanner = document.getElementById('modal-card-detail-history-banner');
+  const bannerCycleLabel = document.getElementById('modal-card-detail-history-banner-label');
 
-  if (modalTitle) modalTitle.textContent = cardData.method.name;
-  if (modalCycle) modalCycle.textContent = `${cardData.dateRangeLabel} ${cardData.paymentDateLabel ? ' • ' + cardData.paymentDateLabel : ''}`;
-  if (modalTotal) modalTotal.textContent = formatCurrency(cardData.totalSpent);
-  if (modalOwner) modalOwner.textContent = `Titular: ${cardData.ownerName}`;
+  if (modalTitle) modalTitle.textContent = method.name;
+  if (modalCycle) modalCycle.textContent = `${dateRangeLabel} ${paymentDateLabel ? ' • ' + paymentDateLabel : ''}`;
+  if (modalTotal) modalTotal.textContent = formatCurrency(totalSpent);
+  if (modalOwner) modalOwner.textContent = `Titular: ${ownerName}`;
 
-  // Desglose de Deuda por Miembro dentro de este método / ciclo (respetando gastos reales y fijos)
-  const participants = appState.participants || [];
-  const debtPerPerson = {};
-  participants.forEach(p => { debtPerPerson[p.id] = 0; });
-  let guestDebt = 0;
-
-  cardData.methodExpenses.forEach(e => {
-    const amount = parseFloat(e.amount) || 0;
-    const guests = (e.guests && Array.isArray(e.guests) && e.guests.length > 0)
-      ? e.guests
-      : (e.guestName ? [e.guestName] : []);
-    const totalPeople = participants.length + guests.length;
-
-    if (e.type === "personal") {
-      const payerId = e.paidBy || cardData.method.ownerId || (participants[0]?.id);
-      if (debtPerPerson[payerId] !== undefined) {
-        debtPerPerson[payerId] += amount;
-      }
+  if (historyBanner) {
+    if (isHistorical) {
+      historyBanner.classList.remove('hidden');
+      if (bannerCycleLabel) bannerCycleLabel.textContent = dateRangeLabel;
     } else {
-      // Gasto Compartido
-      if (e.items && e.items.length > 0) {
-        e.items.forEach(item => {
-          const qty = parseFloat(item.quantity) || 1;
-          const unitPrice = parseFloat(item.amount) || 0;
-          const assignments = item.assignments || {};
-          const assignedKeys = Object.keys(assignments).filter(k => (parseFloat(assignments[k]) || 0) > 0);
-
-          if (assignedKeys.length > 0) {
-            assignedKeys.forEach(k => {
-              const u = parseFloat(assignments[k]) || 0;
-              const cost = u * unitPrice;
-              if (debtPerPerson[k] !== undefined) {
-                debtPerPerson[k] += cost;
-              } else {
-                guestDebt += cost;
-              }
-            });
-          } else {
-            const share = (qty * unitPrice) / (totalPeople || 1);
-            participants.forEach(p => { debtPerPerson[p.id] += share; });
-            guestDebt += share * guests.length;
-          }
-        });
-      } else {
-        const share = amount / (totalPeople || 1);
-        participants.forEach(p => { debtPerPerson[p.id] += share; });
-        guestDebt += share * guests.length;
-      }
+      historyBanner.classList.add('hidden');
     }
-  });
+  }
+
+  // Desglose de Deuda por Miembro e Invitados
+  const { debtPerPerson, guestDebt } = calculateMethodDebtBreakdown(methodExpenses, method, participants);
 
   if (debtContainer) {
     debtContainer.innerHTML = participants.map(p => {
       const owed = debtPerPerson[p.id] || 0;
-      const isOwner = p.id === cardData.method.ownerId;
+      const isOwner = p.id === method.ownerId;
       return `
         <div class="flex items-center justify-between p-2.5 rounded-xl bg-white border border-slate-100 shadow-2xs">
           <div class="flex items-center gap-2">
@@ -370,17 +519,17 @@ export function openCreditCardDetailModal(methodId) {
 
   // Lista de Movimientos con soporte visual de Fijos/Proyectados
   if (listContainer) {
-    if (cardData.methodExpenses.length === 0) {
+    if (methodExpenses.length === 0) {
       listContainer.innerHTML = `<p class="text-center text-xs text-slate-400 italic py-6">Sin consumos en este período</p>`;
     } else {
-      listContainer.innerHTML = cardData.methodExpenses.map(e => {
+      listContainer.innerHTML = methodExpenses.map(e => {
         const isFixed = e.isFixed || e.isProjected;
         return `
-          <div onclick="${isFixed ? '' : `closeModal('modal-card-detail'); openTransactionDetailModal('${e.id}');`}"
+          <div onclick="${isFixed ? '' : `closeModal('modal-card-detail'); window.openTransactionDetailModal ? window.openTransactionDetailModal('${e.id}') : null;`}"
             class="flex items-center justify-between p-3 rounded-2xl bg-white border ${isFixed ? 'border-dashed border-indigo-200 bg-indigo-50/20' : 'border-slate-100 shadow-2xs'} ${isFixed ? '' : 'cursor-pointer active:scale-98'} transition-all">
             <div class="flex items-center gap-2.5 min-w-0 flex-1">
-              <div class="w-8 h-8 rounded-xl ${cardData.style.iconBg} flex items-center justify-center text-xs shrink-0">
-                <i class="fas ${isFixed ? 'fa-repeat' : cardData.style.icon}"></i>
+              <div class="w-8 h-8 rounded-xl ${style.iconBg} flex items-center justify-center text-xs shrink-0">
+                <i class="fas ${isFixed ? 'fa-repeat' : style.icon}"></i>
               </div>
               <div class="min-w-0 flex-1">
                 <div class="flex items-center gap-1.5">
@@ -400,5 +549,100 @@ export function openCreditCardDetailModal(methodId) {
   openModal('modal-card-detail');
 }
 
+// ================================================================
+// VOLVER AL CICLO ACTUAL DESDE UN ESTADO DE CUENTA ANTERIOR
+// ================================================================
+export function restoreCurrentCardCycle() {
+  if (!currentActiveMethodId) return;
+  openCreditCardDetailModal(currentActiveMethodId, null);
+}
+
+// ================================================================
+// ABRIR MODAL HISTORIAL DE ESTADOS DE CUENTA ANTERIORES
+// ================================================================
+export function openCardStatementsHistoryModal(methodId = null) {
+  const targetId = methodId || currentActiveMethodId;
+  const paymentMethods = appState.paymentMethods || [];
+  const allExpenses = appState.expenses || [];
+
+  const method = paymentMethods.find(m => m.id === targetId);
+  if (!method) return;
+
+  const cycles = getCardStatementCycles(method, 12);
+
+  const modalTitle = document.getElementById('modal-statements-history-title');
+  const modalSubtitle = document.getElementById('modal-statements-history-subtitle');
+  const listContainer = document.getElementById('modal-statements-history-list');
+
+  if (modalTitle) modalTitle.textContent = `Estados de Cuenta: ${method.name}`;
+  if (modalSubtitle) modalSubtitle.textContent = method.type === 'credit' ? 'Historial de ciclos y fechas de corte' : 'Historial de meses anteriores';
+
+  if (listContainer) {
+    if (cycles.length === 0) {
+      listContainer.innerHTML = `<p class="text-center text-xs text-slate-400 italic py-6">No hay estados de cuenta disponibles.</p>`;
+    } else {
+      listContainer.innerHTML = cycles.map((cycle, index) => {
+        const calc = getExpensesForMethodRange(allExpenses, method.id, cycle);
+        const isCurrentActive = currentActiveCycle ? (currentActiveCycle.startDate === cycle.startDate && currentActiveCycle.closingDate === cycle.closingDate) : cycle.isCurrent;
+        
+        let paymentBadge = '';
+        if (cycle.paymentDate) {
+          const p = new Date(cycle.paymentDate + "T00:00:00Z");
+          const pStr = `${p.getUTCDate()} ${p.toLocaleString('es-ES', { month: 'short', timeZone: 'UTC' })}`;
+          paymentBadge = `<span class="text-[10px] text-slate-400 font-semibold flex items-center gap-1"><i class="fas fa-calendar-check text-[9px] text-indigo-500"></i> Paga: ${pStr}</span>`;
+        }
+
+        return `
+          <div onclick="selectStatementCycle('${method.id}', ${index})"
+            class="p-3.5 rounded-2xl bg-white border ${isCurrentActive ? 'border-indigo-500 ring-2 ring-indigo-500/20 bg-indigo-50/10' : 'border-slate-200/80 hover:border-slate-300'} shadow-2xs hover:shadow-md active:scale-98 transition-all cursor-pointer flex items-center justify-between">
+            <div class="space-y-1 min-w-0 flex-1">
+              <div class="flex items-center gap-2">
+                <span class="text-xs font-black text-slate-900">${cycle.label}</span>
+                ${cycle.isCurrent ? '<span class="text-[9px] font-black uppercase text-indigo-700 bg-indigo-100 px-2 py-0.5 rounded-full border border-indigo-200">Ciclo Activo</span>' : ''}
+              </div>
+              <div class="flex items-center gap-2 text-[10px] text-slate-500 font-medium">
+                <span><i class="far fa-calendar-alt text-[9px] mr-1 text-slate-400"></i>${cycle.dateRangeLabel}</span>
+                <span>•</span>
+                <span>${calc.expenses.length} consumos</span>
+              </div>
+              ${paymentBadge}
+            </div>
+
+            <div class="text-right pl-3 shrink-0">
+              <span class="text-sm font-black text-slate-900 block">${formatCurrency(calc.total)}</span>
+              <span class="text-[10px] font-bold text-indigo-600 flex items-center justify-end gap-1 mt-0.5">
+                <span>Ver detalle</span>
+                <i class="fas fa-chevron-right text-[8px]"></i>
+              </span>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+  }
+
+  openModal('modal-card-statements-history');
+}
+
+// ================================================================
+// SELECCIONAR CICLO HISTÓRICO Y ABRIR DETALLE
+// ================================================================
+export function selectStatementCycle(methodId, cycleIndex) {
+  const paymentMethods = appState.paymentMethods || [];
+  const method = paymentMethods.find(m => m.id === methodId);
+  if (!method) return;
+
+  const cycles = getCardStatementCycles(method, 12);
+  const selectedCycle = cycles[cycleIndex];
+
+  closeModal('modal-card-statements-history');
+  openCreditCardDetailModal(methodId, selectedCycle);
+}
+
+// Global window mappings
 window.openPaymentMethodsSummaryModal = openPaymentMethodsSummaryModal;
 window.openCreditCardDetailModal = openCreditCardDetailModal;
+window.openCardStatementsHistoryModal = openCardStatementsHistoryModal;
+window.restoreCurrentCardCycle = restoreCurrentCardCycle;
+window.selectStatementCycle = selectStatementCycle;
+

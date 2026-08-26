@@ -4,7 +4,7 @@ import { mobileExpenseItems, setMobileExpenseItems, renderMobileItemsList, addMo
 import { normalizeItemAssignments, getGuestKeyAndName } from "./modal-asignacion.js";
 import { doc, updateDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-export let currentRegistrationType = 'shared'; // 'personal', 'shared', 'income'
+export let currentRegistrationType = 'personal'; // 'personal', 'shared', 'income'
 export let isFixedExpenseActive = false;
 export let isListExpenseActive = false;
 export let activeSharedMemberIds = new Set();
@@ -22,44 +22,74 @@ export function updateDateChipLabel(dateStr) {
   if (chip) chip.textContent = label;
 }
 
+export function openExpenseDatePicker() {
+  const input = document.getElementById('exp-date');
+  if (!input) return;
+  if (typeof input.showPicker === 'function') {
+    try {
+      input.showPicker();
+      return;
+    } catch (e) {
+      console.warn('showPicker error:', e);
+    }
+  }
+  input.focus();
+  input.click();
+}
+
 export function switchExpenseRegistrationType(type) {
   currentRegistrationType = type;
   const btnPersonal = document.getElementById('tab-type-personal');
   const btnShared = document.getElementById('tab-type-shared');
   const btnIncome = document.getElementById('tab-type-income');
+  const pill = document.getElementById('segment-sliding-pill');
   const sharedSection = document.getElementById('section-shared-members');
   const iconBox = document.getElementById('box-expense-visual-icon');
 
-  [btnPersonal, btnShared, btnIncome].forEach(b => {
-    if (b) b.className = 'flex-1 py-1.5 rounded-full text-slate-500 hover:text-slate-900 transition-all text-center';
+  const tabs = [
+    { type: 'personal', btn: btnPersonal, offset: 0 },
+    { type: 'shared', btn: btnShared, offset: 1 },
+    { type: 'income', btn: btnIncome, offset: 2 }
+  ];
+
+  tabs.forEach(({ type: t, btn, offset }) => {
+    if (!btn) return;
+    if (t === type) {
+      btn.className = 'relative z-10 flex-1 py-2 rounded-full text-[#273019] font-black transition-colors duration-200 text-center select-none';
+      if (pill) {
+        pill.style.transform = `translateX(${offset * 100}%)`;
+      }
+    } else {
+      btn.className = 'relative z-10 flex-1 py-2 rounded-full text-slate-500 hover:text-slate-800 font-bold transition-colors duration-200 text-center select-none';
+    }
   });
 
   if (type === 'personal') {
-    if (btnPersonal) btnPersonal.className = 'flex-1 py-1.5 rounded-full bg-[#c6f6b5] text-slate-950 shadow-xs font-black transition-all text-center';
+    if (pill) pill.style.backgroundColor = '#C3F1B3';
     if (sharedSection) {
       sharedSection.classList.remove('m3-open');
     }
     if (iconBox) {
-      iconBox.className = 'w-[82px] h-[82px] min-w-[82px] bg-[#dcfce7] text-emerald-900 rounded-[14px] flex flex-col items-center justify-center shrink-0 p-1.5 shadow-2xs transition-all duration-300';
-      iconBox.innerHTML = '<i class="fas fa-user text-xl mb-0.5 opacity-80"></i><span class="text-[8px] font-black uppercase text-emerald-800/80">Personal</span>';
+      iconBox.className = 'w-[86px] h-[86px] min-w-[86px] bg-[#dcfce7] text-emerald-900 rounded-[18px] flex flex-col items-center justify-center shrink-0 p-1.5 shadow-2xs transition-all duration-300';
+      iconBox.innerHTML = '<span class="material-symbols-rounded text-3xl mb-0.5 opacity-90">person</span><span class="text-[8px] font-black uppercase text-emerald-800/80">Personal</span>';
     }
   } else if (type === 'income') {
-    if (btnIncome) btnIncome.className = 'flex-1 py-1.5 rounded-full bg-emerald-200 text-emerald-950 shadow-xs font-black transition-all text-center';
+    if (pill) pill.style.backgroundColor = '#a7f3d0';
     if (sharedSection) {
       sharedSection.classList.remove('m3-open');
     }
     if (iconBox) {
-      iconBox.className = 'w-[82px] h-[82px] min-w-[82px] bg-emerald-100 text-emerald-900 rounded-[14px] flex flex-col items-center justify-center shrink-0 p-1.5 shadow-2xs transition-all duration-300';
-      iconBox.innerHTML = '<i class="fas fa-coins text-xl mb-0.5 opacity-80"></i><span class="text-[8px] font-black uppercase text-emerald-800/80">Ingreso</span>';
+      iconBox.className = 'w-[86px] h-[86px] min-w-[86px] bg-emerald-100 text-emerald-900 rounded-[18px] flex flex-col items-center justify-center shrink-0 p-1.5 shadow-2xs transition-all duration-300';
+      iconBox.innerHTML = '<span class="material-symbols-rounded text-3xl mb-0.5 opacity-90">payments</span><span class="text-[8px] font-black uppercase text-emerald-800/80">Ingreso</span>';
     }
   } else {
-    if (btnShared) btnShared.className = 'flex-1 py-1.5 rounded-full bg-[#c6f6b5] text-slate-950 shadow-xs font-black transition-all text-center';
+    if (pill) pill.style.backgroundColor = '#C3F1B3';
     if (sharedSection) {
       sharedSection.classList.add('m3-open');
     }
     if (iconBox) {
-      iconBox.className = 'w-[82px] h-[82px] min-w-[82px] bg-[#dcfce7] text-emerald-900 rounded-[14px] flex flex-col items-center justify-center shrink-0 p-1.5 shadow-2xs transition-all duration-300';
-      iconBox.innerHTML = '<i class="fas fa-receipt text-xl mb-0.5 opacity-80"></i><span class="text-[8px] font-black uppercase text-emerald-800/80">Gasto</span>';
+      iconBox.className = 'w-[86px] h-[86px] min-w-[86px] bg-[#dcfce7] text-emerald-900 rounded-[18px] flex flex-col items-center justify-center shrink-0 p-1.5 shadow-2xs transition-all duration-300';
+      iconBox.innerHTML = '<span class="material-symbols-rounded text-3xl mb-0.5 opacity-90">receipt_long</span><span class="text-[8px] font-black uppercase text-emerald-800/80">Gasto</span>';
     }
   }
   renderSharedMembersAvatars();
@@ -77,12 +107,12 @@ export function updateSegmentedButtonsUI() {
 
   if (btnFixed) {
     if (isFixedExpenseActive) {
-      btnFixed.className = 'flex-1 h-full px-3 flex items-center justify-center gap-2 text-xs font-black text-slate-950 bg-[#c6f6b5] transition-all select-none active:scale-[0.98]';
+      btnFixed.className = 'flex-1 h-full px-3 flex items-center justify-center gap-2 text-xs font-black text-[#273019] bg-[#C3F1B3] transition-all select-none active:scale-[0.98]';
       if (fixedCheck) fixedCheck.classList.remove('hidden');
       if (fixedSymbol) fixedSymbol.classList.add('hidden');
       if (secFixed) secFixed.classList.add('m3-open');
     } else {
-      btnFixed.className = 'flex-1 h-full px-3 flex items-center justify-center gap-2 text-xs font-bold text-slate-700 bg-white hover:bg-slate-50 transition-all select-none active:scale-[0.98]';
+      btnFixed.className = 'flex-1 h-full px-3 flex items-center justify-center gap-2 text-xs font-bold text-[#273019] bg-white hover:bg-slate-50 transition-all select-none active:scale-[0.98]';
       if (fixedCheck) fixedCheck.classList.add('hidden');
       if (fixedSymbol) fixedSymbol.classList.remove('hidden');
       if (secFixed) secFixed.classList.remove('m3-open');
@@ -91,7 +121,7 @@ export function updateSegmentedButtonsUI() {
 
   if (btnList) {
     if (isListExpenseActive) {
-      btnList.className = 'flex-1 h-full px-3 flex items-center justify-center gap-2 text-xs font-black text-slate-950 bg-[#c6f6b5] transition-all select-none active:scale-[0.98]';
+      btnList.className = 'flex-1 h-full px-3 flex items-center justify-center gap-2 text-xs font-black text-[#273019] bg-[#C3F1B3] transition-all select-none active:scale-[0.98]';
       if (listCheck) listCheck.classList.remove('hidden');
       if (listSymbol) listSymbol.classList.add('hidden');
       if (secList) {
@@ -99,7 +129,7 @@ export function updateSegmentedButtonsUI() {
         secList.classList.add('m3-block-open');
       }
     } else {
-      btnList.className = 'flex-1 h-full px-3 flex items-center justify-center gap-2 text-xs font-bold text-slate-700 bg-white hover:bg-slate-50 transition-all select-none active:scale-[0.98]';
+      btnList.className = 'flex-1 h-full px-3 flex items-center justify-center gap-2 text-xs font-bold text-[#273019] bg-white hover:bg-slate-50 transition-all select-none active:scale-[0.98]';
       if (listCheck) listCheck.classList.add('hidden');
       if (listSymbol) listSymbol.classList.remove('hidden');
       if (secList) {
@@ -239,7 +269,7 @@ export function resetExpenseForm() {
   isListExpenseActive = false;
   updateSegmentedButtonsUI();
 
-  switchExpenseRegistrationType('shared');
+  switchExpenseRegistrationType('personal');
 }
 
 export function resetIncomeForm() {
@@ -303,7 +333,7 @@ export function openEditExpenseModal(expenseId) {
   if (expPmId) expPmId.value = exp.paymentMethodId || '';
   if (chipPm) chipPm.textContent = pmVal;
 
-  switchExpenseRegistrationType(exp.type || 'shared');
+  switchExpenseRegistrationType(exp.type || 'personal');
 
   mobileExpenseGuests = (exp.guests && Array.isArray(exp.guests)) ? [...exp.guests] : (exp.guestName ? [exp.guestName] : []);
   renderSharedMembersAvatars();
