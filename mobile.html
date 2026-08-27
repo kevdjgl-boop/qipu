@@ -579,13 +579,12 @@
   </div>
 
   <!-- ========================================== -->
-  <!-- 🔄 INDICADOR PULL-TO-REFRESH CON SWIPE.JSON -->
+  <!-- 🔄 INDICADOR PULL-TO-REFRESH CON SWIPE.JSON (SOLO ICONO) -->
   <!-- ========================================== -->
   <div id="pull-to-refresh-container"
-    class="fixed top-0 left-1/2 -translate-x-1/2 z-40 pointer-events-none flex flex-col items-center justify-center transition-transform duration-200 opacity-0 -translate-y-20">
-    <div class="bg-white/95 backdrop-blur-md px-3.5 py-1.5 rounded-full shadow-lg border border-slate-200/80 flex items-center gap-2">
-      <div id="pull-to-refresh-lottie" class="w-8 h-8 flex items-center justify-center pointer-events-none"></div>
-      <span id="pull-to-refresh-text" class="text-[10px] font-black text-slate-800 uppercase tracking-wider">Desliza para recargar</span>
+    class="fixed top-0 left-1/2 -translate-x-1/2 z-50 pointer-events-none flex items-center justify-center opacity-0 -translate-y-20">
+    <div class="w-12 h-12 rounded-full bg-white shadow-xl border border-slate-200/90 flex items-center justify-center p-1 select-none">
+      <div id="pull-to-refresh-lottie" class="w-10 h-10 flex items-center justify-center pointer-events-none"></div>
     </div>
   </div>
 
@@ -2063,7 +2062,7 @@
   <!-- ========================================== -->
   <!-- MODULOS JAVASCRIPT MOBILE (ARQUITECTURA MODULAR) -->
   <!-- ========================================== -->
-  <script type="module" src="js/mobile/mobile-main.js?v=4.3"></script>
+  <script type="module" src="js/mobile/mobile-main.js?v=4.4"></script>
 </body>
 
 </html>
