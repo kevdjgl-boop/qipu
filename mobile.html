@@ -316,12 +316,12 @@
     /* Fondo Backdrop Premium con Glassmorphism y desenfoque dinámico */
     .m3-bottom-sheet-backdrop {
       opacity: 0;
-      background-color: rgba(15, 23, 42, 0.55);
+      background-color: rgba(15, 23, 42, 0.60);
       backdrop-filter: blur(0px);
       -webkit-backdrop-filter: blur(0px);
-      transition: opacity 360ms var(--ease-spring-in),
-                  backdrop-filter 360ms var(--ease-spring-in),
-                  -webkit-backdrop-filter 360ms var(--ease-spring-in);
+      transition: opacity 380ms var(--ease-spring-in),
+                  backdrop-filter 380ms var(--ease-spring-in),
+                  -webkit-backdrop-filter 380ms var(--ease-spring-in);
       pointer-events: none;
       padding-left: 8px;
       padding-right: 8px;
@@ -332,15 +332,29 @@
 
     .m3-bottom-sheet-backdrop.m3-visible {
       opacity: 1;
-      backdrop-filter: blur(14px);
-      -webkit-backdrop-filter: blur(14px);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
       pointer-events: auto;
+    }
+
+    /* 📱 Pantalla Completa: Registrar / Editar Gasto (#modal-expense) */
+    #modal-expense {
+      transform: translateY(100%) scale(0.98);
+      opacity: 0;
+      will-change: transform, opacity;
+      transition: transform 420ms var(--ease-spring-in),
+                  opacity 320ms ease-out !important;
+    }
+
+    #modal-expense.m3-visible {
+      transform: translateY(0%) scale(1) !important;
+      opacity: 1 !important;
     }
 
     /* Bottom Sheet Surface: Deslizamiento elástico tipo iOS con micro-escala */
     .m3-bottom-sheet-surface {
       transform: translateY(102%) scale(0.97) !important;
-      opacity: 0.9 !important;
+      opacity: 0.85 !important;
       will-change: transform, opacity;
       border-radius: 32px !important;
       box-shadow: 0 -10px 40px -10px rgba(0, 0, 0, 0.25), 0 25px 50px -12px rgba(0, 0, 0, 0.35) !important;
@@ -1953,29 +1967,6 @@
   <!-- MODULOS JAVASCRIPT MOBILE (ARQUITECTURA MODULAR) -->
   <!-- ========================================== -->
   <script type="module" src="js/mobile/mobile-main.js"></script>
-
-  <!-- MODO DISEÑO: Auto-abrir vista de registro al recargar automáticamente -->
-  <script>
-    window.addEventListener('load', () => {
-      setTimeout(() => {
-        if (typeof window.resetExpenseForm === 'function') {
-          window.resetExpenseForm();
-        }
-        if (typeof window.switchExpenseRegistrationType === 'function') {
-          window.switchExpenseRegistrationType('personal');
-        }
-        if (typeof window.openModal === 'function') {
-          window.openModal('modal-expense');
-        } else {
-          const el = document.getElementById('modal-expense');
-          if (el) {
-            el.classList.remove('hidden');
-            el.classList.add('flex', 'm3-visible');
-          }
-        }
-      }, 100);
-    });
-  </script>
 </body>
 
 </html>
