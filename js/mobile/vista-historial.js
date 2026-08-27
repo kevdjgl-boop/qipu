@@ -354,7 +354,7 @@ export function renderHistoryList(monthlyExpenses) {
     const staggerDelay = Math.min(idx * 35, 280);
 
     return `
-      <div class="relative overflow-hidden rounded-2xl mb-2 select-none" id="mov-row-container-${item.id}">
+      <div class="animate-item-enter relative overflow-hidden rounded-2xl mb-2 select-none" id="mov-row-container-${item.id}" style="animation-delay: ${staggerDelay}ms;">
         <!-- Slot de Eliminar con Animación Trash.lottie en el fondo a la derecha -->
         <div id="mov-delete-slot-${item.id}"
           data-mov-delete-btn="true"
@@ -372,8 +372,8 @@ export function renderHistoryList(monthlyExpenses) {
           data-mov-card-id="${item.id}"
           data-mov-type="${item.type}"
           onclick="handleMovementCardClick(event, '${item.type}', '${item.id}', ${item.hasItems})"
-          style="animation-delay: ${staggerDelay}ms; touch-action: pan-y !important; user-select: none; -webkit-user-select: none;"
-          class="animate-item-enter relative z-10 bg-white p-3.5 rounded-2xl border border-slate-100 shadow-sm flex items-center justify-between gap-3 hover:border-slate-200 cursor-pointer">
+          style="touch-action: pan-y !important; user-select: none; -webkit-user-select: none; transform: translateX(0px);"
+          class="relative z-10 bg-white p-3.5 rounded-2xl border border-slate-100 shadow-sm flex items-center justify-between gap-3 hover:border-slate-200 cursor-pointer">
           
           <div class="flex items-center gap-3 min-w-0 flex-1 pointer-events-none">
             <div class="shrink-0">
