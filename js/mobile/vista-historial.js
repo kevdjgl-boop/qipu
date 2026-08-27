@@ -100,7 +100,7 @@ export function renderHistoryList(monthlyExpenses) {
     return;
   }
 
-  container.innerHTML = items.map(item => {
+  container.innerHTML = items.map((item, idx) => {
     const isExpense = item.type === 'expense';
     const payer = (appState.participants || []).find(p => p.id === item.payerId)?.name || item.payerName || 'General';
 
@@ -128,8 +128,10 @@ export function renderHistoryList(monthlyExpenses) {
       ? (item.hasItems ? `onclick="openTransactionDetailModal('${item.id}')"` : `onclick="openEditExpenseModal('${item.id}')"`)
       : `onclick="openEditIncomeModal('${item.id}')"`;
 
+    const staggerDelay = Math.min(idx * 35, 280);
+
     return `
-      <div ${clickHandler} class="bg-white p-3.5 rounded-2xl border border-slate-100 shadow-sm flex items-center justify-between gap-3 hover:border-slate-200 active:scale-98 transition-all cursor-pointer select-none">
+      <div ${clickHandler} style="animation-delay: ${staggerDelay}ms;" class="animate-item-enter bg-white p-3.5 rounded-2xl border border-slate-100 shadow-sm flex items-center justify-between gap-3 hover:border-slate-200 active:scale-[0.98] transition-all cursor-pointer select-none">
         <div class="flex items-center gap-3 min-w-0 flex-1">
           <div class="shrink-0">
             <div class="w-11 h-11 flex flex-col items-center justify-center rounded-xl border ${dateBoxClass} shadow-sm">
