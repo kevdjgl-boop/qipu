@@ -306,7 +306,6 @@ export function renderHistoryList(monthlyExpenses) {
     `;
   }).join('');
 }
-}
 
 export function openTransactionDetailModal(expenseId) {
   const exp = (appState.expenses || []).find(e => e.id === expenseId);
