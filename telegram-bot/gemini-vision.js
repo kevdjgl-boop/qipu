@@ -1,6 +1,6 @@
 /**
  * @file gemini-vision.js
- * @description Módulo de lectura inteligente de facturas, boletas, vouchers y tickets con desglose de ítems (Gemini 3.6 Flash).
+ * @description Módulo de lectura inteligente con asignación de ítems e invitados por notas/captions (Gemini 3.6 Flash).
  */
 
 /**
@@ -52,21 +52,25 @@ export async function downloadTelegramPhotoAsBase64(fileId, botToken) {
 }
 
 /**
- * Analiza una imagen de factura, boleta, voucher o ticket con Google Gemini Vision (Gemini 3.6 Flash).
- * Extrae tanto el total como el desglose de productos/ítems detallados.
+ * Analiza una imagen de comprobante considerando notas o asignaciones indicadas por el usuario.
  */
-export async function analyzeReceiptWithGemini(base64Image, mimeType, apiKey, availableCategories = []) {
+export async function analyzeReceiptWithGemini(base64Image, mimeType, apiKey, availableCategories = [], availableParticipants = [], userInstructions = '') {
     if (!apiKey) {
         throw new Error("GEMINI_API_KEY_MISSING");
     }
 
     const categoriesList = availableCategories.map(c => typeof c === 'string' ? c : c.name).join(', ');
+    const participantsList = availableParticipants.map(p => typeof p === 'string' ? p : p.name).join(', ');
 
-    const prompt = `Analiza este comprobante de pago (factura, boleta de venta, ticket de compra, voucher de pago, Yape, Plin o recibo).
-Extrae la información general Y la lista detallada de todos los productos o servicios comprados.
-Responde ÚNICAMENTE con un objeto JSON válido (sin bloques de código markdown, sin \`\`\`json, sólo el texto JSON puro).
+    const prompt = `Analiza este comprobante de pago (factura, boleta, ticket de compra, voucher).
+Extrae los datos generales, la lista de productos y aplica cualquier instrucción de asignación de usuarios o invitados que el usuario haya escrito.
 
-El JSON debe tener exactamente esta estructura:
+${userInstructions ? `INSTRUCCIONES ESPECÍFICAS DEL USUARIO:\n"${userInstructions}"\n` : ''}
+
+Integrantes registrados en el monedero: [${participantsList || 'Ninguno'}]
+Categorías disponibles: [${categoriesList || 'Alimentación, Transporte, Servicios, Salud, Entretenimiento, Hogar, Compras, Otros'}]
+
+Responde ÚNICAMENTE con un JSON válido (sin bloques de código markdown, texto JSON puro):
 {
   "amount": 45.50,
   "merchant": "Nombre de la tienda o establecimiento",
@@ -74,33 +78,29 @@ El JSON debe tener exactamente esta estructura:
   "category": "Una categoría adecuada",
   "paymentMethod": "efectivo | tarjeta | yape | plin | transferencia",
   "date": "YYYY-MM-DD",
-  "isShared": false,
+  "isShared": true,
+  "guests": ["Nombre Invitado si aplica"],
   "items": [
     {
       "desc": "Nombre del producto 1",
-      "quantity": 2,
-      "amount": 10.50
+      "quantity": 1,
+      "amount": 25.00,
+      "assignedToName": "Nombre del integrante o invitado al que le corresponde (o 'all' si es compartido entre todos)"
     },
     {
       "desc": "Nombre del producto 2",
       "quantity": 1,
-      "amount": 24.50
+      "amount": 20.50,
+      "assignedToName": "all"
     }
   ]
 }
 
-Reglas importantes:
-1. "amount": Debe ser el MONTO TOTAL FINAL a pagar (Total / Importe Total / Total Venta).
-2. "items": Lista detallada con cada producto/servicio que aparezca en el comprobante.
-   - "desc": Nombre claro y limpio del producto o servicio.
-   - "quantity": Cantidad comprada (número entero o decimal, ej: 1, 2, 0.5).
-   - "amount": Precio unitario de ese producto.
-   (Si el comprobante es un voucher simple sin detalle de productos, deja "items": []).
-3. "merchant": Nombre comercial del emisor (ej: Tottus, Tambo, Wong, Restaurante, Farmacia, etc.).
-4. "description": Descripción concisa (ej: "Compra en Tottus", "Almuerzo Restaurante", "Farmacia").
-5. "category": Elige preferentemente de: [${categoriesList || 'Alimentación, Transporte, Servicios, Salud, Entretenimiento, Hogar, Compras, Otros'}].
-6. "paymentMethod": Si el ticket indica método de pago, normalízalo. Si no, usa "efectivo".
-7. "date": Fecha que figura en el comprobante en formato YYYY-MM-DD. Si no se lee, usa la fecha actual.`;
+Reglas:
+1. "amount": MONTO TOTAL FINAL a pagar.
+2. "items": Lista detallada de ítems. Si el usuario indicó en sus instrucciones que un ítem es de alguien en particular (ej: "el ceviche es de Maria", "las cervezas de Carlos", "el vino es de Pedro (invitado)"), coloca en "assignedToName" el nombre exacto de esa persona. Si no se especifica, usa "all".
+3. "guests": Si se menciona a alguien que no está en la lista de integrantes registrados, agrégalo a la lista de "guests".
+4. "isShared": true si el gasto es compartido entre varias personas o tiene ítems repartidos; false si todo es 100% de una sola persona.`;
 
     const candidateModels = ['gemini-3.6-flash', 'gemini-3-flash-preview', 'gemini-flash-latest'];
     let lastError = null;
@@ -155,5 +155,5 @@ Reglas importantes:
         }
     }
 
-    throw lastError || new Error("No se pudo procesar la imagen con Gemini.");
+    throw lastError || new Error("No se pudo procesar con Gemini.");
 }

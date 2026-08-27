@@ -3,7 +3,8 @@
  * 🤖 QIPU 3.0 - TELEGRAM BOT (CLOUDFLARE WORKER 24/7 BUNDLE)
  * =========================================================================
  * Incluye motor financiero 100% idéntico a Qipu 3.0, extracción de listas
- * de productos detallados (ítems) e IA Gemini 3.6 Flash Vision.
+ * de ítems detallados, asignación de usuarios/invitados por voz/texto
+ * e IA Gemini 3.6 Flash Vision.
  */
 
 // ==========================================
@@ -652,7 +653,7 @@ function parseExpenseMessage(text, walletState = {}, defaultPayerId = null) {
 }
 
 // ================================================================
-// 4. IA GEMINI 3.6 FLASH VISION (CON EXTRACCIÓN DE ÍTEMS DETALLADOS)
+// 4. IA GEMINI 3.6 FLASH VISION (CON ASIGNACIÓN DE INTEGRANTES/INVITADOS)
 // ================================================================
 function arrayBufferToBase64(buffer) {
     let binary = '';
@@ -690,14 +691,19 @@ async function downloadTelegramPhotoAsBase64(fileId, botToken) {
     return { base64Data, mimeType };
 }
 
-async function analyzeReceiptWithGemini(base64Image, mimeType, apiKey, availableCategories = []) {
+async function analyzeReceiptWithGemini(base64Image, mimeType, apiKey, availableCategories = [], availableParticipants = [], userInstructions = '') {
     const categoriesList = availableCategories.map(c => typeof c === 'string' ? c : c.name).join(', ');
+    const participantsList = availableParticipants.map(p => typeof p === 'string' ? p : p.name).join(', ');
 
-    const prompt = `Analiza este comprobante de pago (factura, boleta de venta, ticket de compra, voucher de pago, Yape, Plin o recibo).
-Extrae la información general Y la lista detallada de todos los productos o servicios que aparezcan en el comprobante.
-Responde ÚNICAMENTE con un objeto JSON válido (sin bloques de código markdown, sin \`\`\`json, sólo el texto JSON puro).
+    const prompt = `Analiza este comprobante de pago (factura, boleta, ticket de compra, voucher).
+Extrae los datos generales, la lista de productos y aplica cualquier instrucción de asignación de usuarios o invitados que el usuario haya escrito.
 
-El JSON debe tener exactamente esta estructura:
+${userInstructions ? `INSTRUCCIONES ESPECÍFICAS DEL USUARIO:\n"${userInstructions}"\n` : ''}
+
+Integrantes registrados en el monedero: [${participantsList || 'Ninguno'}]
+Categorías disponibles: [${categoriesList || 'Alimentación, Transporte, Servicios, Salud, Entretenimiento, Hogar, Compras, Otros'}]
+
+Responde ÚNICAMENTE con un JSON válido (sin bloques de código markdown, texto JSON puro):
 {
   "amount": 45.50,
   "merchant": "Nombre de la tienda o establecimiento",
@@ -705,33 +711,29 @@ El JSON debe tener exactamente esta estructura:
   "category": "Una categoría adecuada",
   "paymentMethod": "efectivo | tarjeta | yape | plin | transferencia",
   "date": "YYYY-MM-DD",
-  "isShared": false,
+  "isShared": true,
+  "guests": ["Nombre de invitados si aplica"],
   "items": [
     {
       "desc": "Nombre del producto 1",
-      "quantity": 2,
-      "amount": 10.50
+      "quantity": 1,
+      "amount": 25.00,
+      "assignedToName": "Nombre exacto del integrante o invitado al que le corresponde (o 'all' si es compartido)"
     },
     {
       "desc": "Nombre del producto 2",
       "quantity": 1,
-      "amount": 24.50
+      "amount": 20.50,
+      "assignedToName": "all"
     }
   ]
 }
 
 Reglas importantes:
-1. "amount": Debe ser el MONTO TOTAL FINAL a pagar (Total / Importe Total / Total Venta).
-2. "items": Lista detallada con cada producto/servicio que aparezca en el comprobante.
-   - "desc": Nombre claro del producto.
-   - "quantity": Cantidad (número ej: 1, 2, 0.5).
-   - "amount": Precio unitario.
-   (Si es un voucher de pago simple sin detalle de productos, deja "items": []).
-3. "merchant": Nombre comercial del emisor (ej: Tottus, Tambo, Wong, Restaurante, Farmacia, etc.).
-4. "description": Descripción concisa (ej: "Compra en Tottus", "Almuerzo Restaurante", "Farmacia").
-5. "category": Elige preferentemente de: [${categoriesList || 'Alimentación, Transporte, Servicios, Salud, Entretenimiento, Hogar, Compras, Otros'}].
-6. "paymentMethod": Si el ticket indica cómo se pagó, normalízalo. Si no, usa "efectivo".
-7. "date": Fecha que figura en el comprobante en formato YYYY-MM-DD. Si no se lee, usa la fecha actual.`;
+1. "amount": MONTO TOTAL FINAL a pagar.
+2. "items": Lista detallada de ítems. Si el usuario indicó que un ítem específico es de alguien (ej: "el ceviche es de Maria", "las cervezas son de Carlos", "el vino de Pedro (invitado)"), coloca en "assignedToName" el nombre de esa persona. Si no se especifica, usa "all".
+3. "guests": Si se menciona a alguien que no está en la lista de integrantes registrados, agrégalo aquí como invitado.
+4. "isShared": true si participan varias personas o ítems separados; false si es 100% de una sola persona.`;
 
     const candidateModels = ['gemini-3.6-flash', 'gemini-3-flash-preview', 'gemini-flash-latest'];
     let lastError = null;
@@ -824,7 +826,7 @@ async function handleTelegramUpdate(update, botToken, defaultWalletId = null, ge
             return await sendTelegramMessage(botToken, chatId, `📷 Falta configurar GEMINI_API_KEY.`);
         }
 
-        await sendTelegramMessage(botToken, chatId, `🔍 <b>Analizando comprobante con Inteligencia Artificial...</b> ⏳`);
+        await sendTelegramMessage(botToken, chatId, `🔍 <b>Analizando comprobante y asignaciones con IA...</b> ⏳`);
 
         try {
             let fileId;
@@ -835,11 +837,20 @@ async function handleTelegramUpdate(update, botToken, defaultWalletId = null, ge
                 fileId = message.document.file_id;
             }
 
+            const userCaption = (message.caption || '').trim();
             const { base64Data, mimeType } = await downloadTelegramPhotoAsBase64(fileId, botToken);
             const wallet = await getWalletDoc(walletId);
             if (!wallet) return await sendTelegramMessage(botToken, chatId, `❌ Monedero no encontrado.`);
 
-            const receiptData = await analyzeReceiptWithGemini(base64Data, mimeType, geminiApiKey, wallet.categories || []);
+            const participants = wallet.participants || [];
+            const receiptData = await analyzeReceiptWithGemini(
+                base64Data,
+                mimeType,
+                geminiApiKey,
+                wallet.categories || [],
+                participants,
+                userCaption
+            );
             const amount = parseFloat(receiptData.amount);
 
             if (isNaN(amount) || amount <= 0) {
@@ -856,7 +867,6 @@ async function handleTelegramUpdate(update, botToken, defaultWalletId = null, ge
             let paymentMethodId = paymentMethods.length > 0 ? paymentMethods[0].id : null;
             let paymentMethodName = paymentMethods.length > 0 ? paymentMethods[0].name : 'Efectivo';
 
-            const participants = wallet.participants || [];
             const payerId = participants.length > 0 ? participants[0].id : 'default_payer';
             const payerName = participants.length > 0 ? participants[0].name : 'Tú';
 
@@ -864,16 +874,51 @@ async function handleTelegramUpdate(update, botToken, defaultWalletId = null, ge
                 ? `${receiptData.merchant}${receiptData.description ? ' - ' + receiptData.description : ''}`
                 : (receiptData.description || 'Gasto Comprobante');
 
-            // Formatear ítems detallados si existen en el comprobante
+            // Procesar invitados detectados
+            const rawGuests = Array.isArray(receiptData.guests) ? receiptData.guests : [];
+            const guestsList = rawGuests.filter(g => g && typeof g === 'string' && g.trim().length > 0);
+
+            // Mapear cada ítem a su participante o invitado correspondiente
             const rawItems = Array.isArray(receiptData.items) ? receiptData.items : [];
-            const formattedItems = rawItems.map(item => ({
-                id: 'item_' + Math.random().toString(36).substring(2, 9),
-                desc: item.desc || item.name || 'Producto',
-                quantity: parseFloat(item.quantity) || 1,
-                amount: parseFloat(item.amount) || 0,
-                assignedTo: 'all',
-                assignments: {}
-            }));
+            const formattedItems = rawItems.map(item => {
+                const qty = parseFloat(item.quantity) || 1;
+                const unitPrice = parseFloat(item.amount) || 0;
+                const assignedName = (item.assignedToName || 'all').trim();
+                
+                let assignedTo = 'all';
+                let assignments = {};
+
+                if (assignedName && assignedName.toLowerCase() !== 'all') {
+                    // Buscar si coincide con un integrante registrado
+                    const matchedP = participants.find(p => p.name.toLowerCase().includes(assignedName.toLowerCase()) || assignedName.toLowerCase().includes(p.name.toLowerCase()));
+                    if (matchedP) {
+                        assignedTo = matchedP.id;
+                        assignments[matchedP.id] = qty;
+                    } else {
+                        // Es un invitado
+                        const gKey = `guest_${assignedName.toLowerCase().replace(/\s+/g, '_')}`;
+                        assignedTo = gKey;
+                        assignments[gKey] = qty;
+                        if (!guestsList.some(g => g.toLowerCase() === assignedName.toLowerCase())) {
+                            guestsList.push(assignedName);
+                        }
+                    }
+                }
+
+                return {
+                    id: 'item_' + Math.random().toString(36).substring(2, 9),
+                    desc: item.desc || item.name || 'Producto',
+                    quantity: qty,
+                    amount: unitPrice,
+                    assignedTo,
+                    assignments,
+                    assignedDisplayName: assignedName !== 'all' ? assignedName : 'Compartido'
+                };
+            });
+
+            const hasItems = formattedItems.length > 0;
+            const hasMultipleAssignments = formattedItems.some(it => it.assignedTo !== 'all') || guestsList.length > 0;
+            const expenseType = (receiptData.isShared || hasMultipleAssignments || formattedItems.length > 0) ? 'shared' : 'personal';
 
             const expenseToSave = {
                 amount: Math.round(amount * 100) / 100,
@@ -883,23 +928,29 @@ async function handleTelegramUpdate(update, botToken, defaultWalletId = null, ge
                 paymentMethodName,
                 payerId,
                 payerName,
-                type: receiptData.isShared ? 'shared' : 'personal',
+                type: expenseType,
                 date: receiptData.date || new Date().toISOString().split('T')[0],
                 isFixed: false,
                 fixedRecurrenceMonths: 0,
                 items: formattedItems,
-                guests: []
+                guests: guestsList
             };
 
             await addExpenseToWallet(walletId, expenseToSave);
 
             let itemsSummaryHtml = '';
             if (formattedItems.length > 0) {
-                itemsSummaryHtml = `\n🛒 <b>Productos detectados (${formattedItems.length}):</b>\n`;
+                itemsSummaryHtml = `\n🛒 <b>Desglose de Ítems (${formattedItems.length}):</b>\n`;
                 formattedItems.forEach(it => {
                     const subtotal = it.quantity * it.amount;
-                    itemsSummaryHtml += `• ${it.quantity}x <i>${it.desc}</i> (S/ ${subtotal.toFixed(2)})\n`;
+                    const asgnBadge = it.assignedDisplayName !== 'Compartido' ? ` 👤 <i>[${it.assignedDisplayName}]</i>` : ' 👥 <i>[Todos]</i>';
+                    itemsSummaryHtml += `• ${it.quantity}x <b>${it.desc}</b>: S/ ${subtotal.toFixed(2)}${asgnBadge}\n`;
                 });
+            }
+
+            let guestsSummaryHtml = '';
+            if (guestsList.length > 0) {
+                guestsSummaryHtml = `\n👥 <b>Invitados asignados:</b> ${guestsList.join(', ')}\n`;
             }
 
             const msg = `🧾 <b>¡Comprobante Registrado con Éxito!</b> ✨\n\n` +
@@ -911,7 +962,8 @@ async function handleTelegramUpdate(update, botToken, defaultWalletId = null, ge
                         `📅 <b>Fecha:</b> ${expenseToSave.date}\n` +
                         `👤 <b>Pagado por:</b> ${expenseToSave.payerName}\n` +
                         itemsSummaryHtml +
-                        `\n⚡ <i>Guardado como lista detallada en tu app Qipu.</i>`;
+                        guestsSummaryHtml +
+                        `\n⚡ <i>Guardado en tiempo real en Qipu.</i>`;
 
             return await sendTelegramMessage(botToken, chatId, msg);
         } catch (err) {
@@ -927,11 +979,13 @@ async function handleTelegramUpdate(update, botToken, defaultWalletId = null, ge
         return await sendTelegramMessage(botToken, chatId,
             `👋 <b>¡Hola ${userName}! Bienvenido a tu Bot de Qipu 3.0</b> 💰\n\n` +
             `✅ <b>Monedero Activo:</b> <code>${walletId}</code>\n\n` +
-            `📸 <b>¡Puedes enviar fotos de comprobantes, facturas y boletas!</b>\n\n` +
-            `O registra tus gastos escribiendo:\n` +
+            `📸 <b>Envía fotos de tus comprobantes:</b>\n` +
+            `Puedes escribir en el pie de foto para asignar ítems, ej:\n` +
+            `👉 <i>"El ceviche es de Maria y las cervezas de Juan (invitado)"</i>\n\n` +
+            `✍️ <b>O registra gastos por texto:</b>\n` +
             `👉 <code>25 Almuerzo</code>\n` +
             `👉 <code>18 Taxi transporte efectivo</code>\n` +
-            `👉 <code>/saldo</code> (para ver presupuestos y saldos por usuario)`
+            `👉 <code>/saldo</code> (para ver presupuestos)`
         );
     }
 
