@@ -1,6 +1,6 @@
 /**
  * @file gemini-vision.js
- * @description Módulo de lectura inteligente de facturas peruanas (IGV, Op. Gravada, Importe Total) y asignación inteligente de pagador/consumidor.
+ * @description Módulo de lectura inteligente de facturas y tickets con cálculo exacto de precio unitario y verificación matemática.
  */
 
 /**
@@ -52,7 +52,7 @@ export async function downloadTelegramPhotoAsBase64(fileId, botToken) {
 }
 
 /**
- * Analiza un comprobante de pago con IA reconociendo impuestos (IGV, Op Gravada) e instrucciones de pagador/asignación.
+ * Analiza un comprobante extrayendo con precisión matemática cantidades, precios unitarios e importe total.
  */
 export async function analyzeReceiptWithGemini(base64Image, mimeType, apiKey, availableCategories = [], availableParticipants = [], userInstructions = '') {
     if (!apiKey) {
@@ -62,48 +62,45 @@ export async function analyzeReceiptWithGemini(base64Image, mimeType, apiKey, av
     const categoriesList = availableCategories.map(c => typeof c === 'string' ? c : c.name).join(', ');
     const participantsList = availableParticipants.map(p => typeof p === 'string' ? p : p.name).join(', ');
 
-    const prompt = `Analiza este comprobante de pago peruano (Factura Electrónica, Boleta de Venta Electrónica, Ticket POS, Voucher o Recibo).
-Extrae la información contable exacta, la lista de productos y aplica cualquier instrucción del usuario.
+    const prompt = `Analiza detenidamente este comprobante de pago (factura, boleta de venta, ticket POS o voucher).
+Debes leer y calcular con EXACTITUD MATEMÁTICA las cantidades, precios unitarios y el total final.
 
 ${userInstructions ? `INSTRUCCIONES ESPECÍFICAS DEL USUARIO:\n"${userInstructions}"\n` : ''}
 
 Integrantes registrados en el monedero: [${participantsList || 'Ninguno'}]
 Categorías disponibles: [${categoriesList || 'Alimentación, Transporte, Servicios, Salud, Entretenimiento, Hogar, Compras, Otros'}]
 
-Reglas CRÍTICAS de comprobantes fiscales (SUNAT / Perú):
-1. "amount" (MONTO TOTAL FINAL):
-   - Debe ser SIEMPRE el "IMPORTE TOTAL", "TOTAL VENTA", "TOTAL A PAGAR" o "TOTAL NETO".
-   - NUNCA tomes la "OP. GRAVADA", "SUBTOTAL", "OP. INAFECTA" ni la base imponible sin IGV.
-   - El monto final SIEMPRE INCLUYE EL IGV (18%), bolsas (ICBPER), propinas y cargos por servicio.
-2. "payerName" (QUIÉN PAGÓ):
-   - Si el usuario dice "lo pagó Maria", "pagó Kevind", "pagado por X", "lo pagué yo", etc., extrae ese nombre exacto.
-3. "isPersonal" vs "isShared":
-   - Si el usuario indica "es personal", "todo mío", "es de Kevind", "gasto propio", "todo lo pagó y consumió X": "isShared": false.
-   - Si el gasto fue compartido entre todos o tiene ítems repartidos: "isShared": true.
-4. "items":
-   - Desglosa cada producto con "desc", "quantity" (número) y "amount" (precio unitario con IGV incluido o prorrateado para que la suma total coincida con el IMPORTE TOTAL).
-   - "assignedToName": Si el usuario asignó el producto a alguien específico, coloca su nombre; si no, "all".
-5. "guests":
-   - Si se mencionan personas que no están en la lista de integrantes registrados, agrégalas a la lista "guests".
+REGLAS DE PRECISIÓN DE PRECIOS:
+1. "amount": Debe ser el IMPORTE TOTAL FINAL A PAGAR del comprobante (incluyendo IGV y todos los cargos).
+2. "items" (CADA LÍNEA DE PRODUCTO):
+   - "desc": Nombre completo y limpio del producto o servicio.
+   - "quantity": Cantidad física comprada (número, ej: 1, 2, 3, 0.75). Si no está clara, es 1.
+   - "unitPrice": PRECIO UNITARIO por UNA SOLA UNIDAD.
+     * Si el ticket dice "2 x 4.50 = 9.00", "unitPrice" es 4.50 (NO 9.00).
+     * Si el ticket solo muestra el total de la línea (ej: "2 Leche 10.00"), calcula el unitario dividiendo: 10.00 / 2 = 5.00.
+   - "lineTotal": Total de esa línea de producto (quantity * unitPrice).
+   - "assignedToName": Nombre de la persona asignada según las instrucciones del usuario, o "all" si es compartido.
+3. "payerName": Nombre de quien pagó si se menciona en las instrucciones, o null.
+4. "isShared": false si el usuario indica "personal" o "todo mío"; true si es compartido.
+5. "guests": Nombres de invitados mencionados.
 
-Responde ÚNICAMENTE con un JSON válido (sin markdown, solo texto JSON puro):
+Responde ÚNICAMENTE con JSON puro sin formato markdown:
 {
-  "amount": 118.00,
-  "subtotal": 100.00,
-  "igv": 18.00,
-  "merchant": "Nombre del emisor o tienda",
-  "description": "Resumen de la compra",
+  "amount": 45.50,
+  "merchant": "Nombre del comercio",
+  "description": "Resumen de compra",
   "category": "Categoría adecuada",
   "paymentMethod": "efectivo | tarjeta | yape | plin | transferencia",
   "date": "YYYY-MM-DD",
-  "payerName": "Nombre de quien pagó (o null)",
+  "payerName": null,
   "isShared": true,
   "guests": [],
   "items": [
     {
-      "desc": "Producto 1",
-      "quantity": 1,
-      "amount": 118.00,
+      "desc": "Nombre producto 1",
+      "quantity": 2,
+      "unitPrice": 10.00,
+      "lineTotal": 20.00,
       "assignedToName": "all"
     }
   ]

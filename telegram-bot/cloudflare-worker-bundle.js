@@ -3,8 +3,8 @@
  * 🤖 QIPU 3.0 - TELEGRAM BOT (CLOUDFLARE WORKER 24/7 BUNDLE)
  * =========================================================================
  * Incluye motor financiero 100% idéntico a Qipu 3.0, extracción de listas
- * de ítems detallados, soporte fiscal SUNAT (Total con IGV) y asignación
- * de pagador / gasto personal / compartido por lenguaje natural.
+ * de ítems con validación matemática de precios unitarios vs totales,
+ * soporte fiscal SUNAT (Total con IGV) y asignación inteligente.
  */
 
 // ==========================================
@@ -653,7 +653,7 @@ function parseExpenseMessage(text, walletState = {}, defaultPayerId = null) {
 }
 
 // ================================================================
-// 4. IA GEMINI 3.6 FLASH VISION (REGLAS FISCALES SUNAT Y ASIGNACIÓN)
+// 4. IA GEMINI 3.6 FLASH VISION (VALIDACIÓN DE PRECIOS UNITARIOS)
 // ================================================================
 function arrayBufferToBase64(buffer) {
     let binary = '';
@@ -695,48 +695,45 @@ async function analyzeReceiptWithGemini(base64Image, mimeType, apiKey, available
     const categoriesList = availableCategories.map(c => typeof c === 'string' ? c : c.name).join(', ');
     const participantsList = availableParticipants.map(p => typeof p === 'string' ? p : p.name).join(', ');
 
-    const prompt = `Analiza este comprobante de pago peruano (Factura Electrónica, Boleta de Venta Electrónica, Ticket POS, Voucher o Recibo).
-Extrae la información contable exacta, la lista de productos y aplica cualquier instrucción del usuario.
+    const prompt = `Analiza detenidamente este comprobante de pago (factura, boleta de venta, ticket POS o voucher).
+Debes leer y calcular con EXACTITUD MATEMÁTICA las cantidades, precios unitarios y el total final.
 
 ${userInstructions ? `INSTRUCCIONES ESPECÍFICAS DEL USUARIO:\n"${userInstructions}"\n` : ''}
 
 Integrantes registrados en el monedero: [${participantsList || 'Ninguno'}]
 Categorías disponibles: [${categoriesList || 'Alimentación, Transporte, Servicios, Salud, Entretenimiento, Hogar, Compras, Otros'}]
 
-Reglas CRÍTICAS de comprobantes fiscales (SUNAT / Perú):
-1. "amount" (MONTO TOTAL FINAL):
-   - Debe ser SIEMPRE el "IMPORTE TOTAL", "TOTAL VENTA", "TOTAL A PAGAR" o "TOTAL NETO".
-   - NUNCA tomes la "OP. GRAVADA", "SUBTOTAL", "OP. INAFECTA" ni la base imponible sin IGV.
-   - El monto final SIEMPRE INCLUYE EL IGV (18%), bolsas (ICBPER), propinas y cargos por servicio.
-2. "payerName" (QUIÉN PAGÓ):
-   - Si el usuario dice "lo pagó Maria", "pagó Kevind", "pagado por X", "lo pagué yo", etc., extrae ese nombre exacto.
-3. "isPersonal" vs "isShared":
-   - Si el usuario indica "es personal", "todo mío", "es de Kevind", "gasto propio", "todo lo pagó y consumió X": "isShared": false.
-   - Si el gasto fue compartido entre todos o tiene ítems repartidos: "isShared": true.
-4. "items":
-   - Desglosa cada producto con "desc", "quantity" (número) y "amount" (precio unitario con IGV incluido o prorrateado para que la suma total coincida con el IMPORTE TOTAL).
-   - "assignedToName": Si el usuario asignó el producto a alguien específico, coloca su nombre; si no, "all".
-5. "guests":
-   - Si se mencionan personas que no están en la lista de integrantes registrados, agrégalas a la lista "guests".
+REGLAS DE PRECISIÓN DE PRECIOS:
+1. "amount": Debe ser el IMPORTE TOTAL FINAL A PAGAR del comprobante (incluyendo IGV y todos los cargos).
+2. "items" (CADA LÍNEA DE PRODUCTO):
+   - "desc": Nombre completo y limpio del producto o servicio.
+   - "quantity": Cantidad física comprada (número, ej: 1, 2, 3, 0.75). Si no está clara, es 1.
+   - "unitPrice": PRECIO UNITARIO por UNA SOLA UNIDAD.
+     * Si el ticket dice "2 x 4.50 = 9.00", "unitPrice" es 4.50 (NO 9.00).
+     * Si el ticket solo muestra el total de la línea (ej: "2 Leche 10.00"), calcula el unitario dividiendo: 10.00 / 2 = 5.00.
+   - "lineTotal": Total de esa línea de producto (quantity * unitPrice).
+   - "assignedToName": Nombre de la persona asignada según las instrucciones del usuario, o "all" si es compartido.
+3. "payerName": Nombre de quien pagó si se menciona en las instrucciones, o null.
+4. "isShared": false si el usuario indica "personal" o "todo mío"; true si es compartido.
+5. "guests": Nombres de invitados mencionados.
 
-Responde ÚNICAMENTE con un JSON válido (sin markdown, solo texto JSON puro):
+Responde ÚNICAMENTE con JSON puro sin formato markdown:
 {
-  "amount": 118.00,
-  "subtotal": 100.00,
-  "igv": 18.00,
-  "merchant": "Nombre del emisor o tienda",
-  "description": "Resumen de la compra",
+  "amount": 45.50,
+  "merchant": "Nombre del comercio",
+  "description": "Resumen de compra",
   "category": "Categoría adecuada",
   "paymentMethod": "efectivo | tarjeta | yape | plin | transferencia",
   "date": "YYYY-MM-DD",
-  "payerName": "Nombre de quien pagó (o null)",
+  "payerName": null,
   "isShared": true,
   "guests": [],
   "items": [
     {
-      "desc": "Producto 1",
-      "quantity": 1,
-      "amount": 118.00,
+      "desc": "Nombre producto 1",
+      "quantity": 2,
+      "unitPrice": 10.00,
+      "lineTotal": 20.00,
       "assignedToName": "all"
     }
   ]
@@ -795,7 +792,7 @@ Responde ÚNICAMENTE con un JSON válido (sin markdown, solo texto JSON puro):
         }
     }
 
-    throw lastError || new Error("No se pudo procesar la imagen con Gemini.");
+    throw lastError || new Error("No se pudo procesar con Gemini.");
 }
 
 // ==========================================
@@ -833,7 +830,7 @@ async function handleTelegramUpdate(update, botToken, defaultWalletId = null, ge
             return await sendTelegramMessage(botToken, chatId, `📷 Falta configurar GEMINI_API_KEY.`);
         }
 
-        await sendTelegramMessage(botToken, chatId, `🔍 <b>Analizando comprobante fiscal e impuestos con IA...</b> ⏳`);
+        await sendTelegramMessage(botToken, chatId, `🔍 <b>Analizando comprobante y precios unitarios con IA...</b> ⏳`);
 
         try {
             let fileId;
@@ -874,7 +871,7 @@ async function handleTelegramUpdate(update, botToken, defaultWalletId = null, ge
             let paymentMethodId = paymentMethods.length > 0 ? paymentMethods[0].id : null;
             let paymentMethodName = paymentMethods.length > 0 ? paymentMethods[0].name : 'Efectivo';
 
-            // Detectar quién pagó
+            // Detectar pagador
             let payerId = participants.length > 0 ? participants[0].id : 'default_payer';
             let payerName = participants.length > 0 ? participants[0].name : 'Tú';
 
@@ -894,13 +891,24 @@ async function handleTelegramUpdate(update, botToken, defaultWalletId = null, ge
             const rawGuests = Array.isArray(receiptData.guests) ? receiptData.guests : [];
             const guestsList = rawGuests.filter(g => g && typeof g === 'string' && g.trim().length > 0);
 
-            // Mapear cada ítem a su participante o invitado correspondiente
+            // Mapear y validar matemáticamente precios unitarios de cada ítem
             const rawItems = Array.isArray(receiptData.items) ? receiptData.items : [];
             const formattedItems = rawItems.map(item => {
                 const qty = parseFloat(item.quantity) || 1;
-                const unitPrice = parseFloat(item.amount) || 0;
+                let rawUnit = parseFloat(item.unitPrice || item.amount) || 0;
+                let rawTotal = parseFloat(item.lineTotal) || 0;
+
+                // Validación matemática: si unitPrice vino como el total de línea o viceversa
+                let unitPrice = rawUnit;
+                if (qty > 1) {
+                    if (rawTotal > 0 && Math.abs(rawTotal - rawUnit) < 0.01) {
+                        unitPrice = rawTotal / qty;
+                    } else if (rawTotal > 0 && Math.abs((rawUnit * qty) - rawTotal) > 0.05) {
+                        unitPrice = rawTotal / qty;
+                    }
+                }
+
                 const assignedName = (item.assignedToName || 'all').trim();
-                
                 let assignedTo = 'all';
                 let assignments = {};
 
@@ -923,14 +931,14 @@ async function handleTelegramUpdate(update, botToken, defaultWalletId = null, ge
                     id: 'item_' + Math.random().toString(36).substring(2, 9),
                     desc: item.desc || item.name || 'Producto',
                     quantity: qty,
-                    amount: unitPrice,
+                    amount: Math.round(unitPrice * 100) / 100,
                     assignedTo,
                     assignments,
                     assignedDisplayName: assignedName !== 'all' ? assignedName : 'Compartido'
                 };
             });
 
-            // Determinar si es personal o compartido
+            // Determinar tipo de gasto
             let expenseType = 'shared';
             const normCaption = normalizeStr(userCaption);
             const isPersonalCaption = normCaption.includes('personal') || normCaption.includes('mio') || normCaption.includes('propio') || normCaption.includes('solo yo');
@@ -963,15 +971,16 @@ async function handleTelegramUpdate(update, botToken, defaultWalletId = null, ge
                 formattedItems.forEach(it => {
                     const subtotal = it.quantity * it.amount;
                     const asgnBadge = it.assignedDisplayName !== 'Compartido' ? ` 👤 <i>[${it.assignedDisplayName}]</i>` : '';
-                    itemsSummaryHtml += `• ${it.quantity}x <b>${it.desc}</b>: S/ ${subtotal.toFixed(2)}${asgnBadge}\n`;
+                    const unitPriceText = it.quantity > 1 ? ` (S/ ${it.amount.toFixed(2)} c/u)` : '';
+                    itemsSummaryHtml += `• ${it.quantity}x <b>${it.desc}</b>${unitPriceText}: S/ ${subtotal.toFixed(2)}${asgnBadge}\n`;
                 });
             }
 
-            let typeBadge = expenseType === 'personal' ? '🔒 <b>Tipo:</b> Personal (100% tuyo)' : '👥 <b>Tipo:</b> Compartido grupal';
+            let typeBadge = expenseType === 'personal' ? '🔒 <b>Tipo:</b> Personal' : '👥 <b>Tipo:</b> Compartido';
 
             const msg = `🧾 <b>¡Comprobante Registrado con Éxito!</b> ✨\n\n` +
                         `🏢 <b>Establecimiento:</b> ${receiptData.merchant || 'Comercio'}\n` +
-                        `💵 <b>Importe Total (con IGV):</b> S/ ${expenseToSave.amount.toFixed(2)}\n` +
+                        `💵 <b>Importe Total:</b> S/ ${expenseToSave.amount.toFixed(2)}\n` +
                         `📝 <b>Detalle:</b> ${expenseToSave.description}\n` +
                         `🏷️ <b>Categoría:</b> ${expenseToSave.category}\n` +
                         `💳 <b>Método:</b> ${expenseToSave.paymentMethodName}\n` +
@@ -979,7 +988,7 @@ async function handleTelegramUpdate(update, botToken, defaultWalletId = null, ge
                         `${typeBadge}\n` +
                         `📅 <b>Fecha:</b> ${expenseToSave.date}\n` +
                         itemsSummaryHtml +
-                        `\n⚡ <i>Guardado en tiempo real en Qipu.</i>`;
+                        `\n⚡ <i>Precios unitarios validados en tiempo real en Qipu.</i>`;
 
             return await sendTelegramMessage(botToken, chatId, msg);
         } catch (err) {
