@@ -13,7 +13,7 @@ let pullLottieEl = null;
 let lottieInstance = null;
 
 const PULL_BREAKPOINT = 65; // Punto de quiebre en px para activar la recarga
-const STRETCH_PEAK_FRAME = 24; // Fotograma exacto donde la billetera alcanza su estiramiento máximo
+const STRETCH_PEAK_FRAME = 30; // Fotograma exacto donde la billetera alcanza su estiramiento máximo (nuevo JSON)
 const TOTAL_FRAMES = 60; // Total de fotogramas de la animación
 
 export function initPullToRefresh() {
