@@ -1,7 +1,22 @@
 /**
  * @file gemini-vision.js
- * @description Módulo de lectura inteligente de facturas, boletas, vouchers y tickets usando Google Gemini Vision API (Gemini 2.5 Flash / Flash Latest).
+ * @description Módulo de lectura ultrarrápida de facturas, boletas y tickets con Gemini 2.5 Flash Vision.
  */
+
+/**
+ * Convierte un ArrayBuffer a Base64 a ultra-alta velocidad (por bloques de 8KB).
+ */
+export function arrayBufferToBase64(buffer) {
+    let binary = '';
+    const bytes = new Uint8Array(buffer);
+    const len = bytes.byteLength;
+    const chunkSize = 8192;
+    for (let i = 0; i < len; i += chunkSize) {
+        const sub = bytes.subarray(i, Math.min(i + chunkSize, len));
+        binary += String.fromCharCode.apply(null, sub);
+    }
+    return btoa(binary);
+}
 
 /**
  * Descarga una foto desde los servidores de Telegram en formato Base64.
@@ -26,17 +41,7 @@ export async function downloadTelegramPhotoAsBase64(fileId, botToken) {
     }
 
     const arrayBuffer = await downloadRes.arrayBuffer();
-    
-    let base64Data = '';
-    if (typeof Buffer !== 'undefined') {
-        base64Data = Buffer.from(arrayBuffer).toString('base64');
-    } else {
-        const bytes = new Uint8Array(arrayBuffer);
-        for (let i = 0; i < bytes.byteLength; i++) {
-            base64Data += String.fromCharCode(bytes[i]);
-        }
-        base64Data = btoa(base64Data);
-    }
+    const base64Data = arrayBufferToBase64(arrayBuffer);
 
     let mimeType = 'image/jpeg';
     if (filePath.endsWith('.png')) mimeType = 'image/png';
@@ -47,7 +52,7 @@ export async function downloadTelegramPhotoAsBase64(fileId, botToken) {
 }
 
 /**
- * Analiza una imagen de factura, boleta, voucher o ticket con Google Gemini Vision.
+ * Analiza una imagen de comprobante con Gemini 2.5 Flash a ultra-velocidad.
  */
 export async function analyzeReceiptWithGemini(base64Image, mimeType, apiKey, availableCategories = []) {
     if (!apiKey) {
@@ -79,8 +84,8 @@ Reglas importantes:
 5. "paymentMethod": Si el ticket indica cómo se pagó (Visa, Mastercard, Débito, Efectivo, Yape, Plin), normalízalo. Si no se puede determinar, usa "efectivo".
 6. "date": Fecha que figura en el comprobante en formato YYYY-MM-DD. Si no se lee la fecha, usa la fecha actual.`;
 
-    const candidateModels = ['gemini-2.5-flash', 'gemini-flash-latest', 'gemini-2.5-flash-lite', 'gemini-3-flash-preview'];
-    let lastError = null;
+    const modelName = 'gemini-2.5-flash';
+    const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${apiKey}`;
 
     const bodyPayload = {
         contents: [
@@ -99,40 +104,31 @@ Reglas importantes:
         ],
         generationConfig: {
             temperature: 0.1,
-            responseMimeType: "application/json"
+            responseMimeType: "application/json",
+            thinkingConfig: {
+                thinkingBudget: 0
+            }
         }
     };
 
-    for (const modelName of candidateModels) {
-        try {
-            const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${apiKey}`;
-            const res = await fetch(endpoint, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(bodyPayload)
-            });
+    const res = await fetch(endpoint, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(bodyPayload)
+    });
 
-            if (!res.ok) {
-                const errText = await res.text();
-                lastError = new Error(`Error en modelo ${modelName} (${res.status}): ${errText}`);
-                continue;
-            }
-
-            const data = await res.json();
-            const candidateText = data.candidates?.[0]?.content?.parts?.[0]?.text;
-
-            if (!candidateText) {
-                lastError = new Error(`Modelo ${modelName} no devolvió texto de respuesta.`);
-                continue;
-            }
-
-            const cleaned = candidateText.replace(/^```json/i, '').replace(/^```/, '').replace(/```$/, '').trim();
-            const parsed = JSON.parse(cleaned);
-            return parsed;
-        } catch (err) {
-            lastError = err;
-        }
+    if (!res.ok) {
+        const errText = await res.text();
+        throw new Error(`Error en Gemini (${res.status}): ${errText}`);
     }
 
-    throw lastError || new Error("No se pudo procesar la imagen con Gemini.");
+    const data = await res.json();
+    const candidateText = data.candidates?.[0]?.content?.parts?.[0]?.text;
+
+    if (!candidateText) {
+        throw new Error("Gemini no devolvió texto de respuesta para la imagen.");
+    }
+
+    const cleaned = candidateText.replace(/^```json/i, '').replace(/^```/, '').replace(/```$/, '').trim();
+    return JSON.parse(cleaned);
 }
