@@ -16,23 +16,45 @@ const PULL_TRIGGER_DISTANCE = 95; // Distancia de arrastre con dedo para activar
 const BANNER_OPEN_HEIGHT = 72; // Altura en px del bloque sobre el header
 const STRETCH_PEAK_FRAME = 30; // Fotograma máximo de estiramiento
 
+function ensureLottieInstance() {
+  if (lottieInstance) return lottieInstance;
+  if (!pullLottieEl) pullLottieEl = document.getElementById('pull-to-refresh-lottie');
+  if (window.lottie && pullLottieEl) {
+    try {
+      pullLottieEl.innerHTML = '';
+      lottieInstance = window.lottie.loadAnimation({
+        container: pullLottieEl,
+        renderer: 'svg',
+        loop: false,
+        autoplay: false,
+        animationData: SWIPE_ANIMATION_DATA
+      });
+      lottieInstance.goToAndStop(0, true);
+      return lottieInstance;
+    } catch (err) {
+      console.warn('Error al cargar Lottie en PWA:', err);
+    }
+  }
+  return null;
+}
+
 export function initPullToRefresh() {
   pullBanner = document.getElementById('pull-header-banner');
   pullLottieEl = document.getElementById('pull-to-refresh-lottie');
 
   if (!pullBanner || !pullLottieEl) return;
 
-  // Inicializar reproductor Lottie en el bloque sobre el header
-  if (window.lottie) {
-    pullLottieEl.innerHTML = '';
-    lottieInstance = window.lottie.loadAnimation({
-      container: pullLottieEl,
-      renderer: 'svg',
-      loop: false,
-      autoplay: false,
-      animationData: SWIPE_ANIMATION_DATA
-    });
-    lottieInstance.goToAndStop(0, true);
+  ensureLottieInstance();
+
+  // Reintento en caso de que bodymovin cargue con retardo en PWA móvil
+  if (!lottieInstance) {
+    const timer = setInterval(() => {
+      if (window.lottie) {
+        ensureLottieInstance();
+        clearInterval(timer);
+      }
+    }, 80);
+    setTimeout(() => clearInterval(timer), 6000);
   }
 
   const onTouchStart = (e) => {
@@ -40,6 +62,7 @@ export function initPullToRefresh() {
     const scrollTop = window.scrollY || document.documentElement.scrollTop || 0;
     if (scrollTop > 5) return; // Solo iniciar si el scroll está en la cima absoluta
 
+    ensureLottieInstance();
     pullStartY = e.clientY !== undefined ? e.clientY : (e.touches && e.touches[0] ? e.touches[0].clientY : 0);
     pullStartX = e.clientX !== undefined ? e.clientX : (e.touches && e.touches[0] ? e.touches[0].clientX : 0);
     isPulling = false;
