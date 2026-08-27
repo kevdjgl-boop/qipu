@@ -1,6 +1,6 @@
 /**
  * @file gemini-vision.js
- * @description Módulo de lectura inteligente con asignación de ítems e invitados por notas/captions (Gemini 3.6 Flash).
+ * @description Módulo de lectura inteligente de facturas peruanas (IGV, Op. Gravada, Importe Total) y asignación inteligente de pagador/consumidor.
  */
 
 /**
@@ -52,7 +52,7 @@ export async function downloadTelegramPhotoAsBase64(fileId, botToken) {
 }
 
 /**
- * Analiza una imagen de comprobante considerando notas o asignaciones indicadas por el usuario.
+ * Analiza un comprobante de pago con IA reconociendo impuestos (IGV, Op Gravada) e instrucciones de pagador/asignación.
  */
 export async function analyzeReceiptWithGemini(base64Image, mimeType, apiKey, availableCategories = [], availableParticipants = [], userInstructions = '') {
     if (!apiKey) {
@@ -62,45 +62,52 @@ export async function analyzeReceiptWithGemini(base64Image, mimeType, apiKey, av
     const categoriesList = availableCategories.map(c => typeof c === 'string' ? c : c.name).join(', ');
     const participantsList = availableParticipants.map(p => typeof p === 'string' ? p : p.name).join(', ');
 
-    const prompt = `Analiza este comprobante de pago (factura, boleta, ticket de compra, voucher).
-Extrae los datos generales, la lista de productos y aplica cualquier instrucción de asignación de usuarios o invitados que el usuario haya escrito.
+    const prompt = `Analiza este comprobante de pago peruano (Factura Electrónica, Boleta de Venta Electrónica, Ticket POS, Voucher o Recibo).
+Extrae la información contable exacta, la lista de productos y aplica cualquier instrucción del usuario.
 
 ${userInstructions ? `INSTRUCCIONES ESPECÍFICAS DEL USUARIO:\n"${userInstructions}"\n` : ''}
 
 Integrantes registrados en el monedero: [${participantsList || 'Ninguno'}]
 Categorías disponibles: [${categoriesList || 'Alimentación, Transporte, Servicios, Salud, Entretenimiento, Hogar, Compras, Otros'}]
 
-Responde ÚNICAMENTE con un JSON válido (sin bloques de código markdown, texto JSON puro):
+Reglas CRÍTICAS de comprobantes fiscales (SUNAT / Perú):
+1. "amount" (MONTO TOTAL FINAL):
+   - Debe ser SIEMPRE el "IMPORTE TOTAL", "TOTAL VENTA", "TOTAL A PAGAR" o "TOTAL NETO".
+   - NUNCA tomes la "OP. GRAVADA", "SUBTOTAL", "OP. INAFECTA" ni la base imponible sin IGV.
+   - El monto final SIEMPRE INCLUYE EL IGV (18%), bolsas (ICBPER), propinas y cargos por servicio.
+2. "payerName" (QUIÉN PAGÓ):
+   - Si el usuario dice "lo pagó Maria", "pagó Kevind", "pagado por X", "lo pagué yo", etc., extrae ese nombre exacto.
+3. "isPersonal" vs "isShared":
+   - Si el usuario indica "es personal", "todo mío", "es de Kevind", "gasto propio", "todo lo pagó y consumió X": "isShared": false.
+   - Si el gasto fue compartido entre todos o tiene ítems repartidos: "isShared": true.
+4. "items":
+   - Desglosa cada producto con "desc", "quantity" (número) y "amount" (precio unitario con IGV incluido o prorrateado para que la suma total coincida con el IMPORTE TOTAL).
+   - "assignedToName": Si el usuario asignó el producto a alguien específico, coloca su nombre; si no, "all".
+5. "guests":
+   - Si se mencionan personas que no están en la lista de integrantes registrados, agrégalas a la lista "guests".
+
+Responde ÚNICAMENTE con un JSON válido (sin markdown, solo texto JSON puro):
 {
-  "amount": 45.50,
-  "merchant": "Nombre de la tienda o establecimiento",
+  "amount": 118.00,
+  "subtotal": 100.00,
+  "igv": 18.00,
+  "merchant": "Nombre del emisor o tienda",
   "description": "Resumen de la compra",
-  "category": "Una categoría adecuada",
+  "category": "Categoría adecuada",
   "paymentMethod": "efectivo | tarjeta | yape | plin | transferencia",
   "date": "YYYY-MM-DD",
+  "payerName": "Nombre de quien pagó (o null)",
   "isShared": true,
-  "guests": ["Nombre Invitado si aplica"],
+  "guests": [],
   "items": [
     {
-      "desc": "Nombre del producto 1",
+      "desc": "Producto 1",
       "quantity": 1,
-      "amount": 25.00,
-      "assignedToName": "Nombre del integrante o invitado al que le corresponde (o 'all' si es compartido entre todos)"
-    },
-    {
-      "desc": "Nombre del producto 2",
-      "quantity": 1,
-      "amount": 20.50,
+      "amount": 118.00,
       "assignedToName": "all"
     }
   ]
-}
-
-Reglas:
-1. "amount": MONTO TOTAL FINAL a pagar.
-2. "items": Lista detallada de ítems. Si el usuario indicó en sus instrucciones que un ítem es de alguien en particular (ej: "el ceviche es de Maria", "las cervezas de Carlos", "el vino es de Pedro (invitado)"), coloca en "assignedToName" el nombre exacto de esa persona. Si no se especifica, usa "all".
-3. "guests": Si se menciona a alguien que no está en la lista de integrantes registrados, agrégalo a la lista de "guests".
-4. "isShared": true si el gasto es compartido entre varias personas o tiene ítems repartidos; false si todo es 100% de una sola persona.`;
+}`;
 
     const candidateModels = ['gemini-3.6-flash', 'gemini-3-flash-preview', 'gemini-flash-latest'];
     let lastError = null;
