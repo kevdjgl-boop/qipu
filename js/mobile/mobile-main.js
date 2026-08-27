@@ -498,3 +498,6 @@ document.getElementById('btn-mobile-install-pwa')?.addEventListener('click', asy
     alert('Para instalar Qipu en tu teléfono:\n\n• En Android/Chrome: Toca los 3 puntos (⋮) y selecciona "Instalar aplicación" o "Añadir a pantalla de inicio".\n• En iPhone/Safari: Toca el botón Compartir (cuadrado con flecha) y selecciona "Añadir a la pantalla de inicio".');
   }
 });
+
+// Inicializar sistema de gestos de deslizamiento
+initHistorySwipeGestures();

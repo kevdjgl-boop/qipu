@@ -22,12 +22,11 @@ let openSwipeCardId = null;
 let swipeBaseOffset = 0;
 
 export function initHistorySwipeGestures() {
-  const container = document.getElementById('mobile-history-list');
-  if (!container || container.dataset.swipeInitialized) return;
-  container.dataset.swipeInitialized = 'true';
+  if (window._historySwipeGesturesInitialized) return;
+  window._historySwipeGesturesInitialized = true;
 
-  container.addEventListener('pointerdown', (e) => {
-    // Si se hizo click en el botón de borrar, no iniciar swipe
+  const onStart = (e) => {
+    // Si se hizo click en el botón de borrar, no interferir
     if (e.target.closest('[data-mov-delete-btn]')) return;
 
     const card = e.target.closest('[data-mov-card-id]');
@@ -36,7 +35,7 @@ export function initHistorySwipeGestures() {
     const id = card.dataset.movCardId;
     const type = card.dataset.movType;
 
-    // Si había otra tarjeta abierta y tocamos una diferente, cerramos la anterior
+    // Si había otra tarjeta abierta y tocamos una diferente, la cerramos
     if (openSwipeCardId && openSwipeCardId !== id) {
       const prevCard = document.getElementById(`mov-card-content-${openSwipeCardId}`);
       const prevSlot = document.getElementById(`mov-delete-slot-${openSwipeCardId}`);
@@ -53,8 +52,11 @@ export function initHistorySwipeGestures() {
     activeSwipeType = type;
     activeSwipeSlot = document.getElementById(`mov-delete-slot-${id}`);
 
-    swipeStartX = e.clientX;
-    swipeStartY = e.clientY;
+    const clientX = e.clientX !== undefined ? e.clientX : (e.touches && e.touches[0] ? e.touches[0].clientX : 0);
+    const clientY = e.clientY !== undefined ? e.clientY : (e.touches && e.touches[0] ? e.touches[0].clientY : 0);
+
+    swipeStartX = clientX;
+    swipeStartY = clientY;
     swipeIsHorizontal = null;
     swipeHasMoved = false;
 
@@ -62,21 +64,18 @@ export function initHistorySwipeGestures() {
     const match = (card.style.transform || '').match(/translateX\(([-\d.]+)px\)/);
     swipeBaseOffset = match ? parseFloat(match[1]) : 0;
 
-    // Desactivar transiciones durante el arrastre directo con el dedo
+    // Desactivar transiciones durante el arrastre directo
     card.style.transition = 'none';
+  };
 
-    try {
-      if (e.pointerId && card.setPointerCapture) {
-        card.setPointerCapture(e.pointerId);
-      }
-    } catch (_) {}
-  });
-
-  container.addEventListener('pointermove', (e) => {
+  const onMove = (e) => {
     if (!activeSwipeCard) return;
 
-    const diffX = e.clientX - swipeStartX;
-    const diffY = e.clientY - swipeStartY;
+    const clientX = e.clientX !== undefined ? e.clientX : (e.touches && e.touches[0] ? e.touches[0].clientX : 0);
+    const clientY = e.clientY !== undefined ? e.clientY : (e.touches && e.touches[0] ? e.touches[0].clientY : 0);
+
+    const diffX = clientX - swipeStartX;
+    const diffY = clientY - swipeStartY;
 
     if (swipeIsHorizontal === null) {
       if (Math.abs(diffX) > 6 || Math.abs(diffY) > 6) {
@@ -97,6 +96,10 @@ export function initHistorySwipeGestures() {
       swipeHasMoved = true;
     }
 
+    if (e.cancelable && e.type && e.type.startsWith('touch')) {
+      e.preventDefault();
+    }
+
     // Calcular nueva posición horizontal (limitada entre -96px y 0px)
     const rawPos = swipeBaseOffset + diffX;
     const targetX = Math.max(-96, Math.min(0, rawPos));
@@ -106,20 +109,14 @@ export function initHistorySwipeGestures() {
       const opacity = Math.min(1, Math.abs(targetX) / 36);
       activeSwipeSlot.style.opacity = `${opacity}`;
     }
-  });
+  };
 
-  const onPointerRelease = (e) => {
+  const onEnd = () => {
     if (!activeSwipeCard) return;
 
     const card = activeSwipeCard;
     const slot = activeSwipeSlot;
     const id = activeSwipeId;
-
-    try {
-      if (e.pointerId && card.releasePointerCapture) {
-        card.releasePointerCapture(e.pointerId);
-      }
-    } catch (_) {}
 
     // Restaurar animación fluida de resorte para el cierre/apertura
     card.style.transition = 'transform 280ms cubic-bezier(0.18, 0.89, 0.32, 1.15)';
@@ -146,8 +143,15 @@ export function initHistorySwipeGestures() {
     swipeIsHorizontal = null;
   };
 
-  container.addEventListener('pointerup', onPointerRelease);
-  container.addEventListener('pointercancel', onPointerRelease);
+  document.addEventListener('pointerdown', onStart, { passive: true });
+  window.addEventListener('pointermove', onMove, { passive: false });
+  window.addEventListener('pointerup', onEnd, { passive: true });
+  window.addEventListener('pointercancel', onEnd, { passive: true });
+
+  document.addEventListener('touchstart', onStart, { passive: true });
+  window.addEventListener('touchmove', onMove, { passive: false });
+  window.addEventListener('touchend', onEnd, { passive: true });
+  window.addEventListener('touchcancel', onEnd, { passive: true });
 }
 
 export async function deleteMovementFromSwipe(e, type, id) {
