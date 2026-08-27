@@ -2,7 +2,12 @@
  * =========================================================================
  * 🤖 QIPU 3.0 - TELEGRAM BOT (CLOUDFLARE WORKER 24/7 BUNDLE)
  * =========================================================================
- * Incluye motor de cálculo maestro idéntico a Qipu con desglose individual de usuarios.
+ * Incluye motor financiero 100% idéntico a Qipu 3.0:
+ * - Ciclos de facturación de tarjetas de crédito
+ * - Proyección de gastos fijos
+ * - Repartición de ítems individuales
+ * - Deducción de metas de ahorro
+ * - Balances y liquidaciones de deuda exactas
  */
 
 // ==========================================
@@ -148,26 +153,122 @@ async function addExpenseToWallet(walletId, expenseData) {
     return newExpense;
 }
 
-/**
- * Motor maestro de cálculo idéntico a core-state.js de Qipu 3.0.
- */
-function calculateMasterSummary(walletState) {
-    const participants = walletState.participants || [];
-    const paymentMethods = walletState.paymentMethods || [];
-    const allExpenses = walletState.expenses || [];
+// ================================================================
+// 2. MOTOR DE CÁLCULO FINANCIERO OFICIAL (IDÉNTICO A CORE-STATE.JS)
+// ================================================================
+function getFilterMonthString(date) {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, "0");
+    return `${year}-${month}`;
+}
 
-    const paymentMethodsMap = new Map(paymentMethods.map(m => [m.id, m]));
+function getCycleDates(method, referenceDate) {
+    if (!method || method.type !== "credit") {
+        return { startDate: null, closingDate: null, paymentDate: null };
+    }
 
-    // Mes actual para filtrar gastos
-    const now = new Date();
-    const currentMonthStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+    const closingDay = parseInt(method.closingDay) || 20;
+    const paymentDay = parseInt(method.paymentDay) || 5;
 
-    const filteredExpenses = allExpenses.filter(e => {
-        if (!e.date) return true;
-        return String(e.date).startsWith(currentMonthStr);
+    const currentYear = referenceDate.getFullYear();
+    const currentMonth = referenceDate.getMonth();
+    const currentDay = referenceDate.getDate();
+
+    let closingDateEpoch = Date.UTC(currentYear, currentMonth, closingDay);
+    const referenceDateEpoch = Date.UTC(currentYear, currentMonth, currentDay);
+
+    if (referenceDateEpoch > closingDateEpoch) {
+        const nextMonth = new Date(closingDateEpoch);
+        nextMonth.setUTCMonth(nextMonth.getUTCMonth() + 1);
+        closingDateEpoch = nextMonth.getTime();
+    }
+
+    const activeClosingDate = new Date(closingDateEpoch);
+    const prevClosingDate = new Date(activeClosingDate);
+    prevClosingDate.setUTCMonth(prevClosingDate.getUTCMonth() - 1);
+
+    const activeStartDate = new Date(prevClosingDate);
+    activeStartDate.setUTCDate(activeStartDate.getUTCDate() + 1);
+
+    let paymentDateObj = new Date(activeClosingDate);
+    if (paymentDay <= closingDay) {
+        paymentDateObj.setUTCMonth(paymentDateObj.getUTCMonth() + 1);
+    }
+    paymentDateObj.setUTCDate(paymentDay);
+
+    const paymentDateString = paymentDateObj.toISOString().split("T")[0];
+    const isManual = method.manualClosures && method.manualClosures[paymentDateString];
+
+    return {
+        startDate: activeStartDate.toISOString().split("T")[0],
+        closingDate: activeClosingDate.toISOString().split("T")[0],
+        paymentDate: paymentDateString,
+        isManual: !!isManual,
+    };
+}
+
+function isExpenseInBillingMonth(e, filterMonthString, filterDate, paymentMethods) {
+    if (!e.date) return false;
+
+    if (e.paymentMethodId && !e.isFixed && !e.isProjected) {
+        const method = (paymentMethods || []).find((m) => m.id === e.paymentMethodId);
+        if (method && method.type === "credit") {
+            const refDate = new Date(Date.UTC(filterDate.getFullYear(), filterDate.getMonth(), 15));
+            const cycle = getCycleDates(method, refDate);
+            if (cycle && cycle.startDate && cycle.closingDate) {
+                const expTime = new Date(e.date + "T00:00:00Z").getTime();
+                const startMs = new Date(cycle.startDate + "T00:00:00Z").getTime();
+                const endMs = new Date(cycle.closingDate + "T00:00:00Z").getTime();
+                return expTime >= startMs && expTime <= endMs;
+            }
+        }
+    }
+    return String(e.date).startsWith(filterMonthString);
+}
+
+function calculateOfficialSummary(appState) {
+    const filterDate = new Date();
+    const filterMonthString = getFilterMonthString(filterDate);
+    const allExpenses = appState.expenses || [];
+    const paymentMethods = appState.paymentMethods || [];
+    const participants = appState.participants || [];
+    const projectedFixedExpenses = [];
+
+    // Proyección de gastos fijos
+    const baseFixedExpenses = allExpenses.filter((e) => e.isFixed);
+    baseFixedExpenses.forEach((baseExpense) => {
+        const baseDate = new Date(baseExpense.date + "T00:00:00Z");
+        const recurrenceMonths = baseExpense.fixedRecurrenceMonths || 12;
+        const baseYear = baseDate.getUTCFullYear();
+        const baseMonth = baseDate.getUTCMonth();
+        const viewYear = filterDate.getUTCFullYear();
+        const viewMonth = filterDate.getUTCMonth();
+        const monthDifference = (viewYear - baseYear) * 12 + (viewMonth - baseMonth);
+
+        if (monthDifference > 0 && monthDifference < recurrenceMonths) {
+            let projectedDate = new Date(Date.UTC(viewYear, viewMonth, baseDate.getUTCDate()));
+            if (projectedDate.getUTCMonth() !== viewMonth) {
+                projectedDate = new Date(Date.UTC(viewYear, viewMonth + 1, 0));
+            }
+            const alreadyExists = allExpenses.some((e) => e.date.startsWith(filterMonthString) && e.description.toLowerCase() === baseExpense.description.toLowerCase());
+            if (!alreadyExists) {
+                projectedFixedExpenses.push({
+                    ...baseExpense,
+                    id: `proj_${baseExpense.id}_${monthDifference}`,
+                    date: projectedDate.toISOString().split("T")[0],
+                    isProjected: true,
+                });
+            }
+        }
     });
 
-    const participantData = participants.map(p => {
+    let expensesForMonth = allExpenses.filter((e) => isExpenseInBillingMonth(e, filterMonthString, filterDate, paymentMethods));
+    expensesForMonth = [...expensesForMonth, ...projectedFixedExpenses];
+
+    // Motor de cálculo idéntico a calculateSummary() en core-state.js
+    const paymentMethodsMap = new Map(paymentMethods.map((m) => [m.id, m]));
+
+    const participantData = participants.map((p) => {
         const budget = parseFloat(p.budget) || 0;
         const sharedPct = parseFloat(p.sharedSavingsPercent) || 0;
         const indepPct = parseFloat(p.independentSavingsPercent) || 0;
@@ -178,6 +279,7 @@ function calculateMasterSummary(walletState) {
             budget: budget,
             spent: 0,
             contributionPaid: 0,
+            contributionByMethod: {},
             sharedSavingsGoal: (budget * sharedPct) / 100,
             independentSavingsGoal: (budget * indepPct) / 100,
             availableForSpending: budget * (1 - (sharedPct + indepPct) / 100),
@@ -186,16 +288,50 @@ function calculateMasterSummary(walletState) {
         };
     });
 
-    const participantMap = new Map(participantData.map(p => [p.id, p]));
+    const participantMap = new Map(participantData.map((p) => [p.id, p]));
     let totalSpent = 0;
+    const guestMap = new Map();
+    const guestSummary = { spent: 0, balance: 0, contributionPaid: 0 };
 
-    filteredExpenses.forEach(expense => {
+    expensesForMonth.forEach((expense) => {
         const amount = parseFloat(expense.amount) || 0;
         totalSpent += amount;
 
         const expenseGuests = (expense.guests && Array.isArray(expense.guests) && expense.guests.length > 0)
             ? expense.guests
             : (expense.guestName ? [expense.guestName] : []);
+
+        expenseGuests.forEach((gName) => {
+            if (!gName || !gName.trim()) return;
+            const gKey = `guest_${gName.trim().toLowerCase().replace(/\s+/g, '_')}`;
+            if (!guestMap.has(gKey)) {
+                guestMap.set(gKey, { id: gKey, name: `${gName.trim()} (Invitado)`, spent: 0, contributionPaid: 0, balance: 0, isGuest: true });
+            }
+        });
+
+        function getGuestKeyAndName(rawKey) {
+            const numMatch = String(rawKey).match(/\d+/);
+            if (numMatch && expenseGuests[parseInt(numMatch[0])]) {
+                const name = expenseGuests[parseInt(numMatch[0])].trim();
+                return { key: `guest_${name.toLowerCase().replace(/\s+/g, '_')}`, name, isGuest: true };
+            }
+            if (expenseGuests[parseInt(rawKey)]) {
+                const name = expenseGuests[parseInt(rawKey)].trim();
+                return { key: `guest_${name.toLowerCase().replace(/\s+/g, '_')}`, name, isGuest: true };
+            }
+            if (String(rawKey).startsWith('guest_') || String(rawKey).startsWith('guest-')) {
+                const rawName = String(rawKey).replace('guest_', '').replace('guest-', '').replace(/_/g, ' ').trim();
+                const matched = expenseGuests.find(g => g.toLowerCase() === rawName.toLowerCase());
+                const name = matched || rawName;
+                return { key: `guest_${name.toLowerCase().replace(/\s+/g, '_')}`, name, isGuest: true };
+            }
+            if (expenseGuests.length === 1) {
+                const name = expenseGuests[0].trim();
+                return { key: `guest_${name.toLowerCase().replace(/\s+/g, '_')}`, name, isGuest: true };
+            }
+            const name = String(rawKey).trim();
+            return { key: `guest_${name.toLowerCase().replace(/\s+/g, '_')}`, name, isGuest: true };
+        }
 
         let realPayerId = expense.payerId;
         const method = paymentMethodsMap.get(expense.paymentMethodId);
@@ -206,20 +342,119 @@ function calculateMasterSummary(walletState) {
         const realPayer = participantMap.get(realPayerId);
         if (realPayer) {
             realPayer.contributionPaid += amount;
+            const methodId = expense.paymentMethodId || "unknown";
+            realPayer.contributionByMethod[methodId] = (realPayer.contributionByMethod[methodId] || 0) + amount;
+        } else if (realPayerId && (String(realPayerId).startsWith("guest_") || !participantMap.has(realPayerId))) {
+            guestSummary.contributionPaid = (guestSummary.contributionPaid || 0) + amount;
+            const { key: gKey, name: gName } = getGuestKeyAndName(realPayerId);
+            if (guestMap.has(gKey)) {
+                guestMap.get(gKey).contributionPaid += amount;
+            } else {
+                guestMap.set(gKey, { id: gKey, name: `${gName} (Invitado)`, spent: 0, contributionPaid: amount, balance: 0, isGuest: true });
+            }
         }
 
         if (expense.type === "shared" || !expense.type) {
-            const numPayees = participants.length + expenseGuests.length;
-            if (numPayees > 0) {
-                const splitAmount = amount / numPayees;
-                participantData.forEach(p => {
-                    p.spent += splitAmount;
+            const registeredCount = participants.length;
+            let guestsCount = expenseGuests.length;
+            const numPayees = registeredCount + guestsCount;
+
+            if (expense.items && expense.items.length > 0 && numPayees > 0) {
+                let itemsTotalCost = 0;
+                let itemShares = {};
+                participantData.forEach(p => { itemShares[p.id] = 0; });
+
+                expense.items.forEach(item => {
+                    const qty = parseFloat(item.quantity) || 1;
+                    const unitPrice = parseFloat(item.amount) || 0;
+                    const itemTotal = qty * unitPrice;
+                    itemsTotalCost += itemTotal;
+
+                    const assignments = item.assignments || {};
+                    let assignedUnitsSum = 0;
+
+                    Object.keys(assignments).forEach(pId => {
+                        const assignedQty = parseFloat(assignments[pId]) || 0;
+                        if (assignedQty > 0) {
+                            assignedUnitsSum += assignedQty;
+                            const cost = assignedQty * unitPrice;
+                            if (participantMap.has(pId)) {
+                                itemShares[pId] = (itemShares[pId] || 0) + cost;
+                            } else {
+                                const { key: gKey, name: gName } = getGuestKeyAndName(pId);
+                                if (guestMap.has(gKey)) {
+                                    guestMap.get(gKey).spent += cost;
+                                } else {
+                                    guestMap.set(gKey, { id: gKey, name: `${gName} (Invitado)`, spent: cost, contributionPaid: 0, balance: 0, isGuest: true });
+                                }
+                            }
+                        }
+                    });
+
+                    if (assignedUnitsSum === 0 && item.assignedTo && item.assignedTo !== 'all') {
+                        assignedUnitsSum = qty;
+                        const cost = itemTotal;
+                        if (participantMap.has(item.assignedTo)) {
+                            itemShares[item.assignedTo] = (itemShares[item.assignedTo] || 0) + cost;
+                        } else {
+                            const { key: gKey, name: gName } = getGuestKeyAndName(item.assignedTo);
+                            if (guestMap.has(gKey)) {
+                                guestMap.get(gKey).spent += cost;
+                            } else {
+                                guestMap.set(gKey, { id: gKey, name: `${gName} (Invitado)`, spent: cost, contributionPaid: 0, balance: 0, isGuest: true });
+                            }
+                        }
+                    }
+
+                    const unassignedUnits = Math.max(0, qty - assignedUnitsSum);
+                    if (unassignedUnits > 0 && numPayees > 0) {
+                        const unassignedCost = unassignedUnits * unitPrice;
+                        const sharePerPerson = unassignedCost / numPayees;
+                        participantData.forEach(p => { itemShares[p.id] = (itemShares[p.id] || 0) + sharePerPerson; });
+                        expenseGuests.forEach(gName => {
+                            const gKey = `guest_${gName.trim().toLowerCase().replace(/\s+/g, '_')}`;
+                            if (guestMap.has(gKey)) {
+                                guestMap.get(gKey).spent += sharePerPerson;
+                            }
+                        });
+                    }
                 });
+
+                const remainingAmount = Math.max(0, amount - itemsTotalCost);
+                if (remainingAmount > 0.001 && numPayees > 0) {
+                    const remainingSharePerPerson = remainingAmount / numPayees;
+                    participantData.forEach(p => {
+                        p.spent += (itemShares[p.id] || 0) + remainingSharePerPerson;
+                    });
+                    expenseGuests.forEach(gName => {
+                        const gKey = `guest_${gName.trim().toLowerCase().replace(/\s+/g, '_')}`;
+                        if (guestMap.has(gKey)) {
+                            guestMap.get(gKey).spent += remainingSharePerPerson;
+                        }
+                    });
+                } else {
+                    participantData.forEach(p => {
+                        p.spent += (itemShares[p.id] || 0);
+                    });
+                }
+            } else {
+                const splitAmount = numPayees > 0 ? amount / numPayees : 0;
+                participantData.forEach((p) => { p.spent += splitAmount; });
+                expenseGuests.forEach(gName => {
+                    const gKey = `guest_${gName.trim().toLowerCase().replace(/\s+/g, '_')}`;
+                    if (guestMap.has(gKey)) {
+                        guestMap.get(gKey).spent += splitAmount;
+                    }
+                });
+                if (guestsCount > 0) guestSummary.spent += splitAmount * guestsCount;
             }
         } else {
             const consumer = participantMap.get(expense.payerId);
             if (consumer) {
                 consumer.spent += amount;
+            } else if (expense.payerId && (String(expense.payerId).startsWith("guest_"))) {
+                guestSummary.spent += amount;
+                if (guestMap.has(expense.payerId)) guestMap.get(expense.payerId).spent += amount;
             } else if (participantData.length > 0) {
                 participantData[0].spent += amount;
             }
@@ -228,26 +463,29 @@ function calculateMasterSummary(walletState) {
 
     let totalBudget = 0;
     let globalTotalRemainingBudget = 0;
+    let globalSharedSavingsGoal = 0;
 
-    participantData.forEach(p => {
+    participantData.forEach((p) => {
         totalBudget += p.budget;
-        p.remainingBudget = p.availableForSpending - p.spent;
         p.balance = p.contributionPaid - p.spent;
+        p.remainingBudget = p.availableForSpending - p.spent;
         globalTotalRemainingBudget += p.remainingBudget;
+        globalSharedSavingsGoal += p.sharedSavingsGoal;
     });
 
     return {
-        walletName: walletState.name || 'Mi Monedero',
+        walletName: appState.name || 'Mi Monedero',
         totalBudget,
         totalSpent,
         globalTotalRemainingBudget,
-        participants: participantData,
-        recentExpenses: filteredExpenses.slice(-3).reverse()
+        globalSharedSavingsGoal,
+        participantData,
+        recentExpenses: expensesForMonth.slice(-3).reverse()
     };
 }
 
 // ==========================================
-// 2. PARSER DE TEXTO
+// 3. PARSER DE TEXTO
 // ==========================================
 function normalizeStr(str) {
     if (!str) return '';
@@ -419,7 +657,7 @@ function parseExpenseMessage(text, walletState = {}, defaultPayerId = null) {
 }
 
 // ==========================================
-// 3. IA GEMINI VISION (OCR DE COMPROBANTES)
+// 4. IA GEMINI VISION (OCR DE COMPROBANTES)
 // ==========================================
 function arrayBufferToBase64(buffer) {
     let binary = '';
@@ -522,7 +760,7 @@ Reglas:
 }
 
 // ==========================================
-// 4. CORE DEL BOT TELEGRAM
+// 5. CORE DEL BOT TELEGRAM
 // ==========================================
 async function sendTelegramMessage(botToken, chatId, text) {
     const url = `https://api.telegram.org/bot${botToken}/sendMessage`;
@@ -646,25 +884,28 @@ async function handleTelegramUpdate(update, botToken, defaultWalletId = null, ge
                 return await sendTelegramMessage(botToken, chatId, `❌ Monedero no encontrado en la base de datos (ID: ${walletId}).`);
             }
 
-            const summary = calculateMasterSummary(wallet);
+            const summary = calculateOfficialSummary(wallet);
+
+            const spentPct = summary.totalBudget > 0 ? ((summary.totalSpent / summary.totalBudget) * 100).toFixed(0) : 0;
+            const remainingPct = Math.max(0, 100 - parseInt(spentPct));
 
             let msg = `📊 <b>Estado de ${summary.walletName}</b>\n\n` +
-                      `💰 <b>Presupuesto Total:</b> S/ ${summary.totalBudget.toFixed(2)}\n` +
-                      `📉 <b>Gastado Total Mes:</b> S/ ${summary.totalSpent.toFixed(2)}\n` +
-                      `🟢 <b>Disponible Global:</b> S/ ${summary.globalTotalRemainingBudget.toFixed(2)}\n\n` +
+                      `🟢 <b>DISPONIBLE GLOBAL:</b> S/ ${summary.globalTotalRemainingBudget.toFixed(2)} (${remainingPct}% restante)\n` +
+                      `💰 <b>Presupuesto Base:</b> S/ ${summary.totalBudget.toFixed(2)}\n` +
+                      `📉 <b>Gastado Total Mes:</b> S/ ${summary.totalSpent.toFixed(2)} (${spentPct}% gastado)\n\n` +
                       `━━━━━━━━━━━━━━━━━━━━\n` +
                       `👥 <b>SALDOS INDIVIDUALES:</b>\n` +
                       `━━━━━━━━━━━━━━━━━━━━\n`;
 
-            if (summary.participants && summary.participants.length > 0) {
-                summary.participants.forEach(p => {
+            if (summary.participantData && summary.participantData.length > 0) {
+                summary.participantData.forEach(p => {
                     const dispBadge = p.remainingBudget >= 0 ? '🟢' : '🔴';
                     msg += `\n👤 <b>${p.name}</b>\n` +
-                           `• Presupuesto: S/ ${p.budget.toFixed(2)}\n` +
-                           `• Gasto asignado: S/ ${p.spent.toFixed(2)}\n` +
+                           `• Presupuesto Base: S/ ${p.budget.toFixed(2)}\n` +
+                           `• Gastado mensual: S/ ${p.spent.toFixed(2)}\n` +
                            `• ${dispBadge} <b>Disponible:</b> S/ ${p.remainingBudget.toFixed(2)}\n`;
 
-                    if (summary.participants.length > 1) {
+                    if (summary.participantData.length > 1) {
                         const balanceStr = p.balance >= 0 
                             ? `+S/ ${p.balance.toFixed(2)} (A favor)` 
                             : `-S/ ${Math.abs(p.balance).toFixed(2)} (Debe)`;
@@ -677,7 +918,7 @@ async function handleTelegramUpdate(update, botToken, defaultWalletId = null, ge
 
             if (summary.recentExpenses && summary.recentExpenses.length > 0) {
                 msg += `\n━━━━━━━━━━━━━━━━━━━━\n` +
-                       `🧾 <b>Últimos gastos del mes:</b>\n`;
+                       `🧾 <b>Últimos gastos del ciclo:</b>\n`;
                 summary.recentExpenses.forEach(e => {
                     msg += `• <i>${e.description || 'Gasto'}</i>: S/ ${(parseFloat(e.amount) || 0).toFixed(2)}\n`;
                 });
@@ -718,7 +959,7 @@ async function handleTelegramUpdate(update, botToken, defaultWalletId = null, ge
 }
 
 // ==========================================
-// 5. HANDLER DEL CLOUDFLARE WORKER
+// 6. HANDLER DEL CLOUDFLARE WORKER
 // ==========================================
 export default {
     async fetch(request, env, ctx) {
