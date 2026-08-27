@@ -302,8 +302,8 @@
     }
 
     /* ============================================================ */
-    /* 🌟 SISTEMA DE ANIMACIONES Y TRANSICIONES PREMIUM ULTRA-FLUIDAS */
-    /* Curvas: Apple iOS & Material Design 3 Emphasized Motion       */
+    /* 🌟 MOVIMIENTO FÍSICO PURO 100% (CERO FADES / CERO OPACIDAD)   */
+    /* Curvas: Apple iOS & Material Design 3 Fluid Motion            */
     /* ============================================================ */
     :root {
       --ease-spring-in: cubic-bezier(0.32, 0.72, 0, 1);
@@ -313,91 +313,81 @@
       --ease-standard-decelerate: cubic-bezier(0.05, 0.7, 0.1, 1.0);
     }
 
-    /* Fondo Backdrop Premium con Glassmorphism y desenfoque dinámico */
+    /* Fondo Backdrop: Presencia física pura sin fade */
     .m3-bottom-sheet-backdrop {
-      opacity: 0;
       background-color: rgba(15, 23, 42, 0.60);
-      backdrop-filter: blur(0px);
-      -webkit-backdrop-filter: blur(0px);
-      transition: opacity 380ms var(--ease-spring-in),
-                  backdrop-filter 380ms var(--ease-spring-in),
-                  -webkit-backdrop-filter 380ms var(--ease-spring-in);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
       pointer-events: none;
       padding-left: 8px;
       padding-right: 8px;
       padding-bottom: 8px;
       padding-top: 0;
-      will-change: opacity, backdrop-filter;
+      opacity: 1 !important;
     }
 
     .m3-bottom-sheet-backdrop.m3-visible {
-      opacity: 1;
-      backdrop-filter: blur(16px);
-      -webkit-backdrop-filter: blur(16px);
       pointer-events: auto;
     }
 
     /* 📱 Pantalla Completa: Registrar / Editar Gasto (#modal-expense) */
+    /* 100% Desplazamiento Físico directo desde abajo sin fade */
     #modal-expense {
-      transform: translateY(100%) scale(0.98);
-      opacity: 0;
-      will-change: transform, opacity;
-      transition: transform 420ms var(--ease-spring-in),
-                  opacity 320ms ease-out !important;
+      transform: translateY(100%) !important;
+      opacity: 1 !important;
+      will-change: transform;
+      transition: transform 380ms var(--ease-spring-in) !important;
     }
 
     #modal-expense.m3-visible {
-      transform: translateY(0%) scale(1) !important;
+      transform: translateY(0%) !important;
       opacity: 1 !important;
     }
 
-    /* Bottom Sheet Surface: Deslizamiento elástico tipo iOS con micro-escala */
+    /* Bottom Sheet Surface: 100% Desplazamiento Físico puro sin fade */
     .m3-bottom-sheet-surface {
-      transform: translateY(102%) scale(0.97) !important;
-      opacity: 0.85 !important;
-      will-change: transform, opacity;
+      transform: translateY(100%) !important;
+      opacity: 1 !important;
+      will-change: transform;
       border-radius: 32px !important;
       box-shadow: 0 -10px 40px -10px rgba(0, 0, 0, 0.25), 0 25px 50px -12px rgba(0, 0, 0, 0.35) !important;
-      transition: transform 380ms var(--ease-spring-in),
-                  opacity 300ms ease-out !important;
+      transition: transform 360ms var(--ease-spring-in) !important;
     }
 
     .m3-bottom-sheet-backdrop.m3-visible .m3-bottom-sheet-surface {
-      transform: translateY(0%) scale(1) !important;
+      transform: translateY(0%) !important;
       opacity: 1 !important;
     }
 
-    /* Diálogos y Alertas: Pop-in elástico con micro-bounce estilo iOS */
+    /* Diálogos y Alertas: 100% Desplazamiento Físico desde abajo sin fade */
     .m3-dialog-card {
-      transform: translateY(30px) scale(0.92);
-      opacity: 0;
-      will-change: transform, opacity;
-      transition: transform 340ms var(--ease-spring-bounce),
-                  opacity 260ms ease-out;
+      transform: translateY(100vh) !important;
+      opacity: 1 !important;
+      will-change: transform;
+      transition: transform 340ms var(--ease-spring-in) !important;
     }
 
     .m3-visible .m3-dialog-card,
     #modal-confirm-delete-item.m3-visible>div {
-      transform: translateY(0px) scale(1) !important;
+      transform: translateY(0px) !important;
       opacity: 1 !important;
     }
 
-    /* Transición fluida de expansión M3 con CSS Grid (altura dinámica exacta al píxel) */
+    /* Transición de expansión física con CSS Grid (cero fade) */
     .m3-accordion-collapse {
       display: grid !important;
       grid-template-rows: 0fr;
-      opacity: 0;
+      opacity: 1 !important;
       overflow: hidden;
-      transform: translateY(-8px) scale(0.99);
+      transform: translateY(-8px);
       transform-origin: top center;
-      transition: grid-template-rows 360ms var(--ease-spring-in),
-                  opacity 280ms ease,
-                  transform 360ms var(--ease-spring-in),
-                  margin 360ms var(--ease-spring-in),
-                  padding 360ms var(--ease-spring-in);
+      transition: grid-template-rows 340ms var(--ease-spring-in),
+                  transform 340ms var(--ease-spring-in),
+                  margin 340ms var(--ease-spring-in),
+                  padding 340ms var(--ease-spring-in);
       pointer-events: none;
       visibility: hidden;
-      will-change: grid-template-rows, opacity, transform;
+      will-change: grid-template-rows, transform;
     }
 
     .m3-accordion-collapse>div,
@@ -408,27 +398,26 @@
 
     .m3-accordion-collapse.m3-open {
       grid-template-rows: 1fr;
-      opacity: 1;
-      transform: translateY(0) scale(1);
+      opacity: 1 !important;
+      transform: translateY(0);
       pointer-events: auto;
       visibility: visible;
     }
 
-    /* Animación de deslizamiento ultra suave para la Lista de Productos */
+    /* Deslizamiento físico de la Lista de Productos (sale detrás del bloque) */
     .m3-slide-sheet-block {
       display: grid !important;
       grid-template-rows: 0fr;
-      opacity: 0;
-      transform: translateY(-20px);
+      opacity: 1 !important;
+      transform: translateY(-24px);
       transform-origin: top center;
-      transition: grid-template-rows 380ms var(--ease-spring-in),
-                  opacity 300ms ease,
-                  transform 380ms var(--ease-spring-in);
+      transition: grid-template-rows 360ms var(--ease-spring-in),
+                  transform 360ms var(--ease-spring-in);
       pointer-events: none;
       visibility: hidden;
       margin-top: -32px !important;
       padding: 0px !important;
-      will-change: grid-template-rows, opacity, transform;
+      will-change: grid-template-rows, transform;
     }
 
     .m3-slide-sheet-block>div,
@@ -438,9 +427,9 @@
 
     .m3-slide-sheet-block.m3-block-closed {
       grid-template-rows: 0fr !important;
-      opacity: 0 !important;
+      opacity: 1 !important;
       overflow: hidden !important;
-      transform: translateY(-20px) scale(0.98) !important;
+      transform: translateY(-24px) !important;
       pointer-events: none !important;
       visibility: hidden !important;
       margin-top: -32px !important;
@@ -450,35 +439,33 @@
     .m3-slide-sheet-block.m3-block-open {
       grid-template-rows: 1fr !important;
       opacity: 1 !important;
-      transform: translateY(0px) scale(1) !important;
+      transform: translateY(0px) !important;
       pointer-events: auto !important;
       visibility: visible !important;
       margin-top: -32px !important;
       padding: 0px !important;
     }
 
-    /* Transición suave para items y tarjetas dinámicas */
-    @keyframes premiumFadeInUp {
+    /* Desplazamiento físico puro para items y tarjetas */
+    @keyframes premiumSlideUp {
       0% {
-        opacity: 0;
-        transform: translateY(12px) scale(0.98);
+        transform: translateY(16px);
       }
       100% {
-        opacity: 1;
-        transform: translateY(0) scale(1);
+        transform: translateY(0);
       }
     }
 
     .animate-item-enter {
-      animation: premiumFadeInUp 320ms var(--ease-spring-in) both;
+      animation: premiumSlideUp 280ms var(--ease-spring-in) both;
+      opacity: 1 !important;
     }
 
-    /* Botones y elementos interactivos con respuesta táctil elástica */
+    /* Botones y elementos interactivos con respuesta táctil física */
     button, .interactive-btn {
-      transition: transform 160ms var(--ease-spring-bounce),
-                  box-shadow 160ms ease,
-                  background-color 160ms ease,
-                  opacity 160ms ease;
+      transition: transform 150ms var(--ease-spring-bounce),
+                  box-shadow 150ms ease,
+                  background-color 150ms ease;
     }
 
     button:active, .interactive-btn:active {
