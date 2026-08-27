@@ -651,7 +651,7 @@ function parseExpenseMessage(text, walletState = {}, defaultPayerId = null) {
 }
 
 // ================================================================
-// 4. IA GEMINI 2.5 FLASH VISION (OCR INTELIGENTE DE COMPROBANTES)
+// 4. IA GEMINI VISION (CON inlineData camelCase Y MODELOS ACTIVOS)
 // ================================================================
 function arrayBufferToBase64(buffer) {
     let binary = '';
@@ -711,7 +711,7 @@ Reglas:
 5. "paymentMethod": Normalizar si figura (efectivo, visa, mastercard, yape, plin). Si no se determina, usa "efectivo".
 6. "date": Fecha en YYYY-MM-DD.`;
 
-    const candidateModels = ['gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-1.5-flash-latest'];
+    const candidateModels = ['gemini-2.5-flash', 'gemini-flash-latest', 'gemini-2.5-flash-lite', 'gemini-3-flash-preview'];
     let lastError = null;
 
     const bodyPayload = {
@@ -721,8 +721,8 @@ Reglas:
                 parts: [
                     { text: prompt },
                     {
-                        inline_data: {
-                            mime_type: mimeType,
+                        inlineData: {
+                            mimeType: mimeType,
                             data: base64Image
                         }
                     }
@@ -746,14 +746,14 @@ Reglas:
 
             if (!res.ok) {
                 const errText = await res.text();
-                lastError = new Error(`Error en API de Gemini (${res.status}): ${errText}`);
+                lastError = new Error(`Error en modelo ${modelName} (${res.status}): ${errText}`);
                 continue;
             }
 
             const data = await res.json();
             const candidateText = data.candidates?.[0]?.content?.parts?.[0]?.text;
             if (!candidateText) {
-                lastError = new Error("Gemini no devolvió respuesta para la imagen.");
+                lastError = new Error(`Modelo ${modelName} no devolvió respuesta para la imagen.`);
                 continue;
             }
 

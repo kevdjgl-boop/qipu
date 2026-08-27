@@ -1,6 +1,6 @@
 /**
  * @file gemini-vision.js
- * @description Módulo de lectura inteligente de facturas, boletas, vouchers y tickets usando Google Gemini Vision API (Gemini 2.5 Flash).
+ * @description Módulo de lectura inteligente de facturas, boletas, vouchers y tickets usando Google Gemini Vision API (Gemini 2.5 Flash / Flash Latest).
  */
 
 /**
@@ -27,7 +27,6 @@ export async function downloadTelegramPhotoAsBase64(fileId, botToken) {
 
     const arrayBuffer = await downloadRes.arrayBuffer();
     
-    // Base64 compatible con Node.js y Cloudflare Workers
     let base64Data = '';
     if (typeof Buffer !== 'undefined') {
         base64Data = Buffer.from(arrayBuffer).toString('base64');
@@ -80,8 +79,7 @@ Reglas importantes:
 5. "paymentMethod": Si el ticket indica cómo se pagó (Visa, Mastercard, Débito, Efectivo, Yape, Plin), normalízalo. Si no se puede determinar, usa "efectivo".
 6. "date": Fecha que figura en el comprobante en formato YYYY-MM-DD. Si no se lee la fecha, usa la fecha actual.`;
 
-    // Lista de modelos soportados con fallback automático
-    const candidateModels = ['gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-1.5-flash-latest'];
+    const candidateModels = ['gemini-2.5-flash', 'gemini-flash-latest', 'gemini-2.5-flash-lite', 'gemini-3-flash-preview'];
     let lastError = null;
 
     const bodyPayload = {
@@ -91,8 +89,8 @@ Reglas importantes:
                 parts: [
                     { text: prompt },
                     {
-                        inline_data: {
-                            mime_type: mimeType,
+                        inlineData: {
+                            mimeType: mimeType,
                             data: base64Image
                         }
                     }
@@ -116,15 +114,15 @@ Reglas importantes:
 
             if (!res.ok) {
                 const errText = await res.text();
-                lastError = new Error(`Error en API de Gemini (${res.status}): ${errText}`);
-                continue; // Probar siguiente modelo
+                lastError = new Error(`Error en modelo ${modelName} (${res.status}): ${errText}`);
+                continue;
             }
 
             const data = await res.json();
             const candidateText = data.candidates?.[0]?.content?.parts?.[0]?.text;
 
             if (!candidateText) {
-                lastError = new Error("Gemini no devolvió texto de respuesta para la imagen.");
+                lastError = new Error(`Modelo ${modelName} no devolvió texto de respuesta.`);
                 continue;
             }
 
@@ -136,5 +134,5 @@ Reglas importantes:
         }
     }
 
-    throw lastError || new Error("No se pudo procesar la imagen con los modelos disponibles de Gemini.");
+    throw lastError || new Error("No se pudo procesar la imagen con Gemini.");
 }
