@@ -2,7 +2,7 @@
  * =========================================================================
  * 🤖 QIPU 3.0 - TELEGRAM BOT (CLOUDFLARE WORKER 24/7 BUNDLE)
  * =========================================================================
- * Incluye motor financiero 100% idéntico a Qipu 3.0 e IA Gemini 2.5 Flash Vision instantánea.
+ * Incluye motor financiero 100% idéntico a Qipu 3.0 e IA Gemini 3.6 Flash Vision.
  */
 
 // ==========================================
@@ -651,7 +651,7 @@ function parseExpenseMessage(text, walletState = {}, defaultPayerId = null) {
 }
 
 // ================================================================
-// 4. IA GEMINI 2.5 FLASH VISION (OPTIMIZADO POR CHUNKS & THINKING 0)
+// 4. IA GEMINI 3.6 FLASH VISION (MODELO ACTUALIZADO)
 // ================================================================
 function arrayBufferToBase64(buffer) {
     let binary = '';
@@ -673,9 +673,7 @@ async function downloadTelegramPhotoAsBase64(fileId, botToken) {
     if (!fileData.ok || !fileData.result?.file_path) throw new Error("No se obtuvo ruta de archivo válida.");
 
     const filePath = fileData.result.file_path;
-    const downloadUrl = `https://api.telegram.org/file/bot${botToken}/${filePath}`;
-
-    const downloadRes = await fetch(downloadUrl);
+    const downloadRes = await fetch(`https://api.telegram.org/file/bot${botToken}/${filePath}`);
     if (!downloadRes.ok) throw new Error(`Error descargando imagen: ${downloadRes.status}`);
 
     const arrayBuffer = await downloadRes.arrayBuffer();
@@ -715,8 +713,8 @@ Reglas:
 5. "paymentMethod": Normalizar si figura (efectivo, visa, mastercard, yape, plin). Si no se determina, usa "efectivo".
 6. "date": Fecha en YYYY-MM-DD.`;
 
-    const modelName = 'gemini-2.5-flash';
-    const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${apiKey}`;
+    const candidateModels = ['gemini-3.6-flash', 'gemini-3-flash-preview', 'gemini-flash-latest'];
+    let lastError = null;
 
     const bodyPayload = {
         contents: [
@@ -735,30 +733,40 @@ Reglas:
         ],
         generationConfig: {
             temperature: 0.1,
-            responseMimeType: "application/json",
-            thinkingConfig: {
-                thinkingBudget: 0
-            }
+            responseMimeType: "application/json"
         }
     };
 
-    const res = await fetch(endpoint, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(bodyPayload)
-    });
+    for (const modelName of candidateModels) {
+        try {
+            const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${apiKey}`;
+            const res = await fetch(endpoint, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(bodyPayload)
+            });
 
-    if (!res.ok) {
-        const errText = await res.text();
-        throw new Error(`Error en Gemini (${res.status}): ${errText}`);
+            if (!res.ok) {
+                const errText = await res.text();
+                lastError = new Error(`Error en modelo ${modelName} (${res.status}): ${errText}`);
+                continue;
+            }
+
+            const data = await res.json();
+            const candidateText = data.candidates?.[0]?.content?.parts?.[0]?.text;
+            if (!candidateText) {
+                lastError = new Error(`Modelo ${modelName} no devolvió respuesta.`);
+                continue;
+            }
+
+            const cleaned = candidateText.replace(/^```json/i, '').replace(/^```/, '').replace(/```$/, '').trim();
+            return JSON.parse(cleaned);
+        } catch (err) {
+            lastError = err;
+        }
     }
 
-    const data = await res.json();
-    const candidateText = data.candidates?.[0]?.content?.parts?.[0]?.text;
-    if (!candidateText) throw new Error("Gemini no devolvió respuesta para la imagen.");
-
-    const cleaned = candidateText.replace(/^```json/i, '').replace(/^```/, '').replace(/```$/, '').trim();
-    return JSON.parse(cleaned);
+    throw lastError || new Error("No se pudo procesar la imagen con Gemini.");
 }
 
 // ==========================================
@@ -799,7 +807,6 @@ async function handleTelegramUpdate(update, botToken, defaultWalletId = null, ge
         await sendTelegramMessage(botToken, chatId, `🔍 <b>Analizando comprobante con Inteligencia Artificial...</b> ⏳`);
 
         try {
-            // Seleccionar tamaño óptimo (mediano/grande para no descargar 5MB innecesarios)
             let fileId;
             if (isPhoto) {
                 const targetIdx = message.photo.length > 2 ? message.photo.length - 2 : message.photo.length - 1;

@@ -1,6 +1,6 @@
 /**
  * @file gemini-vision.js
- * @description Módulo de lectura ultrarrápida de facturas, boletas y tickets con Gemini 2.5 Flash Vision.
+ * @description Módulo de lectura inteligente de facturas, boletas, vouchers y tickets usando Google Gemini Vision API (Gemini 3.6 Flash).
  */
 
 /**
@@ -52,7 +52,7 @@ export async function downloadTelegramPhotoAsBase64(fileId, botToken) {
 }
 
 /**
- * Analiza una imagen de comprobante con Gemini 2.5 Flash a ultra-velocidad.
+ * Analiza una imagen de factura, boleta, voucher o ticket con Google Gemini Vision (Gemini 3.6 Flash).
  */
 export async function analyzeReceiptWithGemini(base64Image, mimeType, apiKey, availableCategories = []) {
     if (!apiKey) {
@@ -84,8 +84,8 @@ Reglas importantes:
 5. "paymentMethod": Si el ticket indica cómo se pagó (Visa, Mastercard, Débito, Efectivo, Yape, Plin), normalízalo. Si no se puede determinar, usa "efectivo".
 6. "date": Fecha que figura en el comprobante en formato YYYY-MM-DD. Si no se lee la fecha, usa la fecha actual.`;
 
-    const modelName = 'gemini-2.5-flash';
-    const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${apiKey}`;
+    const candidateModels = ['gemini-3.6-flash', 'gemini-3-flash-preview', 'gemini-flash-latest'];
+    let lastError = null;
 
     const bodyPayload = {
         contents: [
@@ -104,31 +104,38 @@ Reglas importantes:
         ],
         generationConfig: {
             temperature: 0.1,
-            responseMimeType: "application/json",
-            thinkingConfig: {
-                thinkingBudget: 0
-            }
+            responseMimeType: "application/json"
         }
     };
 
-    const res = await fetch(endpoint, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(bodyPayload)
-    });
+    for (const modelName of candidateModels) {
+        try {
+            const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${apiKey}`;
+            const res = await fetch(endpoint, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(bodyPayload)
+            });
 
-    if (!res.ok) {
-        const errText = await res.text();
-        throw new Error(`Error en Gemini (${res.status}): ${errText}`);
+            if (!res.ok) {
+                const errText = await res.text();
+                lastError = new Error(`Error en modelo ${modelName} (${res.status}): ${errText}`);
+                continue;
+            }
+
+            const data = await res.json();
+            const candidateText = data.candidates?.[0]?.content?.parts?.[0]?.text;
+            if (!candidateText) {
+                lastError = new Error(`Modelo ${modelName} no devolvió respuesta.`);
+                continue;
+            }
+
+            const cleaned = candidateText.replace(/^```json/i, '').replace(/^```/, '').replace(/```$/, '').trim();
+            return JSON.parse(cleaned);
+        } catch (err) {
+            lastError = err;
+        }
     }
 
-    const data = await res.json();
-    const candidateText = data.candidates?.[0]?.content?.parts?.[0]?.text;
-
-    if (!candidateText) {
-        throw new Error("Gemini no devolvió texto de respuesta para la imagen.");
-    }
-
-    const cleaned = candidateText.replace(/^```json/i, '').replace(/^```/, '').replace(/```$/, '').trim();
-    return JSON.parse(cleaned);
+    throw lastError || new Error("No se pudo procesar la imagen con Gemini.");
 }
