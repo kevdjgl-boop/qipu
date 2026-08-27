@@ -2,12 +2,7 @@
  * =========================================================================
  * 🤖 QIPU 3.0 - TELEGRAM BOT (CLOUDFLARE WORKER 24/7 BUNDLE)
  * =========================================================================
- * Incluye motor financiero 100% idéntico a Qipu 3.0:
- * - Ciclos de facturación de tarjetas de crédito
- * - Proyección de gastos fijos
- * - Repartición de ítems individuales
- * - Deducción de metas de ahorro
- * - Balances y liquidaciones de deuda exactas
+ * Incluye motor financiero 100% idéntico a Qipu 3.0 e IA Gemini 2.5 Flash Vision.
  */
 
 // ==========================================
@@ -265,7 +260,6 @@ function calculateOfficialSummary(appState) {
     let expensesForMonth = allExpenses.filter((e) => isExpenseInBillingMonth(e, filterMonthString, filterDate, paymentMethods));
     expensesForMonth = [...expensesForMonth, ...projectedFixedExpenses];
 
-    // Motor de cálculo idéntico a calculateSummary() en core-state.js
     const paymentMethodsMap = new Map(paymentMethods.map((m) => [m.id, m]));
 
     const participantData = participants.map((p) => {
@@ -656,9 +650,9 @@ function parseExpenseMessage(text, walletState = {}, defaultPayerId = null) {
     };
 }
 
-// ==========================================
-// 4. IA GEMINI VISION (OCR DE COMPROBANTES)
-// ==========================================
+// ================================================================
+// 4. IA GEMINI 2.5 FLASH VISION (OCR INTELIGENTE DE COMPROBANTES)
+// ================================================================
 function arrayBufferToBase64(buffer) {
     let binary = '';
     const bytes = new Uint8Array(buffer);
@@ -694,7 +688,7 @@ async function downloadTelegramPhotoAsBase64(fileId, botToken) {
 async function analyzeReceiptWithGemini(base64Image, mimeType, apiKey, availableCategories = []) {
     const categoriesList = availableCategories.map(c => typeof c === 'string' ? c : c.name).join(', ');
 
-    const prompt = `Analiza esta imagen que contiene un comprobante de pago (factura, boleta de venta, ticket de compra, voucher de pago, Yape, Plin o recibo).
+    const prompt = `Analiza este comprobante de pago (factura, boleta de venta, ticket de compra, voucher de pago, Yape, Plin o recibo).
 Extrae la información clave del gasto y responde ÚNICAMENTE con un objeto JSON válido (sin bloques de código markdown, sin \`\`\`json, sólo el texto JSON puro).
 
 El JSON debe tener exactamente esta estructura:
@@ -714,11 +708,11 @@ Reglas:
 2. "merchant": Nombre comercial del emisor.
 3. "description": Descripción concisa del concepto.
 4. "category": Elige preferentemente de: [${categoriesList || 'Alimentación, Transporte, Servicios, Salud, Entretenimiento, Hogar, Compras, Otros'}].
-5. "paymentMethod": Normalizar si figura. Si no, usa "efectivo".
+5. "paymentMethod": Normalizar si figura (efectivo, visa, mastercard, yape, plin). Si no se determina, usa "efectivo".
 6. "date": Fecha en YYYY-MM-DD.`;
 
-    const modelName = 'gemini-1.5-flash';
-    const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${apiKey}`;
+    const candidateModels = ['gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-1.5-flash-latest'];
+    let lastError = null;
 
     const bodyPayload = {
         contents: [
@@ -741,22 +735,36 @@ Reglas:
         }
     };
 
-    const res = await fetch(endpoint, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(bodyPayload)
-    });
+    for (const modelName of candidateModels) {
+        try {
+            const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${apiKey}`;
+            const res = await fetch(endpoint, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(bodyPayload)
+            });
 
-    if (!res.ok) {
-        throw new Error(`Error en API de Gemini (${res.status}): ${await res.text()}`);
+            if (!res.ok) {
+                const errText = await res.text();
+                lastError = new Error(`Error en API de Gemini (${res.status}): ${errText}`);
+                continue;
+            }
+
+            const data = await res.json();
+            const candidateText = data.candidates?.[0]?.content?.parts?.[0]?.text;
+            if (!candidateText) {
+                lastError = new Error("Gemini no devolvió respuesta para la imagen.");
+                continue;
+            }
+
+            const cleaned = candidateText.replace(/^```json/i, '').replace(/^```/, '').replace(/```$/, '').trim();
+            return JSON.parse(cleaned);
+        } catch (err) {
+            lastError = err;
+        }
     }
 
-    const data = await res.json();
-    const candidateText = data.candidates?.[0]?.content?.parts?.[0]?.text;
-    if (!candidateText) throw new Error("Gemini no devolvió respuesta para la imagen.");
-
-    const cleaned = candidateText.replace(/^```json/i, '').replace(/^```/, '').replace(/```$/, '').trim();
-    return JSON.parse(cleaned);
+    throw lastError || new Error("No se pudo procesar la imagen con Gemini.");
 }
 
 // ==========================================
