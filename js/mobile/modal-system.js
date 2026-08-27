@@ -29,11 +29,12 @@ export function openModal(id) {
   m.classList.add('flex');
   m.setAttribute('aria-hidden', 'false');
 
-  // Trigger browser layout recalculation for instantaneous smooth animation
-  void m.offsetHeight;
-
+  // Doble requestAnimationFrame garantiza que el navegador pinte el estado inicial (translateY 100%)
+  // antes de disparar la transición fluida hacia arriba (translateY 0%)
   requestAnimationFrame(() => {
-    m.classList.add('m3-visible');
+    requestAnimationFrame(() => {
+      m.classList.add('m3-visible');
+    });
   });
 
   document.body.classList.add('overflow-hidden');
@@ -59,11 +60,11 @@ export function closeModal(id) {
   // Restaurar color base de la barra de notificaciones
   setAppThemeColor('#FBFCFA');
 
-  // Tiempo sincronizado con la animación de salida suave (360ms)
+  // Tiempo sincronizado con la animación de salida suave (400ms)
   setTimeout(() => {
     if (!m.classList.contains('m3-visible')) {
       m.classList.add('hidden');
       m.classList.remove('flex');
     }
-  }, 360);
+  }, 400);
 }
