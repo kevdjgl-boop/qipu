@@ -13,7 +13,8 @@ let pullLottieEl = null;
 let lottieInstance = null;
 
 const PULL_BREAKPOINT = 65; // Punto de quiebre en px para activar la recarga
-const TOTAL_FRAMES = 60; // Frames totales de la animación Swipe.json
+const SCRUB_MAX_FRAME = 30; // Fotograma álgido durante el arrastre (la tarjeta sale al 100% justo al llegar al tope)
+const TOTAL_FRAMES = 60; // Frames totales para la reproducción en recarga activa
 
 export function initPullToRefresh() {
   pullContainer = document.getElementById('pull-to-refresh-container');
@@ -68,9 +69,9 @@ export function initPullToRefresh() {
       pullContainer.style.transform = `translate(-50%, ${pullProgress}px)`;
       pullContainer.style.opacity = `${Math.min(1, pullProgress / 18)}`;
 
-      // Sincronizar el fotograma exacto de la animación según la distancia recorrida
+      // Sincronizar el fotograma exacto: la tarjeta alcanza su punto más alto justo al llegar al punto de quiebre
       const progressRatio = Math.min(1, pullProgress / PULL_BREAKPOINT);
-      const targetFrame = Math.floor(progressRatio * (TOTAL_FRAMES - 1));
+      const targetFrame = Math.floor(progressRatio * SCRUB_MAX_FRAME);
 
       if (lottieInstance) {
         lottieInstance.goToAndStop(targetFrame, true);
