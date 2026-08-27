@@ -169,7 +169,7 @@ export async function triggerPullRefresh() {
 function resetPullIndicator() {
   if (pullContainer) {
     pullContainer.style.transition = 'transform 320ms cubic-bezier(0.4, 0, 0.2, 1), opacity 260ms ease';
-    pullContainer.style.transform = 'translate(-50%, -80px)';
+    pullContainer.style.transform = 'translate(-50%, -100px)';
     pullContainer.style.opacity = '0';
   }
   if (lottieInstance) {
