@@ -47,12 +47,16 @@ import {
 
 import {
   currentRegistrationType, isFixedExpenseActive, isListExpenseActive,
+import {
+  currentRegistrationType, isFixedExpenseActive, isListExpenseActive,
   activeSharedMemberIds, mobileExpenseGuests, editingExpenseId, editingIncomeId,
   updateDateChipLabel, openExpenseDatePicker, switchExpenseRegistrationType, updateSegmentedButtonsUI,
   toggleFixedExpenseSection, toggleListExpenseSection, renderSharedMembersAvatars,
   toggleSharedMemberInclusion, resetExpenseForm, resetIncomeForm,
   openEditExpenseModal, openEditIncomeModal, saveExpenseForm, deleteExpense, deleteIncome
 } from "./vista-registro.js";
+
+import { initReceiptScannerPWA, triggerReceiptScanner } from "./lector-boletas.js";
 
 import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
 import { doc, getDoc, onSnapshot, updateDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
@@ -109,6 +113,7 @@ window.handleCalTouchMove = handleCalTouchMove;
 window.handleCalTouchEnd = handleCalTouchEnd;
 window.deleteIncome = deleteIncome;
 window.deleteExpense = deleteExpense;
+window.triggerReceiptScanner = triggerReceiptScanner;
 
 // ================================================================
 // AUTENTICACIÓN Y SUSCRIPCIÓN EN TIEMPO REAL
@@ -377,18 +382,18 @@ function initMobileEventListeners() {
 
   fabBackdrop?.addEventListener('click', closeFabMenu);
 
+  // 10. Inicializar Lector de Boletas IA
+  initReceiptScannerPWA();
+
+  document.getElementById('fab-opt-scan-receipt')?.addEventListener('click', () => {
+    closeFabMenu();
+    triggerReceiptScanner();
+  });
+
   document.getElementById('fab-opt-simple-expense')?.addEventListener('click', () => {
     closeFabMenu();
     resetExpenseForm();
     switchExpenseRegistrationType('personal');
-    openModal('modal-expense');
-  });
-
-  document.getElementById('fab-opt-list-expense')?.addEventListener('click', () => {
-    closeFabMenu();
-    resetExpenseForm();
-    switchExpenseRegistrationType('personal');
-    toggleListExpenseSection();
     openModal('modal-expense');
   });
 
@@ -402,11 +407,6 @@ function initMobileEventListeners() {
   document.getElementById('fab-opt-settlement')?.addEventListener('click', () => {
     closeFabMenu();
     openModal('modal-settlement');
-  });
-
-  document.getElementById('fab-opt-settings')?.addEventListener('click', () => {
-    closeFabMenu();
-    openModal('modal-settings');
   });
 
   document.getElementById('btn-execute-settlement')?.addEventListener('click', () => {
