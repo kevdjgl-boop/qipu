@@ -1,6 +1,6 @@
 /**
  * @file firebase-service.js
- * @description Servicio de conexión con Firebase Firestore mediante REST API nativa con autenticación.
+ * @description Servicio de conexión con Firebase Firestore mediante REST API nativa con cálculo maestro idéntico a Qipu.
  */
 
 const FIREBASE_CONFIG = {
@@ -162,49 +162,108 @@ export async function addExpenseToWallet(walletId, expenseData) {
 }
 
 /**
- * Calcula un resumen rápido del monedero para mostrar en Telegram (/saldo).
+ * Motor maestro de cálculo idéntico a core-state.js de Qipu 3.0.
  */
-export async function getWalletQuickSummary(walletId, participantId = null) {
-    const wallet = await getWalletDoc(walletId);
-    if (!wallet) return null;
+export function calculateMasterSummary(walletState) {
+    const participants = walletState.participants || [];
+    const paymentMethods = walletState.paymentMethods || [];
+    const allExpenses = walletState.expenses || [];
 
-    const participants = wallet.participants || [];
-    const expenses = wallet.expenses || [];
+    const paymentMethodsMap = new Map(paymentMethods.map(m => [m.id, m]));
 
-    // Calcular presupuesto total
-    let totalBudget = 0;
-    participants.forEach(p => {
-        totalBudget += parseFloat(p.budget) || 0;
-    });
-
-    // Calcular total gastado en el mes actual
+    // Mes actual para filtrar gastos
     const now = new Date();
     const currentMonthStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
 
-    let totalSpent = 0;
-    let participantSpent = 0;
+    const filteredExpenses = allExpenses.filter(e => {
+        if (!e.date) return true;
+        return String(e.date).startsWith(currentMonthStr);
+    });
 
-    expenses.forEach(e => {
-        if (e.date && e.date.startsWith(currentMonthStr)) {
-            const amt = parseFloat(e.amount) || 0;
-            totalSpent += amt;
-            if (participantId && e.payerId === participantId) {
-                participantSpent += amt;
+    const participantData = participants.map(p => {
+        const budget = parseFloat(p.budget) || 0;
+        const sharedPct = parseFloat(p.sharedSavingsPercent) || 0;
+        const indepPct = parseFloat(p.independentSavingsPercent) || 0;
+
+        return {
+            id: p.id,
+            name: p.name || 'Usuario',
+            budget: budget,
+            spent: 0,
+            contributionPaid: 0,
+            sharedSavingsGoal: (budget * sharedPct) / 100,
+            independentSavingsGoal: (budget * indepPct) / 100,
+            availableForSpending: budget * (1 - (sharedPct + indepPct) / 100),
+            balance: 0,
+            remainingBudget: 0
+        };
+    });
+
+    const participantMap = new Map(participantData.map(p => [p.id, p]));
+    let totalSpent = 0;
+
+    filteredExpenses.forEach(expense => {
+        const amount = parseFloat(expense.amount) || 0;
+        totalSpent += amount;
+
+        const expenseGuests = (expense.guests && Array.isArray(expense.guests) && expense.guests.length > 0)
+            ? expense.guests
+            : (expense.guestName ? [expense.guestName] : []);
+
+        let realPayerId = expense.payerId;
+        const method = paymentMethodsMap.get(expense.paymentMethodId);
+        if (method && method.type === "credit" && method.ownerId && !(realPayerId && String(realPayerId).startsWith("guest_"))) {
+            realPayerId = method.ownerId;
+        }
+
+        const realPayer = participantMap.get(realPayerId);
+        if (realPayer) {
+            realPayer.contributionPaid += amount;
+        }
+
+        if (expense.type === "shared" || !expense.type) {
+            const numPayees = participants.length + expenseGuests.length;
+            if (numPayees > 0) {
+                const splitAmount = amount / numPayees;
+                participantData.forEach(p => {
+                    p.spent += splitAmount;
+                });
+            }
+        } else {
+            const consumer = participantMap.get(expense.payerId);
+            if (consumer) {
+                consumer.spent += amount;
+            } else if (participantData.length > 0) {
+                participantData[0].spent += amount;
             }
         }
     });
 
-    const participant = participants.find(p => p.id === participantId);
+    let totalBudget = 0;
+    let globalTotalRemainingBudget = 0;
+
+    participantData.forEach(p => {
+        totalBudget += p.budget;
+        p.remainingBudget = p.availableForSpending - p.spent;
+        p.balance = p.contributionPaid - p.spent;
+        globalTotalRemainingBudget += p.remainingBudget;
+    });
 
     return {
-        walletName: wallet.name || 'Mi Monedero',
+        walletName: walletState.name || 'Mi Monedero',
         totalBudget,
         totalSpent,
-        totalRemaining: Math.max(0, totalBudget - totalSpent),
-        participantName: participant ? participant.name : null,
-        participantBudget: participant ? parseFloat(participant.budget) || 0 : null,
-        participantSpent,
-        participantRemaining: participant ? Math.max(0, (parseFloat(participant.budget) || 0) - participantSpent) : null,
-        recentExpenses: expenses.slice(-3).reverse()
+        globalTotalRemainingBudget,
+        participants: participantData,
+        recentExpenses: filteredExpenses.slice(-3).reverse()
     };
+}
+
+/**
+ * Calcula un resumen rápido y completo del monedero para mostrar en Telegram (/saldo).
+ */
+export async function getWalletQuickSummary(walletId) {
+    const wallet = await getWalletDoc(walletId);
+    if (!wallet) return null;
+    return calculateMasterSummary(wallet);
 }

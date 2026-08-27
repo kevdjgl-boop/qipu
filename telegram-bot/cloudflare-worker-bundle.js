@@ -2,8 +2,7 @@
  * =========================================================================
  * 🤖 QIPU 3.0 - TELEGRAM BOT (CLOUDFLARE WORKER 24/7 BUNDLE)
  * =========================================================================
- * Este archivo contiene TODO el bot listo para copiar y pegar en Cloudflare Workers.
- * Incluye autenticación directa a Firestore REST, IA Gemini Vision y soporte 24/7.
+ * Incluye motor de cálculo maestro idéntico a Qipu con desglose individual de usuarios.
  */
 
 // ==========================================
@@ -149,46 +148,101 @@ async function addExpenseToWallet(walletId, expenseData) {
     return newExpense;
 }
 
-async function getWalletQuickSummary(walletId, participantId = null) {
-    const wallet = await getWalletDoc(walletId);
-    if (!wallet) return null;
+/**
+ * Motor maestro de cálculo idéntico a core-state.js de Qipu 3.0.
+ */
+function calculateMasterSummary(walletState) {
+    const participants = walletState.participants || [];
+    const paymentMethods = walletState.paymentMethods || [];
+    const allExpenses = walletState.expenses || [];
 
-    const participants = wallet.participants || [];
-    const expenses = wallet.expenses || [];
+    const paymentMethodsMap = new Map(paymentMethods.map(m => [m.id, m]));
 
-    let totalBudget = 0;
-    participants.forEach(p => {
-        totalBudget += parseFloat(p.budget) || 0;
-    });
-
+    // Mes actual para filtrar gastos
     const now = new Date();
     const currentMonthStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
 
-    let totalSpent = 0;
-    let participantSpent = 0;
+    const filteredExpenses = allExpenses.filter(e => {
+        if (!e.date) return true;
+        return String(e.date).startsWith(currentMonthStr);
+    });
 
-    expenses.forEach(e => {
-        if (e.date && String(e.date).startsWith(currentMonthStr)) {
-            const amt = parseFloat(e.amount) || 0;
-            totalSpent += amt;
-            if (participantId && e.payerId === participantId) {
-                participantSpent += amt;
+    const participantData = participants.map(p => {
+        const budget = parseFloat(p.budget) || 0;
+        const sharedPct = parseFloat(p.sharedSavingsPercent) || 0;
+        const indepPct = parseFloat(p.independentSavingsPercent) || 0;
+
+        return {
+            id: p.id,
+            name: p.name || 'Usuario',
+            budget: budget,
+            spent: 0,
+            contributionPaid: 0,
+            sharedSavingsGoal: (budget * sharedPct) / 100,
+            independentSavingsGoal: (budget * indepPct) / 100,
+            availableForSpending: budget * (1 - (sharedPct + indepPct) / 100),
+            balance: 0,
+            remainingBudget: 0
+        };
+    });
+
+    const participantMap = new Map(participantData.map(p => [p.id, p]));
+    let totalSpent = 0;
+
+    filteredExpenses.forEach(expense => {
+        const amount = parseFloat(expense.amount) || 0;
+        totalSpent += amount;
+
+        const expenseGuests = (expense.guests && Array.isArray(expense.guests) && expense.guests.length > 0)
+            ? expense.guests
+            : (expense.guestName ? [expense.guestName] : []);
+
+        let realPayerId = expense.payerId;
+        const method = paymentMethodsMap.get(expense.paymentMethodId);
+        if (method && method.type === "credit" && method.ownerId && !(realPayerId && String(realPayerId).startsWith("guest_"))) {
+            realPayerId = method.ownerId;
+        }
+
+        const realPayer = participantMap.get(realPayerId);
+        if (realPayer) {
+            realPayer.contributionPaid += amount;
+        }
+
+        if (expense.type === "shared" || !expense.type) {
+            const numPayees = participants.length + expenseGuests.length;
+            if (numPayees > 0) {
+                const splitAmount = amount / numPayees;
+                participantData.forEach(p => {
+                    p.spent += splitAmount;
+                });
+            }
+        } else {
+            const consumer = participantMap.get(expense.payerId);
+            if (consumer) {
+                consumer.spent += amount;
+            } else if (participantData.length > 0) {
+                participantData[0].spent += amount;
             }
         }
     });
 
-    const participant = participants.find(p => p.id === participantId);
+    let totalBudget = 0;
+    let globalTotalRemainingBudget = 0;
+
+    participantData.forEach(p => {
+        totalBudget += p.budget;
+        p.remainingBudget = p.availableForSpending - p.spent;
+        p.balance = p.contributionPaid - p.spent;
+        globalTotalRemainingBudget += p.remainingBudget;
+    });
 
     return {
-        walletName: wallet.name || 'Mi Monedero',
+        walletName: walletState.name || 'Mi Monedero',
         totalBudget,
         totalSpent,
-        totalRemaining: Math.max(0, totalBudget - totalSpent),
-        participantName: participant ? participant.name : null,
-        participantBudget: participant ? parseFloat(participant.budget) || 0 : null,
-        participantSpent,
-        participantRemaining: participant ? Math.max(0, (parseFloat(participant.budget) || 0) - participantSpent) : null,
-        recentExpenses: expenses.slice(-3).reverse()
+        globalTotalRemainingBudget,
+        participants: participantData,
+        recentExpenses: filteredExpenses.slice(-3).reverse()
     };
 }
 
@@ -581,24 +635,49 @@ async function handleTelegramUpdate(update, botToken, defaultWalletId = null, ge
             `O registra tus gastos escribiendo:\n` +
             `👉 <code>25 Almuerzo</code>\n` +
             `👉 <code>18 Taxi transporte efectivo</code>\n` +
-            `👉 <code>/saldo</code> (para ver tu saldo disponible)`
+            `👉 <code>/saldo</code> (para ver presupuestos y saldos por usuario)`
         );
     }
 
     if (rawText.startsWith('/saldo') || rawText.startsWith('/balance')) {
         try {
-            const summary = await getWalletQuickSummary(walletId);
-            if (!summary) {
+            const wallet = await getWalletDoc(walletId);
+            if (!wallet) {
                 return await sendTelegramMessage(botToken, chatId, `❌ Monedero no encontrado en la base de datos (ID: ${walletId}).`);
             }
 
+            const summary = calculateMasterSummary(wallet);
+
             let msg = `📊 <b>Estado de ${summary.walletName}</b>\n\n` +
                       `💰 <b>Presupuesto Total:</b> S/ ${summary.totalBudget.toFixed(2)}\n` +
-                      `📉 <b>Gastado este mes:</b> S/ ${summary.totalSpent.toFixed(2)}\n` +
-                      `🟢 <b>Disponible Global:</b> S/ ${summary.totalRemaining.toFixed(2)}\n`;
+                      `📉 <b>Gastado Total Mes:</b> S/ ${summary.totalSpent.toFixed(2)}\n` +
+                      `🟢 <b>Disponible Global:</b> S/ ${summary.globalTotalRemainingBudget.toFixed(2)}\n\n` +
+                      `━━━━━━━━━━━━━━━━━━━━\n` +
+                      `👥 <b>SALDOS INDIVIDUALES:</b>\n` +
+                      `━━━━━━━━━━━━━━━━━━━━\n`;
+
+            if (summary.participants && summary.participants.length > 0) {
+                summary.participants.forEach(p => {
+                    const dispBadge = p.remainingBudget >= 0 ? '🟢' : '🔴';
+                    msg += `\n👤 <b>${p.name}</b>\n` +
+                           `• Presupuesto: S/ ${p.budget.toFixed(2)}\n` +
+                           `• Gasto asignado: S/ ${p.spent.toFixed(2)}\n` +
+                           `• ${dispBadge} <b>Disponible:</b> S/ ${p.remainingBudget.toFixed(2)}\n`;
+
+                    if (summary.participants.length > 1) {
+                        const balanceStr = p.balance >= 0 
+                            ? `+S/ ${p.balance.toFixed(2)} (A favor)` 
+                            : `-S/ ${Math.abs(p.balance).toFixed(2)} (Debe)`;
+                        msg += `• ⚖️ Balance grupo: <code>${balanceStr}</code>\n`;
+                    }
+                });
+            } else {
+                msg += `<i>No hay participantes configurados.</i>\n`;
+            }
 
             if (summary.recentExpenses && summary.recentExpenses.length > 0) {
-                msg += `\n🧾 <b>Últimos gastos:</b>\n`;
+                msg += `\n━━━━━━━━━━━━━━━━━━━━\n` +
+                       `🧾 <b>Últimos gastos del mes:</b>\n`;
                 summary.recentExpenses.forEach(e => {
                     msg += `• <i>${e.description || 'Gasto'}</i>: S/ ${(parseFloat(e.amount) || 0).toFixed(2)}\n`;
                 });
