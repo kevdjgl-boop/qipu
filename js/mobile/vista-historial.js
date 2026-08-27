@@ -20,6 +20,7 @@ let swipeIsHorizontal = null;
 let swipeHasMoved = false;
 let openSwipeCardId = null;
 let swipeBaseOffset = 0;
+let suppressClickUntil = 0;
 
 export function initHistorySwipeGestures() {
   if (window._historySwipeGesturesInitialized) return;
@@ -78,7 +79,7 @@ export function initHistorySwipeGestures() {
     const diffY = clientY - swipeStartY;
 
     if (swipeIsHorizontal === null) {
-      if (Math.abs(diffX) > 6 || Math.abs(diffY) > 6) {
+      if (Math.abs(diffX) > 5 || Math.abs(diffY) > 5) {
         swipeIsHorizontal = Math.abs(diffX) > Math.abs(diffY);
         if (!swipeIsHorizontal) {
           // Desplazamiento vertical: restaurar tarjeta y cancelar swipe
@@ -106,7 +107,7 @@ export function initHistorySwipeGestures() {
 
     activeSwipeCard.style.transform = `translateX(${targetX}px)`;
     if (activeSwipeSlot) {
-      const opacity = Math.min(1, Math.abs(targetX) / 36);
+      const opacity = Math.min(1, Math.abs(targetX) / 30);
       activeSwipeSlot.style.opacity = `${opacity}`;
     }
   };
@@ -117,6 +118,11 @@ export function initHistorySwipeGestures() {
     const card = activeSwipeCard;
     const slot = activeSwipeSlot;
     const id = activeSwipeId;
+    const moved = swipeHasMoved;
+
+    if (moved) {
+      suppressClickUntil = Date.now() + 450;
+    }
 
     // Restaurar animación fluida de resorte para el cierre/apertura
     card.style.transition = 'transform 280ms cubic-bezier(0.18, 0.89, 0.32, 1.15)';
@@ -124,7 +130,7 @@ export function initHistorySwipeGestures() {
     const match = (card.style.transform || '').match(/translateX\(([-\d.]+)px\)/);
     const currentX = match ? parseFloat(match[1]) : 0;
 
-    if (currentX <= -36) {
+    if (currentX <= -30) {
       // Dejar abierta a la izquierda mostrando la papelera
       card.style.transform = 'translateX(-76px)';
       if (slot) slot.style.opacity = '1';
@@ -141,17 +147,20 @@ export function initHistorySwipeGestures() {
     activeSwipeSlot = null;
     activeSwipeId = null;
     swipeIsHorizontal = null;
+    swipeHasMoved = false;
   };
 
-  document.addEventListener('pointerdown', onStart, { passive: true });
-  window.addEventListener('pointermove', onMove, { passive: false });
-  window.addEventListener('pointerup', onEnd, { passive: true });
-  window.addEventListener('pointercancel', onEnd, { passive: true });
-
-  document.addEventListener('touchstart', onStart, { passive: true });
-  window.addEventListener('touchmove', onMove, { passive: false });
-  window.addEventListener('touchend', onEnd, { passive: true });
-  window.addEventListener('touchcancel', onEnd, { passive: true });
+  if ('PointerEvent' in window) {
+    document.addEventListener('pointerdown', onStart, { passive: true });
+    window.addEventListener('pointermove', onMove, { passive: false });
+    window.addEventListener('pointerup', onEnd, { passive: true });
+    window.addEventListener('pointercancel', onEnd, { passive: true });
+  } else {
+    document.addEventListener('touchstart', onStart, { passive: true });
+    window.addEventListener('touchmove', onMove, { passive: false });
+    window.addEventListener('touchend', onEnd, { passive: true });
+    window.addEventListener('touchcancel', onEnd, { passive: true });
+  }
 }
 
 export async function deleteMovementFromSwipe(e, type, id) {
@@ -194,8 +203,11 @@ export async function deleteMovementFromSwipe(e, type, id) {
 }
 
 export function handleMovementCardClick(e, type, id, hasItems) {
-  if (swipeHasMoved) {
-    swipeHasMoved = false;
+  if (Date.now() < suppressClickUntil) {
+    if (e) {
+      e.stopPropagation();
+      e.preventDefault();
+    }
     return;
   }
 
@@ -361,7 +373,7 @@ export function renderHistoryList(monthlyExpenses) {
           data-mov-type="${item.type}"
           onclick="handleMovementCardClick(event, '${item.type}', '${item.id}', ${item.hasItems})"
           style="animation-delay: ${staggerDelay}ms; touch-action: pan-y !important; user-select: none; -webkit-user-select: none;"
-          class="animate-item-enter relative z-10 bg-white p-3.5 rounded-2xl border border-slate-100 shadow-sm flex items-center justify-between gap-3 hover:border-slate-200 active:scale-[0.99] cursor-pointer">
+          class="animate-item-enter relative z-10 bg-white p-3.5 rounded-2xl border border-slate-100 shadow-sm flex items-center justify-between gap-3 hover:border-slate-200 cursor-pointer">
           
           <div class="flex items-center gap-3 min-w-0 flex-1 pointer-events-none">
             <div class="shrink-0">
