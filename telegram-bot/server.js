@@ -9,6 +9,7 @@ import { handleTelegramUpdate } from './bot-core.js';
 
 const BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN || '';
 const DEFAULT_WALLET_ID = process.env.DEFAULT_WALLET_ID || '';
+const GEMINI_API_KEY = process.env.GEMINI_API_KEY || '';
 const PORT = process.env.PORT || 3000;
 const MODE = process.env.BOT_MODE || 'polling'; // 'polling' o 'webhook'
 
@@ -23,6 +24,8 @@ console.log("  🤖 QIPU 3.0 - TELEGRAM BOT SERVER");
 console.log("=========================================");
 console.log(`Modo de ejecución: ${MODE.toUpperCase()}`);
 if (DEFAULT_WALLET_ID) console.log(`Monedero por defecto: ${DEFAULT_WALLET_ID}`);
+if (GEMINI_API_KEY) console.log(`IA Visión (Gemini): ACTIVADO ✅`);
+else console.log(`IA Visión (Gemini): Desactivado (agrega GEMINI_API_KEY en .env para leer facturas/fotos)`);
 
 /**
  * MODO LONG-POLLING (Ideal para desarrollo local o VPS sin certificado SSL externo)
@@ -46,7 +49,7 @@ async function startPolling() {
                 if (data.ok && Array.isArray(data.result)) {
                     for (const update of data.result) {
                         offset = update.update_id + 1;
-                        await handleTelegramUpdate(update, BOT_TOKEN, DEFAULT_WALLET_ID);
+                        await handleTelegramUpdate(update, BOT_TOKEN, DEFAULT_WALLET_ID, { geminiApiKey: GEMINI_API_KEY });
                     }
                 }
             }
@@ -72,7 +75,7 @@ function startWebhookServer() {
             req.on('end', async () => {
                 try {
                     const update = JSON.parse(body);
-                    await handleTelegramUpdate(update, BOT_TOKEN, DEFAULT_WALLET_ID);
+                    await handleTelegramUpdate(update, BOT_TOKEN, DEFAULT_WALLET_ID, { geminiApiKey: GEMINI_API_KEY });
                     res.writeHead(200, { 'Content-Type': 'application/json' });
                     res.end(JSON.stringify({ ok: true }));
                 } catch (err) {

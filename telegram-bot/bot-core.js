@@ -1,14 +1,14 @@
 /**
  * @file bot-core.js
  * @description Lógica central del Bot de Telegram para Qipu 3.0.
- * Maneja comandos, vinculaciones y registro de transacciones.
+ * Maneja comandos, vinculaciones, registro de transacciones por texto y lectura de facturas/boletas con IA Gemini Vision.
  */
 
 import { parseExpenseMessage } from './parser.js';
 import { getWalletDoc, addExpenseToWallet, getWalletQuickSummary, updateWalletDoc } from './firebase-service.js';
+import { downloadTelegramPhotoAsBase64, analyzeReceiptWithGemini } from './gemini-vision.js';
 
 // Memoria en caliente para mapeo chat_id -> { walletId, participantId }
-// En producción, también se sincroniza en el campo telegramUsers del documento wallet en Firestore.
 const userSessions = new Map();
 
 /**
@@ -36,15 +36,25 @@ export async function sendTelegramMessage(botToken, chatId, text, options = {}) 
 }
 
 /**
+ * Envía una acción de chat (ej: typing, upload_photo).
+ */
+export async function sendChatAction(botToken, chatId, action = 'typing') {
+    try {
+        await fetch(`https://api.telegram.org/bot${botToken}/sendChatAction`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ chat_id: chatId, action })
+        });
+    } catch (e) {}
+}
+
+/**
  * Obtiene la sesión vinculada para un chatId.
  */
 async function getSession(chatId, fallbackWalletId = null) {
     if (userSessions.has(String(chatId))) {
         return userSessions.get(String(chatId));
     }
-
-    // Si no está en memoria local, buscar si hay algún wallet con este chatId en Firestore
-    // (Opcional: usar fallback si se especificó)
     if (fallbackWalletId) {
         return { walletId: fallbackWalletId, participantId: null };
     }
@@ -61,13 +71,161 @@ export function setSession(chatId, walletId, participantId = null) {
 /**
  * Procesa una actualización (Update) entrante de Telegram.
  */
-export async function handleTelegramUpdate(update, botToken, defaultWalletId = null) {
-    if (!update.message || !update.message.text) return;
+export async function handleTelegramUpdate(update, botToken, defaultWalletId = null, config = {}) {
+    if (!update.message) return;
 
     const message = update.message;
     const chatId = message.chat.id;
-    const rawText = message.text.trim();
     const userName = message.from?.first_name || 'Amigo';
+    const geminiApiKey = config.geminiApiKey || process.env.GEMINI_API_KEY || '';
+
+    // =========================================================================
+    // 📸 PROCESAR FOTOS / COMPROBANTES / FACTURAS / BOLETAS CON IA (GEMINI)
+    // =========================================================================
+    const isPhoto = message.photo && message.photo.length > 0;
+    const isImageDoc = message.document && (
+        message.document.mime_type?.startsWith('image/') ||
+        message.document.mime_type === 'application/pdf'
+    );
+
+    if (isPhoto || isImageDoc) {
+        const session = await getSession(chatId, defaultWalletId);
+        if (!session || !session.walletId) {
+            return await sendTelegramMessage(botToken, chatId,
+                `⚠️ <b>Monedero no configurado.</b>\nPara leer facturas, primero vincula tu monedero con:\n\n👉 <code>/vincular ID_DE_TU_MONEDERO</code>`
+            );
+        }
+
+        if (!geminiApiKey) {
+            return await sendTelegramMessage(botToken, chatId,
+                `📷 <b>¡Foto recibida!</b>\n\n` +
+                `Para activar la <b>lectura automática de facturas y boletas con Inteligencia Artificial</b>, debes agregar tu <code>GEMINI_API_KEY</code> en tu archivo de configuración <code>.env</code>.\n\n` +
+                `💡 <i>Es 100% gratuita y la obtienes en 1 minuto en Google AI Studio:</i>\nhttps://aistudio.google.com/app/apikey`
+            );
+        }
+
+        await sendChatAction(botToken, chatId, 'typing');
+        await sendTelegramMessage(botToken, chatId, `🔍 <b>Analizando comprobante con Inteligencia Artificial...</b> ⏳`);
+
+        try {
+            // Obtener el file_id (la foto con mejor resolución está al final del array)
+            const fileId = isPhoto 
+                ? message.photo[message.photo.length - 1].file_id 
+                : message.document.file_id;
+
+            // 1. Descargar imagen en Base64
+            const { base64Data, mimeType } = await downloadTelegramPhotoAsBase64(fileId, botToken);
+
+            // 2. Obtener estado del monedero para emparejar categorías y métodos
+            const wallet = await getWalletDoc(session.walletId);
+            if (!wallet) {
+                return await sendTelegramMessage(botToken, chatId, `❌ Monedero no encontrado en la base de datos.`);
+            }
+
+            const categories = wallet.categories || [];
+            const paymentMethods = wallet.paymentMethods || [];
+            const participants = wallet.participants || [];
+
+            // 3. Analizar con Gemini Vision
+            const receiptData = await analyzeReceiptWithGemini(base64Data, mimeType, geminiApiKey, categories);
+
+            const amount = parseFloat(receiptData.amount);
+            if (isNaN(amount) || amount <= 0) {
+                return await sendTelegramMessage(botToken, chatId, 
+                    `⚠️ No pude detectar un monto total claro en este comprobante.\n\n` +
+                    `💡 <i>Intenta enviar una foto más nítida o registrarlo por texto (ej: <code>${receiptData.merchant || 'Compra'} 35.00</code>).</i>`
+                );
+            }
+
+            // 4. Emparejar Categoría
+            let categoryName = receiptData.category || 'Varios';
+            const matchedCategory = categories.find(c => 
+                c.name.toLowerCase() === categoryName.toLowerCase() ||
+                (c.subcategories && c.subcategories.some(s => s.toLowerCase() === categoryName.toLowerCase()))
+            );
+            if (matchedCategory) categoryName = matchedCategory.name;
+            else if (categories.length > 0 && !matchedCategory) categoryName = categories[0].name;
+
+            // 5. Emparejar Método de Pago
+            let paymentMethodId = null;
+            let paymentMethodName = '';
+            const detectedPmKey = (receiptData.paymentMethod || '').toLowerCase();
+
+            for (const pm of paymentMethods) {
+                if (pm.name.toLowerCase().includes(detectedPmKey) || pm.type?.toLowerCase()?.includes(detectedPmKey)) {
+                    paymentMethodId = pm.id;
+                    paymentMethodName = pm.name;
+                    break;
+                }
+            }
+            if (!paymentMethodId && paymentMethods.length > 0) {
+                paymentMethodId = paymentMethods[0].id;
+                paymentMethodName = paymentMethods[0].name;
+            }
+
+            // 6. Determinar Pagador
+            let payerId = session.participantId;
+            if (!payerId || !participants.some(p => p.id === payerId)) {
+                payerId = participants.length > 0 ? participants[0].id : 'default_payer';
+            }
+            const payer = participants.find(p => p.id === payerId);
+            const payerName = payer ? payer.name : 'Tú';
+
+            // 7. Armar el registro del gasto
+            const expenseDate = receiptData.date || new Date().toISOString().split('T')[0];
+            const description = receiptData.merchant 
+                ? `${receiptData.merchant}${receiptData.description ? ' - ' + receiptData.description : ''}`
+                : (receiptData.description || 'Gasto Comprobante');
+
+            const expenseToSave = {
+                amount: Math.round(amount * 100) / 100,
+                description,
+                category: categoryName,
+                paymentMethodId,
+                paymentMethodName: paymentMethodName || 'Efectivo',
+                payerId,
+                payerName,
+                type: receiptData.isShared ? 'shared' : 'personal',
+                date: expenseDate,
+                isFixed: false,
+                fixedRecurrenceMonths: 0,
+                items: [],
+                guests: []
+            };
+
+            // 8. Guardar en Firestore
+            await addExpenseToWallet(session.walletId, expenseToSave);
+
+            // 9. Confirmación al usuario
+            const typeBadge = expenseToSave.type === 'shared' ? '👥 Compartido' : '👤 Personal';
+            const msg = `🧾 <b>¡Comprobante Procesado con Éxito!</b> ✨\n\n` +
+                        `🏢 <b>Establecimiento:</b> ${receiptData.merchant || 'Comercio'}\n` +
+                        `💵 <b>Monto Total:</b> S/ ${expenseToSave.amount.toFixed(2)}\n` +
+                        `📝 <b>Detalle:</b> ${expenseToSave.description}\n` +
+                        `🏷️ <b>Categoría:</b> ${expenseToSave.category}\n` +
+                        `💳 <b>Método de Pago:</b> ${expenseToSave.paymentMethodName}\n` +
+                        `📅 <b>Fecha:</b> ${expenseToSave.date}\n` +
+                        `👤 <b>Pagado por:</b> ${expenseToSave.payerName}\n` +
+                        `📌 <b>Tipo:</b> ${typeBadge}\n\n` +
+                        `⚡ <i>Registrado en tiempo real en tu app Qipu.</i>`;
+
+            return await sendTelegramMessage(botToken, chatId, msg);
+
+        } catch (err) {
+            console.error("Error procesando foto/factura:", err);
+            return await sendTelegramMessage(botToken, chatId,
+                `❌ <b>Error al procesar la imagen:</b> ${err.message}\n\n` +
+                `💡 Puedes registrarlo manualmente escribiendo: <code>Monto Descripción</code>`
+            );
+        }
+    }
+
+    // =========================================================================
+    // 💬 PROCESAR MENSAJES DE TEXTO Y COMANDOS
+    // =========================================================================
+    if (!message.text) return;
+
+    const rawText = message.text.trim();
 
     // 1. COMANDO /start
     if (rawText.startsWith('/start')) {
@@ -75,7 +233,6 @@ export async function handleTelegramUpdate(update, botToken, defaultWalletId = n
         const payload = parts.length > 1 ? parts[1].trim() : null;
 
         if (payload) {
-            // Se abrió con deeplink: t.me/Bot?start=WALLETID
             setSession(chatId, payload);
             try {
                 const wallet = await getWalletDoc(payload);
@@ -88,7 +245,8 @@ export async function handleTelegramUpdate(update, botToken, defaultWalletId = n
                         `Monedero: <b>${wallet.name || 'Mi Monedero'}</b>\n\n` +
                         `👥 <b>¿Quién eres en este grupo?</b>\n${pList || 'Sin participantes registrados'}\n\n` +
                         `💡 <i>Para vincular tu nombre, escribe:</i>\n<code>/soy [Tu Nombre o ID]</code>\n\n` +
-                        `O simplemente empieza a escribir tus gastos:\n` +
+                        `📸 <b>¡Puedes enviar fotos de facturas o boletas directamente!</b>\n` +
+                        `O escribe tus gastos en texto:\n` +
                         `👉 <code>25 Almuerzo</code>\n` +
                         `👉 <code>50 Taxi compartido efectivo</code>`
                     );
@@ -100,11 +258,11 @@ export async function handleTelegramUpdate(update, botToken, defaultWalletId = n
 
         return await sendTelegramMessage(botToken, chatId,
             `👋 <b>¡Hola ${userName}! Bienvenido a Qipu Bot</b> 💰\n\n` +
-            `Registra tus gastos al instante enviando un mensaje directo.\n\n` +
+            `Registra tus gastos enviando un mensaje de texto o <b>enviando fotos de tus facturas y tickets</b> 📸.\n\n` +
             `🔗 <b>Paso 1: Vincula tu Monedero</b>\n` +
-            `Escribe: <code>/vincular [ID_DE_TU_MONEDERO]</code>\n` +
-            `<i>(Encuentras tu ID en el botón Ajustes / Billetera de la app web Qipu)</i>\n\n` +
-            `📖 <b>Ejemplos de registro rápido:</b>\n` +
+            `Escribe: <code>/vincular [ID_DE_TU_MONEDERO]</code>\n\n` +
+            `📖 <b>Ejemplos de uso:</b>\n` +
+            `• 📸 <i>Envía la foto de un voucher o ticket de compra</i>\n` +
             `• <code>25.50 Almuerzo</code>\n` +
             `• <code>Almuerzo 30 yape comida</code>\n` +
             `• <code>120 Cena compartido tarjeta</code>\n\n` +
@@ -151,7 +309,7 @@ export async function handleTelegramUpdate(update, botToken, defaultWalletId = n
                 msg += `👤 <b>Participante:</b> No asignado (usa <code>/soy TuNombre</code> para identificarte)\n\n`;
             }
 
-            msg += `🚀 <i>¡Ya puedes registrar gastos! Prueba enviando:</i>\n<code>20 Taxi</code>`;
+            msg += `🚀 <i>¡Ya puedes registrar gastos! Prueba enviando una foto de un ticket o escribe:</i>\n<code>20 Taxi</code>`;
 
             return await sendTelegramMessage(botToken, chatId, msg);
         } catch (err) {
@@ -232,21 +390,23 @@ export async function handleTelegramUpdate(update, botToken, defaultWalletId = n
     if (rawText === '/ayuda' || rawText === '/help') {
         return await sendTelegramMessage(botToken, chatId,
             `💡 <b>Guía de Uso de Qipu Bot</b>\n\n` +
-            `📝 <b>Cómo registrar gastos:</b>\n` +
-            `Simplemente envía un mensaje con el monto y descripción:\n` +
+            `📸 <b>Lectura de Facturas y Boletas:</b>\n` +
+            `• Toma una foto de tu ticket, boleta o voucher de pago y envíala aquí.\n` +
+            `• La IA extraerá automáticamente el monto, establecimiento y categoría.\n\n` +
+            `📝 <b>Registro por Texto:</b>\n` +
             `• <code>25 Almuerzo</code>\n` +
             `• <code>18.50 Uber transporte tarjeta</code>\n` +
             `• <code>120 Cena amigos compartido bcp</code>\n\n` +
             `⚡ <b>Comandos disponibles:</b>\n` +
             `• <code>/saldo</code> - Ver disponible y gastos del mes\n` +
-            `• <code>/soy [Nombre]</code> - Cambiar a quién se le asigna el gasto\n` +
+            `• <code>/soy [Nombre]</code> - Cambiar quién registra el gasto\n` +
             `• <code>/vincular [ID]</code> - Cambiar monedero activo\n` +
             `• <code>/desvincular</code> - Desconectar este chat\n` +
             `• <code>/ayuda</code> - Ver esta guía`
         );
     }
 
-    // 7. REGISTRO DIRECTO DE GASTO (PARSER DE MENSAJE)
+    // 7. REGISTRO DIRECTO DE GASTO (PARSER DE TEXTO)
     const session = await getSession(chatId, defaultWalletId);
     if (!session || !session.walletId) {
         return await sendTelegramMessage(botToken, chatId,
@@ -265,7 +425,8 @@ export async function handleTelegramUpdate(update, botToken, defaultWalletId = n
         if (!parsedExpense) {
             return await sendTelegramMessage(botToken, chatId,
                 `❓ No detecté un monto válido en tu mensaje.\n\n` +
-                `Prueba escribiendo algo como:\n👉 <code>35.00 Almuerzo</code> o <code>Taxi 15</code>`
+                `Prueba escribiendo algo como:\n👉 <code>35.00 Almuerzo</code> o <code>Taxi 15</code>\n` +
+                `O envía una 📸 foto de tu comprobante.`
             );
         }
 

@@ -13,13 +13,14 @@ export default {
             try {
                 const botToken = env.TELEGRAM_BOT_TOKEN;
                 const defaultWalletId = env.DEFAULT_WALLET_ID || null;
+                const geminiApiKey = env.GEMINI_API_KEY || '';
 
                 if (!botToken) {
                     return new Response("Missing TELEGRAM_BOT_TOKEN", { status: 500 });
                 }
 
                 const update = await request.json();
-                ctx.waitUntil(handleTelegramUpdate(update, botToken, defaultWalletId));
+                ctx.waitUntil(handleTelegramUpdate(update, botToken, defaultWalletId, { geminiApiKey }));
 
                 return new Response(JSON.stringify({ ok: true }), {
                     headers: { 'Content-Type': 'application/json' }
