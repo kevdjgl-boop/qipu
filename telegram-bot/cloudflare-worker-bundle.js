@@ -3,16 +3,44 @@
  * 🤖 QIPU 3.0 - TELEGRAM BOT (CLOUDFLARE WORKER 24/7 BUNDLE)
  * =========================================================================
  * Este archivo contiene TODO el bot listo para copiar y pegar en Cloudflare Workers.
- * No requiere Node.js, librerías externas ni servidores de pago (100% Gratis).
+ * Incluye autenticación directa a Firestore REST, IA Gemini Vision y soporte 24/7.
  */
 
 // ==========================================
-// 1. FIREBASE FIRESTORE REST SERVICE
+// 1. FIREBASE FIRESTORE REST SERVICE (CON AUTH)
 // ==========================================
 const FIREBASE_CONFIG = {
+    apiKey: "AIzaSyA63OZWFM30Tu17DGxAmbtVsNFWeQU3k4s",
     projectId: "qipu-d1dcd",
     appId: "qipu-d1dcd"
 };
+
+let cachedAuthToken = null;
+let tokenExpiry = 0;
+
+async function getFirebaseAuthToken() {
+    const now = Date.now();
+    if (cachedAuthToken && now < tokenExpiry) {
+        return cachedAuthToken;
+    }
+
+    try {
+        const res = await fetch(`https://identitytoolkit.googleapis.com/v1/accounts:signUp?key=${FIREBASE_CONFIG.apiKey}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ returnSecureToken: true })
+        });
+        if (res.ok) {
+            const data = await res.json();
+            cachedAuthToken = data.idToken;
+            tokenExpiry = now + (parseInt(data.expiresIn || '3600', 10) - 60) * 1000;
+            return cachedAuthToken;
+        }
+    } catch (e) {
+        console.error("Auth token error:", e);
+    }
+    return null;
+}
 
 function toFirestoreValue(val) {
     if (val === null || val === undefined) return { nullValue: null };
@@ -55,8 +83,15 @@ function fromFirestoreValue(val) {
 }
 
 async function getWalletDoc(walletId) {
-    const url = `https://firestore.googleapis.com/v1/projects/${FIREBASE_CONFIG.projectId}/databases/(default)/documents/artifacts/${FIREBASE_CONFIG.appId}/public/data/wallets/${walletId}`;
-    const response = await fetch(url);
+    const idToken = await getFirebaseAuthToken();
+    const url = `https://firestore.googleapis.com/v1/projects/${FIREBASE_CONFIG.projectId}/databases/(default)/documents/artifacts/${FIREBASE_CONFIG.appId}/public/data/wallets/${walletId}?key=${FIREBASE_CONFIG.apiKey}`;
+    
+    const headers = { 'Content-Type': 'application/json' };
+    if (idToken) {
+        headers['Authorization'] = `Bearer ${idToken}`;
+    }
+
+    const response = await fetch(url, { headers });
     if (!response.ok) {
         if (response.status === 404) return null;
         throw new Error(`Error al leer Firestore (${response.status}): ${await response.text()}`);
@@ -70,17 +105,23 @@ async function getWalletDoc(walletId) {
 }
 
 async function updateWalletDoc(walletId, updates) {
+    const idToken = await getFirebaseAuthToken();
     const fieldMask = Object.keys(updates).map(f => `updateMask.fieldPaths=${encodeURIComponent(f)}`).join('&');
-    const url = `https://firestore.googleapis.com/v1/projects/${FIREBASE_CONFIG.projectId}/databases/(default)/documents/artifacts/${FIREBASE_CONFIG.appId}/public/data/wallets/${walletId}?${fieldMask}`;
+    const url = `https://firestore.googleapis.com/v1/projects/${FIREBASE_CONFIG.projectId}/databases/(default)/documents/artifacts/${FIREBASE_CONFIG.appId}/public/data/wallets/${walletId}?key=${FIREBASE_CONFIG.apiKey}&${fieldMask}`;
 
     const fields = {};
     for (const [k, v] of Object.entries(updates)) {
         fields[k] = toFirestoreValue(v);
     }
 
+    const headers = { 'Content-Type': 'application/json' };
+    if (idToken) {
+        headers['Authorization'] = `Bearer ${idToken}`;
+    }
+
     const response = await fetch(url, {
         method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
+        headers,
         body: JSON.stringify({ fields })
     });
 
@@ -127,7 +168,7 @@ async function getWalletQuickSummary(walletId, participantId = null) {
     let participantSpent = 0;
 
     expenses.forEach(e => {
-        if (e.date && e.date.startsWith(currentMonthStr)) {
+        if (e.date && String(e.date).startsWith(currentMonthStr)) {
             const amt = parseFloat(e.amount) || 0;
             totalSpent += amt;
             if (participantId && e.payerId === participantId) {
@@ -444,7 +485,7 @@ async function handleTelegramUpdate(update, botToken, defaultWalletId = null, ge
     const message = update.message;
     const chatId = message.chat.id;
     const userName = message.from?.first_name || 'Amigo';
-    const walletId = defaultWalletId;
+    const walletId = defaultWalletId || 'restored_1765520245071';
 
     // A) FOTO / COMPROBANTE CON IA
     const isPhoto = message.photo && message.photo.length > 0;
@@ -544,22 +585,35 @@ async function handleTelegramUpdate(update, botToken, defaultWalletId = null, ge
         );
     }
 
-    if (rawText === '/saldo' || rawText === '/balance') {
-        const summary = await getWalletQuickSummary(walletId);
-        if (!summary) return await sendTelegramMessage(botToken, chatId, `❌ Monedero no encontrado.`);
+    if (rawText.startsWith('/saldo') || rawText.startsWith('/balance')) {
+        try {
+            const summary = await getWalletQuickSummary(walletId);
+            if (!summary) {
+                return await sendTelegramMessage(botToken, chatId, `❌ Monedero no encontrado en la base de datos (ID: ${walletId}).`);
+            }
 
-        let msg = `📊 <b>Estado de ${summary.walletName}</b>\n\n` +
-                  `💰 <b>Presupuesto Total:</b> S/ ${summary.totalBudget.toFixed(2)}\n` +
-                  `📉 <b>Gastado este mes:</b> S/ ${summary.totalSpent.toFixed(2)}\n` +
-                  `🟢 <b>Disponible Global:</b> S/ ${summary.totalRemaining.toFixed(2)}\n`;
+            let msg = `📊 <b>Estado de ${summary.walletName}</b>\n\n` +
+                      `💰 <b>Presupuesto Total:</b> S/ ${summary.totalBudget.toFixed(2)}\n` +
+                      `📉 <b>Gastado este mes:</b> S/ ${summary.totalSpent.toFixed(2)}\n` +
+                      `🟢 <b>Disponible Global:</b> S/ ${summary.totalRemaining.toFixed(2)}\n`;
 
-        return await sendTelegramMessage(botToken, chatId, msg);
+            if (summary.recentExpenses && summary.recentExpenses.length > 0) {
+                msg += `\n🧾 <b>Últimos gastos:</b>\n`;
+                summary.recentExpenses.forEach(e => {
+                    msg += `• <i>${e.description || 'Gasto'}</i>: S/ ${(parseFloat(e.amount) || 0).toFixed(2)}\n`;
+                });
+            }
+
+            return await sendTelegramMessage(botToken, chatId, msg);
+        } catch (err) {
+            return await sendTelegramMessage(botToken, chatId, `❌ Error consultando saldo: ${err.message}`);
+        }
     }
 
     // PARSER DE GASTO POR TEXTO
     try {
         const wallet = await getWalletDoc(walletId);
-        if (!wallet) return await sendTelegramMessage(botToken, chatId, `❌ Monedero no encontrado.`);
+        if (!wallet) return await sendTelegramMessage(botToken, chatId, `❌ Monedero no encontrado (ID: ${walletId}).`);
 
         const parsedExpense = parseExpenseMessage(rawText, wallet);
         if (!parsedExpense) {

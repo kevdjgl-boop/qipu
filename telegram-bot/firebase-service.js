@@ -1,13 +1,43 @@
 /**
  * @file firebase-service.js
- * @description Servicio de conexión con Firebase Firestore mediante REST API nativa.
- * No requiere SDKs pesados ni binarios, compatible con Node.js y Cloudflare Workers.
+ * @description Servicio de conexión con Firebase Firestore mediante REST API nativa con autenticación.
  */
 
 const FIREBASE_CONFIG = {
+    apiKey: "AIzaSyA63OZWFM30Tu17DGxAmbtVsNFWeQU3k4s",
     projectId: "qipu-d1dcd",
-    appId: "qipu-d1dcd", // artifacts/${appId}/public/data/wallets/${walletId}
+    appId: "qipu-d1dcd"
 };
+
+let cachedAuthToken = null;
+let tokenExpiry = 0;
+
+/**
+ * Obtiene un token de autenticación anónimo para Firestore.
+ */
+async function getFirebaseAuthToken() {
+    const now = Date.now();
+    if (cachedAuthToken && now < tokenExpiry) {
+        return cachedAuthToken;
+    }
+
+    try {
+        const res = await fetch(`https://identitytoolkit.googleapis.com/v1/accounts:signUp?key=${FIREBASE_CONFIG.apiKey}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ returnSecureToken: true })
+        });
+        if (res.ok) {
+            const data = await res.json();
+            cachedAuthToken = data.idToken;
+            tokenExpiry = now + (parseInt(data.expiresIn || '3600', 10) - 60) * 1000;
+            return cachedAuthToken;
+        }
+    } catch (e) {
+        console.error("Auth token error:", e);
+    }
+    return null;
+}
 
 /**
  * Convierte un objeto JavaScript a la estructura TypedValue de Firestore REST.
@@ -59,8 +89,15 @@ function fromFirestoreValue(val) {
  * Obtiene el documento completo de un Monedero en Firestore.
  */
 export async function getWalletDoc(walletId) {
-    const url = `https://firestore.googleapis.com/v1/projects/${FIREBASE_CONFIG.projectId}/databases/(default)/documents/artifacts/${FIREBASE_CONFIG.appId}/public/data/wallets/${walletId}`;
-    const response = await fetch(url);
+    const idToken = await getFirebaseAuthToken();
+    const url = `https://firestore.googleapis.com/v1/projects/${FIREBASE_CONFIG.projectId}/databases/(default)/documents/artifacts/${FIREBASE_CONFIG.appId}/public/data/wallets/${walletId}?key=${FIREBASE_CONFIG.apiKey}`;
+    
+    const headers = { 'Content-Type': 'application/json' };
+    if (idToken) {
+        headers['Authorization'] = `Bearer ${idToken}`;
+    }
+
+    const response = await fetch(url, { headers });
     if (!response.ok) {
         if (response.status === 404) return null;
         throw new Error(`Error al leer Firestore (${response.status}): ${await response.text()}`);
@@ -77,17 +114,23 @@ export async function getWalletDoc(walletId) {
  * Actualiza campos específicos de un monedero en Firestore.
  */
 export async function updateWalletDoc(walletId, updates) {
+    const idToken = await getFirebaseAuthToken();
     const fieldMask = Object.keys(updates).map(f => `updateMask.fieldPaths=${encodeURIComponent(f)}`).join('&');
-    const url = `https://firestore.googleapis.com/v1/projects/${FIREBASE_CONFIG.projectId}/databases/(default)/documents/artifacts/${FIREBASE_CONFIG.appId}/public/data/wallets/${walletId}?${fieldMask}`;
+    const url = `https://firestore.googleapis.com/v1/projects/${FIREBASE_CONFIG.projectId}/databases/(default)/documents/artifacts/${FIREBASE_CONFIG.appId}/public/data/wallets/${walletId}?key=${FIREBASE_CONFIG.apiKey}&${fieldMask}`;
 
     const fields = {};
     for (const [k, v] of Object.entries(updates)) {
         fields[k] = toFirestoreValue(v);
     }
 
+    const headers = { 'Content-Type': 'application/json' };
+    if (idToken) {
+        headers['Authorization'] = `Bearer ${idToken}`;
+    }
+
     const response = await fetch(url, {
         method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
+        headers,
         body: JSON.stringify({ fields })
     });
 
