@@ -56,6 +56,7 @@ import {
 } from "./vista-registro.js";
 
 import { initReceiptScannerPWA, triggerReceiptScanner } from "./lector-boletas.js";
+import { initPullToRefresh, triggerPullRefresh } from "./pull-refresh.js";
 
 import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
 import { doc, getDoc, onSnapshot, updateDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
@@ -92,6 +93,7 @@ window.handleItemSwipeEnd = handleItemSwipeEnd;
 window.initHistorySwipeGestures = initHistorySwipeGestures;
 window.deleteMovementFromSwipe = deleteMovementFromSwipe;
 window.handleMovementCardClick = handleMovementCardClick;
+window.triggerPullRefresh = triggerPullRefresh;
 window.openItemAssignmentModal = openItemAssignmentModal;
 window.openDetailItemBreakdownModal = openDetailItemBreakdownModal;
 window.toggleMemberAssignment = toggleMemberAssignment;
@@ -499,5 +501,6 @@ document.getElementById('btn-mobile-install-pwa')?.addEventListener('click', asy
   }
 });
 
-// Inicializar sistema de gestos de deslizamiento
+// Inicializar sistema de gestos de deslizamiento y Pull-to-Refresh
 initHistorySwipeGestures();
+initPullToRefresh();
