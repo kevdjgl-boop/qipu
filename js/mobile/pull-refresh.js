@@ -8,22 +8,21 @@ let pullStartX = 0;
 let isPulling = false;
 let isRefreshing = false;
 let hasVibratedBreakpoint = false;
-let pullContainer = null;
+let pullBanner = null;
 let pullLottieEl = null;
 let lottieInstance = null;
 
-const FINGER_TRIGGER_DISTANCE = 110; // Distancia física de arrastre en px requerida para activar la recarga
-const VISUAL_MAX_DESCENT = 70; // Descenso visual máximo en px de la cápsula
-const STRETCH_PEAK_FRAME = 30; // Fotograma exacto donde la billetera alcanza su estiramiento máximo
-const TOTAL_FRAMES = 60; // Total de fotogramas de la animación
+const PULL_TRIGGER_DISTANCE = 95; // Distancia de arrastre con dedo para activar la recarga
+const BANNER_OPEN_HEIGHT = 72; // Altura en px del bloque sobre el header
+const STRETCH_PEAK_FRAME = 30; // Fotograma máximo de estiramiento
 
 export function initPullToRefresh() {
-  pullContainer = document.getElementById('pull-to-refresh-container');
+  pullBanner = document.getElementById('pull-header-banner');
   pullLottieEl = document.getElementById('pull-to-refresh-lottie');
 
-  if (!pullContainer || !pullLottieEl) return;
+  if (!pullBanner || !pullLottieEl) return;
 
-  // Inicializar reproductor Lottie en modo manual (control fotograma a fotograma con el dedo)
+  // Inicializar reproductor Lottie en el bloque sobre el header
   if (window.lottie) {
     pullLottieEl.innerHTML = '';
     lottieInstance = window.lottie.loadAnimation({
@@ -61,27 +60,27 @@ export function initPullToRefresh() {
     const diffX = currentX - pullStartX;
 
     // Solo si el movimiento es predominantemente hacia abajo
-    if (diffY > 10 && Math.abs(diffY) > Math.abs(diffX) * 1.1) {
+    if (diffY > 8 && Math.abs(diffY) > Math.abs(diffX) * 1.1) {
       isPulling = true;
-      const pullVisualY = Math.min(VISUAL_MAX_DESCENT, diffY * 0.42); // Descenso visual suave con amortiguación
+      const bannerHeight = Math.min(BANNER_OPEN_HEIGHT + 10, diffY * 0.45); // Apertura elástica del bloque superior
 
-      pullContainer.style.transition = 'none';
-      pullContainer.style.transform = `translate(-50%, ${pullVisualY}px)`;
-      pullContainer.style.opacity = `${Math.min(1, diffY / 25)}`;
+      pullBanner.style.transition = 'none';
+      pullBanner.style.height = `${bannerHeight}px`;
+      pullBanner.style.opacity = `${Math.min(1, bannerHeight / 20)}`;
 
-      // Mapeo 1:1 con la distancia física del dedo: no se adelanta, llega al frame 30 justo al punto de quiebre
-      const progressRatio = Math.min(1, Math.max(0, (diffY - 10) / (FINGER_TRIGGER_DISTANCE - 10)));
+      // Sincronizar fotograma de estiramiento progresivo con el dedo (0 a 30)
+      const progressRatio = Math.min(1, Math.max(0, (diffY - 8) / (PULL_TRIGGER_DISTANCE - 8)));
       const targetFrame = Math.min(STRETCH_PEAK_FRAME, Math.floor(progressRatio * STRETCH_PEAK_FRAME));
 
       if (lottieInstance) {
         lottieInstance.goToAndStop(targetFrame, true);
       }
 
-      // Feedback háptico al alcanzar el punto de quiebre
-      if (diffY >= FINGER_TRIGGER_DISTANCE && !hasVibratedBreakpoint) {
+      // Feedback háptico al alcanzar la altura de disparo
+      if (diffY >= PULL_TRIGGER_DISTANCE && !hasVibratedBreakpoint) {
         hasVibratedBreakpoint = true;
         if (navigator.vibrate) navigator.vibrate(25);
-      } else if (diffY < FINGER_TRIGGER_DISTANCE) {
+      } else if (diffY < PULL_TRIGGER_DISTANCE) {
         hasVibratedBreakpoint = false;
       }
 
@@ -97,16 +96,10 @@ export function initPullToRefresh() {
       return;
     }
 
-    const diffY = (e => {
-      return pullStartY ? (window._lastPullDiffY || 0) : 0;
-    })();
-
-    // Verificar si alcanzó la distancia de quiebre requerida
+    // Si alcanzó la distancia de quiebre, activar recarga
     if (hasVibratedBreakpoint) {
-      // Alcanzó el punto de quiebre: disparar recarga y continuar animación desde el fotograma 30
       triggerPullRefresh();
     } else {
-      // No alcanzó el punto de quiebre: des-estirar y regresar arriba
       resetPullIndicator();
     }
 
@@ -129,16 +122,16 @@ export async function triggerPullRefresh() {
   if (isRefreshing) return;
   isRefreshing = true;
 
-  if (pullContainer) {
-    pullContainer.style.transition = 'transform 260ms cubic-bezier(0.2, 0.8, 0.2, 1), opacity 200ms ease';
-    pullContainer.style.transform = `translate(-50%, ${VISUAL_MAX_DESCENT}px)`;
-    pullContainer.style.opacity = '1';
+  if (pullBanner) {
+    pullBanner.style.transition = 'height 250ms cubic-bezier(0.2, 0.8, 0.2, 1), opacity 200ms ease';
+    pullBanner.style.height = `${BANNER_OPEN_HEIGHT}px`;
+    pullBanner.style.opacity = '1';
   }
 
-  // Continuar fluidamente la animación expulsando la tarjeta desde el punto de estiramiento (24 -> 60)
+  // Reproducir la animación completa en bucle mientras sincroniza
   if (lottieInstance) {
     lottieInstance.loop = true;
-    lottieInstance.playSegments([STRETCH_PEAK_FRAME, TOTAL_FRAMES], true);
+    lottieInstance.play();
   }
 
   if (navigator.vibrate) navigator.vibrate([15, 30, 15]);
@@ -160,20 +153,20 @@ export async function triggerPullRefresh() {
     console.warn('Error durante Pull-to-Refresh:', err);
   }
 
-  // Finalizar y regresar con animación suave
+  // Cerrar el bloque suavemente tras completar la sincronización
   setTimeout(() => {
     resetPullIndicator();
     setTimeout(() => {
       isRefreshing = false;
     }, 320);
-  }, 800);
+  }, 850);
 }
 
 function resetPullIndicator() {
-  if (pullContainer) {
-    pullContainer.style.transition = 'transform 300ms cubic-bezier(0.4, 0, 0.2, 1), opacity 240ms ease';
-    pullContainer.style.transform = 'translate(-50%, -100px)';
-    pullContainer.style.opacity = '0';
+  if (pullBanner) {
+    pullBanner.style.transition = 'height 300ms cubic-bezier(0.4, 0, 0.2, 1), opacity 240ms ease';
+    pullBanner.style.height = '0px';
+    pullBanner.style.opacity = '0';
   }
   if (lottieInstance) {
     lottieInstance.loop = false;
