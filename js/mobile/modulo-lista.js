@@ -2,6 +2,7 @@ import { formatCurrency } from "./core-state.js";
 import { openModal, closeModal } from "./modal-system.js";
 import { normalizeItemAssignments, getAssignmentSummaryLabel } from "./modal-asignacion.js";
 import { mobileExpenseGuests } from "./vista-registro.js";
+import { TRASH_ANIMATION_DATA } from "../Animaciones/trash-data.js";
 
 export let mobileExpenseItems = [];
 export let itemPendingDeleteId = null;
@@ -192,8 +193,10 @@ export function renderMobileItemsList() {
             style="width: 0px; opacity: 0;">
             <button type="button"
               onclick="confirmDeleteMobileItem('${item.id}', '${(item.desc || 'este producto').replace(/'/g, "\\'")}')"
-              class="w-8 h-8 mr-2 bg-rose-500 hover:bg-rose-600 active:scale-90 text-white rounded-[8px] flex items-center justify-center text-xs shadow-2xs shrink-0 overflow-hidden">
-              <dotlottie-player src="js/Animaciones/Trash.lottie" autoplay loop style="width: 24px; height: 24px; pointer-events: none;"></dotlottie-player>
+              class="w-8 h-8 mr-2 bg-[#ffe4e6] hover:bg-[#fecdd3] active:scale-90 border border-rose-200 rounded-[8px] flex items-center justify-center text-xs shadow-2xs shrink-0 overflow-hidden cursor-pointer">
+              <div id="item-lottie-trash-${item.id}" class="w-6 h-6 pointer-events-none flex items-center justify-center">
+                <dotlottie-player src="js/Animaciones/Trash.lottie" autoplay loop style="width: 20px; height: 20px; pointer-events: none;"></dotlottie-player>
+              </div>
             </button>
           </div>
         </div>
@@ -211,6 +214,23 @@ export function renderMobileItemsList() {
       </div>
     `;
   }).join('');
+
+  // Inicializar animaciones Lottie instantáneas en la lista de productos
+  if (window.lottie) {
+    mobileExpenseItems.forEach(item => {
+      const el = document.getElementById(`item-lottie-trash-${item.id}`);
+      if (el) {
+        el.innerHTML = '';
+        window.lottie.loadAnimation({
+          container: el,
+          renderer: 'svg',
+          loop: true,
+          autoplay: true,
+          animationData: TRASH_ANIMATION_DATA
+        });
+      }
+    });
+  }
 
   renderListTotalBadge();
 }

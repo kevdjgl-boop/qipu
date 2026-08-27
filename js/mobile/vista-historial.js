@@ -3,6 +3,7 @@ import { openModal, closeModal } from "./modal-system.js";
 import { openEditExpenseModal, openEditIncomeModal } from "./vista-registro.js";
 import { openDetailItemBreakdownModal } from "./modal-asignacion.js";
 import { doc, updateDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+import { TRASH_ANIMATION_DATA } from "../Animaciones/trash-data.js";
 
 export let currentDetailExpenseId = null;
 
@@ -404,7 +405,7 @@ export function renderHistoryList(monthlyExpenses) {
           renderer: 'svg',
           loop: true,
           autoplay: true,
-          path: 'js/Animaciones/Trash.json'
+          animationData: TRASH_ANIMATION_DATA
         });
       }
     });
