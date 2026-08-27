@@ -12,7 +12,7 @@ let pullLottieEl = null;
 let pullTextEl = null;
 let lottieInstance = null;
 
-const PULL_THRESHOLD = 70; // px necesarios para activar recarga
+const PULL_THRESHOLD = 50; // px necesarios para activar recarga
 
 export function initPullToRefresh() {
   pullContainer = document.getElementById('pull-to-refresh-container');
@@ -57,13 +57,13 @@ export function initPullToRefresh() {
     const diffX = currentX - pullStartX;
 
     // Solo si el movimiento es predominantemente vertical hacia abajo
-    if (diffY > 10 && Math.abs(diffY) > Math.abs(diffX)) {
+    if (diffY > 8 && Math.abs(diffY) > Math.abs(diffX) * 1.1) {
       isPulling = true;
-      const pullProgress = Math.min(100, diffY * 0.45); // Física elástica de resistencia
+      const pullProgress = Math.min(85, diffY * 0.48); // Física elástica de resistencia
 
       pullContainer.style.transition = 'none';
       pullContainer.style.transform = `translate(-50%, ${pullProgress}px)`;
-      pullContainer.style.opacity = `${Math.min(1, pullProgress / 30)}`;
+      pullContainer.style.opacity = `${Math.min(1, pullProgress / 20)}`;
 
       if (pullProgress >= PULL_THRESHOLD) {
         if (pullTextEl) pullTextEl.textContent = 'Suelta para actualizar';
@@ -72,7 +72,7 @@ export function initPullToRefresh() {
         if (pullTextEl) pullTextEl.textContent = 'Desliza para recargar';
       }
 
-      if (e.cancelable && diffY > 15) {
+      if (e.cancelable) {
         e.preventDefault();
       }
     }
@@ -97,17 +97,15 @@ export function initPullToRefresh() {
     isPulling = false;
   };
 
-  if ('PointerEvent' in window) {
-    document.addEventListener('pointerdown', onTouchStart, { passive: true });
-    window.addEventListener('pointermove', onTouchMove, { passive: false });
-    window.addEventListener('pointerup', onTouchEnd, { passive: true });
-    window.addEventListener('pointercancel', onTouchEnd, { passive: true });
-  } else {
-    document.addEventListener('touchstart', onTouchStart, { passive: true });
-    window.addEventListener('touchmove', onTouchMove, { passive: false });
-    window.addEventListener('touchend', onTouchEnd, { passive: true });
-    window.addEventListener('touchcancel', onTouchEnd, { passive: true });
-  }
+  document.addEventListener('touchstart', onTouchStart, { passive: true });
+  document.addEventListener('touchmove', onTouchMove, { passive: false });
+  document.addEventListener('touchend', onTouchEnd, { passive: true });
+  document.addEventListener('touchcancel', onTouchEnd, { passive: true });
+
+  document.addEventListener('pointerdown', onTouchStart, { passive: true });
+  window.addEventListener('pointermove', onTouchMove, { passive: false });
+  window.addEventListener('pointerup', onTouchEnd, { passive: true });
+  window.addEventListener('pointercancel', onTouchEnd, { passive: true });
 }
 
 export async function triggerPullRefresh() {

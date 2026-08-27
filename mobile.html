@@ -66,6 +66,11 @@
       font-variation-settings: "slnt" 0, "wdth" 100, "GRAD" 0, "ROND" 50;
     }
 
+    html {
+      overscroll-behavior-y: contain;
+      -webkit-overflow-scrolling: touch;
+    }
+
     body,
     input,
     button,
@@ -78,6 +83,8 @@
       background-color: #FBFCFA;
       color: #0f172a;
       overflow-x: hidden;
+      overscroll-behavior-y: contain;
+      -webkit-overflow-scrolling: touch;
     }
 
     /* ============================================================ */
@@ -2056,7 +2063,7 @@
   <!-- ========================================== -->
   <!-- MODULOS JAVASCRIPT MOBILE (ARQUITECTURA MODULAR) -->
   <!-- ========================================== -->
-  <script type="module" src="js/mobile/mobile-main.js?v=4.2"></script>
+  <script type="module" src="js/mobile/mobile-main.js?v=4.3"></script>
 </body>
 
 </html>
