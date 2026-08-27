@@ -15,6 +15,7 @@ import {
 
 import {
   renderHistoryList, openTransactionDetailModal, currentDetailExpenseId,
+  handleMovementPointerDown, handleMovementPointerMove, handleMovementPointerUp,
   handleMovementSwipeStart, handleMovementSwipeMove, handleMovementSwipeEnd,
   deleteMovementFromSwipe, handleMovementCardClick
 } from "./vista-historial.js";
@@ -90,6 +91,9 @@ window.confirmDeleteMobileItem = confirmDeleteMobileItem;
 window.handleItemSwipeStart = handleItemSwipeStart;
 window.handleItemSwipeMove = handleItemSwipeMove;
 window.handleItemSwipeEnd = handleItemSwipeEnd;
+window.handleMovementPointerDown = handleMovementPointerDown;
+window.handleMovementPointerMove = handleMovementPointerMove;
+window.handleMovementPointerUp = handleMovementPointerUp;
 window.handleMovementSwipeStart = handleMovementSwipeStart;
 window.handleMovementSwipeMove = handleMovementSwipeMove;
 window.handleMovementSwipeEnd = handleMovementSwipeEnd;

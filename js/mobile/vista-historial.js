@@ -6,30 +6,35 @@ import { doc, updateDoc } from "https://www.gstatic.com/firebasejs/11.6.1/fireba
 
 export let currentDetailExpenseId = null;
 
-// Gestos táctiles para eliminar movimiento al deslizar a la izquierda
+// Gestos táctiles y de puntero para eliminar movimiento al deslizar a la izquierda
 let movSwipeStartX = 0;
 let movSwipeStartY = 0;
 let movSwipeActiveId = null;
 let movSwipeIsHorizontal = null;
 let movSwipeHasMoved = false;
 
-export function handleMovementSwipeStart(e, id) {
-  movSwipeStartX = e.touches[0].clientX;
-  movSwipeStartY = e.touches[0].clientY;
+export function handleMovementPointerDown(e, id) {
+  movSwipeStartX = e.clientX || (e.touches && e.touches[0] ? e.touches[0].clientX : 0);
+  movSwipeStartY = e.clientY || (e.touches && e.touches[0] ? e.touches[0].clientY : 0);
   movSwipeActiveId = id;
   movSwipeIsHorizontal = null;
   movSwipeHasMoved = false;
+
+  const card = document.getElementById(`mov-card-content-${id}`);
+  if (card && e.pointerId && card.setPointerCapture) {
+    try { card.setPointerCapture(e.pointerId); } catch (_) {}
+  }
 }
 
-export function handleMovementSwipeMove(e, id) {
+export function handleMovementPointerMove(e, id) {
   if (movSwipeActiveId !== id) return;
-  const currentX = e.touches[0].clientX;
-  const currentY = e.touches[0].clientY;
+  const currentX = e.clientX || (e.touches && e.touches[0] ? e.touches[0].clientX : 0);
+  const currentY = e.clientY || (e.touches && e.touches[0] ? e.touches[0].clientY : 0);
   const diffX = currentX - movSwipeStartX;
   const diffY = currentY - movSwipeStartY;
 
   if (movSwipeIsHorizontal === null) {
-    if (Math.abs(diffX) > 8 || Math.abs(diffY) > 8) {
+    if (Math.abs(diffX) > 6 || Math.abs(diffY) > 6) {
       movSwipeIsHorizontal = Math.abs(diffX) > Math.abs(diffY);
     }
   }
@@ -40,42 +45,54 @@ export function handleMovementSwipeMove(e, id) {
   const slot = document.getElementById(`mov-delete-slot-${id}`);
   if (!card || !slot) return;
 
-  movSwipeHasMoved = true;
+  if (Math.abs(diffX) > 5) {
+    movSwipeHasMoved = true;
+  }
 
   if (diffX < 0) {
     const moveAmount = Math.max(-84, diffX);
     card.style.transform = `translateX(${moveAmount}px)`;
-    slot.style.opacity = `${Math.min(1, Math.abs(diffX) / 35)}`;
+    slot.style.opacity = `${Math.min(1, Math.abs(diffX) / 30)}`;
   } else {
     card.style.transform = 'translateX(0px)';
     slot.style.opacity = '0';
   }
 }
 
-export function handleMovementSwipeEnd(e, id, type) {
+export function handleMovementPointerUp(e, id, type) {
   if (movSwipeActiveId !== id) return;
   const card = document.getElementById(`mov-card-content-${id}`);
   const slot = document.getElementById(`mov-delete-slot-${id}`);
-  if (!card || !slot) return;
 
-  const currentTransform = card.style.transform || '';
-  const match = currentTransform.match(/translateX\(([-\d.]+)px\)/);
-  const currentX = match ? parseFloat(match[1]) : 0;
+  if (card && e.pointerId && card.releasePointerCapture) {
+    try { card.releasePointerCapture(e.pointerId); } catch (_) {}
+  }
 
-  if (currentX <= -40) {
-    // Mantener abierto el botón de eliminar a la izquierda
-    card.style.transform = 'translateX(-76px)';
-    slot.style.opacity = '1';
-    if (navigator.vibrate) navigator.vibrate(30);
-  } else {
-    // Cerrar suavemente
-    card.style.transform = 'translateX(0px)';
-    slot.style.opacity = '0';
+  if (card && slot) {
+    const currentTransform = card.style.transform || '';
+    const match = currentTransform.match(/translateX\(([-\d.]+)px\)/);
+    const currentX = match ? parseFloat(match[1]) : 0;
+
+    if (currentX <= -35) {
+      // Mantener abierto el botón de eliminar a la izquierda
+      card.style.transform = 'translateX(-76px)';
+      slot.style.opacity = '1';
+      if (navigator.vibrate) navigator.vibrate(30);
+    } else {
+      // Cerrar suavemente
+      card.style.transform = 'translateX(0px)';
+      slot.style.opacity = '0';
+    }
   }
 
   movSwipeActiveId = null;
   movSwipeIsHorizontal = null;
 }
+
+// Aliases para compatibilidad
+export const handleMovementSwipeStart = handleMovementPointerDown;
+export const handleMovementSwipeMove = handleMovementPointerMove;
+export const handleMovementSwipeEnd = handleMovementPointerUp;
 
 export async function deleteMovementFromSwipe(e, type, id) {
   if (e) e.stopPropagation();
@@ -259,19 +276,25 @@ export function renderHistoryList(monthlyExpenses) {
         <!-- Slot de Eliminar con Animación Trash.lottie en el fondo a la derecha -->
         <div id="mov-delete-slot-${item.id}"
           onclick="deleteMovementFromSwipe(event, '${item.type}', '${item.id}')"
-          class="absolute inset-y-0 right-0 w-[76px] bg-rose-500 hover:bg-rose-600 active:bg-rose-700 rounded-2xl flex flex-col items-center justify-center cursor-pointer transition-all z-0 shadow-inner"
+          class="absolute inset-y-0 right-0 w-[76px] bg-[#ffe4e6] hover:bg-[#fecdd3] active:bg-[#fda4af] border border-rose-200/80 rounded-2xl flex flex-col items-center justify-center cursor-pointer transition-all z-0 shadow-inner"
           style="opacity: 0;">
-          <dotlottie-player src="js/Animaciones/Trash.lottie" autoplay loop style="width: 36px; height: 36px; pointer-events: none;"></dotlottie-player>
-          <span class="text-[9px] font-black text-white uppercase tracking-wider -mt-1 pointer-events-none select-none">Borrar</span>
+          <div id="lottie-trash-${item.id}" class="w-8 h-8 pointer-events-none flex items-center justify-center">
+            <dotlottie-player src="js/Animaciones/Trash.lottie" autoplay loop style="width: 32px; height: 32px; pointer-events: none;"></dotlottie-player>
+          </div>
+          <span class="text-[9px] font-black text-rose-800 uppercase tracking-wider mt-0.5 pointer-events-none select-none">Borrar</span>
         </div>
 
-        <!-- Tarjeta Frontal Deslizable -->
+        <!-- Tarjeta Frontal Deslizable con Soporte Pointer & Touch -->
         <div id="mov-card-content-${item.id}"
           onclick="handleMovementCardClick(event, '${item.type}', '${item.id}', ${item.hasItems})"
-          ontouchstart="handleMovementSwipeStart(event, '${item.id}')"
-          ontouchmove="handleMovementSwipeMove(event, '${item.id}')"
-          ontouchend="handleMovementSwipeEnd(event, '${item.id}', '${item.type}')"
-          style="animation-delay: ${staggerDelay}ms; transition: transform 220ms cubic-bezier(0.32, 0.72, 0, 1);"
+          onpointerdown="handleMovementPointerDown(event, '${item.id}')"
+          onpointermove="handleMovementPointerMove(event, '${item.id}')"
+          onpointerup="handleMovementPointerUp(event, '${item.id}', '${item.type}')"
+          onpointercancel="handleMovementPointerUp(event, '${item.id}', '${item.type}')"
+          ontouchstart="handleMovementPointerDown(event, '${item.id}')"
+          ontouchmove="handleMovementPointerMove(event, '${item.id}')"
+          ontouchend="handleMovementPointerUp(event, '${item.id}', '${item.type}')"
+          style="animation-delay: ${staggerDelay}ms; touch-action: pan-y !important; user-select: none; -webkit-user-select: none; transition: transform 220ms cubic-bezier(0.32, 0.72, 0, 1);"
           class="animate-item-enter relative z-10 bg-white p-3.5 rounded-2xl border border-slate-100 shadow-sm flex items-center justify-between gap-3 hover:border-slate-200 active:scale-[0.99] transition-all cursor-pointer">
           
           <div class="flex items-center gap-3 min-w-0 flex-1 pointer-events-none">
@@ -305,6 +328,23 @@ export function renderHistoryList(monthlyExpenses) {
       </div>
     `;
   }).join('');
+
+  // Inicializar animaciones Lottie instantáneas en cada tarjeta
+  if (window.lottie) {
+    items.forEach(item => {
+      const el = document.getElementById(`lottie-trash-${item.id}`);
+      if (el) {
+        el.innerHTML = '';
+        window.lottie.loadAnimation({
+          container: el,
+          renderer: 'svg',
+          loop: true,
+          autoplay: true,
+          path: 'js/Animaciones/Trash.json'
+        });
+      }
+    });
+  }
 }
 
 export function openTransactionDetailModal(expenseId) {
