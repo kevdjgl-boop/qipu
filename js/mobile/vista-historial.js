@@ -8,7 +8,7 @@ import { TRASH_ANIMATION_DATA } from "../Animaciones/trash-data.js";
 export let currentDetailExpenseId = null;
 
 // ================================================================
-// SISTEMA DE GESTO SWIPE-TO-DELETE DE ALTO RENDIMIENTO (POINTER EVENTS)
+// SISTEMA DE GESTO SWIPE-TO-DELETE DE ALTO RENDIMIENTO (EXPANDING WIDTH)
 // ================================================================
 let activeSwipeCard = null;
 let activeSwipeSlot = null;
@@ -19,7 +19,7 @@ let swipeStartY = 0;
 let swipeIsHorizontal = null;
 let swipeHasMoved = false;
 let openSwipeCardId = null;
-let swipeBaseOffset = 0;
+let swipeBaseWidth = 0;
 let suppressClickUntil = 0;
 
 export function initHistorySwipeGestures() {
@@ -38,13 +38,13 @@ export function initHistorySwipeGestures() {
 
     // Si había otra tarjeta abierta y tocamos una diferente, la cerramos
     if (openSwipeCardId && openSwipeCardId !== id) {
-      const prevCard = document.getElementById(`mov-card-content-${openSwipeCardId}`);
       const prevSlot = document.getElementById(`mov-delete-slot-${openSwipeCardId}`);
-      if (prevCard) {
-        prevCard.style.transition = 'transform 240ms cubic-bezier(0.2, 0.8, 0.2, 1)';
-        prevCard.style.transform = 'translateX(0px)';
+      if (prevSlot) {
+        prevSlot.style.transition = 'width 240ms cubic-bezier(0.2, 0.8, 0.2, 1), opacity 200ms ease, margin-left 240ms ease';
+        prevSlot.style.width = '0px';
+        prevSlot.style.opacity = '0';
+        prevSlot.style.marginLeft = '0px';
       }
-      if (prevSlot) prevSlot.style.opacity = '0';
       openSwipeCardId = null;
     }
 
@@ -61,16 +61,17 @@ export function initHistorySwipeGestures() {
     swipeIsHorizontal = null;
     swipeHasMoved = false;
 
-    // Determinar desplazamiento base si ya estaba abierta
-    const match = (card.style.transform || '').match(/translateX\(([-\d.]+)px\)/);
-    swipeBaseOffset = match ? parseFloat(match[1]) : 0;
+    // Determinar ancho base si ya estaba abierta
+    swipeBaseWidth = activeSwipeSlot ? (parseFloat(activeSwipeSlot.style.width) || 0) : 0;
 
     // Desactivar transiciones durante el arrastre directo
-    card.style.transition = 'none';
+    if (activeSwipeSlot) {
+      activeSwipeSlot.style.transition = 'none';
+    }
   };
 
   const onMove = (e) => {
-    if (!activeSwipeCard) return;
+    if (!activeSwipeCard || !activeSwipeSlot) return;
 
     const clientX = e.clientX !== undefined ? e.clientX : (e.touches && e.touches[0] ? e.touches[0].clientX : 0);
     const clientY = e.clientY !== undefined ? e.clientY : (e.touches && e.touches[0] ? e.touches[0].clientY : 0);
@@ -82,10 +83,13 @@ export function initHistorySwipeGestures() {
       if (Math.abs(diffX) > 5 || Math.abs(diffY) > 5) {
         swipeIsHorizontal = Math.abs(diffX) > Math.abs(diffY);
         if (!swipeIsHorizontal) {
-          // Desplazamiento vertical: restaurar tarjeta y cancelar swipe
-          activeSwipeCard.style.transition = 'transform 200ms ease';
-          activeSwipeCard.style.transform = swipeBaseOffset ? `translateX(${swipeBaseOffset}px)` : 'translateX(0px)';
+          // Desplazamiento vertical: restaurar ancho y cancelar swipe
+          activeSwipeSlot.style.transition = 'width 200ms ease, opacity 200ms ease, margin-left 200ms ease';
+          activeSwipeSlot.style.width = swipeBaseWidth ? `${swipeBaseWidth}px` : '0px';
+          activeSwipeSlot.style.opacity = swipeBaseWidth ? '1' : '0';
+          activeSwipeSlot.style.marginLeft = swipeBaseWidth ? '6px' : '0px';
           activeSwipeCard = null;
+          activeSwipeSlot = null;
           return;
         }
       }
@@ -101,21 +105,17 @@ export function initHistorySwipeGestures() {
       e.preventDefault();
     }
 
-    // Calcular nueva posición horizontal (limitada entre -96px y 0px)
-    const rawPos = swipeBaseOffset + diffX;
-    const targetX = Math.max(-96, Math.min(0, rawPos));
+    // Ensanchar dinámicamente el contenedor del botón de eliminar (de 0px a 90px)
+    const targetWidth = Math.max(0, Math.min(90, swipeBaseWidth - diffX));
 
-    activeSwipeCard.style.transform = `translateX(${targetX}px)`;
-    if (activeSwipeSlot) {
-      const opacity = Math.min(1, Math.abs(targetX) / 30);
-      activeSwipeSlot.style.opacity = `${opacity}`;
-    }
+    activeSwipeSlot.style.width = `${targetWidth}px`;
+    activeSwipeSlot.style.opacity = `${Math.min(1, targetWidth / 25)}`;
+    activeSwipeSlot.style.marginLeft = targetWidth > 0 ? '6px' : '0px';
   };
 
   const onEnd = () => {
-    if (!activeSwipeCard) return;
+    if (!activeSwipeCard || !activeSwipeSlot) return;
 
-    const card = activeSwipeCard;
     const slot = activeSwipeSlot;
     const id = activeSwipeId;
     const moved = swipeHasMoved;
@@ -125,15 +125,15 @@ export function initHistorySwipeGestures() {
     }
 
     // Restaurar animación fluida de resorte para el cierre/apertura
-    card.style.transition = 'transform 280ms cubic-bezier(0.18, 0.89, 0.32, 1.15)';
+    slot.style.transition = 'width 280ms cubic-bezier(0.18, 0.89, 0.32, 1.15), opacity 240ms ease, margin-left 280ms ease';
 
-    const match = (card.style.transform || '').match(/translateX\(([-\d.]+)px\)/);
-    const currentX = match ? parseFloat(match[1]) : 0;
+    const currentWidth = parseFloat(slot.style.width) || 0;
 
-    if (currentX <= -30) {
-      // Dejar abierta a la izquierda mostrando la papelera
-      card.style.transform = 'translateX(-76px)';
-      if (slot) slot.style.opacity = '1';
+    if (currentWidth >= 32) {
+      // Dejar ensanchado a 80px mostrando la papelera
+      slot.style.width = '80px';
+      slot.style.opacity = '1';
+      slot.style.marginLeft = '6px';
       openSwipeCardId = id;
       if (navigator.vibrate) navigator.vibrate(25);
       // Reproducir animación una vez al abrir
@@ -143,8 +143,9 @@ export function initHistorySwipeGestures() {
       }
     } else {
       // Cerrar suavemente
-      card.style.transform = 'translateX(0px)';
-      if (slot) slot.style.opacity = '0';
+      slot.style.width = '0px';
+      slot.style.opacity = '0';
+      slot.style.marginLeft = '0px';
       if (openSwipeCardId === id) openSwipeCardId = null;
     }
 
@@ -175,13 +176,13 @@ export async function deleteMovementFromSwipe(e, type, id) {
   }
 
   if (!confirm('¿Deseas eliminar este movimiento definitivamente?')) {
-    const card = document.getElementById(`mov-card-content-${id}`);
     const slot = document.getElementById(`mov-delete-slot-${id}`);
-    if (card) {
-      card.style.transition = 'transform 240ms cubic-bezier(0.2, 0.8, 0.2, 1)';
-      card.style.transform = 'translateX(0px)';
+    if (slot) {
+      slot.style.transition = 'width 240ms cubic-bezier(0.2, 0.8, 0.2, 1), opacity 200ms ease, margin-left 240ms ease';
+      slot.style.width = '0px';
+      slot.style.opacity = '0';
+      slot.style.marginLeft = '0px';
     }
-    if (slot) slot.style.opacity = '0';
     if (openSwipeCardId === id) openSwipeCardId = null;
     return;
   }
@@ -216,12 +217,12 @@ export function handleMovementCardClick(e, type, id, hasItems) {
     return;
   }
 
-  const card = document.getElementById(`mov-card-content-${id}`);
-  if (card && card.style.transform && card.style.transform !== 'translateX(0px)') {
-    card.style.transition = 'transform 240ms cubic-bezier(0.2, 0.8, 0.2, 1)';
-    card.style.transform = 'translateX(0px)';
-    const slot = document.getElementById(`mov-delete-slot-${id}`);
-    if (slot) slot.style.opacity = '0';
+  const slot = document.getElementById(`mov-delete-slot-${id}`);
+  if (slot && parseFloat(slot.style.width) > 0) {
+    slot.style.transition = 'width 240ms cubic-bezier(0.2, 0.8, 0.2, 1), opacity 200ms ease, margin-left 240ms ease';
+    slot.style.width = '0px';
+    slot.style.opacity = '0';
+    slot.style.marginLeft = '0px';
     if (openSwipeCardId === id) openSwipeCardId = null;
     return;
   }
@@ -359,26 +360,14 @@ export function renderHistoryList(monthlyExpenses) {
     const staggerDelay = Math.min(idx * 35, 280);
 
     return `
-      <div class="animate-item-enter relative overflow-hidden rounded-2xl mb-2 select-none" id="mov-row-container-${item.id}" style="animation-delay: ${staggerDelay}ms;">
-        <!-- Slot de Eliminar con Animación Trash.lottie en el fondo a la derecha -->
-        <div id="mov-delete-slot-${item.id}"
-          data-mov-delete-btn="true"
-          onclick="deleteMovementFromSwipe(event, '${item.type}', '${item.id}')"
-          class="absolute inset-y-0 right-0 w-[80px] bg-[#ffe4e6] hover:bg-[#fecdd3] active:bg-[#fda4af] border border-rose-200/80 rounded-2xl flex flex-col items-center justify-center cursor-pointer transition-all z-0 shadow-inner"
-          style="opacity: 0;">
-          <div id="lottie-trash-${item.id}" class="w-10 h-10 pointer-events-none flex items-center justify-center -mb-0.5">
-            <dotlottie-player src="js/Animaciones/Trash.lottie" autoplay="false" loop="false" style="width: 38px; height: 38px; pointer-events: none;"></dotlottie-player>
-          </div>
-          <span class="text-[9px] font-black text-rose-800 uppercase tracking-wider mt-0.5 pointer-events-none select-none">Borrar</span>
-        </div>
-
-        <!-- Tarjeta Frontal Deslizable con Soporte Pointer & Touch -->
+      <div class="animate-item-enter relative overflow-hidden rounded-2xl mb-2 select-none flex items-stretch" id="mov-row-container-${item.id}" style="animation-delay: ${staggerDelay}ms;">
+        <!-- Tarjeta Frontal Principal -->
         <div id="mov-card-content-${item.id}"
           data-mov-card-id="${item.id}"
           data-mov-type="${item.type}"
           onclick="handleMovementCardClick(event, '${item.type}', '${item.id}', ${item.hasItems})"
-          style="touch-action: pan-y !important; user-select: none; -webkit-user-select: none; transform: translateX(0px);"
-          class="relative z-10 bg-white p-3.5 rounded-2xl border border-slate-100 shadow-sm flex items-center justify-between gap-3 hover:border-slate-200 cursor-pointer">
+          style="touch-action: pan-y !important; user-select: none; -webkit-user-select: none;"
+          class="flex-1 min-w-0 bg-white p-3.5 rounded-2xl border border-slate-100 shadow-sm flex items-center justify-between gap-3 hover:border-slate-200 cursor-pointer">
           
           <div class="flex items-center gap-3 min-w-0 flex-1 pointer-events-none">
             <div class="shrink-0">
@@ -407,6 +396,18 @@ export function renderHistoryList(monthlyExpenses) {
             </span>
             <span class="text-[9px] text-slate-400 font-medium">${item.paymentMethod}</span>
           </div>
+        </div>
+
+        <!-- Contenedor del Botón Eliminar que se ensancha dinámicamente -->
+        <div id="mov-delete-slot-${item.id}"
+          data-mov-delete-btn="true"
+          onclick="deleteMovementFromSwipe(event, '${item.type}', '${item.id}')"
+          class="shrink-0 overflow-hidden bg-[#ffe4e6] hover:bg-[#fecdd3] active:bg-[#fda4af] border border-rose-200/80 rounded-2xl flex flex-col items-center justify-center cursor-pointer select-none shadow-inner"
+          style="width: 0px; opacity: 0; margin-left: 0px;">
+          <div id="lottie-trash-${item.id}" class="w-10 h-10 pointer-events-none flex items-center justify-center -mb-0.5">
+            <dotlottie-player src="js/Animaciones/Trash.lottie" autoplay="false" loop="false" style="width: 38px; height: 38px; pointer-events: none;"></dotlottie-player>
+          </div>
+          <span class="text-[9px] font-black text-rose-800 uppercase tracking-wider mt-0.5 pointer-events-none select-none whitespace-nowrap">Borrar</span>
         </div>
       </div>
     `;
