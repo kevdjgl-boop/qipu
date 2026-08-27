@@ -2,7 +2,8 @@
  * =========================================================================
  * 🤖 QIPU 3.0 - TELEGRAM BOT (CLOUDFLARE WORKER 24/7 BUNDLE)
  * =========================================================================
- * Incluye motor financiero 100% idéntico a Qipu 3.0 e IA Gemini 3.6 Flash Vision.
+ * Incluye motor financiero 100% idéntico a Qipu 3.0, extracción de listas
+ * de productos detallados (ítems) e IA Gemini 3.6 Flash Vision.
  */
 
 // ==========================================
@@ -651,7 +652,7 @@ function parseExpenseMessage(text, walletState = {}, defaultPayerId = null) {
 }
 
 // ================================================================
-// 4. IA GEMINI 3.6 FLASH VISION (MODELO ACTUALIZADO)
+// 4. IA GEMINI 3.6 FLASH VISION (CON EXTRACCIÓN DE ÍTEMS DETALLADOS)
 // ================================================================
 function arrayBufferToBase64(buffer) {
     let binary = '';
@@ -673,7 +674,9 @@ async function downloadTelegramPhotoAsBase64(fileId, botToken) {
     if (!fileData.ok || !fileData.result?.file_path) throw new Error("No se obtuvo ruta de archivo válida.");
 
     const filePath = fileData.result.file_path;
-    const downloadRes = await fetch(`https://api.telegram.org/file/bot${botToken}/${filePath}`);
+    const downloadUrl = `https://api.telegram.org/file/bot${botToken}/${filePath}`;
+
+    const downloadRes = await fetch(downloadUrl);
     if (!downloadRes.ok) throw new Error(`Error descargando imagen: ${downloadRes.status}`);
 
     const arrayBuffer = await downloadRes.arrayBuffer();
@@ -691,27 +694,44 @@ async function analyzeReceiptWithGemini(base64Image, mimeType, apiKey, available
     const categoriesList = availableCategories.map(c => typeof c === 'string' ? c : c.name).join(', ');
 
     const prompt = `Analiza este comprobante de pago (factura, boleta de venta, ticket de compra, voucher de pago, Yape, Plin o recibo).
-Extrae la información clave del gasto y responde ÚNICAMENTE con un objeto JSON válido (sin bloques de código markdown, sin \`\`\`json, sólo el texto JSON puro).
+Extrae la información general Y la lista detallada de todos los productos o servicios que aparezcan en el comprobante.
+Responde ÚNICAMENTE con un objeto JSON válido (sin bloques de código markdown, sin \`\`\`json, sólo el texto JSON puro).
 
 El JSON debe tener exactamente esta estructura:
 {
-  "amount": 25.50,
-  "merchant": "Nombre del establecimiento o tienda",
-  "description": "Breve resumen de la compra o productos principales",
+  "amount": 45.50,
+  "merchant": "Nombre de la tienda o establecimiento",
+  "description": "Resumen de la compra",
   "category": "Una categoría adecuada",
   "paymentMethod": "efectivo | tarjeta | yape | plin | transferencia",
   "date": "YYYY-MM-DD",
   "isShared": false,
-  "confidence": 0.95
+  "items": [
+    {
+      "desc": "Nombre del producto 1",
+      "quantity": 2,
+      "amount": 10.50
+    },
+    {
+      "desc": "Nombre del producto 2",
+      "quantity": 1,
+      "amount": 24.50
+    }
+  ]
 }
 
-Reglas:
-1. "amount": Debe ser un número decimal con el MONTO TOTAL FINAL a pagar.
-2. "merchant": Nombre comercial del emisor.
-3. "description": Descripción concisa del concepto.
-4. "category": Elige preferentemente de: [${categoriesList || 'Alimentación, Transporte, Servicios, Salud, Entretenimiento, Hogar, Compras, Otros'}].
-5. "paymentMethod": Normalizar si figura (efectivo, visa, mastercard, yape, plin). Si no se determina, usa "efectivo".
-6. "date": Fecha en YYYY-MM-DD.`;
+Reglas importantes:
+1. "amount": Debe ser el MONTO TOTAL FINAL a pagar (Total / Importe Total / Total Venta).
+2. "items": Lista detallada con cada producto/servicio que aparezca en el comprobante.
+   - "desc": Nombre claro del producto.
+   - "quantity": Cantidad (número ej: 1, 2, 0.5).
+   - "amount": Precio unitario.
+   (Si es un voucher de pago simple sin detalle de productos, deja "items": []).
+3. "merchant": Nombre comercial del emisor (ej: Tottus, Tambo, Wong, Restaurante, Farmacia, etc.).
+4. "description": Descripción concisa (ej: "Compra en Tottus", "Almuerzo Restaurante", "Farmacia").
+5. "category": Elige preferentemente de: [${categoriesList || 'Alimentación, Transporte, Servicios, Salud, Entretenimiento, Hogar, Compras, Otros'}].
+6. "paymentMethod": Si el ticket indica cómo se pagó, normalízalo. Si no, usa "efectivo".
+7. "date": Fecha que figura en el comprobante en formato YYYY-MM-DD. Si no se lee, usa la fecha actual.`;
 
     const candidateModels = ['gemini-3.6-flash', 'gemini-3-flash-preview', 'gemini-flash-latest'];
     let lastError = null;
@@ -844,6 +864,17 @@ async function handleTelegramUpdate(update, botToken, defaultWalletId = null, ge
                 ? `${receiptData.merchant}${receiptData.description ? ' - ' + receiptData.description : ''}`
                 : (receiptData.description || 'Gasto Comprobante');
 
+            // Formatear ítems detallados si existen en el comprobante
+            const rawItems = Array.isArray(receiptData.items) ? receiptData.items : [];
+            const formattedItems = rawItems.map(item => ({
+                id: 'item_' + Math.random().toString(36).substring(2, 9),
+                desc: item.desc || item.name || 'Producto',
+                quantity: parseFloat(item.quantity) || 1,
+                amount: parseFloat(item.amount) || 0,
+                assignedTo: 'all',
+                assignments: {}
+            }));
+
             const expenseToSave = {
                 amount: Math.round(amount * 100) / 100,
                 description,
@@ -856,11 +887,20 @@ async function handleTelegramUpdate(update, botToken, defaultWalletId = null, ge
                 date: receiptData.date || new Date().toISOString().split('T')[0],
                 isFixed: false,
                 fixedRecurrenceMonths: 0,
-                items: [],
+                items: formattedItems,
                 guests: []
             };
 
             await addExpenseToWallet(walletId, expenseToSave);
+
+            let itemsSummaryHtml = '';
+            if (formattedItems.length > 0) {
+                itemsSummaryHtml = `\n🛒 <b>Productos detectados (${formattedItems.length}):</b>\n`;
+                formattedItems.forEach(it => {
+                    const subtotal = it.quantity * it.amount;
+                    itemsSummaryHtml += `• ${it.quantity}x <i>${it.desc}</i> (S/ ${subtotal.toFixed(2)})\n`;
+                });
+            }
 
             const msg = `🧾 <b>¡Comprobante Registrado con Éxito!</b> ✨\n\n` +
                         `🏢 <b>Establecimiento:</b> ${receiptData.merchant || 'Comercio'}\n` +
@@ -869,8 +909,9 @@ async function handleTelegramUpdate(update, botToken, defaultWalletId = null, ge
                         `🏷️ <b>Categoría:</b> ${expenseToSave.category}\n` +
                         `💳 <b>Método:</b> ${expenseToSave.paymentMethodName}\n` +
                         `📅 <b>Fecha:</b> ${expenseToSave.date}\n` +
-                        `👤 <b>Pagado por:</b> ${expenseToSave.payerName}\n\n` +
-                        `⚡ <i>Guardado en tiempo real en tu app Qipu.</i>`;
+                        `👤 <b>Pagado por:</b> ${expenseToSave.payerName}\n` +
+                        itemsSummaryHtml +
+                        `\n⚡ <i>Guardado como lista detallada en tu app Qipu.</i>`;
 
             return await sendTelegramMessage(botToken, chatId, msg);
         } catch (err) {
