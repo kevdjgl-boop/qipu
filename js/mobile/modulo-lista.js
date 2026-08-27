@@ -223,16 +223,16 @@ export function confirmDeleteMobileItem(itemId, desc) {
 }
 
 export function handleItemSwipeStart(e, itemId) {
-  swipeTouchStartX = e.touches[0].clientX;
-  swipeTouchStartY = e.touches[0].clientY;
+  swipeTouchStartX = e.clientX || (e.touches && e.touches[0] ? e.touches[0].clientX : 0);
+  swipeTouchStartY = e.clientY || (e.touches && e.touches[0] ? e.touches[0].clientY : 0);
   swipeActiveItemId = itemId;
   swipeIsHorizontal = null;
 }
 
 export function handleItemSwipeMove(e, itemId) {
   if (swipeActiveItemId !== itemId) return;
-  const currentX = e.touches[0].clientX;
-  const currentY = e.touches[0].clientY;
+  const currentX = e.clientX || (e.touches && e.touches[0] ? e.touches[0].clientX : 0);
+  const currentY = e.clientY || (e.touches && e.touches[0] ? e.touches[0].clientY : 0);
   const diffX = currentX - swipeTouchStartX;
   const diffY = currentY - swipeTouchStartY;
 

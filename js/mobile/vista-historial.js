@@ -1,106 +1,161 @@
-import { appState, currentTab, searchTerm, formatCurrency, db, appId, currentWalletId } from "./core-state.js";
-import { openModal, closeModal } from "./modal-system.js";
-import { openEditExpenseModal, openEditIncomeModal } from "./vista-registro.js";
-import { openDetailItemBreakdownModal } from "./modal-asignacion.js";
-import { doc, updateDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+// ================================================================
+// SISTEMA DE GESTO SWIPE-TO-DELETE DE ALTO RENDIMIENTO (POINTER EVENTS)
+// ================================================================
+let activeSwipeCard = null;
+let activeSwipeSlot = null;
+let activeSwipeId = null;
+let activeSwipeType = null;
+let swipeStartX = 0;
+let swipeStartY = 0;
+let swipeIsHorizontal = null;
+let swipeHasMoved = false;
+let openSwipeCardId = null;
+let swipeBaseOffset = 0;
 
-export let currentDetailExpenseId = null;
+export function initHistorySwipeGestures() {
+  const container = document.getElementById('mobile-history-list');
+  if (!container || container.dataset.swipeInitialized) return;
+  container.dataset.swipeInitialized = 'true';
 
-// Gestos táctiles y de puntero para eliminar movimiento al deslizar a la izquierda
-let movSwipeStartX = 0;
-let movSwipeStartY = 0;
-let movSwipeActiveId = null;
-let movSwipeIsHorizontal = null;
-let movSwipeHasMoved = false;
+  container.addEventListener('pointerdown', (e) => {
+    // Si se hizo click en el botón de borrar, no iniciar swipe
+    if (e.target.closest('[data-mov-delete-btn]')) return;
 
-export function handleMovementPointerDown(e, id) {
-  movSwipeStartX = e.clientX || (e.touches && e.touches[0] ? e.touches[0].clientX : 0);
-  movSwipeStartY = e.clientY || (e.touches && e.touches[0] ? e.touches[0].clientY : 0);
-  movSwipeActiveId = id;
-  movSwipeIsHorizontal = null;
-  movSwipeHasMoved = false;
+    const card = e.target.closest('[data-mov-card-id]');
+    if (!card) return;
 
-  const card = document.getElementById(`mov-card-content-${id}`);
-  if (card && e.pointerId && card.setPointerCapture) {
-    try { card.setPointerCapture(e.pointerId); } catch (_) {}
-  }
-}
+    const id = card.dataset.movCardId;
+    const type = card.dataset.movType;
 
-export function handleMovementPointerMove(e, id) {
-  if (movSwipeActiveId !== id) return;
-  const currentX = e.clientX || (e.touches && e.touches[0] ? e.touches[0].clientX : 0);
-  const currentY = e.clientY || (e.touches && e.touches[0] ? e.touches[0].clientY : 0);
-  const diffX = currentX - movSwipeStartX;
-  const diffY = currentY - movSwipeStartY;
-
-  if (movSwipeIsHorizontal === null) {
-    if (Math.abs(diffX) > 6 || Math.abs(diffY) > 6) {
-      movSwipeIsHorizontal = Math.abs(diffX) > Math.abs(diffY);
+    // Si había otra tarjeta abierta y tocamos una diferente, cerramos la anterior
+    if (openSwipeCardId && openSwipeCardId !== id) {
+      const prevCard = document.getElementById(`mov-card-content-${openSwipeCardId}`);
+      const prevSlot = document.getElementById(`mov-delete-slot-${openSwipeCardId}`);
+      if (prevCard) {
+        prevCard.style.transition = 'transform 240ms cubic-bezier(0.2, 0.8, 0.2, 1)';
+        prevCard.style.transform = 'translateX(0px)';
+      }
+      if (prevSlot) prevSlot.style.opacity = '0';
+      openSwipeCardId = null;
     }
-  }
 
-  if (!movSwipeIsHorizontal) return;
+    activeSwipeCard = card;
+    activeSwipeId = id;
+    activeSwipeType = type;
+    activeSwipeSlot = document.getElementById(`mov-delete-slot-${id}`);
 
-  const card = document.getElementById(`mov-card-content-${id}`);
-  const slot = document.getElementById(`mov-delete-slot-${id}`);
-  if (!card || !slot) return;
+    swipeStartX = e.clientX;
+    swipeStartY = e.clientY;
+    swipeIsHorizontal = null;
+    swipeHasMoved = false;
 
-  if (Math.abs(diffX) > 5) {
-    movSwipeHasMoved = true;
-  }
+    // Determinar desplazamiento base si ya estaba abierta
+    const match = (card.style.transform || '').match(/translateX\(([-\d.]+)px\)/);
+    swipeBaseOffset = match ? parseFloat(match[1]) : 0;
 
-  if (diffX < 0) {
-    const moveAmount = Math.max(-84, diffX);
-    card.style.transform = `translateX(${moveAmount}px)`;
-    slot.style.opacity = `${Math.min(1, Math.abs(diffX) / 30)}`;
-  } else {
-    card.style.transform = 'translateX(0px)';
-    slot.style.opacity = '0';
-  }
-}
+    // Desactivar transiciones durante el arrastre directo con el dedo
+    card.style.transition = 'none';
 
-export function handleMovementPointerUp(e, id, type) {
-  if (movSwipeActiveId !== id) return;
-  const card = document.getElementById(`mov-card-content-${id}`);
-  const slot = document.getElementById(`mov-delete-slot-${id}`);
+    try {
+      if (e.pointerId && card.setPointerCapture) {
+        card.setPointerCapture(e.pointerId);
+      }
+    } catch (_) {}
+  });
 
-  if (card && e.pointerId && card.releasePointerCapture) {
-    try { card.releasePointerCapture(e.pointerId); } catch (_) {}
-  }
+  container.addEventListener('pointermove', (e) => {
+    if (!activeSwipeCard) return;
 
-  if (card && slot) {
-    const currentTransform = card.style.transform || '';
-    const match = currentTransform.match(/translateX\(([-\d.]+)px\)/);
+    const diffX = e.clientX - swipeStartX;
+    const diffY = e.clientY - swipeStartY;
+
+    if (swipeIsHorizontal === null) {
+      if (Math.abs(diffX) > 6 || Math.abs(diffY) > 6) {
+        swipeIsHorizontal = Math.abs(diffX) > Math.abs(diffY);
+        if (!swipeIsHorizontal) {
+          // Desplazamiento vertical: restaurar tarjeta y cancelar swipe
+          activeSwipeCard.style.transition = 'transform 200ms ease';
+          activeSwipeCard.style.transform = swipeBaseOffset ? `translateX(${swipeBaseOffset}px)` : 'translateX(0px)';
+          activeSwipeCard = null;
+          return;
+        }
+      }
+    }
+
+    if (!swipeIsHorizontal) return;
+
+    if (Math.abs(diffX) > 4) {
+      swipeHasMoved = true;
+    }
+
+    // Calcular nueva posición horizontal (limitada entre -96px y 0px)
+    const rawPos = swipeBaseOffset + diffX;
+    const targetX = Math.max(-96, Math.min(0, rawPos));
+
+    activeSwipeCard.style.transform = `translateX(${targetX}px)`;
+    if (activeSwipeSlot) {
+      const opacity = Math.min(1, Math.abs(targetX) / 36);
+      activeSwipeSlot.style.opacity = `${opacity}`;
+    }
+  });
+
+  const onPointerRelease = (e) => {
+    if (!activeSwipeCard) return;
+
+    const card = activeSwipeCard;
+    const slot = activeSwipeSlot;
+    const id = activeSwipeId;
+
+    try {
+      if (e.pointerId && card.releasePointerCapture) {
+        card.releasePointerCapture(e.pointerId);
+      }
+    } catch (_) {}
+
+    // Restaurar animación fluida de resorte para el cierre/apertura
+    card.style.transition = 'transform 280ms cubic-bezier(0.18, 0.89, 0.32, 1.15)';
+
+    const match = (card.style.transform || '').match(/translateX\(([-\d.]+)px\)/);
     const currentX = match ? parseFloat(match[1]) : 0;
 
-    if (currentX <= -35) {
-      // Mantener abierto el botón de eliminar a la izquierda
+    if (currentX <= -36) {
+      // Dejar abierta a la izquierda mostrando la papelera
       card.style.transform = 'translateX(-76px)';
-      slot.style.opacity = '1';
-      if (navigator.vibrate) navigator.vibrate(30);
+      if (slot) slot.style.opacity = '1';
+      openSwipeCardId = id;
+      if (navigator.vibrate) navigator.vibrate(25);
     } else {
       // Cerrar suavemente
       card.style.transform = 'translateX(0px)';
-      slot.style.opacity = '0';
+      if (slot) slot.style.opacity = '0';
+      if (openSwipeCardId === id) openSwipeCardId = null;
     }
-  }
 
-  movSwipeActiveId = null;
-  movSwipeIsHorizontal = null;
+    activeSwipeCard = null;
+    activeSwipeSlot = null;
+    activeSwipeId = null;
+    swipeIsHorizontal = null;
+  };
+
+  container.addEventListener('pointerup', onPointerRelease);
+  container.addEventListener('pointercancel', onPointerRelease);
 }
 
-// Aliases para compatibilidad
-export const handleMovementSwipeStart = handleMovementPointerDown;
-export const handleMovementSwipeMove = handleMovementPointerMove;
-export const handleMovementSwipeEnd = handleMovementPointerUp;
-
 export async function deleteMovementFromSwipe(e, type, id) {
-  if (e) e.stopPropagation();
+  if (e) {
+    e.stopPropagation();
+    e.preventDefault();
+  }
+
   if (!confirm('¿Deseas eliminar este movimiento definitivamente?')) {
     const card = document.getElementById(`mov-card-content-${id}`);
     const slot = document.getElementById(`mov-delete-slot-${id}`);
-    if (card) card.style.transform = 'translateX(0px)';
+    if (card) {
+      card.style.transition = 'transform 240ms cubic-bezier(0.2, 0.8, 0.2, 1)';
+      card.style.transform = 'translateX(0px)';
+    }
     if (slot) slot.style.opacity = '0';
+    if (openSwipeCardId === id) openSwipeCardId = null;
     return;
   }
 
@@ -126,16 +181,18 @@ export async function deleteMovementFromSwipe(e, type, id) {
 }
 
 export function handleMovementCardClick(e, type, id, hasItems) {
-  if (movSwipeHasMoved) {
-    movSwipeHasMoved = false;
+  if (swipeHasMoved) {
+    swipeHasMoved = false;
     return;
   }
 
   const card = document.getElementById(`mov-card-content-${id}`);
   if (card && card.style.transform && card.style.transform !== 'translateX(0px)') {
+    card.style.transition = 'transform 240ms cubic-bezier(0.2, 0.8, 0.2, 1)';
     card.style.transform = 'translateX(0px)';
     const slot = document.getElementById(`mov-delete-slot-${id}`);
     if (slot) slot.style.opacity = '0';
+    if (openSwipeCardId === id) openSwipeCardId = null;
     return;
   }
 
@@ -275,6 +332,7 @@ export function renderHistoryList(monthlyExpenses) {
       <div class="relative overflow-hidden rounded-2xl mb-2 select-none" id="mov-row-container-${item.id}">
         <!-- Slot de Eliminar con Animación Trash.lottie en el fondo a la derecha -->
         <div id="mov-delete-slot-${item.id}"
+          data-mov-delete-btn="true"
           onclick="deleteMovementFromSwipe(event, '${item.type}', '${item.id}')"
           class="absolute inset-y-0 right-0 w-[76px] bg-[#ffe4e6] hover:bg-[#fecdd3] active:bg-[#fda4af] border border-rose-200/80 rounded-2xl flex flex-col items-center justify-center cursor-pointer transition-all z-0 shadow-inner"
           style="opacity: 0;">
@@ -286,16 +344,11 @@ export function renderHistoryList(monthlyExpenses) {
 
         <!-- Tarjeta Frontal Deslizable con Soporte Pointer & Touch -->
         <div id="mov-card-content-${item.id}"
+          data-mov-card-id="${item.id}"
+          data-mov-type="${item.type}"
           onclick="handleMovementCardClick(event, '${item.type}', '${item.id}', ${item.hasItems})"
-          onpointerdown="handleMovementPointerDown(event, '${item.id}')"
-          onpointermove="handleMovementPointerMove(event, '${item.id}')"
-          onpointerup="handleMovementPointerUp(event, '${item.id}', '${item.type}')"
-          onpointercancel="handleMovementPointerUp(event, '${item.id}', '${item.type}')"
-          ontouchstart="handleMovementPointerDown(event, '${item.id}')"
-          ontouchmove="handleMovementPointerMove(event, '${item.id}')"
-          ontouchend="handleMovementPointerUp(event, '${item.id}', '${item.type}')"
-          style="animation-delay: ${staggerDelay}ms; touch-action: pan-y !important; user-select: none; -webkit-user-select: none; transition: transform 220ms cubic-bezier(0.32, 0.72, 0, 1);"
-          class="animate-item-enter relative z-10 bg-white p-3.5 rounded-2xl border border-slate-100 shadow-sm flex items-center justify-between gap-3 hover:border-slate-200 active:scale-[0.99] transition-all cursor-pointer">
+          style="animation-delay: ${staggerDelay}ms; touch-action: pan-y !important; user-select: none; -webkit-user-select: none;"
+          class="animate-item-enter relative z-10 bg-white p-3.5 rounded-2xl border border-slate-100 shadow-sm flex items-center justify-between gap-3 hover:border-slate-200 active:scale-[0.99] cursor-pointer">
           
           <div class="flex items-center gap-3 min-w-0 flex-1 pointer-events-none">
             <div class="shrink-0">
@@ -328,6 +381,9 @@ export function renderHistoryList(monthlyExpenses) {
       </div>
     `;
   }).join('');
+
+  // Inicializar gestos de arrastre nativos en la lista
+  initHistorySwipeGestures();
 
   // Inicializar animaciones Lottie instantáneas en cada tarjeta
   if (window.lottie) {
