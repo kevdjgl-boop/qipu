@@ -41,7 +41,7 @@ export function openModal(id) {
 
   // Ajustar color de la barra de notificaciones según modal activo
   if (id === 'modal-expense') {
-    setAppThemeColor('#f8fafc');
+    setAppThemeColor('#ECF9E1');
   } else if (id === 'modal-income') {
     setAppThemeColor('#0f172a');
   } else {

@@ -843,39 +843,46 @@
   <!-- MODALES TIPO BOTTOM-SHEET PARA MOBILE -->
   <!-- ========================================== -->
 
-  <!-- 1. Pantalla Completa Registrar / Editar Gasto o Ingreso (Diseño Full-Screen Fondo #FBFCFA) -->
+  <!-- 1. Pantalla Completa Registrar / Editar Gasto o Ingreso (Cabecera #ECF9E1 + Cuerpo rounded-t-[36px]) -->
   <div id="modal-expense"
-    class="fixed inset-0 z-50 bg-[#FBFCFA] h-[100dvh] overflow-hidden hidden">
-    <div class="w-full h-full flex flex-col justify-between pt-4 pb-4">
+    class="fixed inset-0 z-50 bg-[#ECF9E1] h-[100dvh] overflow-hidden hidden flex flex-col justify-between">
+    
+    <!-- Cabecera Superior (Fondo #ECF9E1): [ ← Volver ] + Título & Subtítulo + [ ⋮ Más / 🗑 Eliminar ] -->
+    <div class="px-4 pt-4 pb-3 flex items-center justify-between gap-3 shrink-0 bg-[#ECF9E1]">
+      <button type="button" onclick="closeModal('modal-expense'); resetExpenseForm();"
+        class="w-10 h-10 rounded-full bg-white text-slate-800 flex items-center justify-center text-sm shadow-xs hover:bg-slate-50 active:scale-95 transition-all shrink-0">
+        <span class="material-symbols-rounded text-2xl">arrow_back</span>
+      </button>
 
-      <!-- Cabecera Superior: [ ← Volver ] + Título & Subtítulo + [ 🗑 Eliminar Gasto ] -->
-      <div class="flex items-center justify-between gap-3 px-4 pb-2 shrink-0">
-        <button type="button" onclick="closeModal('modal-expense'); resetExpenseForm();"
-          class="w-11 h-11 rounded-full bg-white text-slate-800 flex items-center justify-center text-sm shadow-xs hover:bg-slate-50 active:scale-95 transition-all">
-          <span class="material-symbols-rounded text-2xl">arrow_back</span>
-        </button>
-
-        <div class="flex-1 min-w-0">
-          <h2 id="modal-expense-main-title" class="text-2xl font-black text-slate-900 leading-tight">Registrar</h2>
-          <p id="modal-expense-sub-title" class="text-xs font-semibold text-slate-800/80 truncate">Detalla y clasifica
-            tu movimiento</p>
-        </div>
-
-        <!-- Botón Eliminar Gasto (Visible en la esquina superior derecha solo al Editar) -->
-        <button type="button" id="btn-delete-expense"
-          class="w-11 h-11 rounded-full bg-rose-100 hover:bg-rose-200 text-rose-700 flex items-center justify-center text-sm shadow-xs active:scale-95 transition-all hidden"
-          title="Eliminar Gasto">
-          <span class="material-symbols-rounded text-xl">delete</span>
-        </button>
+      <div class="flex-1 min-w-0 px-1">
+        <h2 id="modal-expense-main-title" class="text-2xl font-black text-slate-900 leading-tight tracking-tight">Registrar</h2>
+        <p id="modal-expense-sub-title" class="text-xs font-semibold text-slate-700/80 truncate">Detalla y clasifica tu movimiento</p>
       </div>
 
+      <!-- Botón Opciones / Eliminar Gasto -->
+      <button type="button" id="btn-delete-expense"
+        class="w-10 h-10 rounded-full bg-white hover:bg-rose-50 text-rose-600 flex items-center justify-center text-sm shadow-xs active:scale-95 transition-all hidden shrink-0"
+        title="Eliminar Gasto">
+        <span class="material-symbols-rounded text-xl">delete</span>
+      </button>
+
+      <button type="button" id="btn-more-options-expense"
+        class="w-10 h-10 rounded-full bg-white text-slate-800 flex items-center justify-center text-sm shadow-xs hover:bg-slate-50 active:scale-95 transition-all shrink-0"
+        title="Más opciones">
+        <span class="material-symbols-rounded text-xl">more_vert</span>
+      </button>
+    </div>
+
+    <!-- CUERPO PRINCIPAL BLANCO CON BORDES SUPERIORES EN 36PX -->
+    <div class="w-full flex-1 bg-white rounded-t-[36px] px-4 pt-4 pb-3 flex flex-col justify-between overflow-y-auto custom-scrollbar shadow-[0_-8px_30px_rgba(0,0,0,0.04)]">
+      
       <!-- Pestañas Superiores Tipo de Registro: Personal | Compartido | Ingreso (Fondo #ECF9E1) -->
-      <div class="px-4 pb-2.5 shrink-0">
+      <div class="pb-2 shrink-0">
         <div
           class="relative w-full bg-[#ECF9E1] p-1 rounded-full flex items-center text-xs font-black shadow-2xs select-none">
           <!-- Píldora Deslizante Activa con Física M3 Expressive -->
           <div id="segment-sliding-pill"
-            class="absolute top-1 bottom-1 rounded-full bg-[#C3F1B3] shadow-xs pointer-events-none"
+            class="absolute top-1 bottom-1 rounded-full bg-[#BCEAA8] shadow-xs pointer-events-none"
             style="width: calc((100% - 8px) / 3); left: 4px; transform: translateX(0%); transition: transform 320ms cubic-bezier(0.05, 0.7, 0.1, 1.0), background-color 80ms ease;">
           </div>
 
@@ -884,11 +891,11 @@
             Personal
           </button>
           <button type="button" id="tab-type-shared" onclick="switchExpenseRegistrationType('shared')"
-            class="relative z-10 flex-1 py-2 rounded-full text-slate-500 hover:text-slate-800 transition-colors duration-200 text-center font-bold">
+            class="relative z-10 flex-1 py-2 rounded-full text-slate-600 hover:text-slate-900 transition-colors duration-200 text-center font-bold">
             Compartido
           </button>
           <button type="button" id="tab-type-income" onclick="switchExpenseRegistrationType('income')"
-            class="relative z-10 flex-1 py-2 rounded-full text-slate-500 hover:text-slate-800 transition-colors duration-200 text-center font-bold">
+            class="relative z-10 flex-1 py-2 rounded-full text-slate-600 hover:text-slate-900 transition-colors duration-200 text-center font-bold">
             Ingreso
           </button>
         </div>
@@ -897,9 +904,9 @@
       <form id="form-mobile-expense" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"
         data-lpignore="true" class="flex flex-col flex-1 justify-between min-h-0">
 
-        <div class="flex flex-col flex-1 min-h-0">
-          <!-- BLOQUE PRINCIPAL SUPERIOR (Fondo #FBFCFA del mismo color de la vista, Ancho Total, Bordes 24px) -->
-          <div class="w-full bg-[#FBFCFA] rounded-[24px] px-4 py-1 space-y-3 relative z-10 shrink-0">
+        <div class="flex flex-col flex-1 min-h-0 space-y-2.5">
+          <!-- BLOQUE PRINCIPAL SUPERIOR (Fondo Blanco transparente, Ancho Total) -->
+          <div class="w-full bg-white px-0 py-0.5 space-y-2.5 relative z-10 shrink-0">
             <!-- Fila de Chips de Metadatos (Fondo #ECF9E1) -->
             <div class="grid grid-cols-3 gap-2 pb-0.5">
               <!-- Chip Fecha (Abre Bottom Sheet de Calendario) -->
@@ -1117,10 +1124,10 @@
           </div>
         </div>
 
-        <!-- BOTÓN GUARDAR EN EL FONDO (Fijo en la parte inferior, shrink-0, Margen px-4) -->
-        <div class="pt-2.5 pb-1 shrink-0 w-full px-4">
+        <!-- BOTÓN GUARDAR EN EL FONDO (Fijo en la parte inferior, shrink-0) -->
+        <div class="pt-3 pb-1 shrink-0 w-full">
           <button type="submit" id="btn-submit-expense"
-            class="w-full py-4 bg-[#86d952] hover:bg-[#7bc94b] active:scale-98 text-slate-950 font-black text-sm rounded-full shadow-md transition-all flex items-center justify-center gap-2 cursor-pointer">
+            class="w-full py-4 bg-[#222818] hover:bg-[#2e3721] active:scale-[0.98] text-white font-black text-sm rounded-full shadow-md transition-all flex items-center justify-center gap-2 cursor-pointer">
             <span id="label-submit-expense">Guardar</span>
           </button>
         </div>
