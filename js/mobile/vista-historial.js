@@ -1,9 +1,137 @@
-import { appState, currentTab, searchTerm, formatCurrency } from "./core-state.js";
+import { appState, currentTab, searchTerm, formatCurrency, db, appId, currentWalletId } from "./core-state.js";
 import { openModal, closeModal } from "./modal-system.js";
 import { openEditExpenseModal, openEditIncomeModal } from "./vista-registro.js";
 import { openDetailItemBreakdownModal } from "./modal-asignacion.js";
+import { doc, updateDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
 export let currentDetailExpenseId = null;
+
+// Gestos táctiles para eliminar movimiento al deslizar a la izquierda
+let movSwipeStartX = 0;
+let movSwipeStartY = 0;
+let movSwipeActiveId = null;
+let movSwipeIsHorizontal = null;
+let movSwipeHasMoved = false;
+
+export function handleMovementSwipeStart(e, id) {
+  movSwipeStartX = e.touches[0].clientX;
+  movSwipeStartY = e.touches[0].clientY;
+  movSwipeActiveId = id;
+  movSwipeIsHorizontal = null;
+  movSwipeHasMoved = false;
+}
+
+export function handleMovementSwipeMove(e, id) {
+  if (movSwipeActiveId !== id) return;
+  const currentX = e.touches[0].clientX;
+  const currentY = e.touches[0].clientY;
+  const diffX = currentX - movSwipeStartX;
+  const diffY = currentY - movSwipeStartY;
+
+  if (movSwipeIsHorizontal === null) {
+    if (Math.abs(diffX) > 8 || Math.abs(diffY) > 8) {
+      movSwipeIsHorizontal = Math.abs(diffX) > Math.abs(diffY);
+    }
+  }
+
+  if (!movSwipeIsHorizontal) return;
+
+  const card = document.getElementById(`mov-card-content-${id}`);
+  const slot = document.getElementById(`mov-delete-slot-${id}`);
+  if (!card || !slot) return;
+
+  movSwipeHasMoved = true;
+
+  if (diffX < 0) {
+    const moveAmount = Math.max(-84, diffX);
+    card.style.transform = `translateX(${moveAmount}px)`;
+    slot.style.opacity = `${Math.min(1, Math.abs(diffX) / 35)}`;
+  } else {
+    card.style.transform = 'translateX(0px)';
+    slot.style.opacity = '0';
+  }
+}
+
+export function handleMovementSwipeEnd(e, id, type) {
+  if (movSwipeActiveId !== id) return;
+  const card = document.getElementById(`mov-card-content-${id}`);
+  const slot = document.getElementById(`mov-delete-slot-${id}`);
+  if (!card || !slot) return;
+
+  const currentTransform = card.style.transform || '';
+  const match = currentTransform.match(/translateX\(([-\d.]+)px\)/);
+  const currentX = match ? parseFloat(match[1]) : 0;
+
+  if (currentX <= -40) {
+    // Mantener abierto el botón de eliminar a la izquierda
+    card.style.transform = 'translateX(-76px)';
+    slot.style.opacity = '1';
+    if (navigator.vibrate) navigator.vibrate(30);
+  } else {
+    // Cerrar suavemente
+    card.style.transform = 'translateX(0px)';
+    slot.style.opacity = '0';
+  }
+
+  movSwipeActiveId = null;
+  movSwipeIsHorizontal = null;
+}
+
+export async function deleteMovementFromSwipe(e, type, id) {
+  if (e) e.stopPropagation();
+  if (!confirm('¿Deseas eliminar este movimiento definitivamente?')) {
+    const card = document.getElementById(`mov-card-content-${id}`);
+    const slot = document.getElementById(`mov-delete-slot-${id}`);
+    if (card) card.style.transform = 'translateX(0px)';
+    if (slot) slot.style.opacity = '0';
+    return;
+  }
+
+  try {
+    const walletRef = doc(db, "artifacts", appId, "public/data/wallets", currentWalletId);
+    if (type === 'expense') {
+      const updated = (appState.expenses || []).filter(item => item.id !== id);
+      await updateDoc(walletRef, { expenses: updated });
+    } else {
+      const updatedParticipants = JSON.parse(JSON.stringify(appState.participants || []));
+      updatedParticipants.forEach(p => {
+        if (p.incomes) {
+          p.incomes = p.incomes.filter(inc => inc.id !== id);
+        }
+        p.budget = (p.incomes || []).reduce((s, inc) => s + (parseFloat(inc.amount) || 0), 0);
+      });
+      await updateDoc(walletRef, { participants: updatedParticipants });
+    }
+  } catch (err) {
+    console.error('Error al eliminar movimiento:', err);
+    alert('Error al eliminar el movimiento.');
+  }
+}
+
+export function handleMovementCardClick(e, type, id, hasItems) {
+  if (movSwipeHasMoved) {
+    movSwipeHasMoved = false;
+    return;
+  }
+
+  const card = document.getElementById(`mov-card-content-${id}`);
+  if (card && card.style.transform && card.style.transform !== 'translateX(0px)') {
+    card.style.transform = 'translateX(0px)';
+    const slot = document.getElementById(`mov-delete-slot-${id}`);
+    if (slot) slot.style.opacity = '0';
+    return;
+  }
+
+  if (type === 'expense') {
+    if (hasItems) {
+      openTransactionDetailModal(id);
+    } else {
+      openEditExpenseModal(id);
+    }
+  } else {
+    openEditIncomeModal(id);
+  }
+}
 
 export function renderHistoryList(monthlyExpenses) {
   const container = document.getElementById('mobile-history-list');
@@ -124,44 +252,60 @@ export function renderHistoryList(monthlyExpenses) {
       typeBadge = `<span class="ml-1.5 inline-flex items-center justify-center w-4 h-4 rounded-full bg-orange-100 text-orange-600 text-[8px]" title="Compartido"><i class="fas fa-users"></i></span>`;
     }
 
-    const clickHandler = isExpense
-      ? (item.hasItems ? `onclick="openTransactionDetailModal('${item.id}')"` : `onclick="openEditExpenseModal('${item.id}')"`)
-      : `onclick="openEditIncomeModal('${item.id}')"`;
-
     const staggerDelay = Math.min(idx * 35, 280);
 
     return `
-      <div ${clickHandler} style="animation-delay: ${staggerDelay}ms;" class="animate-item-enter bg-white p-3.5 rounded-2xl border border-slate-100 shadow-sm flex items-center justify-between gap-3 hover:border-slate-200 active:scale-[0.98] transition-all cursor-pointer select-none">
-        <div class="flex items-center gap-3 min-w-0 flex-1">
-          <div class="shrink-0">
-            <div class="w-11 h-11 flex flex-col items-center justify-center rounded-xl border ${dateBoxClass} shadow-sm">
-              <span class="text-[9px] font-bold uppercase leading-none opacity-80">${monthShort}</span>
-              <span class="text-base font-black leading-tight">${dayNum}</span>
-            </div>
-          </div>
-          
-          <div class="min-w-0 flex-1">
-            <div class="flex items-center">
-              <h4 class="font-extrabold text-xs text-slate-900 truncate leading-tight">${item.description}</h4>
-              ${typeBadge}
-            </div>
-            <div class="flex items-center gap-1.5 text-[10px] text-slate-400 mt-1">
-              <span class="text-slate-600 font-semibold bg-slate-100 px-1.5 py-0.2 rounded text-[9px]">${item.category}</span>
-              <span>•</span>
-              <span class="truncate max-w-[90px]">${payer}</span>
-            </div>
-          </div>
+      <div class="relative overflow-hidden rounded-2xl mb-2 select-none" id="mov-row-container-${item.id}">
+        <!-- Slot de Eliminar con Animación Trash.lottie en el fondo a la derecha -->
+        <div id="mov-delete-slot-${item.id}"
+          onclick="deleteMovementFromSwipe(event, '${item.type}', '${item.id}')"
+          class="absolute inset-y-0 right-0 w-[76px] bg-rose-500 hover:bg-rose-600 active:bg-rose-700 rounded-2xl flex flex-col items-center justify-center cursor-pointer transition-all z-0 shadow-inner"
+          style="opacity: 0;">
+          <dotlottie-player src="js/Animaciones/Trash.lottie" autoplay loop style="width: 36px; height: 36px; pointer-events: none;"></dotlottie-player>
+          <span class="text-[9px] font-black text-white uppercase tracking-wider -mt-1 pointer-events-none select-none">Borrar</span>
         </div>
 
-        <div class="text-right shrink-0">
-          <span class="font-black text-xs ${isExpense ? 'text-slate-900' : 'text-emerald-600'} block">
-            ${isExpense ? '-' : '+'} ${formatCurrency(item.amount)}
-          </span>
-          <span class="text-[9px] text-slate-400 font-medium">${item.paymentMethod}</span>
+        <!-- Tarjeta Frontal Deslizable -->
+        <div id="mov-card-content-${item.id}"
+          onclick="handleMovementCardClick(event, '${item.type}', '${item.id}', ${item.hasItems})"
+          ontouchstart="handleMovementSwipeStart(event, '${item.id}')"
+          ontouchmove="handleMovementSwipeMove(event, '${item.id}')"
+          ontouchend="handleMovementSwipeEnd(event, '${item.id}', '${item.type}')"
+          style="animation-delay: ${staggerDelay}ms; transition: transform 220ms cubic-bezier(0.32, 0.72, 0, 1);"
+          class="animate-item-enter relative z-10 bg-white p-3.5 rounded-2xl border border-slate-100 shadow-sm flex items-center justify-between gap-3 hover:border-slate-200 active:scale-[0.99] transition-all cursor-pointer">
+          
+          <div class="flex items-center gap-3 min-w-0 flex-1 pointer-events-none">
+            <div class="shrink-0">
+              <div class="w-11 h-11 flex flex-col items-center justify-center rounded-xl border ${dateBoxClass} shadow-sm">
+                <span class="text-[9px] font-bold uppercase leading-none opacity-80">${monthShort}</span>
+                <span class="text-base font-black leading-tight">${dayNum}</span>
+              </div>
+            </div>
+            
+            <div class="min-w-0 flex-1">
+              <div class="flex items-center">
+                <h4 class="font-extrabold text-xs text-slate-900 truncate leading-tight">${item.description}</h4>
+                ${typeBadge}
+              </div>
+              <div class="flex items-center gap-1.5 text-[10px] text-slate-400 mt-1">
+                <span class="text-slate-600 font-semibold bg-slate-100 px-1.5 py-0.2 rounded text-[9px]">${item.category}</span>
+                <span>•</span>
+                <span class="truncate max-w-[90px]">${payer}</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="text-right shrink-0 pointer-events-none">
+            <span class="font-black text-xs ${isExpense ? 'text-slate-900' : 'text-emerald-600'} block">
+              ${isExpense ? '-' : '+'} ${formatCurrency(item.amount)}
+            </span>
+            <span class="text-[9px] text-slate-400 font-medium">${item.paymentMethod}</span>
+          </div>
         </div>
       </div>
     `;
   }).join('');
+}
 }
 
 export function openTransactionDetailModal(expenseId) {

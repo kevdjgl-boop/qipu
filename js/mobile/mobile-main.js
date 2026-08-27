@@ -14,7 +14,9 @@ import {
 } from "./vista-dashboard.js";
 
 import {
-  renderHistoryList, openTransactionDetailModal, currentDetailExpenseId
+  renderHistoryList, openTransactionDetailModal, currentDetailExpenseId,
+  handleMovementSwipeStart, handleMovementSwipeMove, handleMovementSwipeEnd,
+  deleteMovementFromSwipe, handleMovementCardClick
 } from "./vista-historial.js";
 
 import {
@@ -45,8 +47,6 @@ import {
   confirmSplitDistribution
 } from "./modal-reparticion.js";
 
-import {
-  currentRegistrationType, isFixedExpenseActive, isListExpenseActive,
 import {
   currentRegistrationType, isFixedExpenseActive, isListExpenseActive,
   activeSharedMemberIds, mobileExpenseGuests, editingExpenseId, editingIncomeId,
@@ -90,6 +90,11 @@ window.confirmDeleteMobileItem = confirmDeleteMobileItem;
 window.handleItemSwipeStart = handleItemSwipeStart;
 window.handleItemSwipeMove = handleItemSwipeMove;
 window.handleItemSwipeEnd = handleItemSwipeEnd;
+window.handleMovementSwipeStart = handleMovementSwipeStart;
+window.handleMovementSwipeMove = handleMovementSwipeMove;
+window.handleMovementSwipeEnd = handleMovementSwipeEnd;
+window.deleteMovementFromSwipe = deleteMovementFromSwipe;
+window.handleMovementCardClick = handleMovementCardClick;
 window.openItemAssignmentModal = openItemAssignmentModal;
 window.openDetailItemBreakdownModal = openDetailItemBreakdownModal;
 window.toggleMemberAssignment = toggleMemberAssignment;

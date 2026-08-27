@@ -1,10 +1,11 @@
 // Service Worker para Qipu 3.0 PWA
-const CACHE_NAME = 'qipu-v3-cache-v6';
+const CACHE_NAME = 'qipu-v3-cache-v7';
 const ASSETS_TO_CACHE = [
   './index.html',
   './mobile.html',
   './app.html',
-  './manifest.json'
+  './manifest.json',
+  './js/Animaciones/Trash.lottie'
 ];
 
 self.addEventListener('install', (event) => {
