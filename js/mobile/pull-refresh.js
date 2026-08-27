@@ -12,8 +12,9 @@ let pullContainer = null;
 let pullLottieEl = null;
 let lottieInstance = null;
 
-const PULL_BREAKPOINT = 65; // Punto de quiebre en px para activar la recarga
-const STRETCH_PEAK_FRAME = 30; // Fotograma exacto donde la billetera alcanza su estiramiento máximo (nuevo JSON)
+const FINGER_TRIGGER_DISTANCE = 110; // Distancia física de arrastre en px requerida para activar la recarga
+const VISUAL_MAX_DESCENT = 70; // Descenso visual máximo en px de la cápsula
+const STRETCH_PEAK_FRAME = 30; // Fotograma exacto donde la billetera alcanza su estiramiento máximo
 const TOTAL_FRAMES = 60; // Total de fotogramas de la animación
 
 export function initPullToRefresh() {
@@ -60,16 +61,16 @@ export function initPullToRefresh() {
     const diffX = currentX - pullStartX;
 
     // Solo si el movimiento es predominantemente hacia abajo
-    if (diffY > 8 && Math.abs(diffY) > Math.abs(diffX) * 1.1) {
+    if (diffY > 10 && Math.abs(diffY) > Math.abs(diffX) * 1.1) {
       isPulling = true;
-      const pullProgress = Math.min(90, diffY * 0.48); // Resistencia elástica del arrastre
+      const pullVisualY = Math.min(VISUAL_MAX_DESCENT, diffY * 0.42); // Descenso visual suave con amortiguación
 
       pullContainer.style.transition = 'none';
-      pullContainer.style.transform = `translate(-50%, ${pullProgress}px)`;
-      pullContainer.style.opacity = `${Math.min(1, pullProgress / 16)}`;
+      pullContainer.style.transform = `translate(-50%, ${pullVisualY}px)`;
+      pullContainer.style.opacity = `${Math.min(1, diffY / 25)}`;
 
-      // Mapear el estiramiento: avanza de 0 a 24 y SE MANTIENE ESTIRADO en el fotograma 24 mientras el dedo esté abajo
-      const progressRatio = Math.min(1, pullProgress / PULL_BREAKPOINT);
+      // Mapeo 1:1 con la distancia física del dedo: no se adelanta, llega al frame 30 justo al punto de quiebre
+      const progressRatio = Math.min(1, Math.max(0, (diffY - 10) / (FINGER_TRIGGER_DISTANCE - 10)));
       const targetFrame = Math.min(STRETCH_PEAK_FRAME, Math.floor(progressRatio * STRETCH_PEAK_FRAME));
 
       if (lottieInstance) {
@@ -77,10 +78,10 @@ export function initPullToRefresh() {
       }
 
       // Feedback háptico al alcanzar el punto de quiebre
-      if (pullProgress >= PULL_BREAKPOINT && !hasVibratedBreakpoint) {
+      if (diffY >= FINGER_TRIGGER_DISTANCE && !hasVibratedBreakpoint) {
         hasVibratedBreakpoint = true;
         if (navigator.vibrate) navigator.vibrate(25);
-      } else if (pullProgress < PULL_BREAKPOINT) {
+      } else if (diffY < FINGER_TRIGGER_DISTANCE) {
         hasVibratedBreakpoint = false;
       }
 
@@ -96,11 +97,13 @@ export function initPullToRefresh() {
       return;
     }
 
-    const match = (pullContainer.style.transform || '').match(/translate\(-50%,\s*([\d.]+)px\)/);
-    const currentPull = match ? parseFloat(match[1]) : 0;
+    const diffY = (e => {
+      return pullStartY ? (window._lastPullDiffY || 0) : 0;
+    })();
 
-    if (currentPull >= PULL_BREAKPOINT) {
-      // Alcanzó el punto de quiebre: disparar recarga y continuar animación desde el fotograma 24
+    // Verificar si alcanzó la distancia de quiebre requerida
+    if (hasVibratedBreakpoint) {
+      // Alcanzó el punto de quiebre: disparar recarga y continuar animación desde el fotograma 30
       triggerPullRefresh();
     } else {
       // No alcanzó el punto de quiebre: des-estirar y regresar arriba
@@ -128,7 +131,7 @@ export async function triggerPullRefresh() {
 
   if (pullContainer) {
     pullContainer.style.transition = 'transform 260ms cubic-bezier(0.2, 0.8, 0.2, 1), opacity 200ms ease';
-    pullContainer.style.transform = `translate(-50%, ${PULL_BREAKPOINT}px)`;
+    pullContainer.style.transform = `translate(-50%, ${VISUAL_MAX_DESCENT}px)`;
     pullContainer.style.opacity = '1';
   }
 
