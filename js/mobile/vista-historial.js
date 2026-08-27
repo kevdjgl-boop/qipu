@@ -1,3 +1,11 @@
+import { appState, currentTab, searchTerm, formatCurrency, db, appId, currentWalletId } from "./core-state.js";
+import { openModal, closeModal } from "./modal-system.js";
+import { openEditExpenseModal, openEditIncomeModal } from "./vista-registro.js";
+import { openDetailItemBreakdownModal } from "./modal-asignacion.js";
+import { doc, updateDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+export let currentDetailExpenseId = null;
+
 // ================================================================
 // SISTEMA DE GESTO SWIPE-TO-DELETE DE ALTO RENDIMIENTO (POINTER EVENTS)
 // ================================================================
