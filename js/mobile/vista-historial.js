@@ -136,6 +136,11 @@ export function initHistorySwipeGestures() {
       if (slot) slot.style.opacity = '1';
       openSwipeCardId = id;
       if (navigator.vibrate) navigator.vibrate(25);
+      // Reproducir animación una vez al abrir
+      const lottieEl = document.getElementById(`lottie-trash-${id}`);
+      if (lottieEl && lottieEl._lottieInstance) {
+        lottieEl._lottieInstance.goToAndPlay(0, true);
+      }
     } else {
       // Cerrar suavemente
       card.style.transform = 'translateX(0px)';
@@ -359,10 +364,10 @@ export function renderHistoryList(monthlyExpenses) {
         <div id="mov-delete-slot-${item.id}"
           data-mov-delete-btn="true"
           onclick="deleteMovementFromSwipe(event, '${item.type}', '${item.id}')"
-          class="absolute inset-y-0 right-0 w-[76px] bg-[#ffe4e6] hover:bg-[#fecdd3] active:bg-[#fda4af] border border-rose-200/80 rounded-2xl flex flex-col items-center justify-center cursor-pointer transition-all z-0 shadow-inner"
+          class="absolute inset-y-0 right-0 w-[80px] bg-[#ffe4e6] hover:bg-[#fecdd3] active:bg-[#fda4af] border border-rose-200/80 rounded-2xl flex flex-col items-center justify-center cursor-pointer transition-all z-0 shadow-inner"
           style="opacity: 0;">
-          <div id="lottie-trash-${item.id}" class="w-8 h-8 pointer-events-none flex items-center justify-center">
-            <dotlottie-player src="js/Animaciones/Trash.lottie" autoplay loop style="width: 32px; height: 32px; pointer-events: none;"></dotlottie-player>
+          <div id="lottie-trash-${item.id}" class="w-10 h-10 pointer-events-none flex items-center justify-center -mb-0.5">
+            <dotlottie-player src="js/Animaciones/Trash.lottie" autoplay="false" loop="false" style="width: 38px; height: 38px; pointer-events: none;"></dotlottie-player>
           </div>
           <span class="text-[9px] font-black text-rose-800 uppercase tracking-wider mt-0.5 pointer-events-none select-none">Borrar</span>
         </div>
@@ -416,11 +421,11 @@ export function renderHistoryList(monthlyExpenses) {
       const el = document.getElementById(`lottie-trash-${item.id}`);
       if (el) {
         el.innerHTML = '';
-        window.lottie.loadAnimation({
+        el._lottieInstance = window.lottie.loadAnimation({
           container: el,
           renderer: 'svg',
-          loop: true,
-          autoplay: true,
+          loop: false,
+          autoplay: false,
           animationData: TRASH_ANIMATION_DATA
         });
       }
