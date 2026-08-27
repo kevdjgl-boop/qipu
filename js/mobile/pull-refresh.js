@@ -13,8 +13,8 @@ let pullLottieEl = null;
 let lottieInstance = null;
 
 const PULL_BREAKPOINT = 65; // Punto de quiebre en px para activar la recarga
-const SCRUB_MAX_FRAME = 30; // Fotograma álgido durante el arrastre (la tarjeta sale al 100% justo al llegar al tope)
-const TOTAL_FRAMES = 60; // Frames totales para la reproducción en recarga activa
+const STRETCH_PEAK_FRAME = 24; // Fotograma exacto donde la billetera alcanza su estiramiento máximo
+const TOTAL_FRAMES = 60; // Total de fotogramas de la animación
 
 export function initPullToRefresh() {
   pullContainer = document.getElementById('pull-to-refresh-container');
@@ -28,11 +28,10 @@ export function initPullToRefresh() {
     lottieInstance = window.lottie.loadAnimation({
       container: pullLottieEl,
       renderer: 'svg',
-      loop: true,
+      loop: false,
       autoplay: false,
       animationData: SWIPE_ANIMATION_DATA
     });
-    // Pausar en el primer fotograma
     lottieInstance.goToAndStop(0, true);
   }
 
@@ -63,15 +62,15 @@ export function initPullToRefresh() {
     // Solo si el movimiento es predominantemente hacia abajo
     if (diffY > 8 && Math.abs(diffY) > Math.abs(diffX) * 1.1) {
       isPulling = true;
-      const pullProgress = Math.min(85, diffY * 0.46); // Resistencia elástica del arrastre
+      const pullProgress = Math.min(90, diffY * 0.48); // Resistencia elástica del arrastre
 
       pullContainer.style.transition = 'none';
       pullContainer.style.transform = `translate(-50%, ${pullProgress}px)`;
-      pullContainer.style.opacity = `${Math.min(1, pullProgress / 18)}`;
+      pullContainer.style.opacity = `${Math.min(1, pullProgress / 16)}`;
 
-      // Sincronizar el fotograma exacto: la tarjeta alcanza su punto más alto justo al llegar al punto de quiebre
+      // Mapear el estiramiento: avanza de 0 a 24 y SE MANTIENE ESTIRADO en el fotograma 24 mientras el dedo esté abajo
       const progressRatio = Math.min(1, pullProgress / PULL_BREAKPOINT);
-      const targetFrame = Math.floor(progressRatio * SCRUB_MAX_FRAME);
+      const targetFrame = Math.min(STRETCH_PEAK_FRAME, Math.floor(progressRatio * STRETCH_PEAK_FRAME));
 
       if (lottieInstance) {
         lottieInstance.goToAndStop(targetFrame, true);
@@ -80,7 +79,7 @@ export function initPullToRefresh() {
       // Feedback háptico al alcanzar el punto de quiebre
       if (pullProgress >= PULL_BREAKPOINT && !hasVibratedBreakpoint) {
         hasVibratedBreakpoint = true;
-        if (navigator.vibrate) navigator.vibrate(20);
+        if (navigator.vibrate) navigator.vibrate(25);
       } else if (pullProgress < PULL_BREAKPOINT) {
         hasVibratedBreakpoint = false;
       }
@@ -101,10 +100,10 @@ export function initPullToRefresh() {
     const currentPull = match ? parseFloat(match[1]) : 0;
 
     if (currentPull >= PULL_BREAKPOINT) {
-      // Alcanzó el punto de quiebre: ejecutar recarga y reproducir animación en bucle
+      // Alcanzó el punto de quiebre: disparar recarga y continuar animación desde el fotograma 24
       triggerPullRefresh();
     } else {
-      // No alcanzó el punto de quiebre: regresar arriba
+      // No alcanzó el punto de quiebre: des-estirar y regresar arriba
       resetPullIndicator();
     }
 
@@ -133,9 +132,10 @@ export async function triggerPullRefresh() {
     pullContainer.style.opacity = '1';
   }
 
-  // Reproducir animación continuamente mientras sincroniza
+  // Continuar fluidamente la animación expulsando la tarjeta desde el punto de estiramiento (24 -> 60)
   if (lottieInstance) {
-    lottieInstance.play();
+    lottieInstance.loop = true;
+    lottieInstance.playSegments([STRETCH_PEAK_FRAME, TOTAL_FRAMES], true);
   }
 
   if (navigator.vibrate) navigator.vibrate([15, 30, 15]);
@@ -163,16 +163,17 @@ export async function triggerPullRefresh() {
     setTimeout(() => {
       isRefreshing = false;
     }, 320);
-  }, 750);
+  }, 800);
 }
 
 function resetPullIndicator() {
   if (pullContainer) {
-    pullContainer.style.transition = 'transform 320ms cubic-bezier(0.4, 0, 0.2, 1), opacity 260ms ease';
+    pullContainer.style.transition = 'transform 300ms cubic-bezier(0.4, 0, 0.2, 1), opacity 240ms ease';
     pullContainer.style.transform = 'translate(-50%, -100px)';
     pullContainer.style.opacity = '0';
   }
   if (lottieInstance) {
+    lottieInstance.loop = false;
     lottieInstance.stop();
     lottieInstance.goToAndStop(0, true);
   }
