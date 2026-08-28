@@ -2147,32 +2147,145 @@
   <!-- Input invisible para captura de cámara / galería de boletas -->
   <input type="file" id="pwa-receipt-file-input" accept="image/*" capture="environment" class="hidden" />
 
-  <!-- Overlay de Escaneo de Boletas con IA -->
+  <!-- ========================================== -->
+  <!-- 📷 VISOR DE CÁMARA IN-APP ULTRA-MODERNO PARA BOLETAS -->
+  <!-- ========================================== -->
+  <div id="camera-viewfinder-overlay"
+    class="fixed inset-0 z-[100] bg-black hidden flex-col justify-between overflow-hidden select-none">
+    
+    <!-- Video Stream en Vivo de la Cámara -->
+    <video id="camera-stream-video" autoplay playsinline muted class="absolute inset-0 w-full h-full object-cover z-0"></video>
+    <canvas id="camera-capture-canvas" class="hidden"></canvas>
+
+    <!-- 1. Header del Visor: [ ✕ Cerrar ] + Indicador + [ ⚡ Flash ] -->
+    <div class="relative z-10 px-5 pt-5 pb-3 flex items-center justify-between bg-gradient-to-b from-black/80 via-black/40 to-transparent">
+      <button type="button" id="btn-close-camera-viewfinder"
+        class="w-10 h-10 rounded-full bg-white/20 backdrop-blur-md text-white flex items-center justify-center text-sm shadow-md active:scale-90 transition-transform cursor-pointer">
+        <span class="material-symbols-rounded text-2xl">close</span>
+      </button>
+
+      <div class="px-3.5 py-1.5 rounded-full bg-black/40 backdrop-blur-md border border-white/10 text-white text-xs font-black flex items-center gap-1.5">
+        <span class="w-2 h-2 rounded-full bg-[#A3E635] animate-pulse"></span>
+        <span>Enfoca tu comprobante</span>
+      </div>
+
+      <button type="button" id="btn-toggle-camera-flash"
+        class="w-10 h-10 rounded-full bg-white/20 backdrop-blur-md text-white flex items-center justify-center text-sm shadow-md active:scale-90 transition-transform cursor-pointer">
+        <span class="material-symbols-rounded text-xl" id="icon-camera-flash">flash_off</span>
+      </button>
+    </div>
+
+    <!-- 2. Área Central: Retícula de Encuadre con Esquinas Brillantes & Láser de Escaneo -->
+    <div class="relative z-10 flex-1 flex items-center justify-center p-6 pointer-events-none">
+      <div class="relative w-full max-w-xs aspect-[3/4] rounded-3xl border-2 border-white/30 overflow-hidden shadow-[0_0_50px_rgba(0,0,0,0.5)]">
+        <!-- Esquinas Verdes Reforzadas -->
+        <div class="absolute top-0 left-0 w-8 h-8 border-t-4 border-l-4 border-[#A3E635] rounded-tl-2xl"></div>
+        <div class="absolute top-0 right-0 w-8 h-8 border-t-4 border-r-4 border-[#A3E635] rounded-tr-2xl"></div>
+        <div class="absolute bottom-0 left-0 w-8 h-8 border-b-4 border-l-4 border-[#A3E635] rounded-bl-2xl"></div>
+        <div class="absolute bottom-0 right-0 w-8 h-8 border-b-4 border-r-4 border-[#A3E635] rounded-br-2xl"></div>
+
+        <!-- Haz Láser Animado Verde Lima -->
+        <div class="absolute inset-x-0 h-1 bg-gradient-to-r from-transparent via-[#A3E635] to-transparent shadow-[0_0_15px_#A3E635] animate-[scanBeam_2s_ease-in-out_infinite]"></div>
+
+        <div class="absolute inset-x-0 bottom-4 text-center">
+          <span class="px-3 py-1 rounded-full bg-black/60 backdrop-blur-sm text-[11px] font-bold text-white/90">
+            Alinea el texto dentro del recuadro
+          </span>
+        </div>
+      </div>
+    </div>
+
+    <!-- 3. Barra Inferior de Controles de Captura -->
+    <div class="relative z-10 px-6 pb-8 pt-4 bg-gradient-to-t from-black/90 via-black/50 to-transparent flex items-center justify-around">
+      <!-- Botón Galería -->
+      <button type="button" id="btn-camera-open-gallery"
+        class="w-12 h-12 rounded-2xl bg-white/20 backdrop-blur-md hover:bg-white/30 text-white flex flex-col items-center justify-center gap-0.5 active:scale-90 transition-transform cursor-pointer"
+        title="Elegir de la galería">
+        <span class="material-symbols-rounded text-2xl">photo_library</span>
+      </button>
+
+      <!-- Botón Obturador Central Shutter -->
+      <button type="button" id="btn-camera-take-photo"
+        class="w-20 h-20 rounded-full border-4 border-white/80 p-1 flex items-center justify-center active:scale-95 transition-transform cursor-pointer shadow-[0_0_30px_rgba(255,255,255,0.3)]">
+        <div class="w-full h-full rounded-full bg-white active:bg-slate-200 transition-colors"></div>
+      </button>
+
+      <!-- Botón Voltear Cámara -->
+      <button type="button" id="btn-camera-flip"
+        class="w-12 h-12 rounded-2xl bg-white/20 backdrop-blur-md hover:bg-white/30 text-white flex items-center justify-center active:scale-90 transition-transform cursor-pointer"
+        title="Cambiar cámara">
+        <span class="material-symbols-rounded text-2xl">flip_camera_ios</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- Overlay de Procesamiento con IA Holográfico -->
   <div id="receipt-scanner-overlay"
-    class="fixed inset-0 z-[100] bg-slate-950/80 backdrop-blur-md hidden items-center justify-center p-4 m3-bottom-sheet-backdrop">
-    <div class="w-full max-w-xs bg-white rounded-3xl p-6 text-center space-y-4 shadow-2xl m3-dialog-card relative overflow-hidden">
-      <!-- Icono animado de escaneo -->
-      <div class="relative w-20 h-20 mx-auto rounded-3xl bg-emerald-50 text-emerald-600 flex items-center justify-center text-3xl shadow-inner border border-emerald-100 overflow-hidden">
-        <span class="material-symbols-rounded text-4xl animate-pulse">document_scanner</span>
-        <div class="absolute inset-x-0 h-1 bg-gradient-to-r from-transparent via-emerald-500 to-transparent animate-[scanBeam_1.6s_ease-in-out_infinite]"></div>
+    class="fixed inset-0 z-[110] bg-slate-950/85 backdrop-blur-xl hidden items-center justify-center p-6 select-none">
+    <div class="w-full max-w-xs bg-white rounded-3xl p-6 text-center space-y-4 shadow-2xl relative overflow-hidden">
+      <!-- Icono animado de escaneo con aura -->
+      <div class="relative w-20 h-20 mx-auto rounded-3xl bg-[#ECF9E1] text-[#222818] flex items-center justify-center text-3xl shadow-inner border border-[#BEEB9F] overflow-hidden">
+        <span class="material-symbols-rounded text-4xl text-emerald-800 animate-pulse">document_scanner</span>
+        <div class="absolute inset-x-0 h-1 bg-gradient-to-r from-transparent via-[#A3E635] to-transparent shadow-[0_0_10px_#A3E635] animate-[scanBeam_1.6s_ease-in-out_infinite]"></div>
       </div>
       <div>
-        <h4 class="font-black text-base text-slate-900">Escáner IA de Boletas</h4>
-        <p id="receipt-scanner-msg" class="text-xs text-slate-500 mt-1 font-medium leading-snug">
-          Analizando comprobante con Gemini 3.6 Flash...
+        <h4 class="font-black text-base text-slate-900">Mita está analizando tu boleta</h4>
+        <p id="receipt-scanner-msg" class="text-xs text-slate-600 mt-1 font-semibold leading-snug">
+          Extrayendo productos, precios unitarios y total con IGV...
         </p>
       </div>
       <div class="w-full bg-slate-100 h-1.5 rounded-full overflow-hidden">
-        <div class="bg-emerald-500 h-full rounded-full animate-[indeterminate_1.5s_infinite_linear] w-1/2"></div>
+        <div class="bg-[#A3E635] h-full rounded-full animate-[indeterminate_1.5s_infinite_linear] w-1/2"></div>
       </div>
-      <p class="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Calculando unitarios y total con IGV</p>
+      <p class="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Potenciado por Gemini 3.6 Flash</p>
+    </div>
+  </div>
+
+  <!-- Modal para Configurar / Cambiar Gemini API Key -->
+  <div id="modal-gemini-key"
+    class="fixed inset-0 z-[120] bg-slate-950/80 backdrop-blur-md hidden items-center justify-center p-4">
+    <div class="w-full max-w-sm bg-white rounded-3xl p-6 space-y-4 shadow-2xl">
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-2xl bg-amber-100 text-amber-700 flex items-center justify-center text-xl font-bold">
+          <span class="material-symbols-rounded">key</span>
+        </div>
+        <div>
+          <h3 class="font-black text-sm text-slate-900 leading-tight">API Key de Gemini</h3>
+          <p class="text-[10px] text-slate-500 font-medium">Requerida para lectura inteligente de boletas</p>
+        </div>
+      </div>
+
+      <p class="text-xs text-slate-600 leading-relaxed font-medium">
+        Ingresa tu clave gratuita de <strong>Google AI Studio</strong> para analizar boletas sin límites:
+      </p>
+
+      <div class="space-y-1.5">
+        <input type="password" id="input-custom-gemini-key" placeholder="AIzaSy..."
+          class="w-full bg-slate-50 border border-slate-200 rounded-2xl py-3 px-4 text-xs font-bold text-slate-900 outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 transition-all placeholder:text-slate-400" />
+        <a href="https://aistudio.google.com/app/apikey" target="_blank"
+          class="text-[10px] font-bold text-emerald-700 hover:underline inline-flex items-center gap-1">
+          <span>Obtener clave gratis en Google AI Studio</span>
+          <i class="fas fa-external-link-alt text-[8px]"></i>
+        </a>
+      </div>
+
+      <div class="flex items-center gap-2 pt-2">
+        <button type="button" onclick="closeModal('modal-gemini-key')"
+          class="flex-1 py-3 bg-slate-100 hover:bg-slate-200 active:scale-95 text-slate-700 font-black text-xs rounded-2xl transition-all">
+          Cancelar
+        </button>
+        <button type="button" id="btn-save-gemini-key"
+          class="flex-1 py-3 bg-[#222818] hover:bg-[#2e3721] active:scale-95 text-white font-black text-xs rounded-2xl shadow-md transition-all">
+          Guardar Clave
+        </button>
+      </div>
     </div>
   </div>
 
   <!-- ========================================== -->
   <!-- MODULOS JAVASCRIPT MOBILE (ARQUITECTURA MODULAR) -->
   <!-- ========================================== -->
-  <script type="module" src="js/mobile/mobile-main.js?v=6.7"></script>
+  <script type="module" src="js/mobile/mobile-main.js?v=6.8"></script>
 </body>
 
 </html>

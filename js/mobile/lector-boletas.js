@@ -1,22 +1,18 @@
 /**
  * @file lector-boletas.js
- * @description Módulo para escanear y procesar boletas/facturas directamente desde la PWA móvil con Gemini 3.6 Flash.
+ * @description Visor de cámara in-app moderno y procesamiento con Gemini 3.6 Flash.
  */
 
 import { appState } from "./core-state.js";
 import { openModal, closeModal } from "./modal-system.js";
-import { setMobileExpenseItems, renderMobileItemsList, renderListTotalBadge, mobileExpenseItems } from "./modulo-lista.js";
-import {
-  currentRegistrationType, isListExpenseActive, mobileExpenseGuests,
-  switchExpenseRegistrationType, toggleListExpenseSection, resetExpenseForm,
-  updateDateChipLabel, renderSharedMembersAvatars
-} from "./vista-registro.js";
 import { handleReceiptInVoiceChat } from "./voice-chat.js";
 
-const DEFAULT_GEMINI_KEY = "AIzaSyA44x_rY4IncsJ7O7qNfgUdO5WXvlAvxUM";
+let videoStream = null;
+let currentFacingMode = 'environment';
+let isFlashOn = false;
 
 /**
- * Convierte un ArrayBuffer a Base64 a ultra-alta velocidad (por bloques de 8KB).
+ * Convierte un ArrayBuffer a Base64 a ultra-alta velocidad.
  */
 export function arrayBufferToBase64(buffer) {
   let binary = '';
@@ -31,299 +27,317 @@ export function arrayBufferToBase64(buffer) {
 }
 
 /**
- * Analiza un comprobante extrayendo con precisión matemática cantidades, precios unitarios e importe total.
+ * Analiza un comprobante con Gemini.
  */
-export async function analyzeReceiptWithGemini(base64Image, mimeType, apiKey, availableCategories = [], availableParticipants = [], userInstructions = '') {
-  const key = apiKey || DEFAULT_GEMINI_KEY;
-  if (!key) {
+export async function analyzeReceiptWithGemini(base64Image, mimeType, apiKey, availableCategories = [], availableParticipants = []) {
+  if (!apiKey) {
     throw new Error("GEMINI_API_KEY_MISSING");
   }
 
   const categoriesList = availableCategories.map(c => typeof c === 'string' ? c : c.name).join(', ');
   const participantsList = availableParticipants.map(p => typeof p === 'string' ? p : p.name).join(', ');
 
-  const prompt = `Analiza detenidamente este comprobante de pago (factura, boleta de venta, ticket POS o voucher).
-Debes leer y calcular con EXACTITUD MATEMÁTICA las cantidades, precios unitarios y el total final.
+  const prompt = `Analiza este comprobante de pago (factura, boleta de venta, ticket POS o voucher).
+Calcula con EXACTITUD MATEMÁTICA las cantidades, precios unitarios y el total final.
 
-${userInstructions ? `INSTRUCCIONES ESPECÍFICAS DEL USUARIO:\n"${userInstructions}"\n` : ''}
-
-Integrantes registrados en el monedero: [${participantsList || 'Ninguno'}]
+Integrantes registrados: [${participantsList || 'Ninguno'}]
 Categorías disponibles: [${categoriesList || 'Alimentación, Transporte, Servicios, Salud, Entretenimiento, Hogar, Compras, Otros'}]
 
-REGLAS DE PRECISIÓN DE PRECIOS:
-1. "amount": Debe ser el IMPORTE TOTAL FINAL A PAGAR del comprobante (incluyendo IGV y todos los cargos).
-2. "items" (CADA LÍNEA DE PRODUCTO):
-   - "desc": Nombre completo y limpio del producto o servicio.
-   - "quantity": Cantidad física comprada (número, ej: 1, 2, 3, 0.75). Si no está clara, es 1.
-   - "unitPrice": PRECIO UNITARIO por UNA SOLA UNIDAD.
-     * Si el ticket dice "2 x 4.50 = 9.00", "unitPrice" es 4.50 (NO 9.00).
-     * Si el ticket solo muestra el total de la línea (ej: "2 Leche 10.00"), calcula el unitario dividiendo: 10.00 / 2 = 5.00.
-   - "lineTotal": Total de esa línea de producto (quantity * unitPrice).
-   - "assignedToName": Nombre de la persona asignada según las instrucciones del usuario, o "all" si es compartido.
-3. "payerName": Nombre de quien pagó si se menciona en las instrucciones, o null.
-4. "isShared": false si el usuario indica "personal" o "todo mío"; true si es compartido.
-5. "guests": Nombres de invitados mencionados.
+REGLAS:
+1. "amount": Total final a pagar con IGV.
+2. "items": Lista de productos con "desc", "quantity", "unitPrice", "lineTotal".
+3. "merchant": Nombre comercial del establecimiento.
+4. "category": Categoría más acertada.
+5. "paymentMethod": "efectivo | tarjeta | yape | plin | transferencia".
+6. "date": "YYYY-MM-DD" o null.
 
 Responde ÚNICAMENTE con JSON puro sin formato markdown:
 {
   "amount": 45.50,
   "merchant": "Nombre del comercio",
   "description": "Resumen de compra",
-  "category": "Categoría adecuada",
-  "paymentMethod": "efectivo | tarjeta | yape | plin | transferencia",
+  "category": "Alimentación",
+  "paymentMethod": "tarjeta",
   "date": "YYYY-MM-DD",
-  "payerName": null,
   "isShared": true,
-  "guests": [],
   "items": [
     {
-      "desc": "Nombre producto 1",
-      "quantity": 2,
-      "unitPrice": 10.00,
-      "lineTotal": 20.00,
-      "assignedToName": "all"
+      "desc": "Producto 1",
+      "quantity": 1,
+      "unitPrice": 45.50,
+      "lineTotal": 45.50
     }
   ]
 }`;
 
-  const candidateModels = ['gemini-3.6-flash', 'gemini-3-flash-preview', 'gemini-flash-latest'];
+  const candidateModels = ['gemini-2.5-flash', 'gemini-1.5-flash', 'gemini-flash-latest'];
   let lastError = null;
-
-  const bodyPayload = {
-    contents: [
-      {
-        role: "user",
-        parts: [
-          { text: prompt },
-          {
-            inlineData: {
-              mimeType: mimeType,
-              data: base64Image
-            }
-          }
-        ]
-      }
-    ],
-    generationConfig: {
-      temperature: 0.1,
-      responseMimeType: "application/json"
-    }
-  };
 
   for (const modelName of candidateModels) {
     try {
-      const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${key}`;
-      const res = await fetch(endpoint, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(bodyPayload)
+      const url = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${apiKey}`;
+      const resp = await fetch(url, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          contents: [{
+            role: "user",
+            parts: [
+              { text: prompt },
+              { inlineData: { mimeType: mimeType, data: base64Image } }
+            ]
+          }],
+          generationConfig: {
+            temperature: 0.1,
+            responseMimeType: "application/json"
+          }
+        })
       });
 
-      if (!res.ok) {
-        const errText = await res.text();
-        lastError = new Error(`Error en modelo ${modelName} (${res.status}): ${errText}`);
-        continue;
+      if (!resp.ok) {
+        const errJson = await resp.json().catch(() => ({}));
+        if (resp.status === 403 || errJson.error?.message?.includes("leaked") || errJson.error?.message?.includes("API key")) {
+          throw new Error("GEMINI_KEY_LEAKED_OR_INVALID");
+        }
+        throw new Error(`Error en modelo ${modelName} (${resp.status}): ${JSON.stringify(errJson)}`);
       }
 
-      const data = await res.json();
-      const candidateText = data.candidates?.[0]?.content?.parts?.[0]?.text;
-      if (!candidateText) {
-        lastError = new Error(`Modelo ${modelName} no devolvió respuesta.`);
-        continue;
-      }
+      const data = await resp.json();
+      const rawText = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+      if (!rawText) throw new Error(`El modelo ${modelName} devolvió una respuesta vacía.`);
 
-      const cleaned = candidateText.replace(/^```json/i, '').replace(/^```/, '').replace(/```$/, '').trim();
-      return JSON.parse(cleaned);
+      const cleanJsonStr = rawText.replace(/```json/gi, '').replace(/```/g, '').trim();
+      return JSON.parse(cleanJsonStr);
     } catch (err) {
+      if (err.message === "GEMINI_KEY_LEAKED_OR_INVALID") {
+        throw err;
+      }
       lastError = err;
     }
   }
 
-  throw lastError || new Error("No se pudo procesar con Gemini.");
+  throw lastError || new Error("No se pudo analizar la boleta con los modelos disponibles.");
 }
 
-/**
- * Disparador para abrir la cámara o selector de archivos.
- */
-export function triggerReceiptScanner() {
-  const input = document.getElementById('pwa-receipt-file-input');
-  if (input) {
-    input.value = '';
-    input.click();
-  }
-}
-
-/**
- * Muestra u oculta el overlay de escaneo de boleta.
- */
-export function showScannerLoadingOverlay(show = true, message = "Analizando boleta con Gemini 3.6...") {
+export function showScannerLoadingOverlay(show = true, message = "Analizando comprobante con IA...") {
   const overlay = document.getElementById('receipt-scanner-overlay');
   const msgEl = document.getElementById('receipt-scanner-msg');
-  if (!overlay) return;
-
-  if (show) {
-    if (msgEl) msgEl.textContent = message;
-    overlay.classList.remove('hidden');
-    overlay.classList.add('flex');
-    void overlay.offsetHeight;
-    overlay.classList.add('m3-visible');
-  } else {
-    overlay.classList.remove('m3-visible');
-    setTimeout(() => {
-      if (!overlay.classList.contains('m3-visible')) {
-        overlay.classList.add('hidden');
-        overlay.classList.remove('flex');
-      }
-    }, 300);
+  if (overlay) {
+    if (show) {
+      if (msgEl) msgEl.textContent = message;
+      overlay.classList.remove('hidden');
+      overlay.classList.add('flex');
+    } else {
+      overlay.classList.add('hidden');
+      overlay.classList.remove('flex');
+    }
   }
 }
 
-/**
- * Inicializa el lector de boletas en la PWA.
- */
-export function initReceiptScannerPWA() {
-  const input = document.getElementById('pwa-receipt-file-input');
-  if (!input) return;
+// -------------------------------------------------------------
+// VISOR DE CÁMARA IN-APP
+// -------------------------------------------------------------
 
-  input.addEventListener('change', async (e) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
+export async function openInAppCamera() {
+  const overlay = document.getElementById('camera-viewfinder-overlay');
+  const videoEl = document.getElementById('camera-stream-video');
 
-    try {
-      showScannerLoadingOverlay(true, "📸 Leyendo comprobante con Gemini 3.6 Flash...");
+  if (!overlay || !videoEl) {
+    // Fallback a selector nativo si no existe overlay
+    document.getElementById('pwa-receipt-file-input')?.click();
+    return;
+  }
 
-      const arrayBuffer = await file.arrayBuffer();
-      const base64Data = arrayBufferToBase64(arrayBuffer);
-      const mimeType = file.type || 'image/jpeg';
+  try {
+    stopCameraStream();
 
-      const apiKey = localStorage.getItem('gemini_api_key') || DEFAULT_GEMINI_KEY;
-      const categories = appState.categories || [];
-      const participants = appState.participants || [];
+    const constraints = {
+      video: {
+        facingMode: { ideal: currentFacingMode },
+        width: { ideal: 1920 },
+        height: { ideal: 1080 }
+      },
+      audio: false
+    };
 
-      showScannerLoadingOverlay(true, "🧠 Extrayendo productos, cantidades y total...");
-      const result = await analyzeReceiptWithGemini(base64Data, mimeType, apiKey, categories, participants, '');
+    videoStream = await navigator.mediaDevices.getUserMedia(constraints);
+    videoEl.srcObject = videoStream;
+    await videoEl.play();
 
-      // 1. Resetear formulario limpio
-      resetExpenseForm();
+    overlay.classList.remove('hidden');
+    overlay.classList.add('flex');
+  } catch (err) {
+    console.warn("No se pudo iniciar stream directo de cámara, usando selector nativo:", err);
+    document.getElementById('pwa-receipt-file-input')?.click();
+  }
+}
 
-      // 2. Tipo de gasto (Personal o Compartido)
-      if (result.isShared === false) {
-        switchExpenseRegistrationType('personal');
-      } else {
-        switchExpenseRegistrationType('shared');
-      }
+export function closeInAppCamera() {
+  stopCameraStream();
+  const overlay = document.getElementById('camera-viewfinder-overlay');
+  if (overlay) {
+    overlay.classList.add('hidden');
+    overlay.classList.remove('flex');
+  }
+}
 
-      // 3. Descripción / Nombre
-      const descInput = document.getElementById('exp-description');
-      const conceptName = result.merchant || result.description || 'Compra';
-      if (descInput) {
-        descInput.value = conceptName;
-        descInput.dispatchEvent(new Event('input', { bubbles: true }));
-      }
+function stopCameraStream() {
+  if (videoStream) {
+    videoStream.getTracks().forEach(track => track.stop());
+    videoStream = null;
+  }
+}
 
-      // 4. Monto Total (Importe Total con IGV)
-      const finalAmount = parseFloat(result.amount) || 0;
-      const amountInput = document.getElementById('exp-amount');
-      if (amountInput && finalAmount > 0) {
-        amountInput.value = finalAmount.toFixed(2);
-        amountInput.dispatchEvent(new Event('input', { bubbles: true }));
-        amountInput.dispatchEvent(new Event('change', { bubbles: true }));
-      }
+async function capturePhotoFromCamera() {
+  const videoEl = document.getElementById('camera-stream-video');
+  const canvas = document.getElementById('camera-capture-canvas');
+  if (!videoEl || !canvas) return;
 
-      // 5. Fecha
-      if (result.date) {
-        const dateInput = document.getElementById('exp-date');
-        if (dateInput) {
-          dateInput.value = result.date;
-          updateDateChipLabel(result.date);
-        }
-      }
+  const width = videoEl.videoWidth || 1280;
+  const height = videoEl.videoHeight || 720;
+  canvas.width = width;
+  canvas.height = height;
 
-      // 6. Categoría
-      if (result.category && categories.length > 0) {
-        const matchedCat = categories.find(c => {
-          const name = typeof c === 'string' ? c : c.name;
-          return name.toLowerCase().includes(result.category.toLowerCase()) ||
-                 result.category.toLowerCase().includes(name.toLowerCase());
-        });
-        if (matchedCat) {
-          const catName = typeof matchedCat === 'string' ? matchedCat : matchedCat.name;
-          const catInput = document.getElementById('exp-category');
-          const catChip = document.getElementById('chip-category-label');
-          if (catInput) catInput.value = catName;
-          if (catChip) catChip.textContent = catName;
-        }
-      }
+  const ctx = canvas.getContext('2d');
+  ctx.drawImage(videoEl, 0, 0, width, height);
 
-      // 7. Método de pago
-      if (result.paymentMethod && (appState.paymentMethods || []).length > 0) {
-        const pmMatched = appState.paymentMethods.find(pm => 
-          pm.name.toLowerCase().includes(result.paymentMethod.toLowerCase()) ||
-          result.paymentMethod.toLowerCase().includes(pm.type || '')
-        );
-        if (pmMatched) {
-          const pmInput = document.getElementById('exp-payment-method');
-          const pmIdInput = document.getElementById('exp-payment-method-id');
-          const pmChip = document.getElementById('chip-pm-label');
-          if (pmInput) pmInput.value = pmMatched.name;
-          if (pmIdInput) pmIdInput.value = pmMatched.id;
-          if (pmChip) pmChip.textContent = pmMatched.name;
-        }
-      }
+  if (navigator.vibrate) navigator.vibrate(30);
 
-      // 8. Invitados detectados
-      if (result.guests && Array.isArray(result.guests) && result.guests.length > 0) {
-        result.guests.forEach(gName => {
-          if (!mobileExpenseGuests.includes(gName)) {
-            mobileExpenseGuests.push(gName);
-          }
-        });
-        renderSharedMembersAvatars();
-      }
+  // Obtener base64 en JPEG
+  const dataUrl = canvas.toDataURL('image/jpeg', 0.88);
+  const base64Data = dataUrl.split(',')[1];
+  const mimeType = 'image/jpeg';
 
-      // 9. Desglose de ítems / productos si existen
-      if (result.items && Array.isArray(result.items) && result.items.length > 0) {
-        // Activar modo lista
-        if (!isListExpenseActive) {
-          toggleListExpenseSection();
-        }
+  closeInAppCamera();
+  await processReceiptImage(base64Data, mimeType);
+}
 
-        const newItems = result.items.map(it => {
-          const qty = parseFloat(it.quantity) || 1;
-          let unitPrice = parseFloat(it.unitPrice);
-          if (isNaN(unitPrice) || unitPrice <= 0) {
-            const lineTot = parseFloat(it.lineTotal) || 0;
-            unitPrice = qty > 0 ? (lineTot / qty) : lineTot;
-          }
+async function processReceiptImage(base64Data, mimeType) {
+  let apiKey = localStorage.getItem('gemini_api_key');
 
-          return {
-            id: 'item_' + Date.now() + '_' + Math.random().toString(36).substring(2, 6),
-            desc: it.desc || 'Producto',
-            quantity: qty,
-            amount: unitPrice > 0 ? unitPrice.toFixed(2) : '0.00',
-            assignedTo: 'all',
-            assignments: {}
-          };
-        });
+  if (!apiKey) {
+    promptForGeminiKey((newKey) => {
+      processReceiptImage(base64Data, mimeType);
+    });
+    return;
+  }
 
-        setMobileExpenseItems(newItems);
-        renderMobileItemsList();
-        renderListTotalBadge();
-      }
+  showScannerLoadingOverlay(true, "Mita está extrayendo productos, precios y total...");
 
-      // 10. Cerrar overlay y entregar al Chat con Mita
-      showScannerLoadingOverlay(false);
-      handleReceiptInVoiceChat(result);
+  try {
+    const categories = appState.categories || [];
+    const participants = appState.participants || [];
 
-      // Vibración de éxito en móvil
-      if (navigator.vibrate) {
-        navigator.vibrate([40, 60, 40]);
-      }
+    const result = await analyzeReceiptWithGemini(base64Data, mimeType, apiKey, categories, participants);
 
-    } catch (err) {
-      console.error("Error al escanear comprobante en PWA:", err);
-      showScannerLoadingOverlay(false);
+    showScannerLoadingOverlay(false);
+    handleReceiptInVoiceChat(result);
+
+    if (navigator.vibrate) navigator.vibrate([40, 60, 40]);
+  } catch (err) {
+    showScannerLoadingOverlay(false);
+    console.error("Error al procesar boleta:", err);
+
+    if (err.message === "GEMINI_KEY_LEAKED_OR_INVALID" || err.message === "GEMINI_API_KEY_MISSING") {
+      alert("⚠️ Tu clave de Gemini no es válida o fue revocada. Por favor ingresa una nueva clave de Google AI Studio.");
+      promptForGeminiKey((newKey) => {
+        processReceiptImage(base64Data, mimeType);
+      });
+    } else {
       alert(`❌ Error al procesar la boleta:\n${err.message || 'No se pudo leer la imagen.'}`);
     }
+  }
+}
+
+function promptForGeminiKey(onSavedCallback) {
+  const modal = document.getElementById('modal-gemini-key');
+  const input = document.getElementById('input-custom-gemini-key');
+  const btnSave = document.getElementById('btn-save-gemini-key');
+
+  if (modal && input && btnSave) {
+    input.value = localStorage.getItem('gemini_api_key') || '';
+    modal.classList.remove('hidden');
+    modal.classList.add('flex');
+
+    btnSave.onclick = () => {
+      const keyVal = input.value.trim();
+      if (!keyVal) {
+        alert("Por favor ingresa una clave válida de Gemini.");
+        return;
+      }
+      localStorage.setItem('gemini_api_key', keyVal);
+      modal.classList.add('hidden');
+      modal.classList.remove('flex');
+      if (onSavedCallback) onSavedCallback(keyVal);
+    };
+  } else {
+    const userKey = prompt("Ingresa tu Gemini API Key de Google AI Studio:");
+    if (userKey && userKey.trim()) {
+      localStorage.setItem('gemini_api_key', userKey.trim());
+      if (onSavedCallback) onSavedCallback(userKey.trim());
+    }
+  }
+}
+
+export function triggerReceiptScanner() {
+  openInAppCamera();
+}
+
+export function initReceiptScannerPWA() {
+  // 1. Controles del Visor de Cámara
+  document.getElementById('btn-close-camera-viewfinder')?.addEventListener('click', closeInAppCamera);
+  document.getElementById('btn-camera-take-photo')?.addEventListener('click', capturePhotoFromCamera);
+
+  // Botón Galería
+  document.getElementById('btn-camera-open-gallery')?.addEventListener('click', () => {
+    document.getElementById('pwa-receipt-file-input')?.click();
   });
+
+  // Botón Voltear Cámara
+  document.getElementById('btn-camera-flip')?.addEventListener('click', async () => {
+    currentFacingMode = currentFacingMode === 'environment' ? 'user' : 'environment';
+    await openInAppCamera();
+  });
+
+  // Botón Flash
+  document.getElementById('btn-toggle-camera-flash')?.addEventListener('click', async () => {
+    if (!videoStream) return;
+    const track = videoStream.getVideoTracks()[0];
+    if (!track) return;
+
+    try {
+      isFlashOn = !isFlashOn;
+      await track.applyConstraints({
+        advanced: [{ torch: isFlashOn }]
+      });
+      const icon = document.getElementById('icon-camera-flash');
+      if (icon) icon.textContent = isFlashOn ? 'flash_on' : 'flash_off';
+    } catch (e) {
+      console.warn("Flash/Torch no soportado en este dispositivo:", e);
+    }
+  });
+
+  // 2. Input de archivo / galería fallback
+  const fileInput = document.getElementById('pwa-receipt-file-input');
+  if (fileInput) {
+    fileInput.addEventListener('change', async (e) => {
+      const file = e.target.files?.[0];
+      if (!file) return;
+
+      closeInAppCamera();
+      fileInput.value = '';
+
+      showScannerLoadingOverlay(true, "Cargando imagen...");
+
+      try {
+        const buffer = await file.arrayBuffer();
+        const base64Data = arrayBufferToBase64(buffer);
+        const mimeType = file.type || 'image/jpeg';
+        await processReceiptImage(base64Data, mimeType);
+      } catch (err) {
+        showScannerLoadingOverlay(false);
+        alert(`Error al cargar el archivo: ${err.message}`);
+      }
+    });
+  }
 }
