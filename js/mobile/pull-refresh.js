@@ -14,8 +14,8 @@ let lottieInstance = null;
 let rafId = null;
 let lastRenderedFrame = -1;
 
-const PULL_TRIGGER_DISTANCE = 85; // Distancia de arrastre con dedo
-const BANNER_OPEN_HEIGHT = 74; // Altura en px del bloque sobre el header
+const PULL_TRIGGER_DISTANCE = 115; // Distancia de arrastre con dedo ampliada para estiramiento más notorio
+const BANNER_OPEN_HEIGHT = 92; // Altura en px del bloque sobre el header ampliada
 const STRETCH_PEAK_FRAME = 66; // Fotograma del estiramiento máximo (keyframe exacto t: 66)
 
 function ensureLottieInstance() {
@@ -117,7 +117,7 @@ export function initPullToRefresh() {
 
       if (rafId) cancelAnimationFrame(rafId);
       rafId = requestAnimationFrame(() => {
-        const bannerHeight = Math.min(BANNER_OPEN_HEIGHT + 6, diffY * 0.45);
+        const bannerHeight = Math.min(BANNER_OPEN_HEIGHT + 10, diffY * 0.52);
 
         pullBanner.style.transition = 'none';
         pullBanner.style.height = `${bannerHeight}px`;
@@ -125,6 +125,10 @@ export function initPullToRefresh() {
 
         const progressRatio = Math.min(1, Math.max(0, (diffY - 6) / (PULL_TRIGGER_DISTANCE - 6)));
         const targetFrame = Math.min(STRETCH_PEAK_FRAME, Math.floor(progressRatio * STRETCH_PEAK_FRAME));
+
+        // Escalado elástico progresivo del icono para mayor presencia visual
+        const scaleFactor = Math.min(1.15, 0.88 + progressRatio * 0.27);
+        pullLottieEl.style.transform = `scale(${scaleFactor})`;
 
         if (lottieInstance && targetFrame !== lastRenderedFrame) {
           lastRenderedFrame = targetFrame;
