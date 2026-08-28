@@ -804,7 +804,14 @@
   <div id="fab-menu-options"
     class="fixed bottom-24 right-4 z-50 flex flex-col items-end gap-3 pointer-events-none">
     
-    <!-- Opción 1 (Arriba): Escanear Boleta IA -->
+    <!-- Opción 0 (Arriba): Hablar con Mita (IA) -->
+    <button type="button" id="fab-opt-voice-chat"
+      class="fab-speed-dial-item flex items-center gap-2.5 px-4 py-3 bg-[#ECF9E1] hover:bg-[#d9f5c4] active:scale-95 text-[#222818] font-black text-xs rounded-full shadow-2xl border border-[#BEEB9F] transition-all select-none">
+      <span class="material-symbols-rounded text-lg text-emerald-800">mic</span>
+      <span>Hablar con Mita (IA)</span>
+    </button>
+
+    <!-- Opción 1: Escanear Boleta IA -->
     <button type="button" id="fab-opt-scan-receipt"
       class="fab-speed-dial-item flex items-center gap-2.5 px-4 py-3 bg-[#e0f2fe] hover:bg-[#bae6fd] active:scale-95 text-[#0369a1] font-black text-xs rounded-full shadow-2xl border border-sky-200/80 transition-all select-none">
       <span class="material-symbols-rounded text-lg text-sky-700">document_scanner</span>
@@ -880,6 +887,110 @@
   <!-- ========================================== -->
   <!-- MODALES TIPO BOTTOM-SHEET PARA MOBILE -->
   <!-- ========================================== -->
+
+  <!-- ========================================== -->
+  <!-- 🎙️ VISTA DEDICADA: CHAT POR VOZ CON IA (AGENTE MITA) -->
+  <!-- ========================================== -->
+  <div id="view-voice-chat"
+    class="fixed inset-0 z-50 bg-gradient-to-b from-[#EBF9E5] via-[#F4FCF0] to-[#FBFCFA] hidden flex-col justify-between overflow-hidden transition-all duration-300 select-none">
+    
+    <!-- 1. Encabezado Superior: [ ← Volver ] + Títulos + [ ⋮ Opciones ] -->
+    <div class="px-5 pt-5 pb-2 flex items-center justify-between gap-3 shrink-0">
+      <button type="button" id="btn-close-voice-chat"
+        class="w-11 h-11 rounded-full bg-white text-slate-800 flex items-center justify-center text-sm shadow-xs hover:bg-slate-50 active:scale-95 transition-all shrink-0 cursor-pointer border border-slate-100/80"
+        title="Regresar al Dashboard">
+        <span class="material-symbols-rounded text-2xl">arrow_back</span>
+      </button>
+
+      <div class="flex-1 text-center px-1">
+        <h3 class="text-sm font-black text-[#1E2517] tracking-tight">Agente Mita</h3>
+        <p class="text-[10px] font-semibold text-slate-500">Asistente Financiero Inteligente</p>
+      </div>
+
+      <button type="button" id="btn-voice-chat-options"
+        class="w-11 h-11 rounded-full bg-white text-slate-800 flex items-center justify-center text-sm shadow-xs hover:bg-slate-50 active:scale-95 transition-all shrink-0 cursor-pointer border border-slate-100/80"
+        title="Opciones del Asistente">
+        <span class="material-symbols-rounded text-2xl">more_vert</span>
+      </button>
+    </div>
+
+    <!-- 2. Área Central: Aura Reactiva + Feed de Mensajes -->
+    <div class="flex-1 flex flex-col justify-between overflow-hidden px-4 py-2 min-h-0 relative">
+      
+      <!-- Aura Orgánica Superior Reactiva a Decibelios (Sin icono de micrófono central) -->
+      <div id="voice-chat-center-aura" class="relative w-full h-44 sm:h-52 shrink-0 flex items-center justify-center pointer-events-none select-none transition-all duration-300">
+        <!-- Capa Eco 3 (Externa / Difusa) -->
+        <div id="voice-echo-ring-3" class="absolute w-56 h-56 rounded-full bg-[#D9F99D]/40 filter blur-3xl transition-transform duration-75 scale-75 origin-center"></div>
+        <!-- Capa Eco 2 (Media) -->
+        <div id="voice-echo-ring-2" class="absolute w-44 h-44 rounded-full bg-[#BEF264]/50 filter blur-2xl transition-transform duration-75 scale-85 origin-center"></div>
+        <!-- Capa Eco 1 (Interna) -->
+        <div id="voice-echo-ring-1" class="absolute w-36 h-36 rounded-full bg-[#A3E635]/60 filter blur-xl transition-transform duration-75 scale-95 origin-center"></div>
+
+        <!-- SVG Central Orgánico (Icono_chat.svg con Desenfoque Reactivo) -->
+        <div id="voice-chat-svg-core" class="relative z-10 w-36 h-36 flex items-center justify-center transition-transform duration-75 origin-center">
+          <svg class="w-full h-full drop-shadow-xl" viewBox="0 0 1920 1080" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path class="fill-[#C3F1B3]" d="M777.36,383.58c-5.05-2.68-9.4-6.7-12.37-11.59c-5.03-8.28-10.04-10.18-19.76-10.18c-0.15,0-72.48,0-72.48,0 c-14,0-25.34,11.35-25.34,25.34v283.82c0,20.27,16.43,36.69,36.69,36.69h62.83c20.27,0,36.69-16.43,36.69-36.69v1.74 c0-19.13,11.59-37.68,29.56-37.68c24.64,0,28.4,21.74,28.4,49.27v-13.33c0,20.27,16.43,36.69,36.69,36.69h62.82 c20.27,0,36.69-16.43,36.69-36.69v1.74c0-19.13,11.59-37.68,29.56-37.68c24.63,0,28.4,21.74,28.4,49.27v-13.33 c0,20.27,16.43,36.69,36.69,36.69h62.83c20.27,0,36.69-16.43,36.69-36.69V475.13c0-71.59-22.61-122.01-93.61-122.01 c-13.16,0-26.26,2.63-38.54,7.35c-9.73,3.74-20.61,7.14-29.3,13.02c-6.43,4.35-12.27,9.54-18.85,13.65 c-6.58,4.11-14.19,7.15-21.93,6.54c-13.37-1.06-22.16-16.47-32.22-23.96c-4.71-3.51-9.81-6.48-15.16-8.87 c-11.98-5.35-25.11-7.71-38.19-7.71c-14.07,0-26.65,3.87-40.1,7.21c-20.97,5.22-33.2,30.02-56.48,26.64 C784.03,386.45,780.55,385.28,777.36,383.58z"/>
+          </svg>
+        </div>
+      </div>
+
+      <!-- Saludo Inicial Animado (Aparece al abrir el chat) -->
+      <div id="voice-chat-initial-greeting" class="my-auto flex flex-col items-center justify-center px-4 space-y-1.5 transition-opacity duration-300">
+        <!-- Inyectado dinámicamente con renderAnimatedVoiceText -->
+      </div>
+
+      <!-- Feed de Mensajes Conversacionales (Usuario: Burbuja | Mita: Texto Limpio & Tarjetas Interactivas) -->
+      <div id="voice-chat-messages-container" class="flex-1 overflow-y-auto custom-scrollbar flex flex-col gap-3 py-2 px-1">
+        <!-- Inyectado dinámicamente -->
+      </div>
+
+      <!-- Vista previa en tiempo real de lo que habla el usuario con efecto montos -->
+      <div id="voice-chat-live-preview" class="hidden py-1 px-3 bg-white/70 backdrop-blur-md rounded-2xl border border-slate-200/50 text-xs font-bold text-slate-800 text-center max-w-sm mx-auto shadow-2xs">
+      </div>
+
+      <!-- Píldora de Estado (Escuchando / Mita respondiendo) -->
+      <div class="text-center pt-2 pb-1 shrink-0">
+        <div id="voice-chat-status-pill" class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/80 backdrop-blur-md border border-slate-200/60 shadow-2xs text-[11px] font-black text-slate-700">
+          <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+          <span id="voice-chat-status-text">Toca 'Hablar' para consultar a Mita</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- 3. Barra Inferior Adaptada con Identidad Qipu 3.0 -->
+    <div class="px-4 pb-6 pt-2 shrink-0 max-w-lg mx-auto w-full">
+      <div class="h-[60px] bg-white/95 backdrop-blur-xl shadow-[0_10px_35px_rgba(0,0,0,0.12)] border border-slate-100/90 rounded-[28px] flex items-center justify-around px-3 text-slate-800">
+        
+        <!-- Botón 1: Regresar al Dashboard -->
+        <button type="button" id="btn-voice-nav-dashboard"
+          class="w-11 h-11 rounded-2xl flex items-center justify-center text-slate-900 hover:bg-slate-100 active:scale-90 transition-transform cursor-pointer"
+          title="Regresar a Inicio / Monedero">
+          <i class="fas fa-wallet text-lg"></i>
+        </button>
+
+        <!-- Botón 2: Tomar Foto a Boleta con IA -->
+        <button type="button" id="btn-voice-nav-camera"
+          class="w-11 h-11 rounded-2xl flex items-center justify-center text-emerald-700 hover:bg-emerald-50 active:scale-90 transition-transform cursor-pointer"
+          title="Escanear Boleta para el Chat">
+          <span class="material-symbols-rounded text-2xl">photo_camera</span>
+        </button>
+
+        <!-- Botón 3 (Central): Micrófono Continuo de Voz -->
+        <button type="button" id="btn-voice-toggle-mic"
+          class="h-11 px-5 rounded-2xl bg-[#222818] hover:bg-[#2e3721] text-white flex items-center gap-2 font-black text-xs shadow-md active:scale-95 transition-all cursor-pointer">
+          <span class="material-symbols-rounded text-lg" id="icon-voice-btn-mic">mic</span>
+          <span id="label-voice-btn-mic">Hablar</span>
+        </button>
+
+        <!-- Botón 4: Salir / Cerrar Chat -->
+        <button type="button" id="btn-voice-nav-close"
+          class="w-11 h-11 rounded-2xl flex items-center justify-center text-slate-500 hover:text-rose-600 hover:bg-rose-50 active:scale-90 transition-all cursor-pointer"
+          title="Cerrar Asistente">
+          <span class="material-symbols-rounded text-2xl">close</span>
+        </button>
+      </div>
+    </div>
+  </div>
 
   <!-- 1. Pantalla Completa Registrar / Editar Gasto o Ingreso (Cabecera #ECF9E1 + Cuerpo rounded-t-[36px]) -->
   <div id="modal-expense"
@@ -2061,7 +2172,7 @@
   <!-- ========================================== -->
   <!-- MODULOS JAVASCRIPT MOBILE (ARQUITECTURA MODULAR) -->
   <!-- ========================================== -->
-  <script type="module" src="js/mobile/mobile-main.js?v=6.6"></script>
+  <script type="module" src="js/mobile/mobile-main.js?v=6.7"></script>
 </body>
 
 </html>

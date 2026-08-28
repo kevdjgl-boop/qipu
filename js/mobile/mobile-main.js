@@ -57,6 +57,7 @@ import {
 
 import { initReceiptScannerPWA, triggerReceiptScanner } from "./lector-boletas.js";
 import { initPullToRefresh, triggerPullRefresh } from "./pull-refresh.js";
+import { initVoiceChat, openVoiceChat, closeVoiceChat } from "./voice-chat.js";
 
 import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
 import { doc, getDoc, onSnapshot, updateDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
@@ -66,6 +67,8 @@ import { doc, getDoc, onSnapshot, updateDoc } from "https://www.gstatic.com/fire
 // ================================================================
 window.openModal = openModal;
 window.closeModal = closeModal;
+window.openVoiceChat = openVoiceChat;
+window.closeVoiceChat = closeVoiceChat;
 window.openTransactionDetailModal = openTransactionDetailModal;
 window.openEditExpenseModal = openEditExpenseModal;
 window.openEditIncomeModal = openEditIncomeModal;
@@ -389,6 +392,11 @@ function initMobileEventListeners() {
   // 10. Inicializar Lector de Boletas IA
   initReceiptScannerPWA();
 
+  document.getElementById('fab-opt-voice-chat')?.addEventListener('click', () => {
+    closeFabMenu();
+    openVoiceChat();
+  });
+
   document.getElementById('fab-opt-scan-receipt')?.addEventListener('click', () => {
     closeFabMenu();
     triggerReceiptScanner();
@@ -509,6 +517,7 @@ document.getElementById('btn-mobile-install-pwa')?.addEventListener('click', asy
   }
 });
 
-// Inicializar sistema de gestos de deslizamiento y Pull-to-Refresh
+// Inicializar sistema de gestos de deslizamiento, Pull-to-Refresh y Chat de Voz
 initHistorySwipeGestures();
 initPullToRefresh();
+initVoiceChat();

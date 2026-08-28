@@ -11,6 +11,7 @@ import {
   switchExpenseRegistrationType, toggleListExpenseSection, resetExpenseForm,
   updateDateChipLabel, renderSharedMembersAvatars
 } from "./vista-registro.js";
+import { handleReceiptInVoiceChat } from "./voice-chat.js";
 
 const DEFAULT_GEMINI_KEY = "AIzaSyA44x_rY4IncsJ7O7qNfgUdO5WXvlAvxUM";
 
@@ -310,9 +311,9 @@ export function initReceiptScannerPWA() {
         renderListTotalBadge();
       }
 
-      // 10. Cerrar overlay y abrir modal de registro
+      // 10. Cerrar overlay y entregar al Chat con Mita
       showScannerLoadingOverlay(false);
-      openModal('modal-expense');
+      handleReceiptInVoiceChat(result);
 
       // Vibración de éxito en móvil
       if (navigator.vibrate) {

@@ -1,5 +1,5 @@
 // Service Worker para Qipu 3.0 PWA
-const CACHE_NAME = 'qipu-v3-cache-v44';
+const CACHE_NAME = 'qipu-v3-cache-v45';
 const ASSETS_TO_CACHE = [
   './index.html',
   './mobile.html',
@@ -7,7 +7,9 @@ const ASSETS_TO_CACHE = [
   './manifest.json',
   './js/Animaciones/swipe-data.js',
   './js/Animaciones/trash-data.js',
-  './js/mobile/pull-refresh.js'
+  './js/Animaciones/Icono_chat.svg',
+  './js/mobile/pull-refresh.js',
+  './js/mobile/voice-chat.js'
 ];
 
 self.addEventListener('install', (event) => {
