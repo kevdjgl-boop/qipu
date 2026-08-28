@@ -26,7 +26,7 @@ function ensureLottieInstance() {
       pullLottieEl.innerHTML = '';
       lottieInstance = window.lottie.loadAnimation({
         container: pullLottieEl,
-        renderer: 'canvas', // GPU Canvas de alto rendimiento
+        renderer: 'canvas',
         loop: false,
         autoplay: false,
         animationData: SWIPE_ANIMATION_DATA,
@@ -62,11 +62,12 @@ export function initPullToRefresh() {
 
   if (!pullBanner || !pullLottieEl) return;
 
-  // Aceleración por hardware GPU
+  // Aceleración GPU y origen centrado
   pullBanner.style.willChange = 'height';
   pullBanner.style.transform = 'translateZ(0)';
   pullLottieEl.style.willChange = 'transform';
-  pullLottieEl.style.transform = 'translateZ(0) scale(0)';
+  pullLottieEl.style.transformOrigin = 'center center';
+  pullLottieEl.style.transform = 'scale(0)';
 
   ensureLottieInstance();
 
@@ -123,7 +124,7 @@ export function initPullToRefresh() {
 
       if (rafId) cancelAnimationFrame(rafId);
       rafId = requestAnimationFrame(() => {
-        const bannerHeight = Math.min(BANNER_OPEN_HEIGHT + 10, diffY * 0.52);
+        const bannerHeight = Math.min(BANNER_OPEN_HEIGHT + 8, diffY * 0.52);
 
         pullBanner.style.transition = 'none';
         pullBanner.style.height = `${bannerHeight}px`;
@@ -131,10 +132,9 @@ export function initPullToRefresh() {
         const progressRatio = Math.min(1, Math.max(0, (diffY - 6) / (PULL_TRIGGER_DISTANCE - 6)));
         const targetFrame = Math.min(STRETCH_PEAK_FRAME, Math.floor(progressRatio * STRETCH_PEAK_FRAME));
 
-        // El icono escala suavemente de 0.2 a 1.0 según la apertura del bloque (sin fade de opacidad)
-        const scaleFactor = Math.min(1.02, Math.max(0.15, bannerHeight / BANNER_OPEN_HEIGHT));
+        // El icono crece proporcionalmente con el arrastre de 0 a 1.0
         pullLottieEl.style.transition = 'none';
-        pullLottieEl.style.transform = `scale(${scaleFactor})`;
+        pullLottieEl.style.transform = `scale(${Math.max(0, progressRatio)})`;
 
         if (lottieInstance && targetFrame !== lastRenderedFrame) {
           lastRenderedFrame = targetFrame;
@@ -201,7 +201,6 @@ export async function triggerPullRefresh() {
     pullLottieEl.style.transform = 'scale(1)';
   }
 
-  // Continuar la reproducción naturalmente hacia adelante
   if (lottieInstance) {
     lottieInstance.setDirection(1);
     lottieInstance.play();
@@ -223,7 +222,6 @@ export async function triggerPullRefresh() {
     console.warn('Error durante Pull-to-Refresh:', err);
   }
 
-  // Esperar a que la tarjeta complete su ciclo
   setTimeout(() => {
     if (updatedData) {
       appState.walletName = updatedData.name || appState.walletName;
@@ -232,15 +230,15 @@ export async function triggerPullRefresh() {
       renderMobileUI();
     }
 
-    // Reducir tamaño acorde va subiendo el bloque superior (cero fade de opacidad)
-    if (pullBanner) {
-      pullBanner.style.transition = 'height 340ms cubic-bezier(0.4, 0, 0.2, 1)';
-      pullBanner.style.height = '0px';
+    // ENCOGER el icono a escala 0 mientras sube el bloque superior
+    if (pullLottieEl) {
+      pullLottieEl.style.transition = 'transform 260ms cubic-bezier(0.4, 0, 0.2, 1)';
+      pullLottieEl.style.transform = 'scale(0)';
     }
 
-    if (pullLottieEl) {
-      pullLottieEl.style.transition = 'transform 340ms cubic-bezier(0.4, 0, 0.2, 1)';
-      pullLottieEl.style.transform = 'scale(0)';
+    if (pullBanner) {
+      pullBanner.style.transition = 'height 320ms cubic-bezier(0.4, 0, 0.2, 1)';
+      pullBanner.style.height = '0px';
     }
 
     setTimeout(() => {
@@ -250,23 +248,22 @@ export async function triggerPullRefresh() {
         lastRenderedFrame = 0;
       }
       isRefreshing = false;
-    }, 360);
+    }, 340);
   }, 1200);
 }
 
 function resetPullIndicator() {
-  // Reducir tamaño sincronizado al contraerse el bloque
+  // ENCOGER el icono a escala 0 al cancelar el arrastre
+  if (pullLottieEl) {
+    pullLottieEl.style.transition = 'transform 260ms cubic-bezier(0.4, 0, 0.2, 1)';
+    pullLottieEl.style.transform = 'scale(0)';
+  }
+
   if (pullBanner) {
     pullBanner.style.transition = 'height 300ms cubic-bezier(0.4, 0, 0.2, 1)';
     pullBanner.style.height = '0px';
   }
 
-  if (pullLottieEl) {
-    pullLottieEl.style.transition = 'transform 300ms cubic-bezier(0.4, 0, 0.2, 1)';
-    pullLottieEl.style.transform = 'scale(0)';
-  }
-
-  // Rebobinar suavemente al estado de reposo
   if (lottieInstance) {
     try {
       lottieInstance.setDirection(-1);
