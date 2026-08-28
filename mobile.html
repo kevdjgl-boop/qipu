@@ -7,7 +7,7 @@
   <title>Qipu Mobile - Monedero Financiero</title>
   <script>
     (function() {
-      const CURRENT_BUILD = 'qipu-v7.3-gemini3.6';
+      const CURRENT_BUILD = 'qipu-v7.4-sequential-flow';
       if (localStorage.getItem('qipu_app_build') !== CURRENT_BUILD) {
         localStorage.setItem('qipu_app_build', CURRENT_BUILD);
         localStorage.removeItem('gemini_api_key');
@@ -926,33 +926,33 @@
       </button>
     </div>
 
-    <!-- 2. Área Central: Aura Reactiva + Feed de Mensajes -->
+    <!-- 2. Área Central: Aura de Fondo Reactiva + Feed de Mensajes -->
     <div class="flex-1 flex flex-col justify-between overflow-hidden px-4 py-2 min-h-0 relative">
       
-      <!-- Aura Orgánica Superior Reactiva a Decibelios (Sin icono de micrófono central) -->
-      <div id="voice-chat-center-aura" class="relative w-full h-44 sm:h-52 shrink-0 flex items-center justify-center pointer-events-none select-none transition-all duration-300">
+      <!-- Aura Orgánica de Fondo Reactiva a Decibelios (Icono_chat.svg de fondo ambiental) -->
+      <div id="voice-chat-center-aura" class="absolute inset-0 flex items-center justify-center pointer-events-none select-none transition-opacity duration-300 opacity-50 z-0 overflow-hidden">
         <!-- Capa Eco 3 (Externa / Difusa) -->
-        <div id="voice-echo-ring-3" class="absolute w-56 h-56 rounded-full bg-[#D9F99D]/40 filter blur-3xl transition-transform duration-75 scale-75 origin-center"></div>
+        <div id="voice-echo-ring-3" class="absolute w-72 h-72 rounded-full bg-[#D9F99D]/30 filter blur-3xl transition-transform duration-75 scale-75 origin-center"></div>
         <!-- Capa Eco 2 (Media) -->
-        <div id="voice-echo-ring-2" class="absolute w-44 h-44 rounded-full bg-[#BEF264]/50 filter blur-2xl transition-transform duration-75 scale-85 origin-center"></div>
+        <div id="voice-echo-ring-2" class="absolute w-56 h-56 rounded-full bg-[#BEF264]/40 filter blur-2xl transition-transform duration-75 scale-85 origin-center"></div>
         <!-- Capa Eco 1 (Interna) -->
-        <div id="voice-echo-ring-1" class="absolute w-36 h-36 rounded-full bg-[#A3E635]/60 filter blur-xl transition-transform duration-75 scale-95 origin-center"></div>
+        <div id="voice-echo-ring-1" class="absolute w-44 h-44 rounded-full bg-[#A3E635]/50 filter blur-xl transition-transform duration-75 scale-95 origin-center"></div>
 
-        <!-- SVG Central Orgánico (Icono_chat.svg con Desenfoque Reactivo) -->
-        <div id="voice-chat-svg-core" class="relative z-10 w-36 h-36 flex items-center justify-center transition-transform duration-75 origin-center">
-          <svg class="w-full h-full drop-shadow-xl" viewBox="0 0 1920 1080" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <!-- SVG Central Orgánico de Fondo -->
+        <div id="voice-chat-svg-core" class="relative w-48 h-48 flex items-center justify-center transition-transform duration-75 origin-center">
+          <svg class="w-full h-full drop-shadow-md" viewBox="0 0 1920 1080" fill="none" xmlns="http://www.w3.org/2000/svg">
             <path class="fill-[#C3F1B3]" d="M777.36,383.58c-5.05-2.68-9.4-6.7-12.37-11.59c-5.03-8.28-10.04-10.18-19.76-10.18c-0.15,0-72.48,0-72.48,0 c-14,0-25.34,11.35-25.34,25.34v283.82c0,20.27,16.43,36.69,36.69,36.69h62.83c20.27,0,36.69-16.43,36.69-36.69v1.74 c0-19.13,11.59-37.68,29.56-37.68c24.64,0,28.4,21.74,28.4,49.27v-13.33c0,20.27,16.43,36.69,36.69,36.69h62.82 c20.27,0,36.69-16.43,36.69-36.69v1.74c0-19.13,11.59-37.68,29.56-37.68c24.63,0,28.4,21.74,28.4,49.27v-13.33 c0,20.27,16.43,36.69,36.69,36.69h62.83c20.27,0,36.69-16.43,36.69-36.69V475.13c0-71.59-22.61-122.01-93.61-122.01 c-13.16,0-26.26,2.63-38.54,7.35c-9.73,3.74-20.61,7.14-29.3,13.02c-6.43,4.35-12.27,9.54-18.85,13.65 c-6.58,4.11-14.19,7.15-21.93,6.54c-13.37-1.06-22.16-16.47-32.22-23.96c-4.71-3.51-9.81-6.48-15.16-8.87 c-11.98-5.35-25.11-7.71-38.19-7.71c-14.07,0-26.65,3.87-40.1,7.21c-20.97,5.22-33.2,30.02-56.48,26.64 C784.03,386.45,780.55,385.28,777.36,383.58z"/>
           </svg>
         </div>
       </div>
 
-      <!-- Saludo Inicial Animado (Aparece al abrir el chat) -->
-      <div id="voice-chat-initial-greeting" class="my-auto flex flex-col items-center justify-center px-4 space-y-1.5 transition-opacity duration-300">
+      <!-- Saludo Inicial Animado (Aparece en el centro al abrir el chat) -->
+      <div id="voice-chat-initial-greeting" class="my-auto flex flex-col items-center justify-center px-4 space-y-1.5 transition-opacity duration-300 relative z-10">
         <!-- Inyectado dinámicamente con renderAnimatedVoiceText -->
       </div>
 
       <!-- Feed de Mensajes Conversacionales (Usuario: Burbuja | Mita: Texto Limpio & Tarjetas Interactivas) -->
-      <div id="voice-chat-messages-container" class="flex-1 overflow-y-auto custom-scrollbar flex flex-col gap-3 py-2 px-1">
+      <div id="voice-chat-messages-container" class="flex-1 overflow-y-auto custom-scrollbar flex flex-col gap-3 py-2 px-1 relative z-10">
         <!-- Inyectado dinámicamente -->
       </div>
 
@@ -2256,7 +2256,7 @@
   <!-- ========================================== -->
   <!-- MODULOS JAVASCRIPT MOBILE (ARQUITECTURA MODULAR) -->
   <!-- ========================================== -->
-  <script type="module" src="js/mobile/mobile-main.js?v=7.3"></script>
+  <script type="module" src="js/mobile/mobile-main.js?v=7.4"></script>
 </body>
 
 </html>

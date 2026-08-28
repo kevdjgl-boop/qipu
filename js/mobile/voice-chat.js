@@ -419,13 +419,13 @@ export function addMitaTextToChat(text, speak = true) {
 }
 
 // 3. Tarjeta Interactiva de Opciones (Preguntas de Mita con píldoras)
-export function addInteractiveOptionsToChat({ type, title, subtitle, items, onSelect, onConfirm }) {
+export function addInteractiveQuestionStep({ title, subtitle, items, onChoose }) {
   ensureConversationStarted();
   const feed = document.getElementById('voice-chat-messages-container');
   if (!feed) return;
 
   const card = document.createElement('div');
-  card.className = "self-start w-full max-w-sm bg-white/95 backdrop-blur-xl border border-slate-200/80 rounded-3xl p-4 shadow-xl space-y-3 animate-fade-in";
+  card.className = "interactive-step-card self-start w-full max-w-sm bg-white/95 backdrop-blur-xl border border-slate-200/80 rounded-3xl p-4 shadow-xl space-y-3 animate-fade-in";
 
   let contentHtml = `
     <div>
@@ -439,8 +439,8 @@ export function addInteractiveOptionsToChat({ type, title, subtitle, items, onSe
       <div class="flex flex-wrap gap-1.5 pt-1">
         ${items.map(item => `
           <button type="button" data-option-value="${item.id || item.value || item.name}"
-            class="chat-option-pill px-3.5 py-2 rounded-2xl text-xs font-black transition-all cursor-pointer ${item.selected ? 'bg-[#222818] text-white shadow-xs' : 'bg-slate-100 hover:bg-slate-200 text-slate-800'}">
-            ${item.icon ? `<i class="${item.icon} mr-1"></i>` : ''}
+            class="chat-option-pill px-3.5 py-2.5 rounded-2xl text-xs font-black transition-all active:scale-95 cursor-pointer ${item.highlight ? 'bg-[#222818] text-white shadow-sm' : 'bg-slate-100 hover:bg-slate-200 text-slate-800'}">
+            ${item.icon ? `<i class="${item.icon} mr-1.5 text-xs"></i>` : ''}
             <span>${item.name || item.label}</span>
           </button>
         `).join('')}
@@ -448,36 +448,83 @@ export function addInteractiveOptionsToChat({ type, title, subtitle, items, onSe
     `;
   }
 
-  if (onConfirm) {
-    contentHtml += `
-      <div class="pt-2 border-t border-slate-100">
-        <button type="button" class="btn-confirm-chat-action w-full py-3 bg-[#222818] hover:bg-[#2e3721] active:scale-98 text-white font-black text-xs rounded-2xl shadow-md transition-all flex items-center justify-center gap-2 cursor-pointer">
-          <span class="material-symbols-rounded text-base text-emerald-400">check_circle</span>
-          <span>Registrar Gasto en Qipu</span>
-        </button>
-      </div>
-    `;
-  }
-
   card.innerHTML = contentHtml;
 
-  // Bindings de las píldoras
+  // Bindings de las píldoras: al tocar, se desactiva la tarjeta y se avanza
   card.querySelectorAll('.chat-option-pill').forEach(btn => {
     btn.addEventListener('click', () => {
       const val = btn.getAttribute('data-option-value');
+      
+      // Desactivar botones de esta tarjeta para evitar dobles clics
       card.querySelectorAll('.chat-option-pill').forEach(b => {
-        b.className = "chat-option-pill px-3.5 py-2 rounded-2xl text-xs font-black transition-all cursor-pointer bg-slate-100 hover:bg-slate-200 text-slate-800";
+        b.disabled = true;
+        b.classList.add('opacity-40', 'pointer-events-none');
       });
-      btn.className = "chat-option-pill px-3.5 py-2 rounded-2xl text-xs font-black transition-all cursor-pointer bg-[#222818] text-white shadow-xs";
-      if (onSelect) onSelect(val);
+      btn.classList.remove('opacity-40');
+      btn.className = "chat-option-pill px-3.5 py-2.5 rounded-2xl text-xs font-black bg-[#222818] text-white shadow-xs pointer-events-none";
+
+      if (onChoose) onChoose(val);
     });
   });
 
-  if (onConfirm) {
-    card.querySelector('.btn-confirm-chat-action')?.addEventListener('click', () => {
-      onConfirm();
-    });
-  }
+  feed.appendChild(card);
+  scrollChatToBottom();
+}
+
+export function addInteractiveSummaryCard({ draft, onConfirm }) {
+  ensureConversationStarted();
+  const feed = document.getElementById('voice-chat-messages-container');
+  if (!feed) return;
+
+  const card = document.createElement('div');
+  card.className = "self-start w-full max-w-sm bg-white/95 backdrop-blur-xl border border-emerald-200/80 rounded-3xl p-4 shadow-xl space-y-3.5 animate-fade-in";
+
+  const totalStr = (parseFloat(draft.amount) || 0).toFixed(2);
+
+  card.innerHTML = `
+    <div class="flex items-center justify-between border-b border-slate-100 pb-2.5">
+      <div>
+        <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Resumen de Registro</span>
+        <h4 class="text-sm font-black text-slate-900 leading-tight">${draft.description || 'Comprobante'}</h4>
+      </div>
+      <div class="text-right">
+        <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Total</span>
+        <p class="text-base font-black text-[#222818]">S/ ${totalStr}</p>
+      </div>
+    </div>
+
+    <div class="grid grid-cols-2 gap-2 text-xs font-semibold">
+      <div class="bg-slate-50 p-2.5 rounded-2xl border border-slate-100">
+        <span class="text-[10px] text-slate-400 block font-bold">MÉTODO DE PAGO</span>
+        <span class="font-black text-slate-800">${draft.paymentMethod || 'Efectivo'}</span>
+      </div>
+      <div class="bg-slate-50 p-2.5 rounded-2xl border border-slate-100">
+        <span class="text-[10px] text-slate-400 block font-bold">CATEGORÍA</span>
+        <span class="font-black text-slate-800">${draft.category || 'General'}</span>
+      </div>
+      <div class="col-span-2 bg-slate-50 p-2.5 rounded-2xl border border-slate-100 flex items-center justify-between">
+        <div>
+          <span class="text-[10px] text-slate-400 block font-bold">TIPO DE GASTO</span>
+          <span class="font-black text-slate-800">${draft.type === 'shared' ? 'Gasto Compartido' : 'Gasto Personal'}</span>
+        </div>
+        ${draft.payerId ? `<span class="text-[11px] font-bold text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-xl">Pagó: ${draft.payerId}</span>` : ''}
+      </div>
+    </div>
+
+    <div class="pt-1">
+      <button type="button" class="btn-confirm-chat-action w-full py-3.5 bg-[#222818] hover:bg-[#2e3721] active:scale-98 text-white font-black text-xs rounded-2xl shadow-md transition-all flex items-center justify-center gap-2 cursor-pointer">
+        <span class="material-symbols-rounded text-lg text-[#A3E635]">check_circle</span>
+        <span>Confirmar y Guardar en Qipu</span>
+      </button>
+    </div>
+  `;
+
+  card.querySelector('.btn-confirm-chat-action')?.addEventListener('click', (e) => {
+    const btn = e.currentTarget;
+    btn.disabled = true;
+    btn.innerHTML = `<i class="fas fa-spinner fa-spin text-sm"></i> Guardando...`;
+    if (onConfirm) onConfirm();
+  });
 
   feed.appendChild(card);
   scrollChatToBottom();
@@ -493,7 +540,7 @@ function scrollChatToBottom() {
 }
 
 // -------------------------------------------------------------
-// INTEGRACIÓN DEL ESCÁNER DE BOLETA DIRECTO AL CHAT
+// INTEGRACIÓN DEL ESCÁNER DE BOLETA DIRECTO AL CHAT (FLUJO SECUENCIAL)
 // -------------------------------------------------------------
 
 export function handleReceiptInVoiceChat(receiptResult) {
@@ -510,61 +557,149 @@ export function handleReceiptInVoiceChat(receiptResult) {
     description: merchantName,
     date: receiptResult.date || new Date().toISOString().split('T')[0],
     category: categoryDetected,
-    paymentMethod: receiptResult.paymentMethod || 'Efectivo',
+    paymentMethod: 'Efectivo',
     paymentMethodId: '',
     type: isShared ? 'shared' : 'personal',
+    payerId: '',
     items: receiptResult.items || []
   };
 
-  // 1. Mensaje de la IA (Sin burbuja)
+  // PASO 1: Mita saluda con el resultado y pregunta el MÉTODO DE PAGO
   setTimeout(() => {
-    addMitaTextToChat(`Analicé tu comprobante de ${merchantName} por un total de S/ ${finalAmount.toFixed(2)}. Selecciona o confirma los detalles para guardarlo:`);
+    addMitaTextToChat(`Analicé tu comprobante de **${merchantName}** por un total de **S/ ${finalAmount.toFixed(2)}**.\n¿Con qué método de pago realizaste esta compra?`);
 
-    // 2. Tarjeta con Opciones de Método de Pago
-    const pmList = (appState.paymentMethods && appState.paymentMethods.length > 0)
-      ? appState.paymentMethods.map((pm, idx) => ({
-          id: pm.id || pm.name,
+    const pmItems = (appState.paymentMethods && appState.paymentMethods.length > 0)
+      ? appState.paymentMethods.map(pm => ({
+          id: pm.name || pm.id,
           name: pm.name,
-          selected: idx === 0
+          icon: 'fas fa-wallet'
         }))
       : [
-          { id: 'efectivo', name: 'Efectivo', selected: true },
-          { id: 'bcp', name: 'BCP Débito', selected: false },
-          { id: 'yape', name: 'Yape', selected: false }
+          { id: 'Efectivo', name: 'Efectivo', icon: 'fas fa-money-bill-wave' },
+          { id: 'Tarjeta', name: 'Tarjeta', icon: 'fas fa-credit-card' },
+          { id: 'Yape', name: 'Yape', icon: 'fas fa-mobile-alt' },
+          { id: 'Plin', name: 'Plin', icon: 'fas fa-bolt' },
+          { id: 'Transferencia', name: 'Transferencia', icon: 'fas fa-university' }
         ];
 
-    // 3. Tarjeta con Categorías Disponibles
-    const catList = (appState.categories && appState.categories.length > 0)
-      ? appState.categories.map((c, idx) => {
-          const cName = typeof c === 'string' ? c : c.name;
-          return {
-            id: cName,
-            name: cName,
-            selected: cName.toLowerCase().includes(categoryDetected.toLowerCase()) || idx === 0
-          };
-        })
-      : [
-          { id: 'Alimentación', name: 'Alimentación', selected: true },
-          { id: 'Supermercado', name: 'Supermercado', selected: false },
-          { id: 'Hogar', name: 'Hogar', selected: false },
-          { id: 'Servicios', name: 'Servicios', selected: false }
-        ];
+    addInteractiveQuestionStep({
+      title: '💳 Método de Pago',
+      subtitle: 'Selecciona cómo pagaste este comprobante',
+      items: pmItems,
+      onChoose: (chosenPm) => {
+        pendingExpenseDraft.paymentMethod = chosenPm;
+        addUserMessageToChat(`💳 ${chosenPm}`);
 
-    // Renderizar Opciones de Clasificación Interactiva
-    addInteractiveOptionsToChat({
-      type: 'receipt-classification',
-      title: '💳 Método de Pago y Categoría',
-      subtitle: `Comercio: ${merchantName} • Total: S/ ${finalAmount.toFixed(2)}`,
-      items: pmList,
-      onSelect: (selectedPm) => {
-        pendingExpenseDraft.paymentMethod = selectedPm;
-      },
-      onConfirm: async () => {
-        await executeSaveExpenseFromChat();
+        // PASO 2: Preguntar CATEGORÍA
+        setTimeout(() => {
+          askReceiptCategoryStep();
+        }, 350);
       }
     });
+  }, 400);
+}
 
-  }, 600);
+function askReceiptCategoryStep() {
+  const categoryDetected = pendingExpenseDraft.category || 'Alimentación';
+  addMitaTextToChat(`Entendido, ${pendingExpenseDraft.paymentMethod}. ¿A qué categoría corresponde este gasto?`);
+
+  const catItems = (appState.categories && appState.categories.length > 0)
+    ? appState.categories.map(c => {
+        const cName = typeof c === 'string' ? c : c.name;
+        return {
+          id: cName,
+          name: cName,
+          highlight: cName.toLowerCase().includes(categoryDetected.toLowerCase())
+        };
+      })
+    : [
+        { id: 'Alimentación', name: 'Alimentación', highlight: true },
+        { id: 'Supermercado', name: 'Supermercado' },
+        { id: 'Transporte', name: 'Transporte' },
+        { id: 'Servicios', name: 'Servicios' },
+        { id: 'Salud', name: 'Salud' },
+        { id: 'Hogar', name: 'Hogar' },
+        { id: 'Entretenimiento', name: 'Entretenimiento' },
+        { id: 'Compras', name: 'Compras' },
+        { id: 'Otros', name: 'Otros' }
+      ];
+
+  addInteractiveQuestionStep({
+    title: '🏷️ Categoría del Gasto',
+    subtitle: 'Elige la clasificación adecuada',
+    items: catItems,
+    onChoose: (chosenCat) => {
+      pendingExpenseDraft.category = chosenCat;
+      addUserMessageToChat(`🏷️ ${chosenCat}`);
+
+      // PASO 3: Preguntar TIPO DE GASTO (Personal vs Compartido)
+      setTimeout(() => {
+        askReceiptExpenseTypeStep();
+      }, 350);
+    }
+  });
+}
+
+function askReceiptExpenseTypeStep() {
+  addMitaTextToChat(`¿Este gasto es personal o compartido entre varias personas?`);
+
+  addInteractiveQuestionStep({
+    title: '👥 Tipo de Gasto',
+    subtitle: 'Define si se divide entre integrantes',
+    items: [
+      { id: 'personal', name: 'Gasto Personal', icon: 'fas fa-user', highlight: pendingExpenseDraft.type === 'personal' },
+      { id: 'shared', name: 'Gasto Compartido', icon: 'fas fa-users', highlight: pendingExpenseDraft.type === 'shared' }
+    ],
+    onChoose: (chosenType) => {
+      pendingExpenseDraft.type = chosenType;
+      addUserMessageToChat(chosenType === 'shared' ? '👥 Gasto Compartido' : '👤 Gasto Personal');
+
+      setTimeout(() => {
+        if (chosenType === 'shared' && appState.participants && appState.participants.length > 0) {
+          askReceiptPayerStep();
+        } else {
+          showReceiptSummaryStep();
+        }
+      }, 350);
+    }
+  });
+}
+
+function askReceiptPayerStep() {
+  addMitaTextToChat(`¿Quién realizó el pago total de este gasto?`);
+
+  const memberItems = appState.participants.map(p => {
+    const pName = typeof p === 'string' ? p : p.name;
+    return {
+      id: pName,
+      name: pName,
+      icon: 'fas fa-user-circle'
+    };
+  });
+
+  addInteractiveQuestionStep({
+    title: '👤 ¿Quién pagó el gasto?',
+    items: memberItems,
+    onChoose: (chosenPayer) => {
+      pendingExpenseDraft.payerId = chosenPayer;
+      addUserMessageToChat(`👤 Pagó ${chosenPayer}`);
+
+      setTimeout(() => {
+        showReceiptSummaryStep();
+      }, 350);
+    }
+  });
+}
+
+function showReceiptSummaryStep() {
+  addMitaTextToChat(`¡Todo listo! Revisa el resumen y pulsa confirmar para registrarlo en tu monedero:`);
+
+  addInteractiveSummaryCard({
+    draft: pendingExpenseDraft,
+    onConfirm: async () => {
+      await executeSaveExpenseFromChat();
+    }
+  });
 }
 
 // Guardar gasto desde el chat directamente a Firestore
