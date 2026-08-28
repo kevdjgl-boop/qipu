@@ -14,8 +14,8 @@ let lottieInstance = null;
 let rafId = null;
 let lastRenderedFrame = -1;
 
-const PULL_TRIGGER_DISTANCE = 115; // Distancia de arrastre con dedo ampliada para estiramiento más notorio
-const BANNER_OPEN_HEIGHT = 92; // Altura en px del bloque sobre el header ampliada
+const PULL_TRIGGER_DISTANCE = 110; // Distancia de arrastre con dedo
+const BANNER_OPEN_HEIGHT = 104; // Altura generosa con margen holgado para el icono de 72px
 const STRETCH_PEAK_FRAME = 66; // Fotograma del estiramiento máximo (keyframe exacto t: 66)
 
 function ensureLottieInstance() {
@@ -26,7 +26,7 @@ function ensureLottieInstance() {
       pullLottieEl.innerHTML = '';
       lottieInstance = window.lottie.loadAnimation({
         container: pullLottieEl,
-        renderer: 'canvas', // GPU Canvas ultra-rápido en móviles (0 re-renders de DOM)
+        renderer: 'canvas', // GPU Canvas de alto rendimiento
         loop: false,
         autoplay: false,
         animationData: SWIPE_ANIMATION_DATA,
@@ -61,6 +61,12 @@ export function initPullToRefresh() {
   pullLottieEl = document.getElementById('pull-to-refresh-lottie');
 
   if (!pullBanner || !pullLottieEl) return;
+
+  // Aceleración por hardware GPU
+  pullBanner.style.willChange = 'height';
+  pullBanner.style.transform = 'translateZ(0)';
+  pullLottieEl.style.willChange = 'transform';
+  pullLottieEl.style.transform = 'translateZ(0) scale(0)';
 
   ensureLottieInstance();
 
@@ -121,13 +127,13 @@ export function initPullToRefresh() {
 
         pullBanner.style.transition = 'none';
         pullBanner.style.height = `${bannerHeight}px`;
-        pullBanner.style.opacity = `${Math.min(1, bannerHeight / 20)}`;
 
         const progressRatio = Math.min(1, Math.max(0, (diffY - 6) / (PULL_TRIGGER_DISTANCE - 6)));
         const targetFrame = Math.min(STRETCH_PEAK_FRAME, Math.floor(progressRatio * STRETCH_PEAK_FRAME));
 
-        // Escalado elástico progresivo del icono para mayor presencia visual
-        const scaleFactor = Math.min(1.15, 0.88 + progressRatio * 0.27);
+        // El icono escala suavemente de 0.2 a 1.0 según la apertura del bloque (sin fade de opacidad)
+        const scaleFactor = Math.min(1.02, Math.max(0.15, bannerHeight / BANNER_OPEN_HEIGHT));
+        pullLottieEl.style.transition = 'none';
         pullLottieEl.style.transform = `scale(${scaleFactor})`;
 
         if (lottieInstance && targetFrame !== lastRenderedFrame) {
@@ -186,12 +192,16 @@ export async function triggerPullRefresh() {
   isRefreshing = true;
 
   if (pullBanner) {
-    pullBanner.style.transition = 'height 250ms cubic-bezier(0.2, 0.8, 0.2, 1), opacity 200ms ease';
+    pullBanner.style.transition = 'height 280ms cubic-bezier(0.2, 0.8, 0.2, 1)';
     pullBanner.style.height = `${BANNER_OPEN_HEIGHT}px`;
-    pullBanner.style.opacity = '1';
   }
 
-  // Continuar la reproducción naturalmente hacia adelante (cero reinicios ni playSegments)
+  if (pullLottieEl) {
+    pullLottieEl.style.transition = 'transform 280ms cubic-bezier(0.2, 0.8, 0.2, 1)';
+    pullLottieEl.style.transform = 'scale(1)';
+  }
+
+  // Continuar la reproducción naturalmente hacia adelante
   if (lottieInstance) {
     lottieInstance.setDirection(1);
     lottieInstance.play();
@@ -213,7 +223,7 @@ export async function triggerPullRefresh() {
     console.warn('Error durante Pull-to-Refresh:', err);
   }
 
-  // Esperar a que la tarjeta termine su trayectoria natural
+  // Esperar a que la tarjeta complete su ciclo
   setTimeout(() => {
     if (updatedData) {
       appState.walletName = updatedData.name || appState.walletName;
@@ -222,10 +232,15 @@ export async function triggerPullRefresh() {
       renderMobileUI();
     }
 
+    // Reducir tamaño acorde va subiendo el bloque superior (cero fade de opacidad)
     if (pullBanner) {
-      pullBanner.style.transition = 'height 300ms cubic-bezier(0.4, 0, 0.2, 1), opacity 240ms ease';
+      pullBanner.style.transition = 'height 340ms cubic-bezier(0.4, 0, 0.2, 1)';
       pullBanner.style.height = '0px';
-      pullBanner.style.opacity = '0';
+    }
+
+    if (pullLottieEl) {
+      pullLottieEl.style.transition = 'transform 340ms cubic-bezier(0.4, 0, 0.2, 1)';
+      pullLottieEl.style.transform = 'scale(0)';
     }
 
     setTimeout(() => {
@@ -235,15 +250,20 @@ export async function triggerPullRefresh() {
         lastRenderedFrame = 0;
       }
       isRefreshing = false;
-    }, 320);
+    }, 360);
   }, 1200);
 }
 
 function resetPullIndicator() {
+  // Reducir tamaño sincronizado al contraerse el bloque
   if (pullBanner) {
-    pullBanner.style.transition = 'height 280ms cubic-bezier(0.4, 0, 0.2, 1), opacity 220ms ease';
+    pullBanner.style.transition = 'height 300ms cubic-bezier(0.4, 0, 0.2, 1)';
     pullBanner.style.height = '0px';
-    pullBanner.style.opacity = '0';
+  }
+
+  if (pullLottieEl) {
+    pullLottieEl.style.transition = 'transform 300ms cubic-bezier(0.4, 0, 0.2, 1)';
+    pullLottieEl.style.transform = 'scale(0)';
   }
 
   // Rebobinar suavemente al estado de reposo
