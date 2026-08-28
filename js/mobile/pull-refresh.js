@@ -65,8 +65,11 @@ export function initPullToRefresh() {
 
     ensureLottieInstance();
 
-    // Resetear siempre al fotograma 0 al iniciar un nuevo toque
+    // Resetear segmentos y forzar inicio absoluto en frame 0
     if (lottieInstance) {
+      try {
+        lottieInstance.resetSegments(true);
+      } catch {}
       lottieInstance.loop = false;
       lottieInstance.setDirection(1);
       lottieInstance.stop();
@@ -188,7 +191,7 @@ export async function triggerPullRefresh() {
     console.warn('Error durante Pull-to-Refresh:', err);
   }
 
-  // Cerrar el bloque suavemente y resetear al terminar la recarga
+  // Cerrar el bloque suavemente y restaurar segmentos limpios a [0, 60]
   setTimeout(() => {
     if (pullBanner) {
       pullBanner.style.transition = 'height 300ms cubic-bezier(0.4, 0, 0.2, 1), opacity 240ms ease';
@@ -196,6 +199,9 @@ export async function triggerPullRefresh() {
       pullBanner.style.opacity = '0';
     }
     if (lottieInstance) {
+      try {
+        lottieInstance.resetSegments(true);
+      } catch {}
       lottieInstance.loop = false;
       lottieInstance.stop();
       lottieInstance.goToAndStop(0, true);
@@ -213,9 +219,10 @@ function resetPullIndicator() {
     pullBanner.style.opacity = '0';
   }
 
-  // REBOBINAR suavemente hacia el fotograma 0
+  // REBOBINAR suavemente hacia el fotograma 0 y restaurar segmentos limpios
   if (lottieInstance) {
     try {
+      lottieInstance.resetSegments(true);
       lottieInstance.loop = false;
       lottieInstance.setDirection(-1);
       lottieInstance.play();
