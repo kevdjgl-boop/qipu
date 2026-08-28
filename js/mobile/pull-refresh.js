@@ -14,8 +14,15 @@ let lottieInstance = null;
 
 const PULL_TRIGGER_DISTANCE = 90; // Distancia de arrastre en px requerida para activar la recarga
 const BANNER_OPEN_HEIGHT = 74; // Altura en px del bloque sobre el header
-const STRETCH_MAX_FRAME = 30; // Fin de la parte 1 (estiramiento con el dedo)
-const TOTAL_FRAMES = 60; // Fin de la parte 2 (expulsión y recarga activa)
+
+function getTotalFrames() {
+  return (lottieInstance && lottieInstance.totalFrames) ? lottieInstance.totalFrames : 60;
+}
+
+function getStretchPeakFrame() {
+  const total = getTotalFrames();
+  return Math.floor(total * 0.5); // El 50% de la animación representa la fase de estiramiento
+}
 
 function ensureLottieInstance() {
   if (lottieInstance) return lottieInstance;
@@ -104,15 +111,16 @@ export function initPullToRefresh() {
       pullBanner.style.height = `${bannerHeight}px`;
       pullBanner.style.opacity = `${Math.min(1, bannerHeight / 20)}`;
 
-      // PARTE 1: Avanzar la animación de estiramiento progresivamente de 0 a 30
+      // PARTE 1: Avanzar la animación de estiramiento progresivamente de 0 al pico máximo
+      const peakFrame = getStretchPeakFrame();
       const progressRatio = Math.min(1, Math.max(0, (diffY - 8) / (PULL_TRIGGER_DISTANCE - 8)));
-      const targetFrame = Math.min(STRETCH_MAX_FRAME, Math.floor(progressRatio * STRETCH_MAX_FRAME));
+      const targetFrame = Math.min(peakFrame, Math.floor(progressRatio * peakFrame));
 
       if (lottieInstance) {
         lottieInstance.goToAndStop(targetFrame, true);
       }
 
-      // Feedback háptico al alcanzar el punto de quiebre (Frame 30 alcanzado)
+      // Feedback háptico al alcanzar el punto de quiebre (Pico alcanzado)
       if (diffY >= PULL_TRIGGER_DISTANCE && !hasVibratedBreakpoint) {
         hasVibratedBreakpoint = true;
         if (navigator.vibrate) navigator.vibrate(25);
@@ -165,11 +173,13 @@ export async function triggerPullRefresh() {
     pullBanner.style.opacity = '1';
   }
 
-  // PARTE 2: Reproducir la fase activa de expulsión y bucle de recarga (30 -> 60)
+  // PARTE 2: Reproducir la fase activa de expulsión y bucle de recarga dinámica
   if (lottieInstance) {
+    const peakFrame = getStretchPeakFrame();
+    const totalFrames = getTotalFrames();
     lottieInstance.loop = true;
     lottieInstance.setDirection(1);
-    lottieInstance.playSegments([STRETCH_MAX_FRAME, TOTAL_FRAMES], true);
+    lottieInstance.playSegments([peakFrame, totalFrames], true);
   }
 
   if (navigator.vibrate) navigator.vibrate([15, 30, 15]);
