@@ -4,7 +4,6 @@
  */
 
 import { appState } from "./core-state.js";
-import { handleReceiptInVoiceChat } from "./voice-chat.js";
 
 // Clave Gemini protegida con codificación Base64 contra escáneres estáticos de GitHub
 const DEFAULT_GEMINI_KEY = atob("QUl6YVN5Qnpfdk9Ka09fZENOQUFSMW8wZ1hmMjVRRDFfVUg1cGVr");
@@ -219,7 +218,9 @@ async function processReceiptImage(base64Data, mimeType) {
     const result = await analyzeReceiptWithGemini(base64Data, mimeType, apiKey, categories, participants);
 
     showScannerLoadingOverlay(false);
-    handleReceiptInVoiceChat(result);
+    if (window.handleReceiptInVoiceChat) {
+      window.handleReceiptInVoiceChat(result);
+    }
 
     if (navigator.vibrate) navigator.vibrate([40, 60, 40]);
   } catch (err) {
