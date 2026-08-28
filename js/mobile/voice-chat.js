@@ -17,18 +17,17 @@ let hasStartedConversation = false;
 // Estado temporal para registro de gasto interactivo desde el chat
 let pendingExpenseDraft = null;
 
-// Renderizador de texto animado estilo montos
+// Renderizador de texto animado elegante y fluido (sin aplanar ni distorsionar letras)
 export function renderAnimatedVoiceText(text) {
   if (!text) return '';
-  let charIndex = 0;
   const words = text.split(' ');
-  return words.map(word => {
-    const chars = word.split('').map(char => {
-      const delay = charIndex * 22;
-      charIndex++;
-      return `<span class="animate-digit-grow" style="animation-delay: ${delay}ms;">${char}</span>`;
-    }).join('');
-    return `<span class="inline-block whitespace-nowrap">${chars}&nbsp;</span>`;
+  return words.map((word, idx) => {
+    const delay = Math.min(idx * 24, 500);
+    let formattedWord = word;
+    if (word.startsWith('**') && word.endsWith('**') && word.length > 4) {
+      formattedWord = `<strong class="font-black text-[#1E2517]">${word.slice(2, -2)}</strong>`;
+    }
+    return `<span class="animate-voice-word" style="animation-delay: ${delay}ms;">${formattedWord}&nbsp;</span>`;
   }).join('');
 }
 
@@ -396,8 +395,8 @@ export function addUserMessageToChat(text) {
   scrollChatToBottom();
 }
 
-// 2. Mensaje de Mita (IA): TEXTO LIMPIO SIN BURBUJA
-export function addMitaTextToChat(text, speak = true) {
+// 2. Mensaje de Mita (IA): TEXTO LIMPIO SIN BURBUJA (visual y rápido, sin audio robótico)
+export function addMitaTextToChat(text) {
   ensureConversationStarted();
   const feed = document.getElementById('voice-chat-messages-container');
   if (!feed) return;
@@ -408,14 +407,6 @@ export function addMitaTextToChat(text, speak = true) {
   feed.appendChild(textNode);
 
   scrollChatToBottom();
-
-  if (speak && speechSynth) {
-    speechSynth.cancel();
-    const utter = new SpeechSynthesisUtterance(text);
-    utter.lang = 'es-PE';
-    utter.rate = 1.05;
-    speechSynth.speak(utter);
-  }
 }
 
 // 3. Tarjeta Interactiva de Opciones (Preguntas de Mita con píldoras)

@@ -7,7 +7,7 @@
   <title>Qipu Mobile - Monedero Financiero</title>
   <script>
     (function() {
-      const CURRENT_BUILD = 'qipu-v7.6-delete-fix';
+      const CURRENT_BUILD = 'qipu-v7.7-smooth-text-silent';
       if (localStorage.getItem('qipu_app_build') !== CURRENT_BUILD) {
         localStorage.setItem('qipu_app_build', CURRENT_BUILD);
         localStorage.removeItem('gemini_api_key');
@@ -234,6 +234,25 @@
       display: inline-block;
       transform-origin: bottom center;
       animation: digitGrowBase 600ms cubic-bezier(0.05, 0.7, 0.1, 1.0) backwards;
+    }
+
+    /* Animación tipográfica fluida, natural y sin aplanamiento para texto conversacional de Mita */
+    @keyframes smoothTextReveal {
+      0% {
+        opacity: 0;
+        transform: translateY(5px);
+        filter: blur(1.5px);
+      }
+      100% {
+        opacity: 1;
+        transform: translateY(0);
+        filter: blur(0);
+      }
+    }
+
+    .animate-voice-word {
+      display: inline-block;
+      animation: smoothTextReveal 300ms cubic-bezier(0.16, 1, 0.3, 1) backwards;
     }
 
     /* Expansión tipo acordeón pura por altura (sin deformar números) */
@@ -916,7 +935,7 @@
 
       <div class="flex-1 text-center px-1">
         <h3 class="text-sm font-black text-[#1E2517] tracking-tight">Agente Mita</h3>
-        <p class="text-[10px] font-semibold text-slate-500">Asistente Inteligente • v7.6</p>
+        <p class="text-[10px] font-semibold text-slate-500">Asistente Inteligente • v7.7</p>
       </div>
 
       <button type="button" id="btn-voice-chat-options"
@@ -2256,7 +2275,7 @@
   <!-- ========================================== -->
   <!-- MODULOS JAVASCRIPT MOBILE (ARQUITECTURA MODULAR) -->
   <!-- ========================================== -->
-  <script type="module" src="js/mobile/mobile-main.js?v=7.6"></script>
+  <script type="module" src="js/mobile/mobile-main.js?v=7.7"></script>
 </body>
 
 </html>
