@@ -11,11 +11,13 @@ let hasVibratedBreakpoint = false;
 let pullBanner = null;
 let pullLottieEl = null;
 let lottieInstance = null;
+let rafId = null;
+let currentFrameRendered = 0;
 
-const PULL_TRIGGER_DISTANCE = 95; // Distancia de arrastre en px requerida para activar la recarga
+const PULL_TRIGGER_DISTANCE = 90; // Distancia de arrastre en px requerida para activar la recarga
 const BANNER_OPEN_HEIGHT = 74; // Altura en px del bloque sobre el header
 const STRETCH_PEAK_FRAME = 66; // Fotograma del estiramiento máximo (keyframe exacto t: 66)
-const TOTAL_FRAMES = 180; // Total de fotogramas de la animación a 60 FPS
+const TOTAL_FRAMES = 180; // Total de fotogramas de la animación
 
 function ensureLottieInstance() {
   if (lottieInstance) return lottieInstance;
@@ -28,9 +30,14 @@ function ensureLottieInstance() {
         renderer: 'svg',
         loop: false,
         autoplay: false,
-        animationData: SWIPE_ANIMATION_DATA
+        animationData: SWIPE_ANIMATION_DATA,
+        rendererSettings: {
+          progressiveLoad: true,
+          hideOnTransparent: false
+        }
       });
       lottieInstance.goToAndStop(0, true);
+      currentFrameRendered = 0;
       return lottieInstance;
     } catch (err) {
       console.warn('Error al inicializar Lottie:', err);
@@ -45,9 +52,14 @@ export function initPullToRefresh() {
 
   if (!pullBanner || !pullLottieEl) return;
 
+  // Aceleración GPU en móvil
+  pullBanner.style.willChange = 'height, opacity';
+  pullBanner.style.transform = 'translateZ(0)';
+  pullLottieEl.style.willChange = 'transform';
+  pullLottieEl.style.transform = 'translateZ(0)';
+
   ensureLottieInstance();
 
-  // Reintento en caso de carga asíncrona en PWA móvil
   if (!lottieInstance) {
     const timer = setInterval(() => {
       if (window.lottie) {
@@ -61,11 +73,15 @@ export function initPullToRefresh() {
   const onTouchStart = (e) => {
     if (isRefreshing) return;
     const scrollTop = window.scrollY || document.documentElement.scrollTop || 0;
-    if (scrollTop > 5) return; // Solo iniciar si el scroll está en la cima absoluta
+    if (scrollTop > 5) return;
+
+    if (rafId) {
+      cancelAnimationFrame(rafId);
+      rafId = null;
+    }
 
     ensureLottieInstance();
 
-    // Resetear segmentos limpios e ir al frame 0
     if (lottieInstance) {
       try {
         lottieInstance.resetSegments(true);
@@ -74,6 +90,7 @@ export function initPullToRefresh() {
       lottieInstance.setDirection(1);
       lottieInstance.stop();
       lottieInstance.goToAndStop(0, true);
+      currentFrameRendered = 0;
     }
 
     pullStartY = e.clientY !== undefined ? e.clientY : (e.touches && e.touches[0] ? e.touches[0].clientY : 0);
@@ -95,30 +112,33 @@ export function initPullToRefresh() {
     const diffY = currentY - pullStartY;
     const diffX = currentX - pullStartX;
 
-    // Solo si el movimiento es predominantemente hacia abajo
-    if (diffY > 8 && Math.abs(diffY) > Math.abs(diffX) * 1.1) {
+    if (diffY > 6 && Math.abs(diffY) > Math.abs(diffX) * 1.1) {
       isPulling = true;
-      const bannerHeight = Math.min(BANNER_OPEN_HEIGHT + 10, diffY * 0.48);
 
-      pullBanner.style.transition = 'none';
-      pullBanner.style.height = `${bannerHeight}px`;
-      pullBanner.style.opacity = `${Math.min(1, bannerHeight / 20)}`;
+      // Optimizado con requestAnimationFrame para sincronizar con la tasa de refresco (60/120Hz del móvil)
+      if (rafId) cancelAnimationFrame(rafId);
+      rafId = requestAnimationFrame(() => {
+        const bannerHeight = Math.min(BANNER_OPEN_HEIGHT + 8, diffY * 0.46);
 
-      // PARTE 1: Avanzar progresivamente de 0 a 66 (estiramiento suave en 60 FPS)
-      const progressRatio = Math.min(1, Math.max(0, (diffY - 8) / (PULL_TRIGGER_DISTANCE - 8)));
-      const targetFrame = Math.min(STRETCH_PEAK_FRAME, Math.floor(progressRatio * STRETCH_PEAK_FRAME));
+        pullBanner.style.transition = 'none';
+        pullBanner.style.height = `${bannerHeight}px`;
+        pullBanner.style.opacity = `${Math.min(1, bannerHeight / 20)}`;
 
-      if (lottieInstance) {
-        lottieInstance.goToAndStop(targetFrame, true);
-      }
+        const progressRatio = Math.min(1, Math.max(0, (diffY - 6) / (PULL_TRIGGER_DISTANCE - 6)));
+        const targetFrame = Math.min(STRETCH_PEAK_FRAME, Math.floor(progressRatio * STRETCH_PEAK_FRAME));
 
-      // Feedback háptico al alcanzar el punto de quiebre (Frame 66 alcanzado)
-      if (diffY >= PULL_TRIGGER_DISTANCE && !hasVibratedBreakpoint) {
-        hasVibratedBreakpoint = true;
-        if (navigator.vibrate) navigator.vibrate(25);
-      } else if (diffY < PULL_TRIGGER_DISTANCE) {
-        hasVibratedBreakpoint = false;
-      }
+        if (lottieInstance && targetFrame !== currentFrameRendered) {
+          currentFrameRendered = targetFrame;
+          lottieInstance.goToAndStop(targetFrame, true);
+        }
+
+        if (diffY >= PULL_TRIGGER_DISTANCE && !hasVibratedBreakpoint) {
+          hasVibratedBreakpoint = true;
+          if (navigator.vibrate) navigator.vibrate(25);
+        } else if (diffY < PULL_TRIGGER_DISTANCE) {
+          hasVibratedBreakpoint = false;
+        }
+      });
 
       if (e.cancelable) {
         e.preventDefault();
@@ -127,16 +147,19 @@ export function initPullToRefresh() {
   };
 
   const onTouchEnd = () => {
+    if (rafId) {
+      cancelAnimationFrame(rafId);
+      rafId = null;
+    }
+
     if (!isPulling || isRefreshing) {
       pullStartY = 0;
       return;
     }
 
     if (hasVibratedBreakpoint) {
-      // PARTE 2: Entrar al estado de actualización activa (dispara expulsión 66 -> 180)
       triggerPullRefresh();
     } else {
-      // Se soltó antes del punto de quiebre: REBOBINAR suavemente a 0
       resetPullIndicator();
     }
 
@@ -165,11 +188,13 @@ export async function triggerPullRefresh() {
     pullBanner.style.opacity = '1';
   }
 
-  // PARTE 2: Reproducir la fase activa de expulsión y bucle de recarga (66 -> 180)
+  // Continuar fluidamente hacia adelante sin cortes ni reinicios bruscos
   if (lottieInstance) {
     lottieInstance.loop = true;
     lottieInstance.setDirection(1);
-    lottieInstance.playSegments([STRETCH_PEAK_FRAME, TOTAL_FRAMES], true);
+    // Reproducir desde el fotograma actual hacia el final
+    const startFrame = Math.max(STRETCH_PEAK_FRAME, currentFrameRendered);
+    lottieInstance.playSegments([startFrame, TOTAL_FRAMES], true);
   }
 
   if (navigator.vibrate) navigator.vibrate([15, 30, 15]);
@@ -205,6 +230,7 @@ export async function triggerPullRefresh() {
       lottieInstance.loop = false;
       lottieInstance.stop();
       lottieInstance.goToAndStop(0, true);
+      currentFrameRendered = 0;
     }
     setTimeout(() => {
       isRefreshing = false;
@@ -229,5 +255,6 @@ function resetPullIndicator() {
     } catch {
       lottieInstance.goToAndStop(0, true);
     }
+    currentFrameRendered = 0;
   }
 }
