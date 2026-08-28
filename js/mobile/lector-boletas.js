@@ -70,7 +70,7 @@ Responde ÚNICAMENTE con JSON puro sin formato markdown:
   ]
 }`;
 
-  const candidateModels = ['gemini-2.5-flash', 'gemini-2.5-pro'];
+  const candidateModels = ['gemini-3.6-flash', 'gemini-3-flash-preview', 'gemini-2.5-pro'];
   let lastError = null;
 
   for (const modelName of candidateModels) {
@@ -205,7 +205,10 @@ async function capturePhotoFromCamera() {
 }
 
 async function processReceiptImage(base64Data, mimeType) {
-  const apiKey = localStorage.getItem('gemini_api_key') || DEFAULT_GEMINI_KEY;
+  try {
+    localStorage.removeItem('gemini_api_key');
+  } catch {}
+  const apiKey = DEFAULT_GEMINI_KEY;
 
   showScannerLoadingOverlay(true, "Mita está extrayendo productos, precios y total...");
 

@@ -1,5 +1,5 @@
 // Service Worker para Qipu 3.0 PWA
-const CACHE_NAME = 'qipu-v3-cache-v47';
+const CACHE_NAME = 'qipu-v3-cache-v48';
 const ASSETS_TO_CACHE = [
   './index.html',
   './mobile.html',
