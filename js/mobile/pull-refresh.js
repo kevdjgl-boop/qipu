@@ -12,17 +12,10 @@ let pullBanner = null;
 let pullLottieEl = null;
 let lottieInstance = null;
 
-const PULL_TRIGGER_DISTANCE = 90; // Distancia de arrastre en px requerida para activar la recarga
+const PULL_TRIGGER_DISTANCE = 95; // Distancia de arrastre en px requerida para activar la recarga
 const BANNER_OPEN_HEIGHT = 74; // Altura en px del bloque sobre el header
-
-function getTotalFrames() {
-  return (lottieInstance && lottieInstance.totalFrames) ? lottieInstance.totalFrames : 60;
-}
-
-function getStretchPeakFrame() {
-  const total = getTotalFrames();
-  return Math.floor(total * 0.5); // El 50% de la animación representa la fase de estiramiento
-}
+const STRETCH_PEAK_FRAME = 66; // Fotograma del estiramiento máximo (keyframe exacto t: 66)
+const TOTAL_FRAMES = 180; // Total de fotogramas de la animación a 60 FPS
 
 function ensureLottieInstance() {
   if (lottieInstance) return lottieInstance;
@@ -72,7 +65,7 @@ export function initPullToRefresh() {
 
     ensureLottieInstance();
 
-    // Resetear segmentos y forzar inicio absoluto en frame 0
+    // Resetear segmentos limpios e ir al frame 0
     if (lottieInstance) {
       try {
         lottieInstance.resetSegments(true);
@@ -111,16 +104,15 @@ export function initPullToRefresh() {
       pullBanner.style.height = `${bannerHeight}px`;
       pullBanner.style.opacity = `${Math.min(1, bannerHeight / 20)}`;
 
-      // PARTE 1: Avanzar la animación de estiramiento progresivamente de 0 al pico máximo
-      const peakFrame = getStretchPeakFrame();
+      // PARTE 1: Avanzar progresivamente de 0 a 66 (estiramiento suave en 60 FPS)
       const progressRatio = Math.min(1, Math.max(0, (diffY - 8) / (PULL_TRIGGER_DISTANCE - 8)));
-      const targetFrame = Math.min(peakFrame, Math.floor(progressRatio * peakFrame));
+      const targetFrame = Math.min(STRETCH_PEAK_FRAME, Math.floor(progressRatio * STRETCH_PEAK_FRAME));
 
       if (lottieInstance) {
         lottieInstance.goToAndStop(targetFrame, true);
       }
 
-      // Feedback háptico al alcanzar el punto de quiebre (Pico alcanzado)
+      // Feedback háptico al alcanzar el punto de quiebre (Frame 66 alcanzado)
       if (diffY >= PULL_TRIGGER_DISTANCE && !hasVibratedBreakpoint) {
         hasVibratedBreakpoint = true;
         if (navigator.vibrate) navigator.vibrate(25);
@@ -141,7 +133,7 @@ export function initPullToRefresh() {
     }
 
     if (hasVibratedBreakpoint) {
-      // PARTE 2: Entrar al estado de actualización activa (dispara expulsión y bucle)
+      // PARTE 2: Entrar al estado de actualización activa (dispara expulsión 66 -> 180)
       triggerPullRefresh();
     } else {
       // Se soltó antes del punto de quiebre: REBOBINAR suavemente a 0
@@ -173,13 +165,11 @@ export async function triggerPullRefresh() {
     pullBanner.style.opacity = '1';
   }
 
-  // PARTE 2: Reproducir la fase activa de expulsión y bucle de recarga dinámica
+  // PARTE 2: Reproducir la fase activa de expulsión y bucle de recarga (66 -> 180)
   if (lottieInstance) {
-    const peakFrame = getStretchPeakFrame();
-    const totalFrames = getTotalFrames();
     lottieInstance.loop = true;
     lottieInstance.setDirection(1);
-    lottieInstance.playSegments([peakFrame, totalFrames], true);
+    lottieInstance.playSegments([STRETCH_PEAK_FRAME, TOTAL_FRAMES], true);
   }
 
   if (navigator.vibrate) navigator.vibrate([15, 30, 15]);
@@ -201,7 +191,7 @@ export async function triggerPullRefresh() {
     console.warn('Error durante Pull-to-Refresh:', err);
   }
 
-  // Cerrar el bloque suavemente y restaurar segmentos limpios a [0, 60]
+  // Cerrar el bloque suavemente y restaurar segmentos limpios a [0, 180]
   setTimeout(() => {
     if (pullBanner) {
       pullBanner.style.transition = 'height 300ms cubic-bezier(0.4, 0, 0.2, 1), opacity 240ms ease';
@@ -219,7 +209,7 @@ export async function triggerPullRefresh() {
     setTimeout(() => {
       isRefreshing = false;
     }, 320);
-  }, 850);
+  }, 950);
 }
 
 function resetPullIndicator() {
