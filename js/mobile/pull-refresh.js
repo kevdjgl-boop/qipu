@@ -12,9 +12,8 @@ let pullBanner = null;
 let pullLottieEl = null;
 let lottieInstance = null;
 
-const PULL_TRIGGER_DISTANCE = 95; // Distancia de arrastre con dedo para activar la recarga
-const BANNER_OPEN_HEIGHT = 72; // Altura en px del bloque sobre el header
-const STRETCH_PEAK_FRAME = 30; // Fotograma máximo de estiramiento
+const PULL_TRIGGER_DISTANCE = 90; // Distancia de arrastre con el dedo para activar la recarga
+const BANNER_OPEN_HEIGHT = 74; // Altura en px del bloque sobre el header
 
 function ensureLottieInstance() {
   if (lottieInstance) return lottieInstance;
@@ -25,14 +24,13 @@ function ensureLottieInstance() {
       lottieInstance = window.lottie.loadAnimation({
         container: pullLottieEl,
         renderer: 'svg',
-        loop: false,
+        loop: true,
         autoplay: false,
         animationData: SWIPE_ANIMATION_DATA
       });
-      lottieInstance.goToAndStop(0, true);
       return lottieInstance;
     } catch (err) {
-      console.warn('Error al cargar Lottie en PWA:', err);
+      console.warn('Error al inicializar Lottie:', err);
     }
   }
   return null;
@@ -46,7 +44,7 @@ export function initPullToRefresh() {
 
   ensureLottieInstance();
 
-  // Reintento en caso de que bodymovin cargue con retardo en PWA móvil
+  // Reintento en caso de carga asíncrona en PWA móvil
   if (!lottieInstance) {
     const timer = setInterval(() => {
       if (window.lottie) {
@@ -85,21 +83,22 @@ export function initPullToRefresh() {
     // Solo si el movimiento es predominantemente hacia abajo
     if (diffY > 8 && Math.abs(diffY) > Math.abs(diffX) * 1.1) {
       isPulling = true;
-      const bannerHeight = Math.min(BANNER_OPEN_HEIGHT + 10, diffY * 0.45); // Apertura elástica del bloque superior
+      const bannerHeight = Math.min(BANNER_OPEN_HEIGHT + 12, diffY * 0.48); // Apertura elástica física
 
       pullBanner.style.transition = 'none';
       pullBanner.style.height = `${bannerHeight}px`;
       pullBanner.style.opacity = `${Math.min(1, bannerHeight / 20)}`;
 
-      // Sincronizar fotograma de estiramiento progresivo con el dedo (0 a 30)
-      const progressRatio = Math.min(1, Math.max(0, (diffY - 8) / (PULL_TRIGGER_DISTANCE - 8)));
-      const targetFrame = Math.min(STRETCH_PEAK_FRAME, Math.floor(progressRatio * STRETCH_PEAK_FRAME));
+      // Escalar sutilmente el icono para dar sensación de profundidad y tensión
+      const scaleRatio = Math.min(1.05, 0.72 + (bannerHeight / BANNER_OPEN_HEIGHT) * 0.33);
+      pullLottieEl.style.transform = `scale(${scaleRatio})`;
 
-      if (lottieInstance) {
-        lottieInstance.goToAndStop(targetFrame, true);
+      // Reproducción continua a 60 FPS nativos (fluidez absoluta sin cortes de fotogramas)
+      if (lottieInstance && lottieInstance.isPaused) {
+        lottieInstance.play();
       }
 
-      // Feedback háptico al alcanzar la altura de disparo
+      // Feedback háptico al alcanzar el punto de quiebre
       if (diffY >= PULL_TRIGGER_DISTANCE && !hasVibratedBreakpoint) {
         hasVibratedBreakpoint = true;
         if (navigator.vibrate) navigator.vibrate(25);
@@ -151,9 +150,13 @@ export async function triggerPullRefresh() {
     pullBanner.style.opacity = '1';
   }
 
-  // Reproducir la animación completa en bucle mientras sincroniza
+  if (pullLottieEl) {
+    pullLottieEl.style.transition = 'transform 250ms ease';
+    pullLottieEl.style.transform = 'scale(1)';
+  }
+
+  // Reproducir a 60 FPS continuos mientras sincroniza
   if (lottieInstance) {
-    lottieInstance.loop = true;
     lottieInstance.play();
   }
 
@@ -191,9 +194,15 @@ function resetPullIndicator() {
     pullBanner.style.height = '0px';
     pullBanner.style.opacity = '0';
   }
+  if (pullLottieEl) {
+    pullLottieEl.style.transition = 'transform 300ms ease';
+    pullLottieEl.style.transform = 'scale(0.7)';
+  }
   if (lottieInstance) {
-    lottieInstance.loop = false;
-    lottieInstance.stop();
-    lottieInstance.goToAndStop(0, true);
+    setTimeout(() => {
+      if (!isPulling && !isRefreshing && lottieInstance) {
+        lottieInstance.stop();
+      }
+    }, 300);
   }
 }
