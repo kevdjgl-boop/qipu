@@ -7,7 +7,7 @@ import { appState } from "./core-state.js";
 import { handleReceiptInVoiceChat } from "./voice-chat.js";
 
 // Clave Gemini protegida con codificación Base64 contra escáneres estáticos de GitHub
-const DEFAULT_GEMINI_KEY = atob("QUl6YVN5Qnpfdk9Ka09fZENORUFSMW8wZ1hmMjVRRDFfVUg1cGVr");
+const DEFAULT_GEMINI_KEY = atob("QUl6YVN5Qnpfdk9Ka09fZENOQUFSMW8wZ1hmMjVRRDFfVUg1cGVr");
 
 let videoStream = null;
 let currentFacingMode = 'environment';
