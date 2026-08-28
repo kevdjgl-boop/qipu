@@ -2241,51 +2241,10 @@
     </div>
   </div>
 
-  <!-- Modal para Configurar / Cambiar Gemini API Key -->
-  <div id="modal-gemini-key"
-    class="fixed inset-0 z-[120] bg-slate-950/80 backdrop-blur-md hidden items-center justify-center p-4">
-    <div class="w-full max-w-sm bg-white rounded-3xl p-6 space-y-4 shadow-2xl">
-      <div class="flex items-center gap-3">
-        <div class="w-10 h-10 rounded-2xl bg-amber-100 text-amber-700 flex items-center justify-center text-xl font-bold">
-          <span class="material-symbols-rounded">key</span>
-        </div>
-        <div>
-          <h3 class="font-black text-sm text-slate-900 leading-tight">API Key de Gemini</h3>
-          <p class="text-[10px] text-slate-500 font-medium">Requerida para lectura inteligente de boletas</p>
-        </div>
-      </div>
-
-      <p class="text-xs text-slate-600 leading-relaxed font-medium">
-        Ingresa tu clave gratuita de <strong>Google AI Studio</strong> para analizar boletas sin límites:
-      </p>
-
-      <div class="space-y-1.5">
-        <input type="password" id="input-custom-gemini-key" placeholder="AIzaSy..."
-          class="w-full bg-slate-50 border border-slate-200 rounded-2xl py-3 px-4 text-xs font-bold text-slate-900 outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 transition-all placeholder:text-slate-400" />
-        <a href="https://aistudio.google.com/app/apikey" target="_blank"
-          class="text-[10px] font-bold text-emerald-700 hover:underline inline-flex items-center gap-1">
-          <span>Obtener clave gratis en Google AI Studio</span>
-          <i class="fas fa-external-link-alt text-[8px]"></i>
-        </a>
-      </div>
-
-      <div class="flex items-center gap-2 pt-2">
-        <button type="button" onclick="closeModal('modal-gemini-key')"
-          class="flex-1 py-3 bg-slate-100 hover:bg-slate-200 active:scale-95 text-slate-700 font-black text-xs rounded-2xl transition-all">
-          Cancelar
-        </button>
-        <button type="button" id="btn-save-gemini-key"
-          class="flex-1 py-3 bg-[#222818] hover:bg-[#2e3721] active:scale-95 text-white font-black text-xs rounded-2xl shadow-md transition-all">
-          Guardar Clave
-        </button>
-      </div>
-    </div>
-  </div>
-
   <!-- ========================================== -->
   <!-- MODULOS JAVASCRIPT MOBILE (ARQUITECTURA MODULAR) -->
   <!-- ========================================== -->
-  <script type="module" src="js/mobile/mobile-main.js?v=6.8"></script>
+  <script type="module" src="js/mobile/mobile-main.js?v=6.9"></script>
 </body>
 
 </html>
