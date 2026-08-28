@@ -702,19 +702,25 @@ function showReceiptSummaryStep() {
   });
 }
 
+let isSavingExpense = false;
+
 // Guardar gasto desde el chat directamente a Firestore
 async function executeSaveExpenseFromChat() {
-  if (!pendingExpenseDraft || !currentWalletId || !appId || !db) return;
+  if (isSavingExpense || !pendingExpenseDraft || !currentWalletId || !appId || !db) return;
+  isSavingExpense = true;
 
   updateStatusText("Guardando movimiento en Qipu...", true);
 
   try {
+    const expenseId = 'exp_' + Date.now() + '_' + Math.random().toString(36).substring(2, 7);
     const expenseData = {
+      id: expenseId,
       description: pendingExpenseDraft.description || "Gasto Escaneado",
       amount: parseFloat(pendingExpenseDraft.amount) || 0,
       category: pendingExpenseDraft.category || "General",
       date: pendingExpenseDraft.date || new Date().toISOString().split('T')[0],
       type: pendingExpenseDraft.type || "personal",
+      payerId: pendingExpenseDraft.payerId || (appState.participants?.[0]?.id || 'default'),
       paymentMethod: pendingExpenseDraft.paymentMethod || "Efectivo",
       paymentMethodId: pendingExpenseDraft.paymentMethodId || "",
       items: pendingExpenseDraft.items || [],
@@ -722,22 +728,34 @@ async function executeSaveExpenseFromChat() {
       walletId: currentWalletId
     };
 
-    if (appState.expenses) {
-      appState.expenses.unshift(expenseData);
-      renderMobileUI();
-    }
+    // Sanear gastos previos para que ninguno quede sin ID
+    const currentExpenses = (appState.expenses || []).map((e, idx) => {
+      if (!e.id) {
+        return { ...e, id: 'exp_' + (e.createdAt ? new Date(e.createdAt).getTime() : Date.now()) + '_' + idx };
+      }
+      return e;
+    });
+
+    const updatedExpenses = [expenseData, ...currentExpenses];
 
     // Guardar en Firestore
     const walletRef = doc(db, "artifacts", appId, "public/data/wallets", currentWalletId);
     await updateDoc(walletRef, {
-      expenses: appState.expenses
+      expenses: updatedExpenses
     });
+
+    appState.expenses = updatedExpenses;
+    renderMobileUI();
 
     addMitaTextToChat(`¡Listo! Tu gasto de S/ ${expenseData.amount.toFixed(2)} en "${expenseData.description}" fue registrado con éxito en tu monedero.`);
     updateStatusText("Gasto guardado correctamente", false);
 
+    pendingExpenseDraft = null;
+    isSavingExpense = false;
+
     if (navigator.vibrate) navigator.vibrate([40, 60, 40]);
   } catch (err) {
+    isSavingExpense = false;
     console.error("Error al registrar gasto desde chat:", err);
     addMitaTextToChat("Hubo un pequeño problema al guardar en la base de datos. Intenta nuevamente.");
     updateStatusText("Error al guardar", false);

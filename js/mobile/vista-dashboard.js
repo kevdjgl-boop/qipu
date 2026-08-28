@@ -12,6 +12,22 @@ export function renderMobileUI() {
     currentMonthEl.textContent = `${MONTHS[filterDate.getMonth()]} ${filterDate.getFullYear()}`;
   }
 
+  // Sanear automáticamente cualquier gasto sin ID en Firestore
+  if (appState.expenses && Array.isArray(appState.expenses)) {
+    let needsSanitize = false;
+    appState.expenses = appState.expenses.map((e, idx) => {
+      if (!e.id || e.id === 'undefined') {
+        needsSanitize = true;
+        return { ...e, id: 'exp_' + (e.createdAt ? new Date(e.createdAt).getTime() : Date.now()) + '_' + idx };
+      }
+      return e;
+    });
+    if (needsSanitize && currentWalletId && appId && db) {
+      const walletRef = doc(db, "artifacts", appId, "public/data/wallets", currentWalletId);
+      updateDoc(walletRef, { expenses: appState.expenses }).catch(console.warn);
+    }
+  }
+
   const filterMonthString = getFilterMonthString(filterDate);
   const allExpenses = appState.expenses || [];
   const projectedFixedExpenses = [];

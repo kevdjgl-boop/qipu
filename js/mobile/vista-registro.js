@@ -292,7 +292,10 @@ export function resetIncomeForm() {
 }
 
 export function openEditExpenseModal(expenseId) {
-  const exp = (appState.expenses || []).find(e => e.id === expenseId);
+  const exp = (appState.expenses || []).find((e, idx) => {
+    const fallbackId = `exp_fallback_${idx}_${e.date}_${e.amount}`;
+    return e.id === expenseId || fallbackId === expenseId || (!e.id && expenseId === 'undefined');
+  });
   if (!exp) return;
 
   editingExpenseId = expenseId;
@@ -577,7 +580,12 @@ export async function deleteExpense() {
   if (!confirm('¿Estás seguro de eliminar este gasto definitivamente?')) return;
 
   try {
-    const updatedExpenses = (appState.expenses || []).filter(e => e.id !== editingExpenseId);
+    const updatedExpenses = (appState.expenses || []).filter((e, idx) => {
+      const fallbackId = `exp_fallback_${idx}_${e.date}_${e.amount}`;
+      if (e.id === editingExpenseId || fallbackId === editingExpenseId) return false;
+      if ((!e.id || e.id === 'undefined') && (editingExpenseId === 'undefined' || editingExpenseId.includes('undefined'))) return false;
+      return true;
+    });
     const walletRef = doc(db, "artifacts", appId, "public/data/wallets", currentWalletId);
     await updateDoc(walletRef, { expenses: updatedExpenses });
     closeModal('modal-expense');

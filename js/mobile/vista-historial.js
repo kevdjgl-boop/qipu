@@ -190,13 +190,23 @@ export async function deleteMovementFromSwipe(e, type, id) {
   try {
     const walletRef = doc(db, "artifacts", appId, "public/data/wallets", currentWalletId);
     if (type === 'expense') {
-      const updated = (appState.expenses || []).filter(item => item.id !== id);
+      const updated = (appState.expenses || []).filter((item, idx) => {
+        const fallbackId = `exp_fallback_${idx}_${item.date}_${item.amount}`;
+        if (item.id === id || fallbackId === id) return false;
+        if ((!item.id || item.id === 'undefined') && (id === 'undefined' || id.includes('undefined'))) return false;
+        return true;
+      });
       await updateDoc(walletRef, { expenses: updated });
     } else {
       const updatedParticipants = JSON.parse(JSON.stringify(appState.participants || []));
       updatedParticipants.forEach(p => {
         if (p.incomes) {
-          p.incomes = p.incomes.filter(inc => inc.id !== id);
+          p.incomes = p.incomes.filter((inc, idx) => {
+            const fallbackId = `inc_fallback_${idx}_${inc.date}_${inc.amount}`;
+            if (inc.id === id || fallbackId === id) return false;
+            if ((!inc.id || inc.id === 'undefined') && (id === 'undefined' || id.includes('undefined'))) return false;
+            return true;
+          });
         }
         p.budget = (p.incomes || []).reduce((s, inc) => s + (parseFloat(inc.amount) || 0), 0);
       });
@@ -248,15 +258,16 @@ export function renderHistoryList(monthlyExpenses) {
   let items = [];
 
   if (currentTab === 'all' || currentTab === 'expenses') {
-    monthlyExpenses.forEach(e => {
+    monthlyExpenses.forEach((e, idx) => {
       if (e.isProjected && e.date > todayStr) {
         return;
       }
 
       const hasItems = !!(e.items && Array.isArray(e.items) && e.items.length > 0);
+      const itemId = e.id || `exp_fallback_${idx}_${e.date}_${e.amount}`;
 
       items.push({
-        id: e.id,
+        id: itemId,
         type: 'expense',
         description: e.description || 'Gasto sin concepto',
         amount: parseFloat(e.amount) || 0,

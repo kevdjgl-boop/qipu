@@ -7,7 +7,7 @@
   <title>Qipu Mobile - Monedero Financiero</title>
   <script>
     (function() {
-      const CURRENT_BUILD = 'qipu-v7.5-gemini3.6';
+      const CURRENT_BUILD = 'qipu-v7.6-delete-fix';
       if (localStorage.getItem('qipu_app_build') !== CURRENT_BUILD) {
         localStorage.setItem('qipu_app_build', CURRENT_BUILD);
         localStorage.removeItem('gemini_api_key');
@@ -916,7 +916,7 @@
 
       <div class="flex-1 text-center px-1">
         <h3 class="text-sm font-black text-[#1E2517] tracking-tight">Agente Mita</h3>
-        <p class="text-[10px] font-semibold text-slate-500">Asistente Inteligente • v7.5</p>
+        <p class="text-[10px] font-semibold text-slate-500">Asistente Inteligente • v7.6</p>
       </div>
 
       <button type="button" id="btn-voice-chat-options"
@@ -2256,7 +2256,7 @@
   <!-- ========================================== -->
   <!-- MODULOS JAVASCRIPT MOBILE (ARQUITECTURA MODULAR) -->
   <!-- ========================================== -->
-  <script type="module" src="js/mobile/mobile-main.js?v=7.5"></script>
+  <script type="module" src="js/mobile/mobile-main.js?v=7.6"></script>
 </body>
 
 </html>
