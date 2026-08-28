@@ -693,8 +693,6 @@ function showReceiptSummaryStep() {
   });
 }
 
-let isSavingExpense = false;
-
 // Guardar gasto desde el chat directamente a Firestore
 async function executeSaveExpenseFromChat() {
   if (isSavingExpense || !pendingExpenseDraft || !currentWalletId || !appId || !db) return;
@@ -703,6 +701,38 @@ async function executeSaveExpenseFromChat() {
   updateStatusText("Guardando movimiento en Qipu...", true);
 
   try {
+    const isPersonal = pendingExpenseDraft.type === 'personal';
+    const primaryParticipant = (appState.participants && appState.participants.length > 0) 
+      ? appState.participants[0] 
+      : { id: 'default', name: 'Principal' };
+
+    let resolvedPayerId = primaryParticipant.id;
+    if (!isPersonal && pendingExpenseDraft.payerId) {
+      const matchP = (appState.participants || []).find(p => p.name === pendingExpenseDraft.payerId || p.id === pendingExpenseDraft.payerId);
+      if (matchP) resolvedPayerId = matchP.id;
+    }
+
+    const finalItems = (pendingExpenseDraft.items || []).map(it => {
+      const qty = parseFloat(it.quantity) || 1;
+      const amount = parseFloat(it.amount || it.price) || 0;
+      if (isPersonal) {
+        return {
+          desc: it.desc || it.name || it.description || 'Producto',
+          quantity: qty,
+          amount: amount,
+          assignedTo: primaryParticipant.id,
+          assignments: { [primaryParticipant.id]: qty }
+        };
+      }
+      return {
+        desc: it.desc || it.name || it.description || 'Producto',
+        quantity: qty,
+        amount: amount,
+        assignedTo: it.assignedTo || 'all',
+        assignments: it.assignments || {}
+      };
+    });
+
     const expenseId = 'exp_' + Date.now() + '_' + Math.random().toString(36).substring(2, 7);
     const expenseData = {
       id: expenseId,
@@ -710,11 +740,12 @@ async function executeSaveExpenseFromChat() {
       amount: parseFloat(pendingExpenseDraft.amount) || 0,
       category: pendingExpenseDraft.category || "General",
       date: pendingExpenseDraft.date || new Date().toISOString().split('T')[0],
-      type: pendingExpenseDraft.type || "personal",
-      payerId: pendingExpenseDraft.payerId || (appState.participants?.[0]?.id || 'default'),
+      type: isPersonal ? "personal" : "shared",
+      payerId: resolvedPayerId,
       paymentMethod: pendingExpenseDraft.paymentMethod || "Efectivo",
       paymentMethodId: pendingExpenseDraft.paymentMethodId || "",
-      items: pendingExpenseDraft.items || [],
+      items: finalItems,
+      guests: isPersonal ? [] : (pendingExpenseDraft.guests || []),
       createdAt: new Date().toISOString(),
       walletId: currentWalletId
     };

@@ -521,6 +521,14 @@ export async function saveExpenseForm(e) {
       return itemObj;
     });
 
+    if (type === 'personal') {
+      finalItems = finalItems.map(item => ({
+        ...item,
+        assignedTo: payerId,
+        assignments: { [payerId]: item.quantity || 1 }
+      }));
+    }
+
     if (!finalDescription) {
       finalDescription = `Lista de ${finalItems.length} ítems (${finalItems[0]?.desc || 'Compra'})`;
     }
@@ -545,8 +553,10 @@ export async function saveExpenseForm(e) {
     expenseData.fixedRepeat = fixedRepeat;
   }
 
-  if (mobileExpenseGuests.length > 0) {
+  if (type === 'shared' && mobileExpenseGuests.length > 0) {
     expenseData.guests = [...mobileExpenseGuests];
+  } else {
+    expenseData.guests = [];
   }
 
   if (finalItems.length > 0) {

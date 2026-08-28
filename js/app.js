@@ -2952,7 +2952,14 @@ function calculateSummary(state, filteredExpenses) {
       realPayerId = method.ownerId;
     }
 
-    const realPayer = participantMap.get(realPayerId);
+    let realPayer = participantMap.get(realPayerId);
+    if (!realPayer && realPayerId) {
+      realPayer = participantData.find(p => p.name === realPayerId || p.id === realPayerId);
+    }
+    if (!realPayer && expense.type !== 'shared' && participantData.length > 0) {
+      realPayer = participantData[0];
+    }
+
     if (realPayer) {
       realPayer.contributionPaid += amount;
       const methodId = expense.paymentMethodId || "unknown";
@@ -3069,8 +3076,14 @@ function calculateSummary(state, filteredExpenses) {
       }
 
     } else {
-      // Gasto Personal
-      const consumer = participantMap.get(expense.payerId);
+      // Gasto Personal: Asignar 100% al pagador o al usuario principal
+      let consumer = participantMap.get(expense.payerId);
+      if (!consumer && expense.payerId) {
+        consumer = participantData.find(p => p.name === expense.payerId || p.id === expense.payerId);
+      }
+      if (!consumer && participantData.length > 0) {
+        consumer = participantData[0];
+      }
       if (consumer) {
         consumer.spent += amount;
       } else if (expense.payerId && (expense.payerId.startsWith("guest_") || expense.payerId.startsWith("guest-"))) {
