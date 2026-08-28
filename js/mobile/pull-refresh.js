@@ -17,7 +17,7 @@ let currentFrameRendered = 0;
 const PULL_TRIGGER_DISTANCE = 90; // Distancia de arrastre en px requerida para activar la recarga
 const BANNER_OPEN_HEIGHT = 74; // Altura en px del bloque sobre el header
 const STRETCH_PEAK_FRAME = 66; // Fotograma del estiramiento máximo (keyframe exacto t: 66)
-const TOTAL_FRAMES = 180; // Total de fotogramas de la animación
+const TOTAL_FRAMES = 180; // Total de fotogramas de la animación a 60 FPS
 
 function ensureLottieInstance() {
   if (lottieInstance) return lottieInstance;
@@ -52,7 +52,7 @@ export function initPullToRefresh() {
 
   if (!pullBanner || !pullLottieEl) return;
 
-  // Aceleración GPU en móvil
+  // Aceleración GPU aislada en móvil
   pullBanner.style.willChange = 'height, opacity';
   pullBanner.style.transform = 'translateZ(0)';
   pullLottieEl.style.willChange = 'transform';
@@ -115,7 +115,6 @@ export function initPullToRefresh() {
     if (diffY > 6 && Math.abs(diffY) > Math.abs(diffX) * 1.1) {
       isPulling = true;
 
-      // Optimizado con requestAnimationFrame para sincronizar con la tasa de refresco (60/120Hz del móvil)
       if (rafId) cancelAnimationFrame(rafId);
       rafId = requestAnimationFrame(() => {
         const bannerHeight = Math.min(BANNER_OPEN_HEIGHT + 8, diffY * 0.46);
@@ -188,54 +187,60 @@ export async function triggerPullRefresh() {
     pullBanner.style.opacity = '1';
   }
 
-  // Continuar fluidamente hacia adelante sin cortes ni reinicios bruscos
+  // Reproducir la animación completa hacia adelante sin loops que hagan saltos bruscos
   if (lottieInstance) {
-    lottieInstance.loop = true;
+    lottieInstance.loop = false;
     lottieInstance.setDirection(1);
-    // Reproducir desde el fotograma actual hacia el final
     const startFrame = Math.max(STRETCH_PEAK_FRAME, currentFrameRendered);
     lottieInstance.playSegments([startFrame, TOTAL_FRAMES], true);
   }
 
   if (navigator.vibrate) navigator.vibrate([15, 30, 15]);
 
+  let updatedData = null;
+
   try {
-    // Re-sincronizar datos de Firestore
+    // Sincronizar datos de Firestore en segundo plano sin bloquear el hilo gráfico de la animación
     if (currentWalletId && appId && db) {
       const walletRef = doc(db, "artifacts", appId, "public/data/wallets", currentWalletId);
       const snap = await getDoc(walletRef);
       if (snap.exists()) {
-        const data = snap.data();
-        appState.walletName = data.name || appState.walletName;
-        appState.participants = data.participants || [];
-        appState.expenses = data.expenses || [];
-        renderMobileUI();
+        updatedData = snap.data();
       }
     }
   } catch (err) {
     console.warn('Error durante Pull-to-Refresh:', err);
   }
 
-  // Cerrar el bloque suavemente y restaurar segmentos limpios a [0, 180]
+  // Esperar a que la animación de expulsión termine su curso visual
   setTimeout(() => {
+    // Aplicar los datos actualizados justo antes de cerrar para evitar tirones durante la animación
+    if (updatedData) {
+      appState.walletName = updatedData.name || appState.walletName;
+      appState.participants = updatedData.participants || [];
+      appState.expenses = updatedData.expenses || [];
+      renderMobileUI();
+    }
+
     if (pullBanner) {
-      pullBanner.style.transition = 'height 300ms cubic-bezier(0.4, 0, 0.2, 1), opacity 240ms ease';
+      pullBanner.style.transition = 'height 320ms cubic-bezier(0.4, 0, 0.2, 1), opacity 260ms ease';
       pullBanner.style.height = '0px';
       pullBanner.style.opacity = '0';
     }
-    if (lottieInstance) {
-      try {
-        lottieInstance.resetSegments(true);
-      } catch {}
-      lottieInstance.loop = false;
-      lottieInstance.stop();
-      lottieInstance.goToAndStop(0, true);
-      currentFrameRendered = 0;
-    }
+
     setTimeout(() => {
+      if (lottieInstance) {
+        try {
+          lottieInstance.resetSegments(true);
+        } catch {}
+        lottieInstance.loop = false;
+        lottieInstance.stop();
+        lottieInstance.goToAndStop(0, true);
+        currentFrameRendered = 0;
+      }
       isRefreshing = false;
-    }, 320);
-  }, 950);
+    }, 340);
+  }, 1100);
 }
 
 function resetPullIndicator() {
