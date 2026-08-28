@@ -69,7 +69,7 @@ Responde ÚNICAMENTE con JSON puro sin formato markdown:
   ]
 }`;
 
-  const candidateModels = ['gemini-3.6-flash', 'gemini-3-flash-preview', 'gemini-2.5-pro'];
+  const candidateModels = ['gemini-3.6-flash'];
   let lastError = null;
 
   for (const modelName of candidateModels) {

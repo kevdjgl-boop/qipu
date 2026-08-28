@@ -5,6 +5,18 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <title>Qipu Mobile - Monedero Financiero</title>
+  <script>
+    (function() {
+      const CURRENT_BUILD = 'qipu-v7.3-gemini3.6';
+      if (localStorage.getItem('qipu_app_build') !== CURRENT_BUILD) {
+        localStorage.setItem('qipu_app_build', CURRENT_BUILD);
+        localStorage.removeItem('gemini_api_key');
+        if (window.caches) {
+          caches.keys().then(keys => Promise.all(keys.map(k => caches.delete(k))));
+        }
+      }
+    })();
+  </script>
   <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
   <!-- Font Awesome -->
@@ -2244,7 +2256,7 @@
   <!-- ========================================== -->
   <!-- MODULOS JAVASCRIPT MOBILE (ARQUITECTURA MODULAR) -->
   <!-- ========================================== -->
-  <script type="module" src="js/mobile/mobile-main.js?v=7.2"></script>
+  <script type="module" src="js/mobile/mobile-main.js?v=7.3"></script>
 </body>
 
 </html>
