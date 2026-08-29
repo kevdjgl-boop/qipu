@@ -371,23 +371,39 @@ function ensureConversationStarted() {
   }
 }
 
+// Renderizador de caracteres animados escalonados (idéntico al monto en registros compartidos)
+export function renderAnimatedUserSpeech(text) {
+  if (!text) return '';
+  let charIndex = 0;
+  return String(text).split('').map(char => {
+    if (char === ' ') {
+      return '<span class="inline-block">&nbsp;</span>';
+    }
+    const delay = Math.min(charIndex * 18, 400);
+    charIndex++;
+    return `<span class="animate-digit-grow inline-block" style="animation-delay: ${delay}ms;">${char}</span>`;
+  }).join('');
+}
+
 let currentStreamingBubble = null;
 
-// 1. Mensaje del Usuario en Vivo: Se escribe dinámicamente en su burbuja a la derecha mientras habla
+// 1. Mensaje del Usuario en Vivo: Se escribe dinámicamente en su burbuja a la derecha con animación de dígitos
 export function updateStreamingUserMessage(text, isFinal = false) {
   if (!text) return;
   ensureConversationStarted();
   const feed = document.getElementById('voice-chat-messages-container');
   if (!feed) return;
 
+  const animatedHtml = renderAnimatedUserSpeech(text);
+
   if (!currentStreamingBubble) {
     currentStreamingBubble = document.createElement('div');
-    currentStreamingBubble.className = "self-end max-w-[84%] bg-[#222818] text-white text-xs font-bold px-4 py-3 rounded-3xl rounded-tr-sm shadow-md animate-fade-in flex items-center gap-1.5";
-    currentStreamingBubble.innerHTML = `<span class="streaming-text">${text}</span><span class="streaming-cursor inline-block w-1.5 h-3.5 bg-[#A3E635] rounded-full animate-pulse"></span>`;
+    currentStreamingBubble.className = "self-end max-w-[84%] bg-[#222818] text-white text-xs font-bold px-4 py-3 rounded-3xl rounded-tr-sm shadow-md animate-fade-in flex items-center gap-1.5 flex-wrap";
+    currentStreamingBubble.innerHTML = `<span class="streaming-text">${animatedHtml}</span><span class="streaming-cursor inline-block w-1.5 h-3.5 bg-[#A3E635] rounded-full animate-pulse shrink-0"></span>`;
     feed.appendChild(currentStreamingBubble);
   } else {
     const textSpan = currentStreamingBubble.querySelector('.streaming-text');
-    if (textSpan) textSpan.textContent = text;
+    if (textSpan) textSpan.innerHTML = animatedHtml;
   }
 
   if (isFinal) {
@@ -402,9 +418,11 @@ export function updateStreamingUserMessage(text, isFinal = false) {
 // Mensaje del Usuario convencional (para opciones de botones o confirmaciones)
 export function addUserMessageToChat(text) {
   if (!text) return;
+  const animatedHtml = renderAnimatedUserSpeech(text);
+
   if (currentStreamingBubble) {
     const textSpan = currentStreamingBubble.querySelector('.streaming-text');
-    if (textSpan) textSpan.textContent = text;
+    if (textSpan) textSpan.innerHTML = animatedHtml;
     const cursor = currentStreamingBubble.querySelector('.streaming-cursor');
     if (cursor) cursor.remove();
     currentStreamingBubble = null;
@@ -418,7 +436,7 @@ export function addUserMessageToChat(text) {
 
   const bubble = document.createElement('div');
   bubble.className = "self-end max-w-[84%] bg-[#222818] text-white text-xs font-bold px-4 py-3 rounded-3xl rounded-tr-sm shadow-md animate-fade-in";
-  bubble.textContent = text;
+  bubble.innerHTML = animatedHtml;
   feed.appendChild(bubble);
 
   scrollChatToBottom();
