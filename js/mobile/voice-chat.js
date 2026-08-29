@@ -18,11 +18,11 @@ let hasStartedConversation = false;
 let pendingExpenseDraft = null;
 
 // Renderizador de texto animado elegante y fluido (sin aplanar ni distorsionar letras)
-export function renderAnimatedVoiceText(text) {
+export function renderAnimatedVoiceText(text, baseDelay = 0) {
   if (!text) return '';
   const words = text.split(' ');
   return words.map((word, idx) => {
-    const delay = Math.min(idx * 24, 500);
+    const delay = baseDelay + Math.min(idx * 30, 600);
     let formattedWord = word;
     if (word.startsWith('**') && word.endsWith('**') && word.length > 4) {
       formattedWord = `<strong class="font-black text-[#1E2517]">${word.slice(2, -2)}</strong>`;
@@ -120,12 +120,15 @@ export function openVoiceChat() {
   if (greetingBox) {
     greetingBox.classList.remove('hidden');
     const userName = appState.userName || (appState.participants && appState.participants[0]?.name) || "Kevin";
+    const titleHtml = renderAnimatedVoiceText(`Hola ${userName}`, 0);
+    const subtitleHtml = renderAnimatedVoiceText("Mita tu asistente financiero está para lo que necesites", 100);
+
     greetingBox.innerHTML = `
       <h2 class="text-3xl font-black text-[#1E2517] leading-tight tracking-tight text-center">
-        ${renderAnimatedVoiceText(`Hola ${userName}`)}
+        ${titleHtml}
       </h2>
-      <p class="text-xs font-semibold text-slate-700/90 mt-1 leading-snug text-center max-w-[280px]">
-        Mita tu <span class="text-[#65A30D] font-black">Asistente Financiero</span> está para lo que <span class="text-[#65A30D] font-black">Necesites</span>
+      <p class="text-xs font-semibold text-slate-700 mt-2 leading-relaxed text-center max-w-[280px]">
+        ${subtitleHtml}
       </p>
     `;
   }
