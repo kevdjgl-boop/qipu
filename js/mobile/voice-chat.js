@@ -59,7 +59,6 @@ export function initVoiceChat() {
     recognition.onstart = () => {
       isRecording = true;
       updateMicUIState(true);
-      updateStatusText("Escuchando tu voz...", true);
     };
 
     recognition.onresult = (event) => {
@@ -74,20 +73,13 @@ export function initVoiceChat() {
         }
       }
 
-      const textToShow = finalTranscript || interimTranscript;
-      const liveBox = document.getElementById('voice-chat-live-preview');
-      if (liveBox && textToShow) {
-        liveBox.classList.remove('hidden');
-        liveBox.innerHTML = renderAnimatedVoiceText(textToShow);
+      if (interimTranscript) {
+        updateStreamingUserMessage(interimTranscript, false);
       }
 
       if (finalTranscript.trim()) {
         const cleanText = finalTranscript.trim();
-        addUserMessageToChat(cleanText);
-        if (liveBox) {
-          liveBox.innerHTML = '';
-          liveBox.classList.add('hidden');
-        }
+        updateStreamingUserMessage(cleanText, true);
         processUserVoiceQuery(cleanText);
       }
     };
@@ -95,20 +87,15 @@ export function initVoiceChat() {
     recognition.onerror = (event) => {
       if (event.error === 'no-speech') return;
       console.warn('Error en Speech Recognition:', event.error);
-      if (event.error !== 'aborted') {
-        updateStatusText("Toca para hablar...", false);
-      }
     };
 
     recognition.onend = () => {
-      // Si seguimos en modo grabación, reconectar continuamente
       if (isRecording && isVoiceChatOpen) {
         try { recognition.start(); } catch {}
       } else {
         isRecording = false;
         stopAudioAnalysis();
         updateMicUIState(false);
-        updateStatusText("Toca 'Hablar' para consultar a Mita", false);
       }
     };
   }
@@ -124,11 +111,11 @@ export function openVoiceChat() {
 
   hasStartedConversation = false;
   pendingExpenseDraft = null;
+  currentStreamingBubble = null;
 
   // Restaurar pantalla de saludo inicial
   const greetingBox = document.getElementById('voice-chat-initial-greeting');
   const chatFeed = document.getElementById('voice-chat-messages-container');
-  const liveBox = document.getElementById('voice-chat-live-preview');
 
   if (greetingBox) {
     greetingBox.classList.remove('hidden');
@@ -147,12 +134,6 @@ export function openVoiceChat() {
     chatFeed.innerHTML = '';
   }
 
-  if (liveBox) {
-    liveBox.innerHTML = '';
-    liveBox.classList.add('hidden');
-  }
-
-  updateStatusText("Toca 'Hablar' o toma foto a una boleta", false);
   resetEchoRings();
 }
 
@@ -350,39 +331,50 @@ function updateMicUIState(recording) {
 }
 
 function updateStatusText(text, active = false) {
-  const pill = document.getElementById('voice-chat-status-pill');
-  const statusText = document.getElementById('voice-chat-status-text');
-
-  if (statusText) statusText.textContent = text;
-  if (pill) {
-    const dot = pill.querySelector('span:first-child');
-    if (dot) {
-      dot.className = active ? "w-2 h-2 rounded-full bg-emerald-500 animate-ping" : "w-2 h-2 rounded-full bg-slate-400";
-    }
-  }
+  // Píldoras redundantes eliminadas para mayor limpieza visual
 }
 
-// -------------------------------------------------------------
-// GESTIÓN DE MENSAJES Y CONVERSACIÓN
-// -------------------------------------------------------------
+let currentStreamingBubble = null;
 
-function ensureConversationStarted() {
-  if (!hasStartedConversation) {
-    hasStartedConversation = true;
-    const greetingBox = document.getElementById('voice-chat-initial-greeting');
-    if (greetingBox) {
-      greetingBox.classList.add('hidden');
-    }
-    const centerAura = document.getElementById('voice-chat-center-aura');
-    if (centerAura) {
-      centerAura.classList.remove('h-72', 'sm:h-80');
-      centerAura.classList.add('h-40', 'sm:h-48');
-    }
+// 1. Mensaje del Usuario en Vivo: Se escribe dinámicamente en su burbuja a la derecha mientras habla
+export function updateStreamingUserMessage(text, isFinal = false) {
+  if (!text) return;
+  ensureConversationStarted();
+  const feed = document.getElementById('voice-chat-messages-container');
+  if (!feed) return;
+
+  if (!currentStreamingBubble) {
+    currentStreamingBubble = document.createElement('div');
+    currentStreamingBubble.className = "self-end max-w-[84%] bg-[#222818] text-white text-xs font-bold px-4 py-3 rounded-3xl rounded-tr-sm shadow-md animate-fade-in flex items-center gap-1.5";
+    currentStreamingBubble.innerHTML = `<span class="streaming-text">${text}</span><span class="streaming-cursor inline-block w-1.5 h-3.5 bg-[#A3E635] rounded-full animate-pulse"></span>`;
+    feed.appendChild(currentStreamingBubble);
+  } else {
+    const textSpan = currentStreamingBubble.querySelector('.streaming-text');
+    if (textSpan) textSpan.textContent = text;
   }
+
+  if (isFinal) {
+    const cursor = currentStreamingBubble.querySelector('.streaming-cursor');
+    if (cursor) cursor.remove();
+    currentStreamingBubble = null;
+  }
+
+  scrollChatToBottom();
 }
 
-// 1. Mensaje del Usuario: CON BURBUJA a la derecha
+// Mensaje del Usuario convencional (para opciones de botones o confirmaciones)
 export function addUserMessageToChat(text) {
+  if (!text) return;
+  if (currentStreamingBubble) {
+    const textSpan = currentStreamingBubble.querySelector('.streaming-text');
+    if (textSpan) textSpan.textContent = text;
+    const cursor = currentStreamingBubble.querySelector('.streaming-cursor');
+    if (cursor) cursor.remove();
+    currentStreamingBubble = null;
+    scrollChatToBottom();
+    return;
+  }
+
   ensureConversationStarted();
   const feed = document.getElementById('voice-chat-messages-container');
   if (!feed) return;
