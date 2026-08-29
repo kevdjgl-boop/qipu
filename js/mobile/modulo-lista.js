@@ -195,7 +195,7 @@ export function renderMobileItemsList() {
               onclick="confirmDeleteMobileItem('${item.id}', '${(item.desc || 'este producto').replace(/'/g, "\\'")}')"
               class="w-9 h-9 mr-2 bg-[#ffe4e6] hover:bg-[#fecdd3] active:scale-90 border border-rose-200 rounded-[8px] flex items-center justify-center text-xs shadow-2xs shrink-0 overflow-hidden cursor-pointer">
               <div id="item-lottie-trash-${item.id}" class="w-7 h-7 pointer-events-none flex items-center justify-center">
-                <dotlottie-player src="js/Animaciones/Trash.lottie" autoplay="false" loop="false" style="width: 26px; height: 26px; pointer-events: none;"></dotlottie-player>
+                <span class="material-symbols-rounded text-lg text-rose-700 pointer-events-none">delete</span>
               </div>
             </button>
           </div>

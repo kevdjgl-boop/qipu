@@ -361,6 +361,16 @@ function updateStatusText(text, active = false) {
   // Píldoras redundantes eliminadas para mayor limpieza visual
 }
 
+function ensureConversationStarted() {
+  if (!hasStartedConversation) {
+    hasStartedConversation = true;
+    const greetingBox = document.getElementById('voice-chat-initial-greeting');
+    if (greetingBox) {
+      greetingBox.classList.add('hidden');
+    }
+  }
+}
+
 let currentStreamingBubble = null;
 
 // 1. Mensaje del Usuario en Vivo: Se escribe dinámicamente en su burbuja a la derecha mientras habla

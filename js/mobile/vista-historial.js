@@ -415,8 +415,8 @@ export function renderHistoryList(monthlyExpenses) {
           onclick="deleteMovementFromSwipe(event, '${item.type}', '${item.id}')"
           class="shrink-0 overflow-hidden bg-[#ffe4e6] hover:bg-[#fecdd3] active:bg-[#fda4af] border border-rose-200/80 rounded-2xl flex flex-col items-center justify-center cursor-pointer select-none shadow-inner"
           style="width: 0px; opacity: 0; margin-left: 0px;">
-          <div id="lottie-trash-${item.id}" class="w-10 h-10 pointer-events-none flex items-center justify-center -mb-0.5">
-            <dotlottie-player src="js/Animaciones/Trash.lottie" autoplay="false" loop="false" style="width: 38px; height: 38px; pointer-events: none;"></dotlottie-player>
+          <div id="lottie-trash-${item.id}" class="w-8 h-8 pointer-events-none flex items-center justify-center -mb-0.5">
+            <span class="material-symbols-rounded text-2xl text-rose-700 pointer-events-none">delete</span>
           </div>
           <span class="text-[9px] font-black text-rose-800 uppercase tracking-wider mt-0.5 pointer-events-none select-none whitespace-nowrap">Borrar</span>
         </div>
