@@ -7,7 +7,7 @@
   <title>Qipu Mobile - Monedero Financiero</title>
   <script>
     (function() {
-      const CURRENT_BUILD = 'qipu-v8.6-pregunta-a-mita-bar';
+      const CURRENT_BUILD = 'qipu-v8.7-dynamic-island-bar';
       if (localStorage.getItem('qipu_app_build') !== CURRENT_BUILD) {
         localStorage.setItem('qipu_app_build', CURRENT_BUILD);
         localStorage.removeItem('gemini_api_key');
@@ -253,6 +253,44 @@
     .animate-voice-word {
       display: inline-block;
       animation: smoothTextReveal 300ms cubic-bezier(0.16, 1, 0.3, 1) backwards;
+    }
+
+    /* ============================================================ */
+    /* 🌟 UNIVERSAL DYNAMIC MORPHING DOCK (PINTEREST / DYNAMIC ISLAND) */
+    /* ============================================================ */
+    .dynamic-morph-dock {
+      transition: width 420ms cubic-bezier(0.34, 1.56, 0.64, 1),
+                  max-width 420ms cubic-bezier(0.34, 1.56, 0.64, 1),
+                  border-radius 360ms cubic-bezier(0.34, 1.56, 0.64, 1),
+                  padding 320ms ease-out,
+                  box-shadow 360ms ease-out,
+                  transform 360ms cubic-bezier(0.34, 1.56, 0.64, 1);
+      will-change: width, max-width, border-radius, transform;
+    }
+
+    .dynamic-morph-content {
+      transition: opacity 220ms ease-out,
+                  transform 320ms cubic-bezier(0.34, 1.56, 0.64, 1);
+      will-change: opacity, transform;
+    }
+
+    .popup-spring-enter {
+      animation: popupSpring 360ms cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+    }
+
+    @keyframes popupSpring {
+      0% {
+        opacity: 0;
+        transform: scale(0.65) translateY(24px);
+      }
+      70% {
+        opacity: 1;
+        transform: scale(1.04) translateY(-3px);
+      }
+      100% {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+      }
     }
 
     /* Expansión tipo acordeón pura por altura (sin deformar números) */
@@ -935,7 +973,7 @@
 
       <div class="flex-1 text-center px-1">
         <h3 class="text-sm font-black text-[#1E2517] tracking-tight">Agente Mita</h3>
-        <p class="text-[10px] font-semibold text-slate-500">Asistente Inteligente • v8.6</p>
+        <p class="text-[10px] font-semibold text-slate-500">Asistente Inteligente • v8.7</p>
       </div>
 
       <button type="button" id="btn-voice-chat-options"
@@ -2296,7 +2334,7 @@
   <!-- ========================================== -->
   <!-- MODULOS JAVASCRIPT MOBILE (ARQUITECTURA MODULAR) -->
   <!-- ========================================== -->
-  <script type="module" src="js/mobile/mobile-main.js?v=8.6"></script>
+  <script type="module" src="js/mobile/mobile-main.js?v=8.7"></script>
 </body>
 
 </html>

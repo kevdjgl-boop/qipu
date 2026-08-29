@@ -132,12 +132,8 @@ export function openAttachmentsPopup() {
   if (!popup) return;
 
   isPopupOpen = true;
-  popup.classList.remove('hidden');
-  popup.classList.remove('pointer-events-none');
-  setTimeout(() => {
-    popup.classList.remove('opacity-0', 'scale-95');
-    popup.classList.add('opacity-100', 'scale-100');
-  }, 10);
+  popup.classList.remove('hidden', 'pointer-events-none', 'opacity-0', 'scale-95');
+  popup.classList.add('popup-spring-enter');
 
   if (icon) {
     icon.style.transform = 'rotate(45deg)';
@@ -150,12 +146,11 @@ export function closeAttachmentsPopup() {
   if (!popup) return;
 
   isPopupOpen = false;
-  popup.classList.remove('opacity-100', 'scale-100');
-  popup.classList.add('opacity-0', 'scale-95');
-  popup.classList.add('pointer-events-none');
+  popup.classList.remove('popup-spring-enter');
+  popup.classList.add('opacity-0', 'scale-95', 'pointer-events-none');
   setTimeout(() => {
     if (!isPopupOpen) popup.classList.add('hidden');
-  }, 200);
+  }, 180);
 
   if (icon) {
     icon.style.transform = 'rotate(0deg)';
