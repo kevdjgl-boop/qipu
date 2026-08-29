@@ -39,15 +39,40 @@ export function initVoiceChat() {
   document.getElementById('btn-close-voice-chat')?.addEventListener('click', closeVoiceChat);
   document.getElementById('btn-voice-nav-dashboard')?.addEventListener('click', closeVoiceChat);
 
-  // 1. Micrófono (Izquierda) y Visualizador Waveform
-  document.getElementById('btn-mita-mic-left')?.addEventListener('click', toggleVoiceRecording);
-  document.getElementById('btn-mita-waveform')?.addEventListener('click', toggleVoiceRecording);
+  // 1. Elemento Izquierda (Micrófono para nota de voz / Cámara en llamada)
+  document.getElementById('mita-item-left')?.addEventListener('click', () => {
+    const dock = document.getElementById('universal-floating-dock');
+    if (dock?.classList.contains('dock-state-voice')) {
+      stopVoiceRecording();
+      setUniversalDockMode('chat');
+      triggerReceiptScanner();
+    } else {
+      startVoiceRecording();
+    }
+  });
 
-  // 2. Botón Verde "+" / Enviar
-  const plusBtn = document.getElementById('btn-mita-plus-toggle');
+  // 2. Elemento Derecha 1 (Decibeles / Hablar en vivo o pausar)
+  document.getElementById('mita-item-wave')?.addEventListener('click', () => {
+    const dock = document.getElementById('universal-floating-dock');
+    if (dock?.classList.contains('dock-state-voice')) {
+      toggleVoiceRecording();
+    } else {
+      startVoiceRecording();
+    }
+  });
+
+  // 3. Elemento Derecha 2 (Botón '+' / Enviar en chat o '✕' Cerrar en llamada)
+  const actionBtn = document.getElementById('mita-item-action');
   const textInput = document.getElementById('voice-chat-text-input');
 
-  plusBtn?.addEventListener('click', () => {
+  actionBtn?.addEventListener('click', () => {
+    const dock = document.getElementById('universal-floating-dock');
+    if (dock?.classList.contains('dock-state-voice')) {
+      stopVoiceRecording();
+      setUniversalDockMode('chat');
+      return;
+    }
+
     const text = textInput?.value.trim();
     if (text) {
       handleSendTextMessage();
@@ -58,8 +83,11 @@ export function initVoiceChat() {
 
   // Escuchar escritura en el input para cambiar el icono entre "+" y "send"
   textInput?.addEventListener('input', () => {
-    const icon = document.getElementById('icon-mita-plus');
+    const icon = document.getElementById('mita-icon-action');
     if (!icon) return;
+    const dock = document.getElementById('universal-floating-dock');
+    if (dock?.classList.contains('dock-state-voice')) return;
+
     if (textInput.value.trim()) {
       icon.textContent = 'send';
       closeAttachmentsPopup();
@@ -75,7 +103,7 @@ export function initVoiceChat() {
     }
   });
 
-  // 3. Opciones del Popup: Fotos, Archivos, Cámara
+  // Opciones del Popup: Fotos, Archivos, Cámara
   document.getElementById('btn-attach-camera')?.addEventListener('click', () => {
     closeAttachmentsPopup();
     triggerReceiptScanner();
@@ -105,24 +133,10 @@ export function initVoiceChat() {
   document.getElementById('nav-btn-open-chat')?.addEventListener('click', openVoiceChat);
   document.getElementById('nav-btn-open-mita')?.addEventListener('click', openVoiceChat);
 
-  // Listeners para el Estado 3 de la barra (Grabación de voz activa)
-  document.getElementById('btn-voice-state-camera')?.addEventListener('click', () => {
-    stopVoiceRecording();
-    setUniversalDockMode('chat');
-    triggerReceiptScanner();
-  });
-
-  document.getElementById('btn-voice-state-mic')?.addEventListener('click', toggleVoiceRecording);
-
-  document.getElementById('btn-voice-state-close')?.addEventListener('click', () => {
-    stopVoiceRecording();
-    setUniversalDockMode('chat');
-  });
-
   // Cerrar popup al hacer click fuera
   document.addEventListener('click', (e) => {
     const popup = document.getElementById('voice-chat-attachments-popup');
-    const toggleBtn = document.getElementById('btn-mita-plus-toggle');
+    const toggleBtn = document.getElementById('mita-item-action');
     if (isPopupOpen && popup && !popup.contains(e.target) && !toggleBtn?.contains(e.target)) {
       closeAttachmentsPopup();
     }
@@ -141,63 +155,100 @@ export function initVoiceChat() {
 export function setUniversalDockMode(mode) {
   const dock = document.getElementById('universal-floating-dock');
   const navView = document.getElementById('dock-view-nav');
-  const chatView = document.getElementById('dock-view-chat');
-  const voiceView = document.getElementById('dock-view-voice');
+  const interactiveView = document.getElementById('dock-view-interactive');
+
+  const iconLeft = document.getElementById('mita-icon-left');
+  const textInput = document.getElementById('voice-chat-text-input');
+  const wavesContainer = document.getElementById('mita-waves-container');
+  const iconWave = document.getElementById('mita-icon-wave');
+  const iconAction = document.getElementById('mita-icon-action');
 
   closeAttachmentsPopup();
 
   if (!dock) return;
 
   if (mode === 'nav') {
-    // 1. Estado Monedero / Inicio: Cápsula compacta (330px)
+    // 1. Estado Dashboard / Monedero: Cápsula compacta
     dock.classList.remove('dock-state-chat', 'dock-state-voice');
     dock.classList.add('dock-state-nav');
 
     if (navView) {
-      navView.classList.remove('hidden', 'opacity-0', 'translate-y-3', 'pointer-events-none');
-      navView.classList.add('opacity-100', 'translate-y-0', 'pointer-events-auto', 'flex');
+      navView.classList.remove('hidden', 'opacity-0', 'pointer-events-none');
+      navView.classList.add('opacity-100', 'pointer-events-auto', 'flex');
     }
-    if (chatView) {
-      chatView.classList.remove('opacity-100', 'translate-y-0', 'pointer-events-auto', 'flex');
-      chatView.classList.add('opacity-0', '-translate-y-3', 'pointer-events-none', 'hidden');
-    }
-    if (voiceView) {
-      voiceView.classList.remove('opacity-100', 'translate-y-0', 'pointer-events-auto', 'flex');
-      voiceView.classList.add('opacity-0', 'translate-y-3', 'pointer-events-none', 'hidden');
+    if (interactiveView) {
+      interactiveView.classList.remove('flex', 'opacity-100', 'pointer-events-auto');
+      interactiveView.classList.add('hidden', 'opacity-0', 'pointer-events-none');
     }
   } else if (mode === 'chat') {
-    // 2. Estado Chat / Pregunta a mita: Expansión elástica continua (Full width)
+    // 2. Estado Chat / Pregunta a mita: Barra blanca unificada continua
     dock.classList.remove('dock-state-nav', 'dock-state-voice');
     dock.classList.add('dock-state-chat');
 
     if (navView) {
-      navView.classList.remove('opacity-100', 'translate-y-0', 'pointer-events-auto', 'flex');
-      navView.classList.add('opacity-0', 'translate-y-3', 'pointer-events-none', 'hidden');
+      navView.classList.remove('flex', 'opacity-100', 'pointer-events-auto');
+      navView.classList.add('hidden', 'opacity-0', 'pointer-events-none');
     }
-    if (voiceView) {
-      voiceView.classList.remove('opacity-100', 'translate-y-0', 'pointer-events-auto', 'flex');
-      voiceView.classList.add('opacity-0', 'translate-y-3', 'pointer-events-none', 'hidden');
+    if (interactiveView) {
+      interactiveView.classList.remove('hidden', 'opacity-0', 'pointer-events-none');
+      interactiveView.classList.add('flex', 'opacity-100', 'pointer-events-auto');
     }
-    if (chatView) {
-      chatView.classList.remove('hidden', 'opacity-0', '-translate-y-3', 'pointer-events-none');
-      chatView.classList.add('opacity-100', 'translate-y-0', 'pointer-events-auto', 'flex');
+
+    // Morphing de iconos y contenido a Modo Chat
+    if (iconLeft) {
+      iconLeft.textContent = 'mic';
+      iconLeft.className = 'material-symbols-rounded text-2xl text-slate-800 transition-all duration-300';
+    }
+    if (textInput) {
+      textInput.style.opacity = '1';
+      textInput.style.pointerEvents = 'auto';
+    }
+    if (wavesContainer) {
+      wavesContainer.style.opacity = '0';
+      wavesContainer.style.pointerEvents = 'none';
+    }
+    if (iconWave) {
+      iconWave.textContent = 'graphic_eq';
+      iconWave.className = 'material-symbols-rounded text-2xl text-slate-800 transition-all duration-300';
+    }
+    if (iconAction) {
+      iconAction.textContent = textInput?.value.trim() ? 'send' : 'add';
+      iconAction.style.transform = 'rotate(0deg)';
     }
   } else if (mode === 'voice') {
-    // 3. Estado Grabación de Voz / Llamada: Cámara, Ondas, Mic, Cerrar
+    // 3. Estado Voz / Llamada: Container Transform -> Separación líquida en botones flotantes
     dock.classList.remove('dock-state-nav', 'dock-state-chat');
     dock.classList.add('dock-state-voice');
 
     if (navView) {
-      navView.classList.remove('opacity-100', 'translate-y-0', 'pointer-events-auto', 'flex');
-      navView.classList.add('opacity-0', 'translate-y-3', 'pointer-events-none', 'hidden');
+      navView.classList.remove('flex', 'opacity-100', 'pointer-events-auto');
+      navView.classList.add('hidden', 'opacity-0', 'pointer-events-none');
     }
-    if (chatView) {
-      chatView.classList.remove('opacity-100', 'translate-y-0', 'pointer-events-auto', 'flex');
-      chatView.classList.add('opacity-0', '-translate-y-3', 'pointer-events-none', 'hidden');
+    if (interactiveView) {
+      interactiveView.classList.remove('hidden', 'opacity-0', 'pointer-events-none');
+      interactiveView.classList.add('flex', 'opacity-100', 'pointer-events-auto');
     }
-    if (voiceView) {
-      voiceView.classList.remove('hidden', 'opacity-0', 'translate-y-3', 'pointer-events-none');
-      voiceView.classList.add('opacity-100', 'translate-y-0', 'pointer-events-auto', 'flex');
+
+    // Morphing de iconos y contenido a Modo Voz / Llamada
+    if (iconLeft) {
+      iconLeft.textContent = 'videocam';
+      iconLeft.className = 'material-symbols-rounded text-2xl text-slate-800 transition-all duration-300';
+    }
+    if (textInput) {
+      textInput.style.opacity = '0';
+      textInput.style.pointerEvents = 'none';
+    }
+    if (wavesContainer) {
+      wavesContainer.style.opacity = '1';
+      wavesContainer.style.pointerEvents = 'auto';
+    }
+    if (iconWave) {
+      iconWave.textContent = 'mic';
+      iconWave.className = 'material-symbols-rounded text-2xl text-rose-600 animate-pulse transition-all duration-300';
+    }
+    if (iconAction) {
+      iconAction.textContent = 'close';
+      iconAction.style.transform = 'rotate(0deg)';
     }
   }
 }

@@ -7,7 +7,7 @@
   <title>Qipu Mobile - Monedero Financiero</title>
   <script>
     (function() {
-      const CURRENT_BUILD = 'qipu-v9.2-material-symbols-bubble-physics';
+      const CURRENT_BUILD = 'qipu-v9.3-true-container-transform';
       if (localStorage.getItem('qipu_app_build') !== CURRENT_BUILD) {
         localStorage.setItem('qipu_app_build', CURRENT_BUILD);
         localStorage.removeItem('gemini_api_key');
@@ -282,17 +282,20 @@
     }
 
     /* ============================================================ */
-    /* 🌟 UNIVERSAL DYNAMIC MORPHING DOCK (PINTEREST / DYNAMIC ISLAND) */
+    /* 🌟 UNIVERSAL DYNAMIC CONTAINER TRANSFORM (PINTEREST / DYNAMIC ISLAND) */
     /* ============================================================ */
     #universal-floating-dock {
       transition: width 480ms cubic-bezier(0.34, 1.56, 0.64, 1),
                   max-width 480ms cubic-bezier(0.34, 1.56, 0.64, 1),
                   height 360ms cubic-bezier(0.34, 1.56, 0.64, 1),
-                  background-color 300ms ease,
+                  background 320ms ease,
+                  border 320ms ease,
                   border-radius 360ms cubic-bezier(0.34, 1.56, 0.64, 1),
                   box-shadow 360ms ease-out,
-                  transform 480ms cubic-bezier(0.34, 1.56, 0.64, 1);
-      will-change: width, max-width, transform, border-radius;
+                  transform 480ms cubic-bezier(0.34, 1.56, 0.64, 1),
+                  gap 400ms cubic-bezier(0.34, 1.56, 0.64, 1),
+                  padding 320ms ease;
+      will-change: width, max-width, transform, border-radius, gap;
     }
 
     #universal-floating-dock.dock-state-nav {
@@ -301,6 +304,7 @@
       background: #FFFFFF !important;
       border: 1px solid rgba(241, 245, 249, 0.9) !important;
       box-shadow: 0 12px 40px rgba(0, 0, 0, 0.12) !important;
+      padding: 6px 12px !important;
     }
 
     #universal-floating-dock.dock-state-chat {
@@ -309,15 +313,81 @@
       background: #FFFFFF !important;
       border: 1px solid rgba(241, 245, 249, 0.9) !important;
       box-shadow: 0 12px 40px rgba(0, 0, 0, 0.12) !important;
+      padding: 6px !important;
+      gap: 6px !important;
     }
 
     #universal-floating-dock.dock-state-voice {
       width: 100% !important;
       max-width: 480px !important;
       background: transparent !important;
-      border: none !important;
+      border: 1px solid transparent !important;
       box-shadow: none !important;
       padding: 0 !important;
+      gap: 10px !important;
+    }
+
+    /* Clases de morphing interno para los 4 ítems de la barra */
+    .morph-item-left {
+      transition: all 400ms cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+    .dock-state-chat .morph-item-left {
+      background: transparent;
+      box-shadow: none;
+      border: 1px solid transparent;
+      color: #1e293b;
+    }
+    .dock-state-voice .morph-item-left {
+      background: #FFFFFF;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.12);
+      border: 1px solid rgba(241, 245, 249, 0.9);
+      color: #1e293b;
+    }
+
+    .morph-item-center {
+      transition: all 400ms cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+    .dock-state-chat .morph-item-center {
+      background: transparent;
+      box-shadow: none;
+      border: 1px solid transparent;
+    }
+    .dock-state-voice .morph-item-center {
+      background: #FFFFFF;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.12);
+      border: 1px solid rgba(241, 245, 249, 0.9);
+    }
+
+    .morph-item-wave {
+      transition: all 400ms cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+    .dock-state-chat .morph-item-wave {
+      background: transparent;
+      box-shadow: none;
+      border: 1px solid transparent;
+      color: #1e293b;
+    }
+    .dock-state-voice .morph-item-wave {
+      background: #FFFFFF;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.12);
+      border: 1px solid rgba(241, 245, 249, 0.9);
+      color: #e11d48;
+    }
+
+    .morph-item-action {
+      transition: all 400ms cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+    .dock-state-chat .morph-item-action {
+      background: #B9F59B;
+      color: #1E2517;
+      box-shadow: 0 2px 8px rgba(185, 245, 155, 0.4);
+      border: 1px solid transparent;
+    }
+    .dock-state-voice .morph-item-action {
+      background: #FFFFFF;
+      color: #1e293b;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.12);
+      border: 1px solid rgba(241, 245, 249, 0.9);
     }
 
     /* Esfera Luminosa Orgánica y Fluida para el Chat de Voz */
@@ -1005,7 +1075,7 @@
 
       <div class="flex-1 text-center px-1">
         <h3 class="text-sm font-black text-[#1E2517] tracking-tight">Agente Mita</h3>
-        <p class="text-[10px] font-semibold text-slate-500">Asistente Inteligente • v9.2</p>
+        <p class="text-[10px] font-semibold text-slate-500">Asistente Inteligente • v9.3</p>
       </div>
 
       <button type="button" id="btn-voice-chat-options"
@@ -1122,77 +1192,52 @@
       </div>
 
       <!-- ======================================================== -->
-      <!-- ESTADO 2: MODO CHAT / PREGUNTA A MITA (BARRA EXPANDIDA)  -->
+      <!-- ESTADO 2 & 3: MODO INTERACTIVO (CONTAINER TRANSFORM CONTINUO) -->
       <!-- ======================================================== -->
-      <div id="dock-view-chat"
-        class="hidden absolute inset-0 px-3 flex items-center justify-between gap-2 bg-white transition-all duration-300 transform opacity-0 -translate-y-3 pointer-events-none">
+      <div id="dock-view-interactive"
+        class="hidden absolute inset-0 w-full h-full flex items-center justify-between pointer-events-auto">
         
-        <!-- 1. Micrófono (Izquierda) -> Enviar Nota de Voz -->
-        <button type="button" id="btn-mita-mic-left"
-          class="bubble-btn w-10 h-10 rounded-full flex items-center justify-center text-slate-800 hover:bg-slate-100 shrink-0"
-          title="Enviar Nota de Voz">
-          <span class="material-symbols-rounded text-2xl" id="icon-mita-mic">mic</span>
+        <!-- Elemento 1 (Izquierda): Micrófono / Cámara -->
+        <button type="button" id="mita-item-left"
+          class="bubble-btn w-[50px] h-[50px] rounded-full morph-item-left flex items-center justify-center shrink-0"
+          title="Nota de Voz / Escáner">
+          <span id="mita-icon-left" class="material-symbols-rounded text-2xl">mic</span>
         </button>
 
-        <!-- 2. Input de Texto Central: "Pregunta a mita" -->
-        <input type="text" id="voice-chat-text-input"
-          placeholder="Pregunta a mita"
-          autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"
-          class="flex-1 bg-transparent border-0 text-sm font-bold text-slate-900 placeholder:text-slate-800/90 focus:outline-none outline-none leading-none px-1" />
-
-        <!-- 3. Rayas / Decibeles (Waveform) -> Hablar en Vivo (Llamada Continua) -->
-        <button type="button" id="btn-mita-waveform"
-          class="bubble-btn w-9 h-9 rounded-full flex items-center justify-center text-slate-800 hover:bg-slate-100 shrink-0"
-          title="Hablar en Vivo con Mita">
-          <span class="material-symbols-rounded text-2xl tracking-tighter" id="icon-mita-waveform">graphic_eq</span>
-        </button>
-
-        <!-- 4. Botón Verde "+" (Despliega Fotos, Archivos, Cámara) / Enviar si hay texto -->
-        <button type="button" id="btn-mita-plus-toggle"
-          class="bubble-btn h-10 px-3.5 rounded-[20px] bg-[#B9F59B] hover:bg-[#aef08e] text-slate-900 flex items-center justify-center font-black text-xl shadow-2xs shrink-0"
-          title="Adjuntar o Enviar">
-          <span class="material-symbols-rounded text-2xl font-black transition-transform duration-200" id="icon-mita-plus">add</span>
-        </button>
-      </div>
-
-      <!-- ======================================================== -->
-      <!-- ESTADO 3: MODO VOZ ACTIVA / LLAMADA (BOTONES FLOTANTES SEPARADOS) -->
-      <!-- ======================================================== -->
-      <div id="dock-view-voice"
-        class="hidden absolute inset-0 flex items-center justify-between gap-3 bg-transparent transition-all duration-300 transform opacity-0 translate-y-3 pointer-events-none">
-        
-        <!-- Botón 1 (Izquierda): Cámara / Video Flotante Independiente -->
-        <button type="button" id="btn-voice-state-camera"
-          class="bubble-btn w-14 h-14 rounded-full bg-white shadow-[0_12px_35px_rgba(0,0,0,0.14)] border border-slate-100/90 text-slate-800 flex items-center justify-center shrink-0"
-          title="Escanear Boleta">
-          <span class="material-symbols-rounded text-2xl">videocam</span>
-        </button>
-
-        <!-- Centro: Cápsula Flotante Independiente con Ondas de Audio -->
-        <div class="flex-1 h-14 bg-white rounded-full shadow-[0_12px_35px_rgba(0,0,0,0.14)] border border-slate-100/90 flex items-center justify-center gap-1.5 px-4">
-          <span class="w-1.5 bg-[#A3E635] rounded-full animate-[pulse_0.6s_ease-in-out_infinite] h-4"></span>
-          <span class="w-1.5 bg-[#84cc16] rounded-full animate-[pulse_0.4s_ease-in-out_infinite] h-7"></span>
-          <span class="w-1.5 bg-[#65a30d] rounded-full animate-[pulse_0.7s_ease-in-out_infinite] h-5"></span>
-          <span class="w-1.5 bg-[#84cc16] rounded-full animate-[pulse_0.5s_ease-in-out_infinite] h-8"></span>
-          <span class="w-1.5 bg-[#A3E635] rounded-full animate-[pulse_0.6s_ease-in-out_infinite] h-4"></span>
+        <!-- Elemento 2 (Centro): Input "Pregunta a mita" / Cápsula Ondas de Audio -->
+        <div id="mita-item-center"
+          class="flex-1 h-[50px] rounded-full morph-item-center relative flex items-center justify-center px-3 overflow-hidden">
+          
+          <!-- Input de Texto (Visible en Modo Chat) -->
+          <input type="text" id="voice-chat-text-input"
+            placeholder="Pregunta a mita"
+            autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"
+            class="w-full h-full bg-transparent border-0 text-sm font-bold text-slate-900 placeholder:text-slate-800/90 focus:outline-none outline-none leading-none transition-opacity duration-300" />
+          
+          <!-- Ondas Ecualizadoras de Audio (Visibles en Modo Voz) -->
+          <div id="mita-waves-container"
+            class="absolute inset-0 flex items-center justify-center gap-1.5 px-4 opacity-0 pointer-events-none transition-opacity duration-300">
+            <span class="w-1.5 bg-[#A3E635] rounded-full animate-[pulse_0.6s_ease-in-out_infinite] h-3.5"></span>
+            <span class="w-1.5 bg-[#84cc16] rounded-full animate-[pulse_0.4s_ease-in-out_infinite] h-7"></span>
+            <span class="w-1.5 bg-[#65a30d] rounded-full animate-[pulse_0.7s_ease-in-out_infinite] h-5"></span>
+            <span class="w-1.5 bg-[#84cc16] rounded-full animate-[pulse_0.5s_ease-in-out_infinite] h-8"></span>
+            <span class="w-1.5 bg-[#A3E635] rounded-full animate-[pulse_0.6s_ease-in-out_infinite] h-3.5"></span>
+          </div>
         </div>
 
-        <!-- Botones Derecha: Botones Flotantes Independientes [ 🎤 Mic ] + [ ✕ Cerrar ] -->
-        <div class="flex items-center gap-2 shrink-0">
-          <!-- Botón Micrófono Activo Flotante -->
-          <button type="button" id="btn-voice-state-mic"
-            class="bubble-btn w-14 h-14 rounded-full bg-white shadow-[0_12px_35px_rgba(0,0,0,0.14)] border border-slate-100/90 text-slate-900 flex items-center justify-center"
-            title="Pausar / Reanudar Micrófono">
-            <span class="material-symbols-rounded text-2xl animate-pulse text-rose-600" id="icon-voice-state-mic">mic</span>
-          </button>
+        <!-- Elemento 3 (Derecha 1): Rayas Decibeles / Micrófono Activo -->
+        <button type="button" id="mita-item-wave"
+          class="bubble-btn w-[50px] h-[50px] rounded-full morph-item-wave flex items-center justify-center shrink-0"
+          title="Hablar en Vivo / Pausar Micrófono">
+          <span id="mita-icon-wave" class="material-symbols-rounded text-2xl tracking-tighter">graphic_eq</span>
+        </button>
 
-          <!-- Botón ✕ Cerrar / Cancelar Flotante (Vuelve al Modo Chat o Nav) -->
-          <button type="button" id="btn-voice-state-close"
-            class="bubble-btn w-14 h-14 rounded-full bg-white shadow-[0_12px_35px_rgba(0,0,0,0.14)] border border-slate-100/90 text-slate-800 flex items-center justify-center"
-            title="Cerrar y volver a escribir">
-            <span class="material-symbols-rounded text-2xl font-black">close</span>
-          </button>
-        </div>
+        <!-- Elemento 4 (Derecha 2): Botón '+' / Botón '✕' -->
+        <button type="button" id="mita-item-action"
+          class="bubble-btn w-[50px] h-[50px] rounded-full morph-item-action flex items-center justify-center shrink-0"
+          title="Adjuntar / Cerrar">
+          <span id="mita-icon-action" class="material-symbols-rounded text-2xl font-bold">add</span>
+        </button>
       </div>
 
       <!-- Hidden File Inputs para Fotos y Archivos -->
@@ -2453,7 +2498,7 @@
   <!-- ========================================== -->
   <!-- MODULOS JAVASCRIPT MOBILE (ARQUITECTURA MODULAR) -->
   <!-- ========================================== -->
-  <script type="module" src="js/mobile/mobile-main.js?v=9.2"></script>
+  <script type="module" src="js/mobile/mobile-main.js?v=9.3"></script>
 </body>
 
 </html>
