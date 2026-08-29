@@ -157,6 +157,11 @@ export function setUniversalDockMode(mode) {
   const navView = document.getElementById('dock-view-nav');
   const interactiveView = document.getElementById('dock-view-interactive');
 
+  const itemLeft = document.getElementById('mita-item-left');
+  const itemCenter = document.getElementById('mita-item-center');
+  const itemWave = document.getElementById('mita-item-wave');
+  const itemAction = document.getElementById('mita-item-action');
+
   const iconLeft = document.getElementById('mita-icon-left');
   const textInput = document.getElementById('voice-chat-text-input');
   const wavesContainer = document.getElementById('mita-waves-container');
@@ -166,6 +171,20 @@ export function setUniversalDockMode(mode) {
   closeAttachmentsPopup();
 
   if (!dock) return;
+
+  // 1. Captura el estado FLIP inicial antes del cambio
+  let flipState = null;
+  if (window.Flip) {
+    try {
+      flipState = Flip.getState([
+        dock,
+        itemLeft,
+        itemCenter,
+        itemWave,
+        itemAction
+      ].filter(Boolean));
+    } catch {}
+  }
 
   if (mode === 'nav') {
     // 1. Estado Dashboard / Monedero: Cápsula compacta
@@ -250,6 +269,20 @@ export function setUniversalDockMode(mode) {
       iconAction.textContent = 'close';
       iconAction.style.transform = 'rotate(0deg)';
     }
+  }
+
+  // 2. Ejecuta la animación FLIP física con rebote elástico
+  if (flipState && window.Flip) {
+    try {
+      Flip.from(flipState, {
+        duration: 0.45,
+        ease: "back.out(1.6)",
+        scale: true,
+        fade: true,
+        absolute: false,
+        stagger: mode === 'voice' ? 0.02 : 0
+      });
+    } catch {}
   }
 }
 

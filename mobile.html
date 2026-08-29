@@ -7,7 +7,7 @@
   <title>Qipu Mobile - Monedero Financiero</title>
   <script>
     (function() {
-      const CURRENT_BUILD = 'qipu-v9.3-true-container-transform';
+      const CURRENT_BUILD = 'qipu-v9.4-gsap-flip-morphing';
       if (localStorage.getItem('qipu_app_build') !== CURRENT_BUILD) {
         localStorage.setItem('qipu_app_build', CURRENT_BUILD);
         localStorage.removeItem('gemini_api_key');
@@ -31,6 +31,10 @@
     href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
   <link rel="stylesheet"
     href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
+
+  <!-- GSAP & Flip Plugin para Animaciones Físicas y Container Transform -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/Flip.min.js"></script>
 
   <!-- Lottie & DotLottie Web Players -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/bodymovin/5.12.2/lottie.min.js"></script>
@@ -1075,7 +1079,7 @@
 
       <div class="flex-1 text-center px-1">
         <h3 class="text-sm font-black text-[#1E2517] tracking-tight">Agente Mita</h3>
-        <p class="text-[10px] font-semibold text-slate-500">Asistente Inteligente • v9.3</p>
+        <p class="text-[10px] font-semibold text-slate-500">Asistente Inteligente • v9.4</p>
       </div>
 
       <button type="button" id="btn-voice-chat-options"
@@ -2498,7 +2502,7 @@
   <!-- ========================================== -->
   <!-- MODULOS JAVASCRIPT MOBILE (ARQUITECTURA MODULAR) -->
   <!-- ========================================== -->
-  <script type="module" src="js/mobile/mobile-main.js?v=9.3"></script>
+  <script type="module" src="js/mobile/mobile-main.js?v=9.4"></script>
 </body>
 
 </html>
