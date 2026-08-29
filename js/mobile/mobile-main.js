@@ -55,9 +55,9 @@ import {
   openEditExpenseModal, openEditIncomeModal, saveExpenseForm, deleteExpense, deleteIncome
 } from "./vista-registro.js";
 
-import { initReceiptScannerPWA, triggerReceiptScanner } from "./lector-boletas.js?v=8.9";
-import { initPullToRefresh, triggerPullRefresh } from "./pull-refresh.js?v=8.9";
-import { initVoiceChat, openVoiceChat, closeVoiceChat, handleReceiptInVoiceChat } from "./voice-chat.js?v=8.9";
+import { initReceiptScannerPWA, triggerReceiptScanner } from "./lector-boletas.js?v=9.0";
+import { initPullToRefresh, triggerPullRefresh } from "./pull-refresh.js?v=9.0";
+import { initVoiceChat, openVoiceChat, closeVoiceChat, handleReceiptInVoiceChat } from "./voice-chat.js?v=9.0";
 
 import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
 import { doc, getDoc, onSnapshot, updateDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";

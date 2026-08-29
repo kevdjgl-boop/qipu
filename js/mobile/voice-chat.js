@@ -97,7 +97,12 @@ export function initVoiceChat() {
   photoInput?.addEventListener('change', handleAttachmentFile);
   fileInput?.addEventListener('change', handleAttachmentFile);
 
-  // Botón Mita en la barra de navegación del inicio
+  // Botones Hablar y Chat en el Dock de Inicio
+  document.getElementById('nav-btn-open-voice')?.addEventListener('click', () => {
+    openVoiceChat();
+    setTimeout(() => startVoiceRecording(), 100);
+  });
+  document.getElementById('nav-btn-open-chat')?.addEventListener('click', openVoiceChat);
   document.getElementById('nav-btn-open-mita')?.addEventListener('click', openVoiceChat);
 
   // Listeners para el Estado 3 de la barra (Grabación de voz activa)
@@ -134,19 +139,20 @@ export function initVoiceChat() {
 }
 
 export function setUniversalDockMode(mode) {
-  const fabBtn = document.getElementById('fab-main-btn');
+  const dock = document.getElementById('universal-floating-dock');
   const navView = document.getElementById('dock-view-nav');
   const chatView = document.getElementById('dock-view-chat');
   const voiceView = document.getElementById('dock-view-voice');
 
   closeAttachmentsPopup();
 
+  if (!dock) return;
+
   if (mode === 'nav') {
-    // Modo Inicio / Monedero: Cápsula compacta + Botón FAB circular visible
-    if (fabBtn) {
-      fabBtn.classList.remove('hidden', 'scale-0', 'opacity-0', 'pointer-events-none', 'w-0', 'ml-0');
-      fabBtn.classList.add('scale-100', 'opacity-100', 'pointer-events-auto', 'w-[60px]', 'h-[60px]', 'ml-3');
-    }
+    // 1. Estado Monedero / Inicio: Cápsula compacta (330px)
+    dock.classList.remove('dock-state-chat', 'dock-state-voice');
+    dock.classList.add('dock-state-nav');
+
     if (navView) {
       navView.classList.remove('hidden', 'opacity-0', 'translate-y-3', 'pointer-events-none');
       navView.classList.add('opacity-100', 'translate-y-0', 'pointer-events-auto', 'flex');
@@ -160,11 +166,10 @@ export function setUniversalDockMode(mode) {
       voiceView.classList.add('opacity-0', 'translate-y-3', 'pointer-events-none', 'hidden');
     }
   } else if (mode === 'chat') {
-    // Modo Chat / Pregunta a mita: Barra expandida a ancho completo
-    if (fabBtn) {
-      fabBtn.classList.add('scale-0', 'opacity-0', 'pointer-events-none', 'w-0', 'ml-0', 'hidden');
-      fabBtn.classList.remove('scale-100', 'opacity-100', 'pointer-events-auto', 'w-[60px]', 'h-[60px]', 'ml-3');
-    }
+    // 2. Estado Chat / Pregunta a mita: Expansión elástica continua (Full width)
+    dock.classList.remove('dock-state-nav', 'dock-state-voice');
+    dock.classList.add('dock-state-chat');
+
     if (navView) {
       navView.classList.remove('opacity-100', 'translate-y-0', 'pointer-events-auto', 'flex');
       navView.classList.add('opacity-0', 'translate-y-3', 'pointer-events-none', 'hidden');
@@ -178,11 +183,10 @@ export function setUniversalDockMode(mode) {
       chatView.classList.add('opacity-100', 'translate-y-0', 'pointer-events-auto', 'flex');
     }
   } else if (mode === 'voice') {
-    // Modo Grabación de Voz / Llamada
-    if (fabBtn) {
-      fabBtn.classList.add('scale-0', 'opacity-0', 'pointer-events-none', 'w-0', 'ml-0', 'hidden');
-      fabBtn.classList.remove('scale-100', 'opacity-100', 'pointer-events-auto', 'w-[60px]', 'h-[60px]', 'ml-3');
-    }
+    // 3. Estado Grabación de Voz / Llamada: Cámara, Ondas, Mic, Cerrar
+    dock.classList.remove('dock-state-nav', 'dock-state-chat');
+    dock.classList.add('dock-state-voice');
+
     if (navView) {
       navView.classList.remove('opacity-100', 'translate-y-0', 'pointer-events-auto', 'flex');
       navView.classList.add('opacity-0', 'translate-y-3', 'pointer-events-none', 'hidden');

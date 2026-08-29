@@ -7,7 +7,7 @@
   <title>Qipu Mobile - Monedero Financiero</title>
   <script>
     (function() {
-      const CURRENT_BUILD = 'qipu-v8.9-universal-dynamic-dock-morphing';
+      const CURRENT_BUILD = 'qipu-v9.0-spring-morphing-island';
       if (localStorage.getItem('qipu_app_build') !== CURRENT_BUILD) {
         localStorage.setItem('qipu_app_build', CURRENT_BUILD);
         localStorage.removeItem('gemini_api_key');
@@ -258,14 +258,25 @@
     /* ============================================================ */
     /* 🌟 UNIVERSAL DYNAMIC MORPHING DOCK (PINTEREST / DYNAMIC ISLAND) */
     /* ============================================================ */
-    .dynamic-morph-dock {
-      transition: width 420ms cubic-bezier(0.34, 1.56, 0.64, 1),
-                  max-width 420ms cubic-bezier(0.34, 1.56, 0.64, 1),
+    #universal-floating-dock {
+      transition: width 480ms cubic-bezier(0.34, 1.56, 0.64, 1),
+                  max-width 480ms cubic-bezier(0.34, 1.56, 0.64, 1),
+                  height 360ms cubic-bezier(0.34, 1.56, 0.64, 1),
                   border-radius 360ms cubic-bezier(0.34, 1.56, 0.64, 1),
-                  padding 320ms ease-out,
                   box-shadow 360ms ease-out,
-                  transform 360ms cubic-bezier(0.34, 1.56, 0.64, 1);
-      will-change: width, max-width, border-radius, transform;
+                  transform 480ms cubic-bezier(0.34, 1.56, 0.64, 1);
+      will-change: width, max-width, transform, border-radius;
+    }
+
+    #universal-floating-dock.dock-state-nav {
+      width: 330px !important;
+      max-width: calc(100vw - 32px) !important;
+    }
+
+    #universal-floating-dock.dock-state-chat,
+    #universal-floating-dock.dock-state-voice {
+      width: 100% !important;
+      max-width: 480px !important;
     }
 
     .dynamic-morph-content {
@@ -925,7 +936,7 @@
 
       <div class="flex-1 text-center px-1">
         <h3 class="text-sm font-black text-[#1E2517] tracking-tight">Agente Mita</h3>
-        <p class="text-[10px] font-semibold text-slate-500">Asistente Inteligente • v8.9</p>
+        <p class="text-[10px] font-semibold text-slate-500">Asistente Inteligente • v9.0</p>
       </div>
 
       <button type="button" id="btn-voice-chat-options"
@@ -971,11 +982,11 @@
   <!-- 🌟 BARRA DINÁMICA UNIVERSAL FLOTANTE (DYNAMIC MORPHING DOCK)  -->
   <!-- ============================================================ -->
   <div id="universal-dock-wrapper"
-    class="fixed bottom-4 left-4 right-4 z-50 max-w-lg mx-auto flex items-center justify-between pointer-events-none transition-all duration-300">
+    class="fixed bottom-4 inset-x-0 z-50 px-4 max-w-lg mx-auto flex items-center justify-center pointer-events-none">
     
     <!-- Menú Flotante de Opciones / Adjuntos (Fotos, Archivos, Cámara) -->
     <div id="voice-chat-attachments-popup"
-      class="hidden absolute right-0 bottom-20 z-50 bg-white/98 backdrop-blur-xl p-2.5 rounded-[26px] shadow-[0_12px_40px_rgba(0,0,0,0.18)] border border-slate-100/90 flex flex-col gap-2 transition-all duration-200 transform origin-bottom-right scale-95 opacity-0 pointer-events-none">
+      class="hidden absolute right-4 bottom-20 z-50 bg-white/98 backdrop-blur-xl p-2.5 rounded-[26px] shadow-[0_12px_40px_rgba(0,0,0,0.18)] border border-slate-100/90 flex flex-col gap-2 transition-all duration-200 transform origin-bottom-right scale-95 opacity-0 pointer-events-none">
       
       <!-- Opción 1: Fotos -->
       <button type="button" id="btn-attach-photos"
@@ -1001,13 +1012,13 @@
 
     <!-- LA CÁPSULA UNIVERSAL QUE SE TRANSFORMA ELÁSTICAMENTE (DYNAMIC ISLAND DOCK) -->
     <div id="universal-floating-dock"
-      class="pointer-events-auto h-[64px] flex-1 bg-white shadow-[0_10px_35px_rgba(0,0,0,0.12)] border border-slate-100/90 rounded-[32px] flex items-center justify-between px-3 text-slate-800 transition-all duration-300 relative z-40 overflow-hidden dynamic-morph-dock select-none">
+      class="dock-state-nav pointer-events-auto h-[64px] bg-white shadow-[0_12px_40px_rgba(0,0,0,0.14)] border border-slate-100/90 rounded-[32px] flex items-center justify-between px-3 text-slate-800 relative z-40 overflow-hidden select-none">
       
       <!-- ======================================================== -->
       <!-- ESTADO 1: MODO INICIO / NAVEGACIÓN COMPACTA (DASHBOARD) -->
       <!-- ======================================================== -->
       <div id="dock-view-nav"
-        class="w-full h-full flex items-center justify-around gap-1 transition-all duration-300 transform">
+        class="w-full h-full flex items-center justify-between gap-1 transition-all duration-300 transform">
         <!-- 1. Monedero -->
         <button type="button" id="nav-btn-wallet"
           class="w-11 h-11 rounded-2xl flex items-center justify-center text-slate-900 hover:bg-slate-100 active:scale-90 transition-transform"
@@ -1029,18 +1040,18 @@
           <span class="material-symbols-rounded text-2xl">photo_camera</span>
         </button>
 
-        <!-- 4. Buscar / Historial -->
-        <button type="button" id="nav-btn-search"
-          class="w-11 h-11 rounded-2xl flex items-center justify-center text-slate-900 hover:bg-slate-100 active:scale-90 transition-transform"
-          title="Buscar Movimientos">
-          <i class="fas fa-magnifying-glass text-lg"></i>
+        <!-- 4. Botón Hablar por Voz (Píldora Verde con Micrófono) -->
+        <button type="button" id="nav-btn-open-voice"
+          class="h-11 px-3.5 rounded-full bg-[#ECF9E1] hover:bg-[#d9f5c4] text-[#1E2517] flex items-center gap-1.5 font-black text-xs border border-[#BEEB9F] active:scale-95 transition-all cursor-pointer shadow-2xs">
+          <span class="material-symbols-rounded text-lg text-emerald-800">mic</span>
+          <span>Hablar</span>
         </button>
 
-        <!-- 5. Botón Píldora Mita (Hablar / Chat) que expande la barra -->
-        <button type="button" id="nav-btn-open-mita"
-          class="h-10 px-3.5 rounded-full bg-[#ECF9E1] hover:bg-[#d9f5c4] text-[#1E2517] flex items-center gap-1.5 font-black text-xs border border-[#BEEB9F] active:scale-95 transition-all cursor-pointer shadow-2xs">
-          <span class="material-symbols-rounded text-base text-emerald-800">mic</span>
-          <span>Mita</span>
+        <!-- 5. Botón Abrir Chat / Escribir -->
+        <button type="button" id="nav-btn-open-chat"
+          class="w-11 h-11 rounded-2xl flex items-center justify-center text-slate-900 hover:bg-slate-100 active:scale-90 transition-transform cursor-pointer"
+          title="Abrir Chat de Texto">
+          <span class="material-symbols-rounded text-2xl">chat</span>
         </button>
       </div>
 
@@ -1122,12 +1133,6 @@
       <input type="file" id="input-mita-attach-photo" accept="image/*" class="hidden" />
       <input type="file" id="input-mita-attach-file" accept="image/*,.pdf,.doc,.docx" class="hidden" />
     </div>
-
-    <!-- Botón FAB Circular Flotante (Se colapsa con spring transition cuando se abre Mita) -->
-    <button type="button" id="fab-main-btn" style="border-radius: 28px;"
-      class="pointer-events-auto w-[60px] h-[60px] shrink-0 bg-white shadow-[0_10px_35px_rgba(0,0,0,0.12)] border border-slate-100/90 flex items-center justify-center text-slate-900 active:scale-95 transition-all duration-300 cursor-pointer select-none ml-3">
-      <i id="fab-icon" class="fas fa-plus text-2xl font-black transition-transform duration-300"></i>
-    </button>
   </div>
 
   <!-- 1. Pantalla Completa Registrar / Editar Gasto o Ingreso (Cabecera #ECF9E1 + Cuerpo rounded-t-[36px]) -->
@@ -2382,7 +2387,7 @@
   <!-- ========================================== -->
   <!-- MODULOS JAVASCRIPT MOBILE (ARQUITECTURA MODULAR) -->
   <!-- ========================================== -->
-  <script type="module" src="js/mobile/mobile-main.js?v=8.9"></script>
+  <script type="module" src="js/mobile/mobile-main.js?v=9.0"></script>
 </body>
 
 </html>
