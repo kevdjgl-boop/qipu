@@ -48,57 +48,69 @@ export function initVoiceChat() {
     triggerReceiptScanner();
   });
 
-  // Inicializar Web Speech Recognition en modo continuo
   const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
   if (SpeechRec) {
     recognition = new SpeechRec();
     recognition.lang = 'es-PE';
-    recognition.continuous = true;
+    recognition.continuous = false;
     recognition.interimResults = true;
-
-    recognition.onstart = () => {
-      isRecording = true;
-      updateMicUIState(true);
-    };
-
-    recognition.onresult = (event) => {
-      let interimTranscript = '';
-      let finalTranscript = '';
-
-      for (let i = event.resultIndex; i < event.results.length; ++i) {
-        if (event.results[i].isFinal) {
-          finalTranscript += event.results[i][0].transcript;
-        } else {
-          interimTranscript += event.results[i][0].transcript;
-        }
-      }
-
-      if (interimTranscript) {
-        updateStreamingUserMessage(interimTranscript, false);
-      }
-
-      if (finalTranscript.trim()) {
-        const cleanText = finalTranscript.trim();
-        updateStreamingUserMessage(cleanText, true);
-        processUserVoiceQuery(cleanText);
-      }
-    };
-
-    recognition.onerror = (event) => {
-      if (event.error === 'no-speech') return;
-      console.warn('Error en Speech Recognition:', event.error);
-    };
-
-    recognition.onend = () => {
-      if (isRecording && isVoiceChatOpen) {
-        try { recognition.start(); } catch {}
-      } else {
-        isRecording = false;
-        stopAudioAnalysis();
-        updateMicUIState(false);
-      }
-    };
+    setupRecognitionEvents();
   }
+}
+
+let accumulatedFinalText = '';
+let auraPulseInterval = null;
+
+function setupRecognitionEvents() {
+  if (!recognition) return;
+
+  recognition.onstart = () => {
+    isRecording = true;
+    accumulatedFinalText = '';
+    updateMicUIState(true);
+    startPulsingAura();
+  };
+
+  recognition.onresult = (event) => {
+    let interimTranscript = '';
+
+    for (let i = event.resultIndex; i < event.results.length; ++i) {
+      if (event.results[i].isFinal) {
+        accumulatedFinalText += ' ' + event.results[i][0].transcript;
+      } else {
+        interimTranscript += event.results[i][0].transcript;
+      }
+    }
+
+    const currentDisplay = (accumulatedFinalText + ' ' + interimTranscript).trim();
+    if (currentDisplay) {
+      updateStreamingUserMessage(currentDisplay, false);
+    }
+  };
+
+  recognition.onerror = (event) => {
+    console.warn('SpeechRecognition error:', event.error);
+    if (event.error === 'not-allowed') {
+      alert('Por favor otorga permisos de micrófono en los ajustes de tu navegador para hablar con Mita.');
+      stopVoiceRecording();
+    }
+  };
+
+  recognition.onend = () => {
+    isRecording = false;
+    updateMicUIState(false);
+    stopPulsingAura();
+
+    const finalText = accumulatedFinalText.trim();
+    if (finalText) {
+      updateStreamingUserMessage(finalText, true);
+      processUserVoiceQuery(finalText);
+      accumulatedFinalText = '';
+    } else if (currentStreamingBubble) {
+      currentStreamingBubble.remove();
+      currentStreamingBubble = null;
+    }
+  };
 }
 
 export function openVoiceChat() {
@@ -147,10 +159,6 @@ export function closeVoiceChat() {
   isVoiceChatOpen = false;
   stopVoiceRecording();
 
-  if (speechSynth && speechSynth.speaking) {
-    speechSynth.cancel();
-  }
-
   view.classList.add('hidden');
   view.classList.remove('flex');
 }
@@ -166,125 +174,80 @@ export async function toggleVoiceRecording() {
 export async function startVoiceRecording() {
   if (isRecording) return;
 
+  const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SpeechRec) {
+    alert("Tu navegador no soporta reconocimiento de voz nativo. Por favor abre Qipu en Google Chrome.");
+    return;
+  }
+
+  if (!recognition) {
+    recognition = new SpeechRec();
+    recognition.lang = 'es-PE';
+    recognition.continuous = false;
+    recognition.interimResults = true;
+    setupRecognitionEvents();
+  }
+
   try {
-    const stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
-    microphoneStream = stream;
-
-    const AudioContextClass = window.AudioContext || window.webkitAudioContext;
-    audioContext = new AudioContextClass();
-    const source = audioContext.createMediaStreamSource(stream);
-    analyser = audioContext.createAnalyser();
-    analyser.fftSize = 256;
-    analyser.smoothingTimeConstant = 0.65;
-    source.connect(analyser);
-
-    dataArray = new Uint8Array(analyser.frequencyBinCount);
-
-    // Iniciar loop de análisis de decibelios a 60 FPS
-    runAudioDecibelLoop();
-
-    // Iniciar reconocimiento de voz
-    if (recognition) {
-      try {
-        recognition.start();
-      } catch {}
-    }
-
     isRecording = true;
+    accumulatedFinalText = '';
     updateMicUIState(true);
-    updateStatusText("Escuchando tu voz...", true);
-
-    if (navigator.vibrate) navigator.vibrate(20);
+    recognition.start();
+    if (navigator.vibrate) navigator.vibrate(25);
   } catch (err) {
-    console.warn("Permiso de micrófono no otorgado o error:", err);
-    updateStatusText("Por favor permite el acceso al micrófono", false);
+    console.warn("Error al iniciar reconocimiento:", err);
+    try {
+      recognition.stop();
+      setTimeout(() => {
+        try { recognition.start(); } catch {}
+      }, 150);
+    } catch {}
   }
 }
 
 export function stopVoiceRecording() {
   isRecording = false;
   updateMicUIState(false);
+  stopPulsingAura();
 
   if (recognition) {
     try { recognition.stop(); } catch {}
   }
-
-  stopAudioAnalysis();
-  resetEchoRings();
 }
 
-function stopAudioAnalysis() {
-  if (animationFrameId) {
-    cancelAnimationFrame(animationFrameId);
-    animationFrameId = null;
-  }
-  if (microphoneStream) {
-    microphoneStream.getTracks().forEach(track => track.stop());
-    microphoneStream = null;
-  }
-  if (audioContext && audioContext.state !== 'closed') {
-    audioContext.close().catch(() => {});
-    audioContext = null;
-  }
-}
+function startPulsingAura() {
+  const coreSvg = document.getElementById('voice-chat-svg-core');
+  const ring1 = document.getElementById('voice-echo-ring-1');
+  const ring2 = document.getElementById('voice-echo-ring-2');
+  const ring3 = document.getElementById('voice-echo-ring-3');
 
-// Bucle en tiempo real de análisis de decibelios & escalado de eco con desenfoque
-function runAudioDecibelLoop() {
-  if (!analyser || !dataArray) return;
+  if (auraPulseInterval) clearInterval(auraPulseInterval);
 
-  const updateDecibels = () => {
-    if (!isRecording) return;
-
-    analyser.getByteFrequencyData(dataArray);
-
-    let sum = 0;
-    for (let i = 0; i < dataArray.length; i++) {
-      sum += dataArray[i];
-    }
-    const average = sum / dataArray.length;
-    const normalizedVol = Math.min(1, Math.max(0, (average - 12) / 75));
-
-    // 1. Núcleo SVG Central: escala elástica
-    const coreSvg = document.getElementById('voice-chat-svg-core');
-    if (coreSvg) {
-      const coreScale = 1.0 + normalizedVol * 0.25;
-      coreSvg.style.transform = `scale(${coreScale})`;
-    }
-
-    // 2. Anillo Eco 1 (Interno)
-    const ring1 = document.getElementById('voice-echo-ring-1');
+  let pulse = false;
+  auraPulseInterval = setInterval(() => {
+    pulse = !pulse;
+    if (coreSvg) coreSvg.style.transform = pulse ? 'scale(1.10)' : 'scale(0.98)';
     if (ring1) {
-      const r1Scale = 0.95 + normalizedVol * 0.4;
-      const r1Blur = 16 + normalizedVol * 20;
-      ring1.style.transform = `scale(${r1Scale})`;
-      ring1.style.filter = `blur(${r1Blur}px)`;
-      ring1.style.opacity = `${0.45 + normalizedVol * 0.55}`;
+      ring1.style.transform = pulse ? 'scale(1.18)' : 'scale(0.95)';
+      ring1.style.opacity = pulse ? '0.70' : '0.45';
     }
-
-    // 3. Anillo Eco 2 (Medio)
-    const ring2 = document.getElementById('voice-echo-ring-2');
     if (ring2) {
-      const r2Scale = 0.85 + normalizedVol * 0.6;
-      const r2Blur = 24 + normalizedVol * 30;
-      ring2.style.transform = `scale(${r2Scale})`;
-      ring2.style.filter = `blur(${r2Blur}px)`;
-      ring2.style.opacity = `${0.35 + normalizedVol * 0.5}`;
+      ring2.style.transform = pulse ? 'scale(1.10)' : 'scale(0.85)';
+      ring2.style.opacity = pulse ? '0.55' : '0.35';
     }
-
-    // 4. Anillo Eco 3 (Externo)
-    const ring3 = document.getElementById('voice-echo-ring-3');
     if (ring3) {
-      const r3Scale = 0.75 + normalizedVol * 0.8;
-      const r3Blur = 36 + normalizedVol * 44;
-      ring3.style.transform = `scale(${r3Scale})`;
-      ring3.style.filter = `blur(${r3Blur}px)`;
-      ring3.style.opacity = `${0.25 + normalizedVol * 0.5}`;
+      ring3.style.transform = pulse ? 'scale(1.04)' : 'scale(0.75)';
+      ring3.style.opacity = pulse ? '0.40' : '0.25';
     }
+  }, 350);
+}
 
-    animationFrameId = requestAnimationFrame(updateDecibels);
-  };
-
-  animationFrameId = requestAnimationFrame(updateDecibels);
+function stopPulsingAura() {
+  if (auraPulseInterval) {
+    clearInterval(auraPulseInterval);
+    auraPulseInterval = null;
+  }
+  resetEchoRings();
 }
 
 function resetEchoRings() {
