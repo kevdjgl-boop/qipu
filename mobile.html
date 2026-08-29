@@ -7,7 +7,7 @@
   <title>Qipu Mobile - Monedero Financiero</title>
   <script>
     (function() {
-      const CURRENT_BUILD = 'qipu-v8.7-dynamic-island-bar';
+      const CURRENT_BUILD = 'qipu-v8.8-voice-recording-bar-morphing';
       if (localStorage.getItem('qipu_app_build') !== CURRENT_BUILD) {
         localStorage.setItem('qipu_app_build', CURRENT_BUILD);
         localStorage.removeItem('gemini_api_key');
@@ -973,7 +973,7 @@
 
       <div class="flex-1 text-center px-1">
         <h3 class="text-sm font-black text-[#1E2517] tracking-tight">Agente Mita</h3>
-        <p class="text-[10px] font-semibold text-slate-500">Asistente Inteligente • v8.7</p>
+        <p class="text-[10px] font-semibold text-slate-500">Asistente Inteligente • v8.8</p>
       </div>
 
       <button type="button" id="btn-voice-chat-options"
@@ -1044,36 +1044,83 @@
         </button>
       </div>
 
-      <!-- Barra Principal Cápsula Blanca Flotante -->
+      <!-- Barra Principal Cápsula Blanca Flotante con Morphing Dinámico (Spring Physics) -->
       <div id="mita-unified-chat-bar"
-        class="h-[64px] bg-white shadow-[0_10px_35px_rgba(0,0,0,0.10)] border border-slate-100/90 rounded-[32px] flex items-center justify-between px-3.5 gap-2 text-slate-800 transition-all duration-200 relative z-30">
+        class="h-[64px] bg-white shadow-[0_10px_35px_rgba(0,0,0,0.12)] border border-slate-100/90 rounded-[32px] flex items-center justify-between px-3 text-slate-800 transition-all duration-300 relative z-30 overflow-hidden select-none">
         
-        <!-- 1. Micrófono (Izquierda) -->
-        <button type="button" id="btn-mita-mic-left"
-          class="w-10 h-10 rounded-full flex items-center justify-center text-slate-800 hover:bg-slate-100 active:scale-90 transition-transform cursor-pointer shrink-0"
-          title="Hablar con Mita">
-          <span class="material-symbols-rounded text-2xl" id="icon-mita-mic">mic</span>
-        </button>
+        <!-- ======================================================== -->
+        <!-- ESTADO A: MODO TEXTO / IDLE ('Pregunta a mita')          -->
+        <!-- ======================================================== -->
+        <div id="mita-bar-text-state"
+          class="w-full h-full flex items-center justify-between gap-2 transition-all duration-300 transform">
+          
+          <!-- 1. Micrófono (Izquierda) -> Al presionar morph a ESTADO B -->
+          <button type="button" id="btn-mita-mic-left"
+            class="w-10 h-10 rounded-full flex items-center justify-center text-slate-800 hover:bg-slate-100 active:scale-90 transition-transform cursor-pointer shrink-0"
+            title="Hablar con Mita">
+            <span class="material-symbols-rounded text-2xl" id="icon-mita-mic">mic</span>
+          </button>
 
-        <!-- 2. Input de Texto Central: "Pregunta a mita" -->
-        <input type="text" id="voice-chat-text-input"
-          placeholder="Pregunta a mita"
-          autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"
-          class="flex-1 bg-transparent border-0 text-sm font-bold text-slate-900 placeholder:text-slate-800/90 focus:outline-none outline-none leading-none px-1" />
+          <!-- 2. Input de Texto Central: "Pregunta a mita" -->
+          <input type="text" id="voice-chat-text-input"
+            placeholder="Pregunta a mita"
+            autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"
+            class="flex-1 bg-transparent border-0 text-sm font-bold text-slate-900 placeholder:text-slate-800/90 focus:outline-none outline-none leading-none px-1" />
 
-        <!-- 3. Visualizador de Ondas de Audio (Waveform) -->
-        <button type="button" id="btn-mita-waveform"
-          class="w-9 h-9 rounded-full flex items-center justify-center text-slate-800 hover:bg-slate-100 active:scale-90 transition-transform cursor-pointer shrink-0"
-          title="Modo Voz / Ondas de Audio">
-          <span class="material-symbols-rounded text-2xl tracking-tighter" id="icon-mita-waveform">graphic_eq</span>
-        </button>
+          <!-- 3. Visualizador de Ondas de Audio (Waveform) -> Al presionar morph a ESTADO B -->
+          <button type="button" id="btn-mita-waveform"
+            class="w-9 h-9 rounded-full flex items-center justify-center text-slate-800 hover:bg-slate-100 active:scale-90 transition-transform cursor-pointer shrink-0"
+            title="Modo Voz / Ondas de Audio">
+            <span class="material-symbols-rounded text-2xl tracking-tighter" id="icon-mita-waveform">graphic_eq</span>
+          </button>
 
-        <!-- 4. Botón Verde "+" (Despliega Fotos, Archivos, Cámara) / Enviar si hay texto -->
-        <button type="button" id="btn-mita-plus-toggle"
-          class="h-10 px-3.5 rounded-[20px] bg-[#B9F59B] hover:bg-[#aef08e] text-slate-900 flex items-center justify-center font-black text-xl shadow-2xs active:scale-90 transition-all cursor-pointer shrink-0"
-          title="Adjuntar o Enviar">
-          <span class="material-symbols-rounded text-2xl font-black transition-transform duration-200" id="icon-mita-plus">add</span>
-        </button>
+          <!-- 4. Botón Verde "+" (Despliega Fotos, Archivos, Cámara) / Enviar si hay texto -->
+          <button type="button" id="btn-mita-plus-toggle"
+            class="h-10 px-3.5 rounded-[20px] bg-[#B9F59B] hover:bg-[#aef08e] text-slate-900 flex items-center justify-center font-black text-xl shadow-2xs active:scale-90 transition-all cursor-pointer shrink-0"
+            title="Adjuntar o Enviar">
+            <span class="material-symbols-rounded text-2xl font-black transition-transform duration-200" id="icon-mita-plus">add</span>
+          </button>
+        </div>
+
+        <!-- ======================================================== -->
+        <!-- ESTADO B: MODO VOZ ACTIVA / GRABACIÓN (Exacto a la imagen)-->
+        <!-- ======================================================== -->
+        <div id="mita-bar-voice-state"
+          class="hidden absolute inset-0 px-3 flex items-center justify-between gap-2 bg-white transition-all duration-300 transform opacity-0 translate-y-3 pointer-events-none">
+          
+          <!-- Botón 1 (Izquierda): Cámara / Video -->
+          <button type="button" id="btn-voice-state-camera"
+            class="w-11 h-11 rounded-full bg-slate-100/80 hover:bg-slate-200/80 text-slate-800 flex items-center justify-center shadow-xs active:scale-90 transition-transform cursor-pointer shrink-0"
+            title="Escanear Boleta">
+            <span class="material-symbols-rounded text-2xl">videocam</span>
+          </button>
+
+          <!-- Centro: Ondas de Audio Dinámicas Animadas -->
+          <div class="flex-1 flex items-center justify-center gap-1.5 px-4 h-full">
+            <span class="w-1 bg-[#A3E635] rounded-full animate-[pulse_0.6s_ease-in-out_infinite] h-4"></span>
+            <span class="w-1 bg-[#84cc16] rounded-full animate-[pulse_0.4s_ease-in-out_infinite] h-7"></span>
+            <span class="w-1 bg-[#65a30d] rounded-full animate-[pulse_0.7s_ease-in-out_infinite] h-5"></span>
+            <span class="w-1 bg-[#84cc16] rounded-full animate-[pulse_0.5s_ease-in-out_infinite] h-8"></span>
+            <span class="w-1 bg-[#A3E635] rounded-full animate-[pulse_0.6s_ease-in-out_infinite] h-4"></span>
+          </div>
+
+          <!-- Botones Derecha: [ 🎤 Mic Activo ] + [ ✕ Cerrar ] -->
+          <div class="flex items-center gap-2 shrink-0">
+            <!-- Botón Micrófono Activo -->
+            <button type="button" id="btn-voice-state-mic"
+              class="w-11 h-11 rounded-full bg-slate-100/80 hover:bg-slate-200/80 text-slate-900 flex items-center justify-center shadow-xs active:scale-90 transition-transform cursor-pointer"
+              title="Pausar / Reanudar Micrófono">
+              <span class="material-symbols-rounded text-2xl animate-pulse text-rose-600" id="icon-voice-state-mic">mic</span>
+            </button>
+
+            <!-- Botón ✕ Cerrar / Cancelar Grabación (Vuelve al Estado A) -->
+            <button type="button" id="btn-voice-state-close"
+              class="w-11 h-11 rounded-full bg-slate-100/80 hover:bg-slate-200/80 text-slate-800 flex items-center justify-center shadow-xs active:scale-90 transition-transform cursor-pointer"
+              title="Cerrar y volver a escribir">
+              <span class="material-symbols-rounded text-2xl font-black">close</span>
+            </button>
+          </div>
+        </div>
 
         <!-- Hidden File Inputs para Fotos y Archivos -->
         <input type="file" id="input-mita-attach-photo" accept="image/*" class="hidden" />
@@ -2334,7 +2381,7 @@
   <!-- ========================================== -->
   <!-- MODULOS JAVASCRIPT MOBILE (ARQUITECTURA MODULAR) -->
   <!-- ========================================== -->
-  <script type="module" src="js/mobile/mobile-main.js?v=8.7"></script>
+  <script type="module" src="js/mobile/mobile-main.js?v=8.8"></script>
 </body>
 
 </html>

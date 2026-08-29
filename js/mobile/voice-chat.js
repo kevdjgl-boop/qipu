@@ -97,6 +97,20 @@ export function initVoiceChat() {
   photoInput?.addEventListener('change', handleAttachmentFile);
   fileInput?.addEventListener('change', handleAttachmentFile);
 
+  // Listeners para el Estado B de la barra (Grabación de voz activa)
+  document.getElementById('btn-voice-state-camera')?.addEventListener('click', () => {
+    stopVoiceRecording();
+    exitVoiceActiveBarState();
+    triggerReceiptScanner();
+  });
+
+  document.getElementById('btn-voice-state-mic')?.addEventListener('click', toggleVoiceRecording);
+
+  document.getElementById('btn-voice-state-close')?.addEventListener('click', () => {
+    stopVoiceRecording();
+    exitVoiceActiveBarState();
+  });
+
   // Cerrar popup al hacer click fuera
   document.addEventListener('click', (e) => {
     const popup = document.getElementById('voice-chat-attachments-popup');
@@ -113,6 +127,36 @@ export function initVoiceChat() {
     recognition.continuous = false;
     recognition.interimResults = true;
     setupRecognitionEvents();
+  }
+}
+
+export function enterVoiceActiveBarState() {
+  const textState = document.getElementById('mita-bar-text-state');
+  const voiceState = document.getElementById('mita-bar-voice-state');
+  closeAttachmentsPopup();
+
+  if (textState && voiceState) {
+    textState.classList.add('opacity-0', '-translate-y-3', 'pointer-events-none');
+    textState.classList.remove('opacity-100', 'translate-y-0');
+
+    voiceState.classList.remove('hidden', 'opacity-0', 'translate-y-3', 'pointer-events-none');
+    voiceState.classList.add('opacity-100', 'translate-y-0', 'pointer-events-auto');
+  }
+}
+
+export function exitVoiceActiveBarState() {
+  const textState = document.getElementById('mita-bar-text-state');
+  const voiceState = document.getElementById('mita-bar-voice-state');
+
+  if (textState && voiceState) {
+    voiceState.classList.add('opacity-0', 'translate-y-3', 'pointer-events-none');
+    voiceState.classList.remove('opacity-100', 'translate-y-0', 'pointer-events-auto');
+    setTimeout(() => {
+      voiceState.classList.add('hidden');
+    }, 250);
+
+    textState.classList.remove('opacity-0', '-translate-y-3', 'pointer-events-none');
+    textState.classList.add('opacity-100', 'translate-y-0');
   }
 }
 
@@ -247,6 +291,7 @@ export function openVoiceChat() {
   view.classList.add('flex');
 
   closeAttachmentsPopup();
+  exitVoiceActiveBarState();
   const textInput = document.getElementById('voice-chat-text-input');
   if (textInput) textInput.value = '';
   const icon = document.getElementById('icon-mita-plus');
@@ -289,6 +334,7 @@ export function closeVoiceChat() {
 
   isVoiceChatOpen = false;
   stopVoiceRecording();
+  exitVoiceActiveBarState();
 
   view.classList.add('hidden');
   view.classList.remove('flex');
@@ -322,6 +368,7 @@ export async function startVoiceRecording() {
   try {
     isRecording = true;
     accumulatedFinalText = '';
+    enterVoiceActiveBarState();
     updateMicUIState(true);
     recognition.start();
     if (navigator.vibrate) navigator.vibrate(25);
@@ -330,7 +377,10 @@ export async function startVoiceRecording() {
     try {
       recognition.stop();
       setTimeout(() => {
-        try { recognition.start(); } catch {}
+        try { 
+          enterVoiceActiveBarState();
+          recognition.start(); 
+        } catch {}
       }, 150);
     } catch {}
   }
@@ -338,6 +388,7 @@ export async function startVoiceRecording() {
 
 export function stopVoiceRecording() {
   isRecording = false;
+  exitVoiceActiveBarState();
   updateMicUIState(false);
   stopPulsingAura();
 
