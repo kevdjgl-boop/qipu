@@ -451,7 +451,7 @@ export function stopVoiceRecording() {
 }
 
 function startPulsingAura() {
-  const coreSvg = document.getElementById('voice-chat-svg-core');
+  const halo = document.getElementById('voice-luminous-halo');
   const ring1 = document.getElementById('voice-echo-ring-1');
   const ring2 = document.getElementById('voice-echo-ring-2');
   const ring3 = document.getElementById('voice-echo-ring-3');
@@ -461,20 +461,20 @@ function startPulsingAura() {
   let pulse = false;
   auraPulseInterval = setInterval(() => {
     pulse = !pulse;
-    if (coreSvg) coreSvg.style.transform = pulse ? 'scale(1.10)' : 'scale(0.98)';
+    if (halo) halo.style.transform = pulse ? 'scale(1.15)' : 'scale(0.96)';
     if (ring1) {
-      ring1.style.transform = pulse ? 'scale(1.18)' : 'scale(0.95)';
-      ring1.style.opacity = pulse ? '0.70' : '0.45';
+      ring1.style.transform = pulse ? 'scale(1.22)' : 'scale(0.94)';
+      ring1.style.boxShadow = pulse ? '0 0 70px rgba(163, 230, 53, 0.85)' : '0 0 40px rgba(163, 230, 53, 0.4)';
     }
     if (ring2) {
-      ring2.style.transform = pulse ? 'scale(1.10)' : 'scale(0.85)';
-      ring2.style.opacity = pulse ? '0.55' : '0.35';
+      ring2.style.transform = pulse ? 'scale(1.14)' : 'scale(0.90)';
+      ring2.style.opacity = pulse ? '0.70' : '0.40';
     }
     if (ring3) {
-      ring3.style.transform = pulse ? 'scale(1.04)' : 'scale(0.75)';
-      ring3.style.opacity = pulse ? '0.40' : '0.25';
+      ring3.style.transform = pulse ? 'scale(1.18)' : 'scale(0.85)';
+      ring3.style.opacity = pulse ? '0.90' : '0.55';
     }
-  }, 350);
+  }, 320);
 }
 
 function stopPulsingAura() {
@@ -486,28 +486,25 @@ function stopPulsingAura() {
 }
 
 function resetEchoRings() {
-  const coreSvg = document.getElementById('voice-chat-svg-core');
-  if (coreSvg) coreSvg.style.transform = 'scale(1)';
+  const halo = document.getElementById('voice-luminous-halo');
+  if (halo) halo.style.transform = 'scale(1)';
 
   const ring1 = document.getElementById('voice-echo-ring-1');
   if (ring1) {
-    ring1.style.transform = 'scale(0.95)';
-    ring1.style.filter = 'blur(16px)';
-    ring1.style.opacity = '0.45';
+    ring1.style.transform = 'scale(1)';
+    ring1.style.boxShadow = '0 0 50px rgba(163, 230, 53, 0.6)';
   }
 
   const ring2 = document.getElementById('voice-echo-ring-2');
   if (ring2) {
-    ring2.style.transform = 'scale(0.85)';
-    ring2.style.filter = 'blur(24px)';
-    ring2.style.opacity = '0.35';
+    ring2.style.transform = 'scale(1)';
+    ring2.style.opacity = '0.40';
   }
 
   const ring3 = document.getElementById('voice-echo-ring-3');
   if (ring3) {
-    ring3.style.transform = 'scale(0.75)';
-    ring3.style.filter = 'blur(36px)';
-    ring3.style.opacity = '0.25';
+    ring3.style.transform = 'scale(1)';
+    ring3.style.opacity = '0.75';
   }
 }
 

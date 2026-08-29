@@ -7,7 +7,7 @@
   <title>Qipu Mobile - Monedero Financiero</title>
   <script>
     (function() {
-      const CURRENT_BUILD = 'qipu-v9.0-spring-morphing-island';
+      const CURRENT_BUILD = 'qipu-v9.1-split-floating-dock-luminous-orb';
       if (localStorage.getItem('qipu_app_build') !== CURRENT_BUILD) {
         localStorage.setItem('qipu_app_build', CURRENT_BUILD);
         localStorage.removeItem('gemini_api_key');
@@ -262,6 +262,7 @@
       transition: width 480ms cubic-bezier(0.34, 1.56, 0.64, 1),
                   max-width 480ms cubic-bezier(0.34, 1.56, 0.64, 1),
                   height 360ms cubic-bezier(0.34, 1.56, 0.64, 1),
+                  background-color 300ms ease,
                   border-radius 360ms cubic-bezier(0.34, 1.56, 0.64, 1),
                   box-shadow 360ms ease-out,
                   transform 480ms cubic-bezier(0.34, 1.56, 0.64, 1);
@@ -271,18 +272,60 @@
     #universal-floating-dock.dock-state-nav {
       width: 330px !important;
       max-width: calc(100vw - 32px) !important;
+      background: #FFFFFF !important;
+      border: 1px solid rgba(241, 245, 249, 0.9) !important;
+      box-shadow: 0 12px 40px rgba(0, 0, 0, 0.12) !important;
     }
 
-    #universal-floating-dock.dock-state-chat,
+    #universal-floating-dock.dock-state-chat {
+      width: 100% !important;
+      max-width: 480px !important;
+      background: #FFFFFF !important;
+      border: 1px solid rgba(241, 245, 249, 0.9) !important;
+      box-shadow: 0 12px 40px rgba(0, 0, 0, 0.12) !important;
+    }
+
     #universal-floating-dock.dock-state-voice {
       width: 100% !important;
       max-width: 480px !important;
+      background: transparent !important;
+      border: none !important;
+      box-shadow: none !important;
+      padding: 0 !important;
     }
 
-    .dynamic-morph-content {
-      transition: opacity 220ms ease-out,
-                  transform 320ms cubic-bezier(0.34, 1.56, 0.64, 1);
-      will-change: opacity, transform;
+    /* Esfera Luminosa Orgánica y Fluida para el Chat de Voz */
+    @keyframes orbBreathe {
+      0%, 100% {
+        transform: scale(1) rotate(0deg);
+        filter: blur(28px);
+      }
+      50% {
+        transform: scale(1.12) rotate(180deg);
+        filter: blur(34px);
+      }
+    }
+
+    @keyframes orbCorePulse {
+      0%, 100% {
+        transform: scale(0.95);
+        opacity: 0.85;
+      }
+      50% {
+        transform: scale(1.06);
+        opacity: 1;
+      }
+    }
+
+    .voice-luminous-orb {
+      background: radial-gradient(circle at 35% 35%, #bef264 0%, #a3e635 45%, #65a30d 80%, rgba(101, 163, 13, 0) 100%);
+      animation: orbBreathe 6s ease-in-out infinite;
+    }
+
+    .voice-luminous-core {
+      background: radial-gradient(circle, #ffffff 0%, #d9f99d 40%, #a3e635 75%);
+      box-shadow: 0 0 50px rgba(163, 230, 53, 0.6), inset 0 0 20px rgba(255, 255, 255, 0.8);
+      animation: orbCorePulse 3.5s ease-in-out infinite;
     }
 
     .popup-spring-enter {
@@ -936,7 +979,7 @@
 
       <div class="flex-1 text-center px-1">
         <h3 class="text-sm font-black text-[#1E2517] tracking-tight">Agente Mita</h3>
-        <p class="text-[10px] font-semibold text-slate-500">Asistente Inteligente • v9.0</p>
+        <p class="text-[10px] font-semibold text-slate-500">Asistente Inteligente • v9.1</p>
       </div>
 
       <button type="button" id="btn-voice-chat-options"
@@ -949,20 +992,17 @@
     <!-- 2. Área Central: Aura de Fondo Reactiva + Feed de Mensajes -->
     <div class="flex-1 flex flex-col justify-between overflow-hidden px-4 py-2 min-h-0 relative">
       
-      <!-- Aura Orgánica de Fondo Reactiva a Decibelios (Icono_chat.svg de fondo ambiental) -->
-      <div id="voice-chat-center-aura" class="absolute inset-0 flex items-center justify-center pointer-events-none select-none transition-opacity duration-300 opacity-50 z-0 overflow-hidden">
-        <!-- Capa Eco 3 (Externa / Difusa) -->
-        <div id="voice-echo-ring-3" class="absolute w-72 h-72 rounded-full bg-[#D9F99D]/30 filter blur-3xl transition-transform duration-75 scale-75 origin-center"></div>
-        <!-- Capa Eco 2 (Media) -->
-        <div id="voice-echo-ring-2" class="absolute w-56 h-56 rounded-full bg-[#BEF264]/40 filter blur-2xl transition-transform duration-75 scale-85 origin-center"></div>
-        <!-- Capa Eco 1 (Interna) -->
-        <div id="voice-echo-ring-1" class="absolute w-44 h-44 rounded-full bg-[#A3E635]/50 filter blur-xl transition-transform duration-75 scale-95 origin-center"></div>
-
-        <!-- SVG Central Orgánico de Fondo -->
-        <div id="voice-chat-svg-core" class="relative w-48 h-48 flex items-center justify-center transition-transform duration-75 origin-center">
-          <svg class="w-full h-full drop-shadow-md" viewBox="0 0 1920 1080" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path class="fill-[#C3F1B3]" d="M777.36,383.58c-5.05-2.68-9.4-6.7-12.37-11.59c-5.03-8.28-10.04-10.18-19.76-10.18c-0.15,0-72.48,0-72.48,0 c-14,0-25.34,11.35-25.34,25.34v283.82c0,20.27,16.43,36.69,36.69,36.69h62.83c20.27,0,36.69-16.43,36.69-36.69v1.74 c0-19.13,11.59-37.68,29.56-37.68c24.64,0,28.4,21.74,28.4,49.27v-13.33c0,20.27,16.43,36.69,36.69,36.69h62.82 c20.27,0,36.69-16.43,36.69-36.69v1.74c0-19.13,11.59-37.68,29.56-37.68c24.63,0,28.4,21.74,28.4,49.27v-13.33 c0,20.27,16.43,36.69,36.69,36.69h62.83c20.27,0,36.69-16.43,36.69-36.69V475.13c0-71.59-22.61-122.01-93.61-122.01 c-13.16,0-26.26,2.63-38.54,7.35c-9.73,3.74-20.61,7.14-29.3,13.02c-6.43,4.35-12.27,9.54-18.85,13.65 c-6.58,4.11-14.19,7.15-21.93,6.54c-13.37-1.06-22.16-16.47-32.22-23.96c-4.71-3.51-9.81-6.48-15.16-8.87 c-11.98-5.35-25.11-7.71-38.19-7.71c-14.07,0-26.65,3.87-40.1,7.21c-20.97,5.22-33.2,30.02-56.48,26.64 C784.03,386.45,780.55,385.28,777.36,383.58z"/>
-          </svg>
+      <!-- Esfera Luminosa Orgánica y Fluida Reactiva a la Voz (Apple Intelligence / Siri style) -->
+      <div id="voice-chat-center-aura" class="absolute inset-0 flex items-center justify-center pointer-events-none select-none transition-opacity duration-500 opacity-60 z-0 overflow-hidden">
+        <div id="voice-luminous-halo" class="relative w-64 h-64 flex items-center justify-center">
+          <!-- Capa 1: Aura Externa Difusa y Respirable -->
+          <div id="voice-echo-ring-3" class="absolute w-72 h-72 rounded-full voice-luminous-orb filter blur-3xl opacity-75"></div>
+          <!-- Capa 2: Halo Intermedio Orgánico -->
+          <div id="voice-echo-ring-2" class="absolute w-52 h-52 rounded-full bg-[#bef264]/40 filter blur-2xl"></div>
+          <!-- Capa 3: Núcleo Brillante Holográfico -->
+          <div id="voice-echo-ring-1" class="absolute w-36 h-36 rounded-full voice-luminous-core flex items-center justify-center">
+            <span class="material-symbols-rounded text-emerald-900 text-5xl opacity-40 animate-pulse">graphic_eq</span>
+          </div>
         </div>
       </div>
 
@@ -1061,10 +1101,10 @@
       <div id="dock-view-chat"
         class="hidden absolute inset-0 px-3 flex items-center justify-between gap-2 bg-white transition-all duration-300 transform opacity-0 -translate-y-3 pointer-events-none">
         
-        <!-- 1. Micrófono (Izquierda) -> Al presionar morph a ESTADO 3 (Voz) -->
+        <!-- 1. Micrófono (Izquierda) -> Enviar Nota de Voz -->
         <button type="button" id="btn-mita-mic-left"
           class="w-10 h-10 rounded-full flex items-center justify-center text-slate-800 hover:bg-slate-100 active:scale-90 transition-transform cursor-pointer shrink-0"
-          title="Hablar con Mita">
+          title="Enviar Nota de Voz">
           <span class="material-symbols-rounded text-2xl" id="icon-mita-mic">mic</span>
         </button>
 
@@ -1074,10 +1114,10 @@
           autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"
           class="flex-1 bg-transparent border-0 text-sm font-bold text-slate-900 placeholder:text-slate-800/90 focus:outline-none outline-none leading-none px-1" />
 
-        <!-- 3. Visualizador de Ondas de Audio (Waveform) -> Al presionar morph a ESTADO 3 (Voz) -->
+        <!-- 3. Rayas / Decibeles (Waveform) -> Hablar en Vivo (Llamada Continua) -->
         <button type="button" id="btn-mita-waveform"
           class="w-9 h-9 rounded-full flex items-center justify-center text-slate-800 hover:bg-slate-100 active:scale-90 transition-transform cursor-pointer shrink-0"
-          title="Modo Voz / Ondas de Audio">
+          title="Hablar en Vivo con Mita">
           <span class="material-symbols-rounded text-2xl tracking-tighter" id="icon-mita-waveform">graphic_eq</span>
         </button>
 
@@ -1090,39 +1130,39 @@
       </div>
 
       <!-- ======================================================== -->
-      <!-- ESTADO 3: MODO VOZ ACTIVA / LLAMADA (Exacto a la imagen) -->
+      <!-- ESTADO 3: MODO VOZ ACTIVA / LLAMADA (BOTONES FLOTANTES SEPARADOS) -->
       <!-- ======================================================== -->
       <div id="dock-view-voice"
-        class="hidden absolute inset-0 px-3 flex items-center justify-between gap-2 bg-white transition-all duration-300 transform opacity-0 translate-y-3 pointer-events-none">
+        class="hidden absolute inset-0 flex items-center justify-between gap-3 bg-transparent transition-all duration-300 transform opacity-0 translate-y-3 pointer-events-none">
         
-        <!-- Botón 1 (Izquierda): Cámara / Video -->
+        <!-- Botón 1 (Izquierda): Cámara / Video Flotante Independiente -->
         <button type="button" id="btn-voice-state-camera"
-          class="w-11 h-11 rounded-full bg-slate-100/80 hover:bg-slate-200/80 text-slate-800 flex items-center justify-center shadow-xs active:scale-90 transition-transform cursor-pointer shrink-0"
+          class="w-14 h-14 rounded-full bg-white shadow-[0_12px_35px_rgba(0,0,0,0.14)] border border-slate-100/90 text-slate-800 flex items-center justify-center active:scale-90 transition-transform cursor-pointer shrink-0"
           title="Escanear Boleta">
           <span class="material-symbols-rounded text-2xl">videocam</span>
         </button>
 
-        <!-- Centro: Ondas de Audio Dinámicas Animadas -->
-        <div class="flex-1 flex items-center justify-center gap-1.5 px-4 h-full">
-          <span class="w-1 bg-[#A3E635] rounded-full animate-[pulse_0.6s_ease-in-out_infinite] h-4"></span>
-          <span class="w-1 bg-[#84cc16] rounded-full animate-[pulse_0.4s_ease-in-out_infinite] h-7"></span>
-          <span class="w-1 bg-[#65a30d] rounded-full animate-[pulse_0.7s_ease-in-out_infinite] h-5"></span>
-          <span class="w-1 bg-[#84cc16] rounded-full animate-[pulse_0.5s_ease-in-out_infinite] h-8"></span>
-          <span class="w-1 bg-[#A3E635] rounded-full animate-[pulse_0.6s_ease-in-out_infinite] h-4"></span>
+        <!-- Centro: Cápsula Flotante Independiente con Ondas de Audio -->
+        <div class="flex-1 h-14 bg-white rounded-full shadow-[0_12px_35px_rgba(0,0,0,0.14)] border border-slate-100/90 flex items-center justify-center gap-1.5 px-4">
+          <span class="w-1.5 bg-[#A3E635] rounded-full animate-[pulse_0.6s_ease-in-out_infinite] h-4"></span>
+          <span class="w-1.5 bg-[#84cc16] rounded-full animate-[pulse_0.4s_ease-in-out_infinite] h-7"></span>
+          <span class="w-1.5 bg-[#65a30d] rounded-full animate-[pulse_0.7s_ease-in-out_infinite] h-5"></span>
+          <span class="w-1.5 bg-[#84cc16] rounded-full animate-[pulse_0.5s_ease-in-out_infinite] h-8"></span>
+          <span class="w-1.5 bg-[#A3E635] rounded-full animate-[pulse_0.6s_ease-in-out_infinite] h-4"></span>
         </div>
 
-        <!-- Botones Derecha: [ 🎤 Mic Activo ] + [ ✕ Cerrar ] -->
+        <!-- Botones Derecha: Botones Flotantes Independientes [ 🎤 Mic ] + [ ✕ Cerrar ] -->
         <div class="flex items-center gap-2 shrink-0">
-          <!-- Botón Micrófono Activo -->
+          <!-- Botón Micrófono Activo Flotante -->
           <button type="button" id="btn-voice-state-mic"
-            class="w-11 h-11 rounded-full bg-slate-100/80 hover:bg-slate-200/80 text-slate-900 flex items-center justify-center shadow-xs active:scale-90 transition-transform cursor-pointer"
+            class="w-14 h-14 rounded-full bg-white shadow-[0_12px_35px_rgba(0,0,0,0.14)] border border-slate-100/90 text-slate-900 flex items-center justify-center active:scale-90 transition-transform cursor-pointer"
             title="Pausar / Reanudar Micrófono">
             <span class="material-symbols-rounded text-2xl animate-pulse text-rose-600" id="icon-voice-state-mic">mic</span>
           </button>
 
-          <!-- Botón ✕ Cerrar / Cancelar Grabación (Vuelve al Modo Chat o Nav) -->
+          <!-- Botón ✕ Cerrar / Cancelar Flotante (Vuelve al Modo Chat o Nav) -->
           <button type="button" id="btn-voice-state-close"
-            class="w-11 h-11 rounded-full bg-slate-100/80 hover:bg-slate-200/80 text-slate-800 flex items-center justify-center shadow-xs active:scale-90 transition-transform cursor-pointer"
+            class="w-14 h-14 rounded-full bg-white shadow-[0_12px_35px_rgba(0,0,0,0.14)] border border-slate-100/90 text-slate-800 flex items-center justify-center active:scale-90 transition-transform cursor-pointer"
             title="Cerrar y volver a escribir">
             <span class="material-symbols-rounded text-2xl font-black">close</span>
           </button>
@@ -2387,7 +2427,7 @@
   <!-- ========================================== -->
   <!-- MODULOS JAVASCRIPT MOBILE (ARQUITECTURA MODULAR) -->
   <!-- ========================================== -->
-  <script type="module" src="js/mobile/mobile-main.js?v=9.0"></script>
+  <script type="module" src="js/mobile/mobile-main.js?v=9.1"></script>
 </body>
 
 </html>
