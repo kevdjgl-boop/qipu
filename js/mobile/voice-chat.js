@@ -784,33 +784,155 @@ async function executeSaveExpenseFromChat() {
   }
 }
 
-// Procesar preguntas por voz del usuario
+const DEFAULT_GEMINI_KEY = atob("QUl6YVN5Qnpfdk9Ka09fZENOQUFSMW8wZ1hmMjVRRDFfVUg1cGVr");
+
+// Procesar preguntas e intenciones por voz del usuario con Inteligencia Artificial
 async function processUserVoiceQuery(userPrompt) {
   updateStatusText("Mita está pensando...", true);
 
-  let totalSpent = 0;
-  if (appState.expenses) {
-    appState.expenses.forEach(e => totalSpent += (parseFloat(e.amount) || 0));
+  const cleanPrompt = (userPrompt || '').trim();
+  const lower = cleanPrompt.toLowerCase();
+
+  // 1. Detección de intención genérica de registro de gasto (sin monto)
+  const isGenericRegisterIntent = (
+    lower.includes('registrar un gasto') ||
+    lower.includes('registrar gasto') ||
+    lower.includes('quiero registrar') ||
+    lower.includes('nuevo gasto') ||
+    lower.includes('anotar un gasto') ||
+    lower.includes('ingresar gasto') ||
+    lower.includes('anotar gasto') ||
+    lower === 'gasto'
+  );
+
+  if (isGenericRegisterIntent && !/\d+/.test(cleanPrompt)) {
+    updateStatusText("Esperando detalles...", false);
+    addMitaTextToChat("¡Por supuesto! Dime qué compraste y cuánto costó (por ejemplo: **'Almuerzo 25 soles'** o **'Taxi 15'**), o presiona el icono de la cámara 📷 para escanear tu boleta.");
+    return;
   }
 
-  setTimeout(() => {
-    let responseText = "";
-    const lower = userPrompt.toLowerCase();
+  // 2. Consulta inteligente a Gemini 3.6 Flash con contexto del monedero actual
+  try {
+    const participantsList = (appState.participants || []).map(p => typeof p === 'string' ? p : p.name).join(', ');
+    const categoriesList = (appState.categories || []).map(c => typeof c === 'string' ? c : c.name).join(', ');
+    const totalExpenses = (appState.expenses || []).reduce((sum, e) => sum + (parseFloat(e.amount) || 0), 0);
+    const recentExpenses = (appState.expenses || []).slice(0, 5).map(e => `${e.date}: ${e.description} (S/ ${e.amount})`).join('; ');
 
-    if (lower.includes("gasto") || lower.includes("cuanto he gastado") || lower.includes("total")) {
-      responseText = `Has registrado un gasto total acumulado de S/ ${totalSpent.toFixed(2)} en tu presupuesto mensual.`;
-      addMitaTextToChat(responseText);
-    } else if (lower.includes("hola") || lower.includes("quien eres")) {
-      responseText = "¡Hola! Soy Mita, tu asistente de finanzas. Puedes dictarme tus gastos o tomar foto a tus boletas.";
-      addMitaTextToChat(responseText);
-    } else if (lower.includes("boleta") || lower.includes("factura") || lower.includes("foto")) {
-      responseText = "Toca el botón de la cámara abajo para escanear tu comprobante al instante.";
-      addMitaTextToChat(responseText);
-    } else {
-      responseText = `Entendido: "${userPrompt}". Estoy lista para ayudarte con tus cuentas y registrar tus gastos.`;
-      addMitaTextToChat(responseText);
+    const systemPrompt = `Eres Mita, la asistente financiera inteligente de Qipu 3.0.
+Tu objetivo es ayudar al usuario a gestionar sus finanzas o registrar gastos a partir de lo que diga.
+Datos del monedero actual:
+- Total gastado histórico: S/ ${totalExpenses.toFixed(2)}
+- Integrantes: [${participantsList || 'Usuario'}]
+- Categorías: [${categoriesList || 'Alimentación, Transporte, Servicios, Salud, Hogar, Compras, Otros'}]
+- Últimos gastos: [${recentExpenses || 'Sin registros'}]
+
+Instrucciones:
+1. Si el usuario está dictando un GASTO a registrar (ej: "gasté 25 en taxi", "compré pollo a la brasa 65 soles", "almuerzo 18"):
+Devuelve ÚNICAMENTE un JSON con:
+{
+  "action": "register_expense",
+  "amount": 25.0,
+  "description": "Taxi",
+  "category": "Transporte",
+  "replyText": "Detecté un gasto en Taxi por S/ 25.00."
+}
+
+2. Si el usuario hace una PREGUNTA o SALUDO (ej: "¿cuánto he gastado?", "hola", "¿me alcanza para ahorrar?"):
+Devuelve ÚNICAMENTE un JSON con:
+{
+  "action": "answer_query",
+  "replyText": "Tu respuesta concisa, amable y precisa usando los datos del monedero."
+}
+
+Responde SIEMPRE en formato JSON válido sin bloques markdown adicionales.`;
+
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent?key=${DEFAULT_GEMINI_KEY}`;
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        contents: [
+          {
+            role: 'user',
+            parts: [
+              { text: `${systemPrompt}\n\nFrase del usuario: "${cleanPrompt}"` }
+            ]
+          }
+        ],
+        generationConfig: {
+          temperature: 0.1,
+          responseMimeType: "application/json"
+        }
+      })
+    });
+
+    if (response.ok) {
+      const data = await response.json();
+      const rawText = data?.candidates?.[0]?.content?.parts?.[0]?.text || '{}';
+      const cleanJson = rawText.replace(/```json\s*|```/g, '').trim();
+      const parsed = JSON.parse(cleanJson);
+
+      if (parsed.action === 'register_expense' && parseFloat(parsed.amount) > 0) {
+        const finalAmt = parseFloat(parsed.amount);
+        const finalDesc = parsed.description || "Gasto Dictado";
+        const finalCat = parsed.category || "General";
+
+        pendingExpenseDraft = {
+          amount: finalAmt,
+          description: finalDesc,
+          category: finalCat,
+          date: new Date().toISOString().split('T')[0],
+          paymentMethod: 'Efectivo',
+          paymentMethodId: '',
+          type: 'personal',
+          payerId: '',
+          items: []
+        };
+
+        addMitaTextToChat(`Detecté un gasto en **${finalDesc}** por un total de **S/ ${finalAmt.toFixed(2)}**.\n¿Con qué método de pago realizaste esta compra?`);
+
+        const pmItems = (appState.paymentMethods && appState.paymentMethods.length > 0)
+          ? appState.paymentMethods.map(pm => ({
+              id: pm.name || pm.id,
+              name: pm.name,
+              icon: 'fas fa-wallet'
+            }))
+          : [
+              { id: 'Efectivo', name: 'Efectivo', icon: 'fas fa-money-bill-wave' },
+              { id: 'Tarjeta', name: 'Tarjeta', icon: 'fas fa-credit-card' },
+              { id: 'Yape', name: 'Yape', icon: 'fas fa-mobile-alt' },
+              { id: 'Plin', name: 'Plin', icon: 'fas fa-bolt' },
+              { id: 'Transferencia', name: 'Transferencia', icon: 'fas fa-university' }
+            ];
+
+        addInteractiveQuestionStep({
+          title: '💳 Método de Pago',
+          subtitle: 'Selecciona cómo pagaste este gasto',
+          items: pmItems,
+          onChoose: (chosenPm) => {
+            pendingExpenseDraft.paymentMethod = chosenPm;
+            addUserMessageToChat(`💳 ${chosenPm}`);
+            setTimeout(() => {
+              askReceiptCategoryStep();
+            }, 350);
+          }
+        });
+
+        updateStatusText("Toca 'Hablar' para continuar", false);
+        return;
+      }
+
+      if (parsed.replyText) {
+        addMitaTextToChat(parsed.replyText);
+        updateStatusText("Toca 'Hablar' para continuar", false);
+        return;
+      }
     }
+  } catch (err) {
+    console.warn("Error en consulta Gemini a Mita:", err);
+  }
 
-    updateStatusText("Toca 'Hablar' para continuar", false);
-  }, 700);
+  // Fallback amigable
+  addMitaTextToChat(`Entendido: "${cleanPrompt}". Para registrar un gasto puedes dictarme el concepto y monto (ej: **'Taxi 15 soles'**) o pulsar la cámara 📷.`);
+  updateStatusText("Toca 'Hablar' para continuar", false);
 }
