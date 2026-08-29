@@ -7,7 +7,7 @@
   <title>Qipu Mobile - Monedero Financiero</title>
   <script>
     (function() {
-      const CURRENT_BUILD = 'qipu-v8.2-mic-recognition-fix';
+      const CURRENT_BUILD = 'qipu-v8.3-dual-mode-chat-bar';
       if (localStorage.getItem('qipu_app_build') !== CURRENT_BUILD) {
         localStorage.setItem('qipu_app_build', CURRENT_BUILD);
         localStorage.removeItem('gemini_api_key');
@@ -935,7 +935,7 @@
 
       <div class="flex-1 text-center px-1">
         <h3 class="text-sm font-black text-[#1E2517] tracking-tight">Agente Mita</h3>
-        <p class="text-[10px] font-semibold text-slate-500">Asistente Inteligente • v8.2</p>
+        <p class="text-[10px] font-semibold text-slate-500">Asistente Inteligente • v8.3</p>
       </div>
 
       <button type="button" id="btn-voice-chat-options"
@@ -976,9 +976,10 @@
       </div>
     </div>
 
-    <!-- 3. Barra Inferior Adaptada con Identidad Qipu 3.0 -->
+    <!-- 3. Barra Inferior Adaptada con Identidad Qipu 3.0 (Modo Voz y Modo Texto) -->
     <div class="px-4 pb-6 pt-2 shrink-0 max-w-lg mx-auto w-full">
-      <div class="h-[60px] bg-white/95 backdrop-blur-xl shadow-[0_10px_35px_rgba(0,0,0,0.12)] border border-slate-100/90 rounded-[28px] flex items-center justify-around px-3 text-slate-800">
+      <!-- MODO VOZ -->
+      <div id="voice-bar-mode-voice" class="h-[60px] bg-white/95 backdrop-blur-xl shadow-[0_10px_35px_rgba(0,0,0,0.12)] border border-slate-100/90 rounded-[28px] flex items-center justify-around px-3 text-slate-800 transition-all duration-200">
         
         <!-- Botón 1: Regresar al Dashboard -->
         <button type="button" id="btn-voice-nav-dashboard"
@@ -1001,11 +1002,41 @@
           <span id="label-voice-btn-mic">Hablar</span>
         </button>
 
-        <!-- Botón 4: Salir / Cerrar Chat -->
+        <!-- Botón 4: Cambiar a modo escribir texto (X / Teclado) -->
         <button type="button" id="btn-voice-nav-close"
-          class="w-11 h-11 rounded-2xl flex items-center justify-center text-slate-500 hover:text-rose-600 hover:bg-rose-50 active:scale-90 transition-all cursor-pointer"
-          title="Cerrar Asistente">
-          <span class="material-symbols-rounded text-2xl">close</span>
+          class="w-11 h-11 rounded-2xl flex items-center justify-center text-slate-500 hover:text-slate-900 hover:bg-slate-100 active:scale-90 transition-all cursor-pointer"
+          title="Escribir por teclado">
+          <span class="material-symbols-rounded text-2xl">keyboard</span>
+        </button>
+      </div>
+
+      <!-- MODO TEXTO (Caja para escribir como un chat) -->
+      <div id="voice-bar-mode-text" class="hidden h-[60px] bg-white/95 backdrop-blur-xl shadow-[0_10px_35px_rgba(0,0,0,0.12)] border border-slate-100/90 rounded-[28px] items-center gap-2 px-3 text-slate-800 transition-all duration-200">
+        
+        <!-- Botón Volver a Modo Micrófono / Voz -->
+        <button type="button" id="btn-voice-switch-to-mic"
+          class="w-11 h-11 rounded-2xl flex items-center justify-center text-slate-700 hover:bg-slate-100 active:scale-90 transition-transform cursor-pointer shrink-0"
+          title="Cambiar a Modo Voz">
+          <span class="material-symbols-rounded text-2xl">mic</span>
+        </button>
+
+        <!-- Botón Cámara en modo texto -->
+        <button type="button" id="btn-voice-text-camera"
+          class="w-10 h-10 rounded-2xl flex items-center justify-center text-emerald-700 hover:bg-emerald-50 active:scale-90 transition-transform cursor-pointer shrink-0"
+          title="Escanear Boleta">
+          <span class="material-symbols-rounded text-xl">photo_camera</span>
+        </button>
+
+        <!-- Input de Texto -->
+        <input type="text" id="voice-chat-text-input"
+          placeholder="Escribe un gasto o pregunta..."
+          class="flex-1 bg-slate-100/80 hover:bg-slate-100 focus:bg-white text-slate-900 placeholder:text-slate-400 text-xs font-bold rounded-2xl px-3.5 py-2.5 outline-none border border-transparent focus:border-slate-300 transition-all" />
+
+        <!-- Botón Enviar Mensaje -->
+        <button type="button" id="btn-voice-send-text"
+          class="w-11 h-11 rounded-2xl bg-[#222818] hover:bg-[#2e3721] text-white flex items-center justify-center active:scale-90 transition-transform cursor-pointer shrink-0 shadow-xs"
+          title="Enviar Mensaje">
+          <span class="material-symbols-rounded text-xl">send</span>
         </button>
       </div>
     </div>
@@ -2263,7 +2294,7 @@
   <!-- ========================================== -->
   <!-- MODULOS JAVASCRIPT MOBILE (ARQUITECTURA MODULAR) -->
   <!-- ========================================== -->
-  <script type="module" src="js/mobile/mobile-main.js?v=8.2"></script>
+  <script type="module" src="js/mobile/mobile-main.js?v=8.3"></script>
 </body>
 
 </html>

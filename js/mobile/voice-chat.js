@@ -35,17 +35,34 @@ export function initVoiceChat() {
   const view = document.getElementById('view-voice-chat');
   if (!view) return;
 
-  // Botones de cierre / regreso al dashboard
+  // Botón superior de regreso al dashboard
   document.getElementById('btn-close-voice-chat')?.addEventListener('click', closeVoiceChat);
   document.getElementById('btn-voice-nav-dashboard')?.addEventListener('click', closeVoiceChat);
-  document.getElementById('btn-voice-nav-close')?.addEventListener('click', closeVoiceChat);
+
+  // Alternar a modo escribir texto
+  document.getElementById('btn-voice-nav-close')?.addEventListener('click', switchToTextMode);
+
+  // Alternar a modo micrófono / voz
+  document.getElementById('btn-voice-switch-to-mic')?.addEventListener('click', switchToVoiceMode);
 
   // Botón Micrófono Principal
   document.getElementById('btn-voice-toggle-mic')?.addEventListener('click', toggleVoiceRecording);
 
-  // Botón de Cámara / Escáner de Boleta dentro del Chat
+  // Botones de Cámara / Escáner de Boleta dentro del Chat
   document.getElementById('btn-voice-nav-camera')?.addEventListener('click', () => {
     triggerReceiptScanner();
+  });
+  document.getElementById('btn-voice-text-camera')?.addEventListener('click', () => {
+    triggerReceiptScanner();
+  });
+
+  // Enviar mensaje de texto
+  document.getElementById('btn-voice-send-text')?.addEventListener('click', handleSendTextMessage);
+  document.getElementById('voice-chat-text-input')?.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      handleSendTextMessage();
+    }
   });
 
   const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -56,6 +73,49 @@ export function initVoiceChat() {
     recognition.interimResults = true;
     setupRecognitionEvents();
   }
+}
+
+export function switchToTextMode() {
+  stopVoiceRecording();
+  const voiceBar = document.getElementById('voice-bar-mode-voice');
+  const textBar = document.getElementById('voice-bar-mode-text');
+  const input = document.getElementById('voice-chat-text-input');
+
+  if (voiceBar) {
+    voiceBar.classList.add('hidden');
+    voiceBar.classList.remove('flex');
+  }
+  if (textBar) {
+    textBar.classList.remove('hidden');
+    textBar.classList.add('flex');
+  }
+  if (input) {
+    setTimeout(() => input.focus(), 100);
+  }
+}
+
+export function switchToVoiceMode() {
+  const voiceBar = document.getElementById('voice-bar-mode-voice');
+  const textBar = document.getElementById('voice-bar-mode-text');
+
+  if (textBar) {
+    textBar.classList.add('hidden');
+    textBar.classList.remove('flex');
+  }
+  if (voiceBar) {
+    voiceBar.classList.remove('hidden');
+    voiceBar.classList.add('flex');
+  }
+}
+
+function handleSendTextMessage() {
+  const input = document.getElementById('voice-chat-text-input');
+  if (!input) return;
+  const text = input.value.trim();
+  if (!text) return;
+  input.value = '';
+  addUserMessageToChat(text);
+  processUserVoiceQuery(text);
 }
 
 let accumulatedFinalText = '';
@@ -121,6 +181,7 @@ export function openVoiceChat() {
   view.classList.remove('hidden');
   view.classList.add('flex');
 
+  switchToVoiceMode();
   hasStartedConversation = false;
   pendingExpenseDraft = null;
   currentStreamingBubble = null;
