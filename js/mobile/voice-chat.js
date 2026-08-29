@@ -39,29 +39,70 @@ export function initVoiceChat() {
   document.getElementById('btn-close-voice-chat')?.addEventListener('click', closeVoiceChat);
   document.getElementById('btn-voice-nav-dashboard')?.addEventListener('click', closeVoiceChat);
 
-  // Alternar a modo escribir texto
-  document.getElementById('btn-voice-nav-close')?.addEventListener('click', switchToTextMode);
+  // 1. Micrófono (Izquierda) y Visualizador Waveform
+  document.getElementById('btn-mita-mic-left')?.addEventListener('click', toggleVoiceRecording);
+  document.getElementById('btn-mita-waveform')?.addEventListener('click', toggleVoiceRecording);
 
-  // Alternar a modo micrófono / voz
-  document.getElementById('btn-voice-switch-to-mic')?.addEventListener('click', switchToVoiceMode);
+  // 2. Botón Verde "+" / Enviar
+  const plusBtn = document.getElementById('btn-mita-plus-toggle');
+  const textInput = document.getElementById('voice-chat-text-input');
 
-  // Botón Micrófono Principal
-  document.getElementById('btn-voice-toggle-mic')?.addEventListener('click', toggleVoiceRecording);
-
-  // Botones de Cámara / Escáner de Boleta dentro del Chat
-  document.getElementById('btn-voice-nav-camera')?.addEventListener('click', () => {
-    triggerReceiptScanner();
+  plusBtn?.addEventListener('click', () => {
+    const text = textInput?.value.trim();
+    if (text) {
+      handleSendTextMessage();
+    } else {
+      toggleAttachmentsPopup();
+    }
   });
-  document.getElementById('btn-voice-text-camera')?.addEventListener('click', () => {
-    triggerReceiptScanner();
+
+  // Escuchar escritura en el input para cambiar el icono entre "+" y "send"
+  textInput?.addEventListener('input', () => {
+    const icon = document.getElementById('icon-mita-plus');
+    if (!icon) return;
+    if (textInput.value.trim()) {
+      icon.textContent = 'send';
+      closeAttachmentsPopup();
+    } else {
+      icon.textContent = isPopupOpen ? 'close' : 'add';
+    }
   });
 
-  // Enviar mensaje de texto
-  document.getElementById('btn-voice-send-text')?.addEventListener('click', handleSendTextMessage);
-  document.getElementById('voice-chat-text-input')?.addEventListener('keydown', (e) => {
+  textInput?.addEventListener('keydown', (e) => {
     if (e.key === 'Enter') {
       e.preventDefault();
       handleSendTextMessage();
+    }
+  });
+
+  // 3. Opciones del Popup: Fotos, Archivos, Cámara
+  document.getElementById('btn-attach-camera')?.addEventListener('click', () => {
+    closeAttachmentsPopup();
+    triggerReceiptScanner();
+  });
+
+  const photoInput = document.getElementById('input-mita-attach-photo');
+  const fileInput = document.getElementById('input-mita-attach-file');
+
+  document.getElementById('btn-attach-photos')?.addEventListener('click', () => {
+    closeAttachmentsPopup();
+    photoInput?.click();
+  });
+
+  document.getElementById('btn-attach-files')?.addEventListener('click', () => {
+    closeAttachmentsPopup();
+    fileInput?.click();
+  });
+
+  photoInput?.addEventListener('change', handleAttachmentFile);
+  fileInput?.addEventListener('change', handleAttachmentFile);
+
+  // Cerrar popup al hacer click fuera
+  document.addEventListener('click', (e) => {
+    const popup = document.getElementById('voice-chat-attachments-popup');
+    const toggleBtn = document.getElementById('btn-mita-plus-toggle');
+    if (isPopupOpen && popup && !popup.contains(e.target) && !toggleBtn?.contains(e.target)) {
+      closeAttachmentsPopup();
     }
   });
 
@@ -75,45 +116,74 @@ export function initVoiceChat() {
   }
 }
 
-export function switchToTextMode() {
-  stopVoiceRecording();
-  const voiceBar = document.getElementById('voice-bar-mode-voice');
-  const textBar = document.getElementById('voice-bar-mode-text');
-  const input = document.getElementById('voice-chat-text-input');
+let isPopupOpen = false;
 
-  if (voiceBar) {
-    voiceBar.classList.add('hidden');
-    voiceBar.classList.remove('flex');
-  }
-  if (textBar) {
-    textBar.classList.remove('hidden');
-    textBar.classList.add('flex');
-  }
-  if (input) {
-    setTimeout(() => input.focus(), 100);
+export function toggleAttachmentsPopup() {
+  if (isPopupOpen) {
+    closeAttachmentsPopup();
+  } else {
+    openAttachmentsPopup();
   }
 }
 
-export function switchToVoiceMode() {
-  const voiceBar = document.getElementById('voice-bar-mode-voice');
-  const textBar = document.getElementById('voice-bar-mode-text');
+export function openAttachmentsPopup() {
+  const popup = document.getElementById('voice-chat-attachments-popup');
+  const icon = document.getElementById('icon-mita-plus');
+  if (!popup) return;
 
-  if (textBar) {
-    textBar.classList.add('hidden');
-    textBar.classList.remove('flex');
+  isPopupOpen = true;
+  popup.classList.remove('hidden');
+  popup.classList.remove('pointer-events-none');
+  setTimeout(() => {
+    popup.classList.remove('opacity-0', 'scale-95');
+    popup.classList.add('opacity-100', 'scale-100');
+  }, 10);
+
+  if (icon) {
+    icon.style.transform = 'rotate(45deg)';
   }
-  if (voiceBar) {
-    voiceBar.classList.remove('hidden');
-    voiceBar.classList.add('flex');
+}
+
+export function closeAttachmentsPopup() {
+  const popup = document.getElementById('voice-chat-attachments-popup');
+  const icon = document.getElementById('icon-mita-plus');
+  if (!popup) return;
+
+  isPopupOpen = false;
+  popup.classList.remove('opacity-100', 'scale-100');
+  popup.classList.add('opacity-0', 'scale-95');
+  popup.classList.add('pointer-events-none');
+  setTimeout(() => {
+    if (!isPopupOpen) popup.classList.add('hidden');
+  }, 200);
+
+  if (icon) {
+    icon.style.transform = 'rotate(0deg)';
   }
+}
+
+async function handleAttachmentFile(e) {
+  const file = e.target.files?.[0];
+  if (!file) return;
+
+  const reader = new FileReader();
+  reader.onload = async (event) => {
+    const base64Data = event.target.result.split(',')[1];
+    addUserMessageToChat(`📎 Documento adjunto: ${file.name}`);
+    await handleReceiptInVoiceChat(base64Data, file.type || 'image/jpeg');
+  };
+  reader.readAsDataURL(file);
+  e.target.value = '';
 }
 
 function handleSendTextMessage() {
   const input = document.getElementById('voice-chat-text-input');
+  const icon = document.getElementById('icon-mita-plus');
   if (!input) return;
   const text = input.value.trim();
   if (!text) return;
   input.value = '';
+  if (icon) icon.textContent = 'add';
   addUserMessageToChat(text);
   processUserVoiceQuery(text);
 }
@@ -181,7 +251,12 @@ export function openVoiceChat() {
   view.classList.remove('hidden');
   view.classList.add('flex');
 
-  switchToVoiceMode();
+  closeAttachmentsPopup();
+  const textInput = document.getElementById('voice-chat-text-input');
+  if (textInput) textInput.value = '';
+  const icon = document.getElementById('icon-mita-plus');
+  if (icon) icon.textContent = 'add';
+
   hasStartedConversation = false;
   pendingExpenseDraft = null;
   currentStreamingBubble = null;
@@ -338,22 +413,27 @@ function resetEchoRings() {
 }
 
 function updateMicUIState(recording) {
-  const micBtn = document.getElementById('btn-voice-toggle-mic');
-  const micIcon = document.getElementById('icon-voice-btn-mic');
-  const micLabel = document.getElementById('label-voice-btn-mic');
+  const micBtn = document.getElementById('btn-mita-mic-left');
+  const waveformBtn = document.getElementById('btn-mita-waveform');
 
   if (recording) {
     if (micBtn) {
-      micBtn.className = "h-12 px-6 rounded-2xl bg-rose-600 hover:bg-rose-700 text-white flex items-center gap-2 font-black text-xs shadow-lg shadow-rose-500/30 active:scale-95 transition-all cursor-pointer animate-pulse";
+      micBtn.classList.add('text-rose-600', 'animate-pulse');
+      micBtn.classList.remove('text-slate-800');
     }
-    if (micIcon) micIcon.textContent = "mic";
-    if (micLabel) micLabel.textContent = "Escuchando...";
+    if (waveformBtn) {
+      waveformBtn.classList.add('text-rose-600', 'animate-bounce');
+      waveformBtn.classList.remove('text-slate-800');
+    }
   } else {
     if (micBtn) {
-      micBtn.className = "h-12 px-6 rounded-2xl bg-[#222818] hover:bg-[#2e3721] text-white flex items-center gap-2 font-black text-xs shadow-md active:scale-95 transition-all cursor-pointer";
+      micBtn.classList.remove('text-rose-600', 'animate-pulse');
+      micBtn.classList.add('text-slate-800');
     }
-    if (micIcon) micIcon.textContent = "mic";
-    if (micLabel) micLabel.textContent = "Hablar";
+    if (waveformBtn) {
+      waveformBtn.classList.remove('text-rose-600', 'animate-bounce');
+      waveformBtn.classList.add('text-slate-800');
+    }
   }
 }
 
