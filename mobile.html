@@ -7,7 +7,7 @@
   <title>Qipu Mobile - Monedero Financiero</title>
   <script>
     (function() {
-      const CURRENT_BUILD = 'qipu-v8.8-voice-recording-bar-morphing';
+      const CURRENT_BUILD = 'qipu-v8.9-universal-dynamic-dock-morphing';
       if (localStorage.getItem('qipu_app_build') !== CURRENT_BUILD) {
         localStorage.setItem('qipu_app_build', CURRENT_BUILD);
         localStorage.removeItem('gemini_api_key');
@@ -909,59 +909,11 @@
     </button>
   </div>
 
-  <!-- Contenedor Inferior: Barra Cápsula + Botón FAB Circular -->
-  <div
-    class="fixed bottom-4 left-4 right-4 z-40 max-w-lg mx-auto flex items-center gap-3 justify-between pointer-events-none">
-
-    <!-- 1. Barra Larga (Alto: 60px, Border-Radius: 28px) -->
-    <nav style="border-radius: 28px;"
-      class="pointer-events-auto h-[60px] flex-1 bg-white/95 backdrop-blur-xl shadow-[0_10px_35px_rgba(0,0,0,0.12)] border border-slate-100/90 flex items-center justify-around px-2 text-slate-800">
-
-      <!-- Icono 1: Monedero / Inicio -->
-      <button type="button" id="nav-btn-wallet"
-        class="w-11 h-11 rounded-2xl flex items-center justify-center text-slate-900 hover:bg-slate-100 active:scale-90 transition-transform"
-        title="Inicio / Monedero">
-        <i class="fas fa-wallet text-lg"></i>
-      </button>
-
-      <!-- Icono 2: Métricas / Tarjetas & Métodos de Pago -->
-      <button type="button" id="nav-btn-stats" onclick="openPaymentMethodsSummaryModal();"
-        class="w-11 h-11 rounded-2xl flex items-center justify-center text-slate-900 hover:bg-slate-100 active:scale-90 transition-transform"
-        title="Tarjetas & Métodos de Pago">
-        <i class="fas fa-credit-card text-lg"></i>
-      </button>
-
-      <!-- Icono 3: Escanear Boleta con Cámara / IA -->
-      <button type="button" id="nav-btn-scan-camera" onclick="triggerReceiptScanner();"
-        class="w-11 h-11 rounded-2xl flex items-center justify-center text-emerald-700 hover:bg-emerald-50 active:scale-90 transition-transform"
-        title="Escanear Boleta con IA">
-        <span class="material-symbols-rounded text-2xl">photo_camera</span>
-      </button>
-
-      <!-- Icono 4: Buscador / Historial -->
-      <button type="button" id="nav-btn-search"
-        class="w-11 h-11 rounded-2xl flex items-center justify-center text-slate-900 hover:bg-slate-100 active:scale-90 transition-transform"
-        title="Buscar Movimientos">
-        <i class="fas fa-magnifying-glass text-lg"></i>
-      </button>
-    </nav>
-
-    <!-- 2. Botón FAB Flotante (60px x 60px, Border-Radius: 28px) -->
-    <button type="button" id="fab-main-btn" style="border-radius: 28px;"
-      class="pointer-events-auto w-[60px] h-[60px] shrink-0 bg-white shadow-[0_10px_35px_rgba(0,0,0,0.12)] border border-slate-100/90 flex items-center justify-center text-slate-900 active:scale-95 transition-all cursor-pointer select-none">
-      <i id="fab-icon" class="fas fa-plus text-2xl font-black transition-transform duration-300"></i>
-    </button>
-  </div>
-
-  <!-- ========================================== -->
-  <!-- MODALES TIPO BOTTOM-SHEET PARA MOBILE -->
-  <!-- ========================================== -->
-
   <!-- ========================================== -->
   <!-- 🎙️ VISTA DEDICADA: CHAT POR VOZ CON IA (AGENTE MITA) -->
   <!-- ========================================== -->
   <div id="view-voice-chat"
-    class="fixed inset-0 z-50 bg-gradient-to-b from-[#EBF9E5] via-[#F4FCF0] to-[#FBFCFA] hidden flex-col justify-between overflow-hidden transition-all duration-300 select-none">
+    class="fixed inset-0 z-40 bg-gradient-to-b from-[#EBF9E5] via-[#F4FCF0] to-[#FBFCFA] hidden flex-col justify-between overflow-hidden transition-all duration-300 pb-24 select-none">
     
     <!-- 1. Encabezado Superior: [ ← Volver ] + Títulos + [ ⋮ Opciones ] -->
     <div class="px-5 pt-5 pb-2 flex items-center justify-between gap-3 shrink-0">
@@ -973,7 +925,7 @@
 
       <div class="flex-1 text-center px-1">
         <h3 class="text-sm font-black text-[#1E2517] tracking-tight">Agente Mita</h3>
-        <p class="text-[10px] font-semibold text-slate-500">Asistente Inteligente • v8.8</p>
+        <p class="text-[10px] font-semibold text-slate-500">Asistente Inteligente • v8.9</p>
       </div>
 
       <button type="button" id="btn-voice-chat-options"
@@ -1013,120 +965,169 @@
         <!-- Inyectado dinámicamente -->
       </div>
     </div>
+  </div>
 
-    <!-- 3. Barra Inferior Adaptada con Identidad Qipu 3.0 (Modo Voz y Modo Texto) -->
-    <!-- 3. Barra Inferior Dinámica Unificada (Estilo Mita) con Popup de Opciones -->
-    <div class="px-4 pb-6 pt-2 shrink-0 max-w-lg mx-auto w-full relative">
+  <!-- ============================================================ -->
+  <!-- 🌟 BARRA DINÁMICA UNIVERSAL FLOTANTE (DYNAMIC MORPHING DOCK)  -->
+  <!-- ============================================================ -->
+  <div id="universal-dock-wrapper"
+    class="fixed bottom-4 left-4 right-4 z-50 max-w-lg mx-auto flex items-center justify-between pointer-events-none transition-all duration-300">
+    
+    <!-- Menú Flotante de Opciones / Adjuntos (Fotos, Archivos, Cámara) -->
+    <div id="voice-chat-attachments-popup"
+      class="hidden absolute right-0 bottom-20 z-50 bg-white/98 backdrop-blur-xl p-2.5 rounded-[26px] shadow-[0_12px_40px_rgba(0,0,0,0.18)] border border-slate-100/90 flex flex-col gap-2 transition-all duration-200 transform origin-bottom-right scale-95 opacity-0 pointer-events-none">
       
-      <!-- Menú Flotante de Opciones / Adjuntos (Fotos, Archivos, Cámara) -->
-      <div id="voice-chat-attachments-popup"
-        class="hidden absolute right-4 bottom-20 z-40 bg-white/98 backdrop-blur-xl p-2.5 rounded-[26px] shadow-[0_12px_40px_rgba(0,0,0,0.18)] border border-slate-100/90 flex flex-col gap-2 transition-all duration-200 transform origin-bottom-right scale-95 opacity-0 pointer-events-none">
-        
-        <!-- Opción 1: Fotos -->
-        <button type="button" id="btn-attach-photos"
-          class="flex items-center gap-2.5 px-3 py-2 rounded-2xl hover:bg-slate-50 active:scale-95 transition-all text-left cursor-pointer group">
-          <span class="material-symbols-rounded text-slate-800 text-xl group-hover:scale-110 transition-transform">add_photo_alternate</span>
-          <span class="px-3 py-1 bg-[#D9F99D]/90 text-[#1E2517] font-black text-xs rounded-xl shadow-2xs">Fotos</span>
-        </button>
+      <!-- Opción 1: Fotos -->
+      <button type="button" id="btn-attach-photos"
+        class="flex items-center gap-2.5 px-3 py-2 rounded-2xl hover:bg-slate-50 active:scale-95 transition-all text-left cursor-pointer group pointer-events-auto">
+        <span class="material-symbols-rounded text-slate-800 text-xl group-hover:scale-110 transition-transform">add_photo_alternate</span>
+        <span class="px-3 py-1 bg-[#D9F99D]/90 text-[#1E2517] font-black text-xs rounded-xl shadow-2xs">Fotos</span>
+      </button>
 
-        <!-- Opción 2: Archivos -->
-        <button type="button" id="btn-attach-files"
-          class="flex items-center gap-2.5 px-3 py-2 rounded-2xl hover:bg-slate-50 active:scale-95 transition-all text-left cursor-pointer group">
-          <span class="material-symbols-rounded text-slate-800 text-xl group-hover:scale-110 transition-transform">attach_file</span>
-          <span class="px-3 py-1 bg-[#D9F99D]/90 text-[#1E2517] font-black text-xs rounded-xl shadow-2xs">Archivos</span>
-        </button>
+      <!-- Opción 2: Archivos -->
+      <button type="button" id="btn-attach-files"
+        class="flex items-center gap-2.5 px-3 py-2 rounded-2xl hover:bg-slate-50 active:scale-95 transition-all text-left cursor-pointer group pointer-events-auto">
+        <span class="material-symbols-rounded text-slate-800 text-xl group-hover:scale-110 transition-transform">attach_file</span>
+        <span class="px-3 py-1 bg-[#D9F99D]/90 text-[#1E2517] font-black text-xs rounded-xl shadow-2xs">Archivos</span>
+      </button>
 
-        <!-- Opción 3: Cámara -->
-        <button type="button" id="btn-attach-camera"
-          class="flex items-center gap-2.5 px-3 py-2 rounded-2xl hover:bg-slate-50 active:scale-95 transition-all text-left cursor-pointer group">
-          <span class="material-symbols-rounded text-slate-800 text-xl group-hover:scale-110 transition-transform">photo_camera</span>
-          <span class="px-3 py-1 bg-[#D9F99D]/90 text-[#1E2517] font-black text-xs rounded-xl shadow-2xs">Cámara</span>
-        </button>
-      </div>
-
-      <!-- Barra Principal Cápsula Blanca Flotante con Morphing Dinámico (Spring Physics) -->
-      <div id="mita-unified-chat-bar"
-        class="h-[64px] bg-white shadow-[0_10px_35px_rgba(0,0,0,0.12)] border border-slate-100/90 rounded-[32px] flex items-center justify-between px-3 text-slate-800 transition-all duration-300 relative z-30 overflow-hidden select-none">
-        
-        <!-- ======================================================== -->
-        <!-- ESTADO A: MODO TEXTO / IDLE ('Pregunta a mita')          -->
-        <!-- ======================================================== -->
-        <div id="mita-bar-text-state"
-          class="w-full h-full flex items-center justify-between gap-2 transition-all duration-300 transform">
-          
-          <!-- 1. Micrófono (Izquierda) -> Al presionar morph a ESTADO B -->
-          <button type="button" id="btn-mita-mic-left"
-            class="w-10 h-10 rounded-full flex items-center justify-center text-slate-800 hover:bg-slate-100 active:scale-90 transition-transform cursor-pointer shrink-0"
-            title="Hablar con Mita">
-            <span class="material-symbols-rounded text-2xl" id="icon-mita-mic">mic</span>
-          </button>
-
-          <!-- 2. Input de Texto Central: "Pregunta a mita" -->
-          <input type="text" id="voice-chat-text-input"
-            placeholder="Pregunta a mita"
-            autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"
-            class="flex-1 bg-transparent border-0 text-sm font-bold text-slate-900 placeholder:text-slate-800/90 focus:outline-none outline-none leading-none px-1" />
-
-          <!-- 3. Visualizador de Ondas de Audio (Waveform) -> Al presionar morph a ESTADO B -->
-          <button type="button" id="btn-mita-waveform"
-            class="w-9 h-9 rounded-full flex items-center justify-center text-slate-800 hover:bg-slate-100 active:scale-90 transition-transform cursor-pointer shrink-0"
-            title="Modo Voz / Ondas de Audio">
-            <span class="material-symbols-rounded text-2xl tracking-tighter" id="icon-mita-waveform">graphic_eq</span>
-          </button>
-
-          <!-- 4. Botón Verde "+" (Despliega Fotos, Archivos, Cámara) / Enviar si hay texto -->
-          <button type="button" id="btn-mita-plus-toggle"
-            class="h-10 px-3.5 rounded-[20px] bg-[#B9F59B] hover:bg-[#aef08e] text-slate-900 flex items-center justify-center font-black text-xl shadow-2xs active:scale-90 transition-all cursor-pointer shrink-0"
-            title="Adjuntar o Enviar">
-            <span class="material-symbols-rounded text-2xl font-black transition-transform duration-200" id="icon-mita-plus">add</span>
-          </button>
-        </div>
-
-        <!-- ======================================================== -->
-        <!-- ESTADO B: MODO VOZ ACTIVA / GRABACIÓN (Exacto a la imagen)-->
-        <!-- ======================================================== -->
-        <div id="mita-bar-voice-state"
-          class="hidden absolute inset-0 px-3 flex items-center justify-between gap-2 bg-white transition-all duration-300 transform opacity-0 translate-y-3 pointer-events-none">
-          
-          <!-- Botón 1 (Izquierda): Cámara / Video -->
-          <button type="button" id="btn-voice-state-camera"
-            class="w-11 h-11 rounded-full bg-slate-100/80 hover:bg-slate-200/80 text-slate-800 flex items-center justify-center shadow-xs active:scale-90 transition-transform cursor-pointer shrink-0"
-            title="Escanear Boleta">
-            <span class="material-symbols-rounded text-2xl">videocam</span>
-          </button>
-
-          <!-- Centro: Ondas de Audio Dinámicas Animadas -->
-          <div class="flex-1 flex items-center justify-center gap-1.5 px-4 h-full">
-            <span class="w-1 bg-[#A3E635] rounded-full animate-[pulse_0.6s_ease-in-out_infinite] h-4"></span>
-            <span class="w-1 bg-[#84cc16] rounded-full animate-[pulse_0.4s_ease-in-out_infinite] h-7"></span>
-            <span class="w-1 bg-[#65a30d] rounded-full animate-[pulse_0.7s_ease-in-out_infinite] h-5"></span>
-            <span class="w-1 bg-[#84cc16] rounded-full animate-[pulse_0.5s_ease-in-out_infinite] h-8"></span>
-            <span class="w-1 bg-[#A3E635] rounded-full animate-[pulse_0.6s_ease-in-out_infinite] h-4"></span>
-          </div>
-
-          <!-- Botones Derecha: [ 🎤 Mic Activo ] + [ ✕ Cerrar ] -->
-          <div class="flex items-center gap-2 shrink-0">
-            <!-- Botón Micrófono Activo -->
-            <button type="button" id="btn-voice-state-mic"
-              class="w-11 h-11 rounded-full bg-slate-100/80 hover:bg-slate-200/80 text-slate-900 flex items-center justify-center shadow-xs active:scale-90 transition-transform cursor-pointer"
-              title="Pausar / Reanudar Micrófono">
-              <span class="material-symbols-rounded text-2xl animate-pulse text-rose-600" id="icon-voice-state-mic">mic</span>
-            </button>
-
-            <!-- Botón ✕ Cerrar / Cancelar Grabación (Vuelve al Estado A) -->
-            <button type="button" id="btn-voice-state-close"
-              class="w-11 h-11 rounded-full bg-slate-100/80 hover:bg-slate-200/80 text-slate-800 flex items-center justify-center shadow-xs active:scale-90 transition-transform cursor-pointer"
-              title="Cerrar y volver a escribir">
-              <span class="material-symbols-rounded text-2xl font-black">close</span>
-            </button>
-          </div>
-        </div>
-
-        <!-- Hidden File Inputs para Fotos y Archivos -->
-        <input type="file" id="input-mita-attach-photo" accept="image/*" class="hidden" />
-        <input type="file" id="input-mita-attach-file" accept="image/*,.pdf,.doc,.docx" class="hidden" />
-      </div>
+      <!-- Opción 3: Cámara -->
+      <button type="button" id="btn-attach-camera"
+        class="flex items-center gap-2.5 px-3 py-2 rounded-2xl hover:bg-slate-50 active:scale-95 transition-all text-left cursor-pointer group pointer-events-auto">
+        <span class="material-symbols-rounded text-slate-800 text-xl group-hover:scale-110 transition-transform">photo_camera</span>
+        <span class="px-3 py-1 bg-[#D9F99D]/90 text-[#1E2517] font-black text-xs rounded-xl shadow-2xs">Cámara</span>
+      </button>
     </div>
+
+    <!-- LA CÁPSULA UNIVERSAL QUE SE TRANSFORMA ELÁSTICAMENTE (DYNAMIC ISLAND DOCK) -->
+    <div id="universal-floating-dock"
+      class="pointer-events-auto h-[64px] flex-1 bg-white shadow-[0_10px_35px_rgba(0,0,0,0.12)] border border-slate-100/90 rounded-[32px] flex items-center justify-between px-3 text-slate-800 transition-all duration-300 relative z-40 overflow-hidden dynamic-morph-dock select-none">
+      
+      <!-- ======================================================== -->
+      <!-- ESTADO 1: MODO INICIO / NAVEGACIÓN COMPACTA (DASHBOARD) -->
+      <!-- ======================================================== -->
+      <div id="dock-view-nav"
+        class="w-full h-full flex items-center justify-around gap-1 transition-all duration-300 transform">
+        <!-- 1. Monedero -->
+        <button type="button" id="nav-btn-wallet"
+          class="w-11 h-11 rounded-2xl flex items-center justify-center text-slate-900 hover:bg-slate-100 active:scale-90 transition-transform"
+          title="Inicio / Monedero">
+          <i class="fas fa-wallet text-lg"></i>
+        </button>
+
+        <!-- 2. Tarjetas -->
+        <button type="button" id="nav-btn-stats" onclick="openPaymentMethodsSummaryModal();"
+          class="w-11 h-11 rounded-2xl flex items-center justify-center text-slate-900 hover:bg-slate-100 active:scale-90 transition-transform"
+          title="Tarjetas & Métodos de Pago">
+          <i class="fas fa-credit-card text-lg"></i>
+        </button>
+
+        <!-- 3. Escanear Boleta con Cámara / IA -->
+        <button type="button" id="nav-btn-scan-camera" onclick="triggerReceiptScanner();"
+          class="w-11 h-11 rounded-2xl flex items-center justify-center text-emerald-700 hover:bg-emerald-50 active:scale-90 transition-transform"
+          title="Escanear Boleta con IA">
+          <span class="material-symbols-rounded text-2xl">photo_camera</span>
+        </button>
+
+        <!-- 4. Buscar / Historial -->
+        <button type="button" id="nav-btn-search"
+          class="w-11 h-11 rounded-2xl flex items-center justify-center text-slate-900 hover:bg-slate-100 active:scale-90 transition-transform"
+          title="Buscar Movimientos">
+          <i class="fas fa-magnifying-glass text-lg"></i>
+        </button>
+
+        <!-- 5. Botón Píldora Mita (Hablar / Chat) que expande la barra -->
+        <button type="button" id="nav-btn-open-mita"
+          class="h-10 px-3.5 rounded-full bg-[#ECF9E1] hover:bg-[#d9f5c4] text-[#1E2517] flex items-center gap-1.5 font-black text-xs border border-[#BEEB9F] active:scale-95 transition-all cursor-pointer shadow-2xs">
+          <span class="material-symbols-rounded text-base text-emerald-800">mic</span>
+          <span>Mita</span>
+        </button>
+      </div>
+
+      <!-- ======================================================== -->
+      <!-- ESTADO 2: MODO CHAT / PREGUNTA A MITA (BARRA EXPANDIDA)  -->
+      <!-- ======================================================== -->
+      <div id="dock-view-chat"
+        class="hidden absolute inset-0 px-3 flex items-center justify-between gap-2 bg-white transition-all duration-300 transform opacity-0 -translate-y-3 pointer-events-none">
+        
+        <!-- 1. Micrófono (Izquierda) -> Al presionar morph a ESTADO 3 (Voz) -->
+        <button type="button" id="btn-mita-mic-left"
+          class="w-10 h-10 rounded-full flex items-center justify-center text-slate-800 hover:bg-slate-100 active:scale-90 transition-transform cursor-pointer shrink-0"
+          title="Hablar con Mita">
+          <span class="material-symbols-rounded text-2xl" id="icon-mita-mic">mic</span>
+        </button>
+
+        <!-- 2. Input de Texto Central: "Pregunta a mita" -->
+        <input type="text" id="voice-chat-text-input"
+          placeholder="Pregunta a mita"
+          autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"
+          class="flex-1 bg-transparent border-0 text-sm font-bold text-slate-900 placeholder:text-slate-800/90 focus:outline-none outline-none leading-none px-1" />
+
+        <!-- 3. Visualizador de Ondas de Audio (Waveform) -> Al presionar morph a ESTADO 3 (Voz) -->
+        <button type="button" id="btn-mita-waveform"
+          class="w-9 h-9 rounded-full flex items-center justify-center text-slate-800 hover:bg-slate-100 active:scale-90 transition-transform cursor-pointer shrink-0"
+          title="Modo Voz / Ondas de Audio">
+          <span class="material-symbols-rounded text-2xl tracking-tighter" id="icon-mita-waveform">graphic_eq</span>
+        </button>
+
+        <!-- 4. Botón Verde "+" (Despliega Fotos, Archivos, Cámara) / Enviar si hay texto -->
+        <button type="button" id="btn-mita-plus-toggle"
+          class="h-10 px-3.5 rounded-[20px] bg-[#B9F59B] hover:bg-[#aef08e] text-slate-900 flex items-center justify-center font-black text-xl shadow-2xs active:scale-90 transition-all cursor-pointer shrink-0"
+          title="Adjuntar o Enviar">
+          <span class="material-symbols-rounded text-2xl font-black transition-transform duration-200" id="icon-mita-plus">add</span>
+        </button>
+      </div>
+
+      <!-- ======================================================== -->
+      <!-- ESTADO 3: MODO VOZ ACTIVA / LLAMADA (Exacto a la imagen) -->
+      <!-- ======================================================== -->
+      <div id="dock-view-voice"
+        class="hidden absolute inset-0 px-3 flex items-center justify-between gap-2 bg-white transition-all duration-300 transform opacity-0 translate-y-3 pointer-events-none">
+        
+        <!-- Botón 1 (Izquierda): Cámara / Video -->
+        <button type="button" id="btn-voice-state-camera"
+          class="w-11 h-11 rounded-full bg-slate-100/80 hover:bg-slate-200/80 text-slate-800 flex items-center justify-center shadow-xs active:scale-90 transition-transform cursor-pointer shrink-0"
+          title="Escanear Boleta">
+          <span class="material-symbols-rounded text-2xl">videocam</span>
+        </button>
+
+        <!-- Centro: Ondas de Audio Dinámicas Animadas -->
+        <div class="flex-1 flex items-center justify-center gap-1.5 px-4 h-full">
+          <span class="w-1 bg-[#A3E635] rounded-full animate-[pulse_0.6s_ease-in-out_infinite] h-4"></span>
+          <span class="w-1 bg-[#84cc16] rounded-full animate-[pulse_0.4s_ease-in-out_infinite] h-7"></span>
+          <span class="w-1 bg-[#65a30d] rounded-full animate-[pulse_0.7s_ease-in-out_infinite] h-5"></span>
+          <span class="w-1 bg-[#84cc16] rounded-full animate-[pulse_0.5s_ease-in-out_infinite] h-8"></span>
+          <span class="w-1 bg-[#A3E635] rounded-full animate-[pulse_0.6s_ease-in-out_infinite] h-4"></span>
+        </div>
+
+        <!-- Botones Derecha: [ 🎤 Mic Activo ] + [ ✕ Cerrar ] -->
+        <div class="flex items-center gap-2 shrink-0">
+          <!-- Botón Micrófono Activo -->
+          <button type="button" id="btn-voice-state-mic"
+            class="w-11 h-11 rounded-full bg-slate-100/80 hover:bg-slate-200/80 text-slate-900 flex items-center justify-center shadow-xs active:scale-90 transition-transform cursor-pointer"
+            title="Pausar / Reanudar Micrófono">
+            <span class="material-symbols-rounded text-2xl animate-pulse text-rose-600" id="icon-voice-state-mic">mic</span>
+          </button>
+
+          <!-- Botón ✕ Cerrar / Cancelar Grabación (Vuelve al Modo Chat o Nav) -->
+          <button type="button" id="btn-voice-state-close"
+            class="w-11 h-11 rounded-full bg-slate-100/80 hover:bg-slate-200/80 text-slate-800 flex items-center justify-center shadow-xs active:scale-90 transition-transform cursor-pointer"
+            title="Cerrar y volver a escribir">
+            <span class="material-symbols-rounded text-2xl font-black">close</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Hidden File Inputs para Fotos y Archivos -->
+      <input type="file" id="input-mita-attach-photo" accept="image/*" class="hidden" />
+      <input type="file" id="input-mita-attach-file" accept="image/*,.pdf,.doc,.docx" class="hidden" />
+    </div>
+
+    <!-- Botón FAB Circular Flotante (Se colapsa con spring transition cuando se abre Mita) -->
+    <button type="button" id="fab-main-btn" style="border-radius: 28px;"
+      class="pointer-events-auto w-[60px] h-[60px] shrink-0 bg-white shadow-[0_10px_35px_rgba(0,0,0,0.12)] border border-slate-100/90 flex items-center justify-center text-slate-900 active:scale-95 transition-all duration-300 cursor-pointer select-none ml-3">
+      <i id="fab-icon" class="fas fa-plus text-2xl font-black transition-transform duration-300"></i>
+    </button>
   </div>
 
   <!-- 1. Pantalla Completa Registrar / Editar Gasto o Ingreso (Cabecera #ECF9E1 + Cuerpo rounded-t-[36px]) -->
@@ -2381,7 +2382,7 @@
   <!-- ========================================== -->
   <!-- MODULOS JAVASCRIPT MOBILE (ARQUITECTURA MODULAR) -->
   <!-- ========================================== -->
-  <script type="module" src="js/mobile/mobile-main.js?v=8.8"></script>
+  <script type="module" src="js/mobile/mobile-main.js?v=8.9"></script>
 </body>
 
 </html>

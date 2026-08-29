@@ -97,10 +97,13 @@ export function initVoiceChat() {
   photoInput?.addEventListener('change', handleAttachmentFile);
   fileInput?.addEventListener('change', handleAttachmentFile);
 
-  // Listeners para el Estado B de la barra (Grabación de voz activa)
+  // Botón Mita en la barra de navegación del inicio
+  document.getElementById('nav-btn-open-mita')?.addEventListener('click', openVoiceChat);
+
+  // Listeners para el Estado 3 de la barra (Grabación de voz activa)
   document.getElementById('btn-voice-state-camera')?.addEventListener('click', () => {
     stopVoiceRecording();
-    exitVoiceActiveBarState();
+    setUniversalDockMode('chat');
     triggerReceiptScanner();
   });
 
@@ -108,7 +111,7 @@ export function initVoiceChat() {
 
   document.getElementById('btn-voice-state-close')?.addEventListener('click', () => {
     stopVoiceRecording();
-    exitVoiceActiveBarState();
+    setUniversalDockMode('chat');
   });
 
   // Cerrar popup al hacer click fuera
@@ -130,34 +133,77 @@ export function initVoiceChat() {
   }
 }
 
-export function enterVoiceActiveBarState() {
-  const textState = document.getElementById('mita-bar-text-state');
-  const voiceState = document.getElementById('mita-bar-voice-state');
+export function setUniversalDockMode(mode) {
+  const fabBtn = document.getElementById('fab-main-btn');
+  const navView = document.getElementById('dock-view-nav');
+  const chatView = document.getElementById('dock-view-chat');
+  const voiceView = document.getElementById('dock-view-voice');
+
   closeAttachmentsPopup();
 
-  if (textState && voiceState) {
-    textState.classList.add('opacity-0', '-translate-y-3', 'pointer-events-none');
-    textState.classList.remove('opacity-100', 'translate-y-0');
-
-    voiceState.classList.remove('hidden', 'opacity-0', 'translate-y-3', 'pointer-events-none');
-    voiceState.classList.add('opacity-100', 'translate-y-0', 'pointer-events-auto');
+  if (mode === 'nav') {
+    // Modo Inicio / Monedero: Cápsula compacta + Botón FAB circular visible
+    if (fabBtn) {
+      fabBtn.classList.remove('hidden', 'scale-0', 'opacity-0', 'pointer-events-none', 'w-0', 'ml-0');
+      fabBtn.classList.add('scale-100', 'opacity-100', 'pointer-events-auto', 'w-[60px]', 'h-[60px]', 'ml-3');
+    }
+    if (navView) {
+      navView.classList.remove('hidden', 'opacity-0', 'translate-y-3', 'pointer-events-none');
+      navView.classList.add('opacity-100', 'translate-y-0', 'pointer-events-auto', 'flex');
+    }
+    if (chatView) {
+      chatView.classList.remove('opacity-100', 'translate-y-0', 'pointer-events-auto', 'flex');
+      chatView.classList.add('opacity-0', '-translate-y-3', 'pointer-events-none', 'hidden');
+    }
+    if (voiceView) {
+      voiceView.classList.remove('opacity-100', 'translate-y-0', 'pointer-events-auto', 'flex');
+      voiceView.classList.add('opacity-0', 'translate-y-3', 'pointer-events-none', 'hidden');
+    }
+  } else if (mode === 'chat') {
+    // Modo Chat / Pregunta a mita: Barra expandida a ancho completo
+    if (fabBtn) {
+      fabBtn.classList.add('scale-0', 'opacity-0', 'pointer-events-none', 'w-0', 'ml-0', 'hidden');
+      fabBtn.classList.remove('scale-100', 'opacity-100', 'pointer-events-auto', 'w-[60px]', 'h-[60px]', 'ml-3');
+    }
+    if (navView) {
+      navView.classList.remove('opacity-100', 'translate-y-0', 'pointer-events-auto', 'flex');
+      navView.classList.add('opacity-0', 'translate-y-3', 'pointer-events-none', 'hidden');
+    }
+    if (voiceView) {
+      voiceView.classList.remove('opacity-100', 'translate-y-0', 'pointer-events-auto', 'flex');
+      voiceView.classList.add('opacity-0', 'translate-y-3', 'pointer-events-none', 'hidden');
+    }
+    if (chatView) {
+      chatView.classList.remove('hidden', 'opacity-0', '-translate-y-3', 'pointer-events-none');
+      chatView.classList.add('opacity-100', 'translate-y-0', 'pointer-events-auto', 'flex');
+    }
+  } else if (mode === 'voice') {
+    // Modo Grabación de Voz / Llamada
+    if (fabBtn) {
+      fabBtn.classList.add('scale-0', 'opacity-0', 'pointer-events-none', 'w-0', 'ml-0', 'hidden');
+      fabBtn.classList.remove('scale-100', 'opacity-100', 'pointer-events-auto', 'w-[60px]', 'h-[60px]', 'ml-3');
+    }
+    if (navView) {
+      navView.classList.remove('opacity-100', 'translate-y-0', 'pointer-events-auto', 'flex');
+      navView.classList.add('opacity-0', 'translate-y-3', 'pointer-events-none', 'hidden');
+    }
+    if (chatView) {
+      chatView.classList.remove('opacity-100', 'translate-y-0', 'pointer-events-auto', 'flex');
+      chatView.classList.add('opacity-0', '-translate-y-3', 'pointer-events-none', 'hidden');
+    }
+    if (voiceView) {
+      voiceView.classList.remove('hidden', 'opacity-0', 'translate-y-3', 'pointer-events-none');
+      voiceView.classList.add('opacity-100', 'translate-y-0', 'pointer-events-auto', 'flex');
+    }
   }
 }
 
+export function enterVoiceActiveBarState() {
+  setUniversalDockMode('voice');
+}
+
 export function exitVoiceActiveBarState() {
-  const textState = document.getElementById('mita-bar-text-state');
-  const voiceState = document.getElementById('mita-bar-voice-state');
-
-  if (textState && voiceState) {
-    voiceState.classList.add('opacity-0', 'translate-y-3', 'pointer-events-none');
-    voiceState.classList.remove('opacity-100', 'translate-y-0', 'pointer-events-auto');
-    setTimeout(() => {
-      voiceState.classList.add('hidden');
-    }, 250);
-
-    textState.classList.remove('opacity-0', '-translate-y-3', 'pointer-events-none');
-    textState.classList.add('opacity-100', 'translate-y-0');
-  }
+  setUniversalDockMode('chat');
 }
 
 let isPopupOpen = false;
@@ -290,8 +336,7 @@ export function openVoiceChat() {
   view.classList.remove('hidden');
   view.classList.add('flex');
 
-  closeAttachmentsPopup();
-  exitVoiceActiveBarState();
+  setUniversalDockMode('chat');
   const textInput = document.getElementById('voice-chat-text-input');
   if (textInput) textInput.value = '';
   const icon = document.getElementById('icon-mita-plus');
@@ -334,7 +379,7 @@ export function closeVoiceChat() {
 
   isVoiceChatOpen = false;
   stopVoiceRecording();
-  exitVoiceActiveBarState();
+  setUniversalDockMode('nav');
 
   view.classList.add('hidden');
   view.classList.remove('flex');
@@ -368,7 +413,7 @@ export async function startVoiceRecording() {
   try {
     isRecording = true;
     accumulatedFinalText = '';
-    enterVoiceActiveBarState();
+    setUniversalDockMode('voice');
     updateMicUIState(true);
     recognition.start();
     if (navigator.vibrate) navigator.vibrate(25);
@@ -378,7 +423,7 @@ export async function startVoiceRecording() {
       recognition.stop();
       setTimeout(() => {
         try { 
-          enterVoiceActiveBarState();
+          setUniversalDockMode('voice');
           recognition.start(); 
         } catch {}
       }, 150);
@@ -388,7 +433,11 @@ export async function startVoiceRecording() {
 
 export function stopVoiceRecording() {
   isRecording = false;
-  exitVoiceActiveBarState();
+  if (isVoiceChatOpen) {
+    setUniversalDockMode('chat');
+  } else {
+    setUniversalDockMode('nav');
+  }
   updateMicUIState(false);
   stopPulsingAura();
 
