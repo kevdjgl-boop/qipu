@@ -152,139 +152,7 @@ export function initVoiceChat() {
   }
 }
 
-export function setUniversalDockMode(mode) {
-  const dock = document.getElementById('universal-floating-dock');
-  const navView = document.getElementById('dock-view-nav');
-  const interactiveView = document.getElementById('dock-view-interactive');
 
-  const itemLeft = document.getElementById('mita-item-left');
-  const itemCenter = document.getElementById('mita-item-center');
-  const itemWave = document.getElementById('mita-item-wave');
-  const itemAction = document.getElementById('mita-item-action');
-
-  const iconLeft = document.getElementById('mita-icon-left');
-  const textInput = document.getElementById('voice-chat-text-input');
-  const wavesContainer = document.getElementById('mita-waves-container');
-  const iconWave = document.getElementById('mita-icon-wave');
-  const iconAction = document.getElementById('mita-icon-action');
-
-  closeAttachmentsPopup();
-
-  if (!dock) return;
-
-  // 1. Captura el estado FLIP inicial antes del cambio
-  let flipState = null;
-  if (window.Flip) {
-    try {
-      flipState = Flip.getState([
-        dock,
-        itemLeft,
-        itemCenter,
-        itemWave,
-        itemAction
-      ].filter(Boolean));
-    } catch {}
-  }
-
-  if (mode === 'nav') {
-    // 1. Estado Dashboard / Monedero: Cápsula compacta
-    dock.classList.remove('dock-state-chat', 'dock-state-voice');
-    dock.classList.add('dock-state-nav');
-
-    if (navView) {
-      navView.classList.remove('hidden', 'opacity-0', 'pointer-events-none');
-      navView.classList.add('opacity-100', 'pointer-events-auto', 'flex');
-    }
-    if (interactiveView) {
-      interactiveView.classList.remove('flex', 'opacity-100', 'pointer-events-auto');
-      interactiveView.classList.add('hidden', 'opacity-0', 'pointer-events-none');
-    }
-  } else if (mode === 'chat') {
-    // 2. Estado Chat / Pregunta a mita: Barra blanca unificada continua
-    dock.classList.remove('dock-state-nav', 'dock-state-voice');
-    dock.classList.add('dock-state-chat');
-
-    if (navView) {
-      navView.classList.remove('flex', 'opacity-100', 'pointer-events-auto');
-      navView.classList.add('hidden', 'opacity-0', 'pointer-events-none');
-    }
-    if (interactiveView) {
-      interactiveView.classList.remove('hidden', 'opacity-0', 'pointer-events-none');
-      interactiveView.classList.add('flex', 'opacity-100', 'pointer-events-auto');
-    }
-
-    // Morphing de iconos y contenido a Modo Chat
-    if (iconLeft) {
-      iconLeft.textContent = 'mic';
-      iconLeft.className = 'material-symbols-rounded text-2xl text-slate-800 transition-all duration-300';
-    }
-    if (textInput) {
-      textInput.style.opacity = '1';
-      textInput.style.pointerEvents = 'auto';
-    }
-    if (wavesContainer) {
-      wavesContainer.style.opacity = '0';
-      wavesContainer.style.pointerEvents = 'none';
-    }
-    if (iconWave) {
-      iconWave.textContent = 'graphic_eq';
-      iconWave.className = 'material-symbols-rounded text-2xl text-slate-800 transition-all duration-300';
-    }
-    if (iconAction) {
-      iconAction.textContent = textInput?.value.trim() ? 'send' : 'add';
-      iconAction.style.transform = 'rotate(0deg)';
-    }
-  } else if (mode === 'voice') {
-    // 3. Estado Voz / Llamada: Container Transform -> Separación líquida en botones flotantes
-    dock.classList.remove('dock-state-nav', 'dock-state-chat');
-    dock.classList.add('dock-state-voice');
-
-    if (navView) {
-      navView.classList.remove('flex', 'opacity-100', 'pointer-events-auto');
-      navView.classList.add('hidden', 'opacity-0', 'pointer-events-none');
-    }
-    if (interactiveView) {
-      interactiveView.classList.remove('hidden', 'opacity-0', 'pointer-events-none');
-      interactiveView.classList.add('flex', 'opacity-100', 'pointer-events-auto');
-    }
-
-    // Morphing de iconos y contenido a Modo Voz / Llamada
-    if (iconLeft) {
-      iconLeft.textContent = 'videocam';
-      iconLeft.className = 'material-symbols-rounded text-2xl text-slate-800 transition-all duration-300';
-    }
-    if (textInput) {
-      textInput.style.opacity = '0';
-      textInput.style.pointerEvents = 'none';
-    }
-    if (wavesContainer) {
-      wavesContainer.style.opacity = '1';
-      wavesContainer.style.pointerEvents = 'auto';
-    }
-    if (iconWave) {
-      iconWave.textContent = 'mic';
-      iconWave.className = 'material-symbols-rounded text-2xl text-rose-600 animate-pulse transition-all duration-300';
-    }
-    if (iconAction) {
-      iconAction.textContent = 'close';
-      iconAction.style.transform = 'rotate(0deg)';
-    }
-  }
-
-  // 2. Ejecuta la animación FLIP física con rebote elástico
-  if (flipState && window.Flip) {
-    try {
-      Flip.from(flipState, {
-        duration: 0.45,
-        ease: "back.out(1.6)",
-        scale: true,
-        fade: true,
-        absolute: false,
-        stagger: mode === 'voice' ? 0.02 : 0
-      });
-    } catch {}
-  }
-}
 
 export function enterVoiceActiveBarState() {
   setUniversalDockMode('voice');
@@ -459,6 +327,13 @@ export function openVoiceChat() {
   }
 
   resetEchoRings();
+}
+
+export function setUniversalDockMode(mode) {
+  const dock = document.getElementById('main-universal-dock');
+  if (dock && typeof dock.setMode === 'function') {
+    dock.setMode(mode);
+  }
 }
 
 export function closeVoiceChat() {

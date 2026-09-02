@@ -1,6 +1,7 @@
 import { SWIPE_ANIMATION_DATA } from "../Animaciones/swipe-data.js";
 import { appState, currentWalletId, appId, db } from "./core-state.js";
 import { renderMobileUI } from "./vista-dashboard.js";
+import { openPaymentMethodsSummaryModal } from "./modulo-tarjetas.js";
 import { doc, getDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
 let pullStartY = 0;
@@ -26,34 +27,41 @@ function ensureLottieInstance() {
       pullLottieEl.innerHTML = '';
       lottieInstance = window.lottie.loadAnimation({
         container: pullLottieEl,
-        renderer: 'canvas',
+        renderer: 'svg',
         loop: false,
         autoplay: false,
-        animationData: SWIPE_ANIMATION_DATA,
+        animationData: JSON.parse(JSON.stringify(SWIPE_ANIMATION_DATA)),
         rendererSettings: {
           preserveAspectRatio: 'xMidYMid meet',
-          clearCanvas: true
+          progressiveLoad: true,
+          hideOnTransparent: false
         }
       });
       lottieInstance.goToAndStop(0, true);
       lastRenderedFrame = 0;
       return lottieInstance;
     } catch (err) {
-      console.warn('Fallback a SVG renderer:', err);
-      try {
-        lottieInstance = window.lottie.loadAnimation({
-          container: pullLottieEl,
-          renderer: 'svg',
-          loop: false,
-          autoplay: false,
-          animationData: SWIPE_ANIMATION_DATA
-        });
-        lottieInstance.goToAndStop(0, true);
-        return lottieInstance;
-      } catch (e2) {}
+      console.warn('Error cargando Lottie:', err);
     }
   }
   return null;
+}
+
+function getActiveScrollTop() {
+  const viewTarjetas = document.getElementById('view-tarjetas');
+  if (viewTarjetas && !viewTarjetas.classList.contains('hidden')) {
+    const cardsContainer = document.getElementById('modal-pm-summary-cards-container');
+    return cardsContainer ? cardsContainer.scrollTop : 0;
+  }
+  return window.scrollY || document.documentElement.scrollTop || 0;
+}
+
+function syncViewTarjetasTop(heightPx, animate = false) {
+  const viewTarjetas = document.getElementById('view-tarjetas');
+  if (viewTarjetas && !viewTarjetas.classList.contains('hidden')) {
+    viewTarjetas.style.transition = animate ? 'top 280ms cubic-bezier(0.2, 0.8, 0.2, 1)' : 'none';
+    viewTarjetas.style.top = `${heightPx}px`;
+  }
 }
 
 export function initPullToRefresh() {
@@ -83,8 +91,20 @@ export function initPullToRefresh() {
 
   const onTouchStart = (e) => {
     if (isRefreshing) return;
-    const scrollTop = window.scrollY || document.documentElement.scrollTop || 0;
-    if (scrollTop > 5) return;
+
+    // En la vista de tarjetas, solo activar pull-to-refresh si se arrastra desde la cabecera superior blanca
+    const target = e.target;
+    if (target && target.closest('#modal-pm-summary-cards-container')) {
+      pullStartY = 0;
+      isPulling = false;
+      return; // Permitir que las tarjetas hagan scroll libremente
+    }
+
+    const scrollTop = getActiveScrollTop();
+    if (scrollTop > 5) {
+      pullStartY = 0;
+      return;
+    }
 
     if (rafId) {
       cancelAnimationFrame(rafId);
@@ -108,7 +128,15 @@ export function initPullToRefresh() {
 
   const onTouchMove = (e) => {
     if (isRefreshing || pullStartY === 0) return;
-    const scrollTop = window.scrollY || document.documentElement.scrollTop || 0;
+
+    const target = e.target;
+    if (target && target.closest('#modal-pm-summary-cards-container')) {
+      pullStartY = 0;
+      if (isPulling) resetPullIndicator();
+      return;
+    }
+
+    const scrollTop = getActiveScrollTop();
     if (scrollTop > 5) {
       if (isPulling) resetPullIndicator();
       return;
@@ -128,6 +156,7 @@ export function initPullToRefresh() {
 
         pullBanner.style.transition = 'none';
         pullBanner.style.height = `${bannerHeight}px`;
+        syncViewTarjetasTop(bannerHeight, false);
 
         const progressRatio = Math.min(1, Math.max(0, (diffY - 6) / (PULL_TRIGGER_DISTANCE - 6)));
         const targetFrame = Math.min(STRETCH_PEAK_FRAME, Math.floor(progressRatio * STRETCH_PEAK_FRAME));
@@ -149,9 +178,7 @@ export function initPullToRefresh() {
         }
       });
 
-      if (e.cancelable) {
-        e.preventDefault();
-      }
+      if (e.cancelable) e.preventDefault();
     }
   };
 
@@ -176,15 +203,11 @@ export function initPullToRefresh() {
     isPulling = false;
   };
 
+  // Solo eventos táctiles en documento que no interfieran con scroll
   document.addEventListener('touchstart', onTouchStart, { passive: true });
   document.addEventListener('touchmove', onTouchMove, { passive: false });
   document.addEventListener('touchend', onTouchEnd, { passive: true });
   document.addEventListener('touchcancel', onTouchEnd, { passive: true });
-
-  document.addEventListener('pointerdown', onTouchStart, { passive: true });
-  window.addEventListener('pointermove', onTouchMove, { passive: false });
-  window.addEventListener('pointerup', onTouchEnd, { passive: true });
-  window.addEventListener('pointercancel', onTouchEnd, { passive: true });
 }
 
 export async function triggerPullRefresh() {
@@ -194,6 +217,7 @@ export async function triggerPullRefresh() {
   if (pullBanner) {
     pullBanner.style.transition = 'height 280ms cubic-bezier(0.2, 0.8, 0.2, 1)';
     pullBanner.style.height = `${BANNER_OPEN_HEIGHT}px`;
+    syncViewTarjetasTop(BANNER_OPEN_HEIGHT, true);
   }
 
   if (pullLottieEl) {
@@ -227,7 +251,13 @@ export async function triggerPullRefresh() {
       appState.walletName = updatedData.name || appState.walletName;
       appState.participants = updatedData.participants || [];
       appState.expenses = updatedData.expenses || [];
-      renderMobileUI();
+
+      const viewTarjetas = document.getElementById('view-tarjetas');
+      if (viewTarjetas && !viewTarjetas.classList.contains('hidden')) {
+        openPaymentMethodsSummaryModal();
+      } else {
+        renderMobileUI();
+      }
     }
 
     // ENCOGER el icono a escala 0 mientras sube el bloque superior
@@ -239,6 +269,7 @@ export async function triggerPullRefresh() {
     if (pullBanner) {
       pullBanner.style.transition = 'height 320ms cubic-bezier(0.4, 0, 0.2, 1)';
       pullBanner.style.height = '0px';
+      syncViewTarjetasTop(0, true);
     }
 
     setTimeout(() => {
@@ -262,6 +293,7 @@ function resetPullIndicator() {
   if (pullBanner) {
     pullBanner.style.transition = 'height 300ms cubic-bezier(0.4, 0, 0.2, 1)';
     pullBanner.style.height = '0px';
+    syncViewTarjetasTop(0, true);
   }
 
   if (lottieInstance) {

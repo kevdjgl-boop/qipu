@@ -6,11 +6,10 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <title>Qipu Mobile - Monedero Financiero</title>
   <script>
-    (function() {
-      const CURRENT_BUILD = 'qipu-v9.4-gsap-flip-morphing';
+    (function () {
+      const CURRENT_BUILD = 'qipu-v17.5-pronounced-fade-and-spring-bounce';
       if (localStorage.getItem('qipu_app_build') !== CURRENT_BUILD) {
         localStorage.setItem('qipu_app_build', CURRENT_BUILD);
-        localStorage.removeItem('gemini_api_key');
         if (window.caches) {
           caches.keys().then(keys => Promise.all(keys.map(k => caches.delete(k))));
         }
@@ -38,7 +37,8 @@
 
   <!-- Lottie & DotLottie Web Players -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/bodymovin/5.12.2/lottie.min.js"></script>
-  <script type="module" src="https://cdn.jsdelivr.net/npm/@dotlottie/player-component@latest/dist/dotlottie-player.mjs"></script>
+  <script type="module"
+    src="https://cdn.jsdelivr.net/npm/@dotlottie/player-component@latest/dist/dotlottie-player.mjs"></script>
 
   <!-- PWA Meta Tags -->
   <link rel="manifest" href="manifest.json" />
@@ -86,17 +86,18 @@
 
     /* Efecto Burbuja Táctil con Spring Physics para Botones */
     .bubble-btn {
-      transition: transform 380ms cubic-bezier(0.34, 1.56, 0.64, 1),
-                  box-shadow 300ms ease,
-                  background-color 200ms ease;
       will-change: transform;
       -webkit-tap-highlight-color: transparent;
       cursor: pointer;
+      touch-action: manipulation;
     }
 
-    .bubble-btn:active {
-      transform: scale(0.85) !important;
-      transition: transform 90ms cubic-bezier(0.2, 0, 0, 1) !important;
+    .dock-shadow {
+      box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.08), 0 4px 12px -2px rgba(0, 0, 0, 0.04);
+    }
+
+    .dock-shadow-lg {
+      box-shadow: 0 16px 40px -8px rgba(0, 0, 0, 0.14), 0 6px 16px -4px rgba(0, 0, 0, 0.06);
     }
 
     * {
@@ -273,6 +274,7 @@
         transform: translateY(5px);
         filter: blur(1.5px);
       }
+
       100% {
         opacity: 1;
         transform: translateY(0);
@@ -290,15 +292,15 @@
     /* ============================================================ */
     #universal-floating-dock {
       transition: width 480ms cubic-bezier(0.34, 1.56, 0.64, 1),
-                  max-width 480ms cubic-bezier(0.34, 1.56, 0.64, 1),
-                  height 360ms cubic-bezier(0.34, 1.56, 0.64, 1),
-                  background 320ms ease,
-                  border 320ms ease,
-                  border-radius 360ms cubic-bezier(0.34, 1.56, 0.64, 1),
-                  box-shadow 360ms ease-out,
-                  transform 480ms cubic-bezier(0.34, 1.56, 0.64, 1),
-                  gap 400ms cubic-bezier(0.34, 1.56, 0.64, 1),
-                  padding 320ms ease;
+        max-width 480ms cubic-bezier(0.34, 1.56, 0.64, 1),
+        height 360ms cubic-bezier(0.34, 1.56, 0.64, 1),
+        background 320ms ease,
+        border 320ms ease,
+        border-radius 360ms cubic-bezier(0.34, 1.56, 0.64, 1),
+        box-shadow 360ms ease-out,
+        transform 480ms cubic-bezier(0.34, 1.56, 0.64, 1),
+        gap 400ms cubic-bezier(0.34, 1.56, 0.64, 1),
+        padding 320ms ease;
       will-change: width, max-width, transform, border-radius, gap;
     }
 
@@ -335,12 +337,14 @@
     .morph-item-left {
       transition: all 400ms cubic-bezier(0.34, 1.56, 0.64, 1);
     }
+
     .dock-state-chat .morph-item-left {
       background: transparent;
       box-shadow: none;
       border: 1px solid transparent;
       color: #1e293b;
     }
+
     .dock-state-voice .morph-item-left {
       background: #FFFFFF;
       box-shadow: 0 10px 30px rgba(0, 0, 0, 0.12);
@@ -351,11 +355,13 @@
     .morph-item-center {
       transition: all 400ms cubic-bezier(0.34, 1.56, 0.64, 1);
     }
+
     .dock-state-chat .morph-item-center {
       background: transparent;
       box-shadow: none;
       border: 1px solid transparent;
     }
+
     .dock-state-voice .morph-item-center {
       background: #FFFFFF;
       box-shadow: 0 10px 30px rgba(0, 0, 0, 0.12);
@@ -365,12 +371,14 @@
     .morph-item-wave {
       transition: all 400ms cubic-bezier(0.34, 1.56, 0.64, 1);
     }
+
     .dock-state-chat .morph-item-wave {
       background: transparent;
       box-shadow: none;
       border: 1px solid transparent;
       color: #1e293b;
     }
+
     .dock-state-voice .morph-item-wave {
       background: #FFFFFF;
       box-shadow: 0 10px 30px rgba(0, 0, 0, 0.12);
@@ -381,12 +389,14 @@
     .morph-item-action {
       transition: all 400ms cubic-bezier(0.34, 1.56, 0.64, 1);
     }
+
     .dock-state-chat .morph-item-action {
       background: #B9F59B;
       color: #1E2517;
       box-shadow: 0 2px 8px rgba(185, 245, 155, 0.4);
       border: 1px solid transparent;
     }
+
     .dock-state-voice .morph-item-action {
       background: #FFFFFF;
       color: #1e293b;
@@ -396,10 +406,13 @@
 
     /* Esfera Luminosa Orgánica y Fluida para el Chat de Voz */
     @keyframes orbBreathe {
-      0%, 100% {
+
+      0%,
+      100% {
         transform: scale(1) rotate(0deg);
         filter: blur(28px);
       }
+
       50% {
         transform: scale(1.12) rotate(180deg);
         filter: blur(34px);
@@ -407,10 +420,13 @@
     }
 
     @keyframes orbCorePulse {
-      0%, 100% {
+
+      0%,
+      100% {
         transform: scale(0.95);
         opacity: 0.85;
       }
+
       50% {
         transform: scale(1.06);
         opacity: 1;
@@ -437,10 +453,12 @@
         opacity: 0;
         transform: scale(0.65) translateY(24px);
       }
+
       70% {
         opacity: 1;
         transform: scale(1.04) translateY(-3px);
       }
+
       100% {
         opacity: 1;
         transform: scale(1) translateY(0);
@@ -478,6 +496,7 @@
       scrollbar-width: none !important;
       -ms-overflow-style: none !important;
     }
+
     #modal-date-picker *::-webkit-scrollbar {
       display: none !important;
       width: 0 !important;
@@ -529,6 +548,7 @@
         transform: scale(0.35);
         opacity: 0.6;
       }
+
       100% {
         transform: scale(1);
         opacity: 1;
@@ -616,9 +636,9 @@
       transform: translateY(-8px);
       transform-origin: top center;
       transition: grid-template-rows 340ms var(--ease-spring-in),
-                  transform 340ms var(--ease-spring-in),
-                  margin 340ms var(--ease-spring-in),
-                  padding 340ms var(--ease-spring-in);
+        transform 340ms var(--ease-spring-in),
+        margin 340ms var(--ease-spring-in),
+        padding 340ms var(--ease-spring-in);
       pointer-events: none;
       visibility: hidden;
       will-change: grid-template-rows, transform;
@@ -646,7 +666,7 @@
       transform: translateY(-24px);
       transform-origin: top center;
       transition: grid-template-rows 360ms var(--ease-spring-in),
-                  transform 360ms var(--ease-spring-in);
+        transform 360ms var(--ease-spring-in);
       pointer-events: none;
       visibility: hidden;
       margin-top: -32px !important;
@@ -685,6 +705,7 @@
       0% {
         transform: translateY(16px);
       }
+
       100% {
         transform: translateY(0);
       }
@@ -710,8 +731,8 @@
       transform-origin: bottom right;
       will-change: transform, opacity;
       transition: transform 240ms cubic-bezier(0.4, 0, 0.2, 1),
-                  opacity 180ms ease-in,
-                  visibility 240ms !important;
+        opacity 180ms ease-in,
+        visibility 240ms !important;
     }
 
     #fab-menu-options.fab-open .fab-speed-dial-item {
@@ -720,20 +741,23 @@
       pointer-events: auto !important;
       visibility: visible !important;
       transition: transform 320ms var(--ease-spring-bounce),
-                  opacity 240ms ease-out,
-                  visibility 320ms !important;
+        opacity 240ms ease-out,
+        visibility 320ms !important;
     }
 
     /* Entrada escalonada de abajo hacia arriba (4 opciones) */
     #fab-menu-options.fab-open .fab-speed-dial-item:nth-child(4) {
       transition-delay: 0ms !important;
     }
+
     #fab-menu-options.fab-open .fab-speed-dial-item:nth-child(3) {
       transition-delay: 35ms !important;
     }
+
     #fab-menu-options.fab-open .fab-speed-dial-item:nth-child(2) {
       transition-delay: 70ms !important;
     }
+
     #fab-menu-options.fab-open .fab-speed-dial-item:nth-child(1) {
       transition-delay: 105ms !important;
     }
@@ -742,24 +766,29 @@
     #fab-menu-options:not(.fab-open) .fab-speed-dial-item:nth-child(1) {
       transition-delay: 0ms !important;
     }
+
     #fab-menu-options:not(.fab-open) .fab-speed-dial-item:nth-child(2) {
       transition-delay: 20ms !important;
     }
+
     #fab-menu-options:not(.fab-open) .fab-speed-dial-item:nth-child(3) {
       transition-delay: 40ms !important;
     }
+
     #fab-menu-options:not(.fab-open) .fab-speed-dial-item:nth-child(4) {
       transition-delay: 60ms !important;
     }
 
     /* Botones y elementos interactivos con respuesta táctil física */
-    button, .interactive-btn {
+    button,
+    .interactive-btn {
       transition: transform 150ms var(--ease-spring-bounce),
-                  box-shadow 150ms ease,
-                  background-color 150ms ease;
+        box-shadow 150ms ease,
+        background-color 150ms ease;
     }
 
-    button:active, .interactive-btn:active {
+    button:active,
+    .interactive-btn:active {
       transform: scale(0.955);
     }
 
@@ -772,8 +801,17 @@
     }
 
     @keyframes scanBeam {
-      0%, 100% { top: 10%; opacity: 0.3; }
-      50% { top: 85%; opacity: 1; }
+
+      0%,
+      100% {
+        top: 10%;
+        opacity: 0.3;
+      }
+
+      50% {
+        top: 85%;
+        opacity: 1;
+      }
     }
 
     .scrollbar-none {
@@ -805,15 +843,16 @@
   <!-- 🔄 BLOQUE PULL-TO-REFRESH SOBRE EL HEADER -->
   <!-- ========================================== -->
   <div id="pull-header-banner"
-    class="w-full bg-[#FBFCFA] flex items-center justify-center overflow-hidden select-none z-40"
-    style="height: 0px;">
-    <div id="pull-to-refresh-lottie" class="w-[72px] h-[72px] flex items-center justify-center pointer-events-none origin-center" style="transform: scale(0);"></div>
+    class="w-full bg-[#FBFCFA] flex items-center justify-center overflow-hidden select-none z-40" style="height: 0px;">
+    <div id="pull-to-refresh-lottie"
+      class="w-[72px] h-[72px] flex items-center justify-center pointer-events-none origin-center"
+      style="transform: scale(0);"></div>
   </div>
 
   <!-- ========================================== -->
   <!-- ENCABEZADO SUPERIOR MOBILE -->
   <!-- ========================================== -->
-  <header
+  <header id="mobile-top-header"
     class="sticky top-0 z-30 bg-white/90 backdrop-blur-md border-b border-slate-100 px-4 py-3 flex items-center justify-between">
     <div class="flex items-center gap-2.5">
       <div
@@ -852,223 +891,241 @@
   <!-- CONTENIDO PRINCIPAL MOBILE -->
   <!-- ========================================== -->
   <main class="px-4 py-4 space-y-5 max-w-lg mx-auto">
+    <!-- 1️⃣ VISTA PRINCIPAL: DASHBOARD -->
+    <div id="view-dashboard" class="space-y-5">
+      <!-- 1️⃣ BLOQUE SUPERIOR: PRESUPUESTO GLOBAL & MÉTRICAS -->
+      <section id="top-budget-section" class="space-y-3">
+        <!-- Tarjeta Hero de Disponible Global (Clicable -> Abre Bottom Sheet de Saldos) -->
+        <div onclick="openModal('modal-participants-balances');"
+          class="relative overflow-hidden bg-gradient-to-br from-slate-900 via-indigo-950 to-slate-900 rounded-3xl p-5 text-white shadow-xl shadow-indigo-950/20 border border-slate-800 cursor-pointer active:scale-98 transition-all group select-none"
+          title="Toca para ver el desglose por usuario">
+          <!-- Decoración glow -->
+          <div class="absolute -right-8 -bottom-8 w-36 h-36 bg-indigo-500/20 rounded-full blur-2xl"></div>
+          <div class="absolute -left-8 -top-8 w-32 h-32 bg-emerald-500/15 rounded-full blur-2xl"></div>
 
-    <!-- ========================================== -->
-    <!-- 1️⃣ BLOQUE SUPERIOR: PRESUPUESTO GLOBAL & MÉTRICAS -->
-    <!-- ========================================== -->
-    <section id="top-budget-section" class="space-y-3">
-      <!-- Tarjeta Hero de Disponible Global (Clicable -> Abre Bottom Sheet de Saldos) -->
-      <div onclick="openModal('modal-participants-balances');"
-        class="relative overflow-hidden bg-gradient-to-br from-slate-900 via-indigo-950 to-slate-900 rounded-3xl p-5 text-white shadow-xl shadow-indigo-950/20 border border-slate-800 cursor-pointer active:scale-98 transition-all group select-none"
-        title="Toca para ver el desglose por usuario">
-        <!-- Decoración glow -->
-        <div class="absolute -right-8 -bottom-8 w-36 h-36 bg-indigo-500/20 rounded-full blur-2xl"></div>
-        <div class="absolute -left-8 -top-8 w-32 h-32 bg-emerald-500/15 rounded-full blur-2xl"></div>
-
-        <div class="relative z-10">
-          <div class="flex items-center justify-between mb-1">
-            <div class="flex items-center gap-1.5">
-              <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-              <span class="text-[10px] font-extrabold uppercase tracking-widest text-slate-300">Disponible Global</span>
-            </div>
-            <div class="flex items-center gap-1.5">
-              <span
-                class="text-[10px] font-bold text-indigo-300 bg-white/10 group-hover:bg-white/20 px-2 py-0.5 rounded-full transition-colors flex items-center gap-1">
-                <i class="fas fa-users text-[9px]"></i>
-                <span>Ver saldos</span>
-                <i class="fas fa-chevron-right text-[8px] opacity-70"></i>
-              </span>
-              <span id="global-percent-badge"
-                class="text-[10px] font-black px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">100%
-                restante</span>
-            </div>
-          </div>
-
-          <div class="my-2">
-            <span id="display-global-remaining"
-              class="text-3xl sm:text-4xl font-black tracking-tight text-white block">S/ 0.00</span>
-          </div>
-
-          <!-- Barra de Progreso Global -->
-          <div class="mt-4 space-y-1.5">
-            <div class="flex justify-between text-[11px] font-semibold text-slate-300">
-              <span class="text-slate-400">Presupuesto Base: <strong id="display-global-budget" class="text-white">S/
-                  0.00</strong></span>
-              <span class="text-orange-300">Gastado: <strong id="display-global-spent-percent">0%</strong></span>
-            </div>
-            <div class="w-full bg-slate-800/80 h-2.5 rounded-full overflow-hidden p-0.5 border border-slate-700/50">
-              <div id="global-progress-bar"
-                class="h-full bg-gradient-to-r from-emerald-400 to-indigo-400 rounded-full transition-all duration-700"
-                style="width: 100%"></div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Carrusel Horizontal Táctil de Métricas Globales -->
-      <div class="space-y-1.5 pt-1">
-        <div class="flex items-center justify-between px-1">
-          <span class="text-[10px] font-extrabold uppercase tracking-wider text-slate-400">Resumen Financiero</span>
-          <span class="text-[10px] font-bold text-slate-400 flex items-center gap-1">
-            Desliza <i class="fas fa-arrow-right text-[8px]"></i>
-          </span>
-        </div>
-
-        <div class="flex overflow-x-auto snap-x scrollbar-none gap-3 pb-1 -mx-4 px-4">
-          <!-- 1. Gastado Total -->
-          <div
-            class="w-[190px] shrink-0 snap-start bg-white rounded-2xl p-4 border border-slate-100 shadow-sm flex flex-col justify-between">
-            <div class="flex items-center justify-between mb-2">
-              <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Gastado Total</span>
-              <div
-                class="w-7 h-7 rounded-xl bg-orange-50 text-orange-500 flex items-center justify-center text-xs shadow-2xs">
-                <i class="fas fa-chart-line"></i>
+          <div class="relative z-10">
+            <div class="flex items-center justify-between mb-1">
+              <div class="flex items-center gap-1.5">
+                <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                <span class="text-[10px] font-extrabold uppercase tracking-widest text-slate-300">Disponible
+                  Global</span>
+              </div>
+              <div class="flex items-center gap-1.5">
+                <span
+                  class="text-[10px] font-bold text-indigo-300 bg-white/10 group-hover:bg-white/20 px-2 py-0.5 rounded-full transition-colors flex items-center gap-1">
+                  <i class="fas fa-users text-[9px]"></i>
+                  <span>Ver saldos</span>
+                  <i class="fas fa-chevron-right text-[8px] opacity-70"></i>
+                </span>
+                <span id="global-percent-badge"
+                  class="text-[10px] font-black px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">100%
+                  restante</span>
               </div>
             </div>
-            <div>
-              <span id="display-total-spent" class="text-xl font-black text-slate-900 tracking-tight block">S/
-                0.00</span>
-              <span id="display-total-fixed" class="text-[10px] text-slate-400 font-medium block mt-0.5">Fijos: S/
-                0.00</span>
-            </div>
-          </div>
 
-          <!-- 2. Fondo Ahorro -->
-          <div
-            class="w-[190px] shrink-0 snap-start bg-white rounded-2xl p-4 border border-slate-100 shadow-sm flex flex-col justify-between">
-            <div class="flex items-center justify-between mb-2">
-              <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Fondo Ahorro</span>
-              <div
-                class="w-7 h-7 rounded-xl bg-purple-50 text-purple-500 flex items-center justify-center text-xs shadow-2xs">
-                <i class="fas fa-piggy-bank"></i>
-              </div>
+            <div class="my-2">
+              <span id="display-global-remaining"
+                class="text-3xl sm:text-4xl font-black tracking-tight text-white block">S/ 0.00</span>
             </div>
-            <div>
-              <span id="display-global-savings" class="text-xl font-black text-purple-600 tracking-tight block">S/
-                0.00</span>
-              <span id="display-shared-savings" class="text-[10px] text-slate-400 font-medium block mt-0.5">Mutuo: S/
-                0.00</span>
-            </div>
-          </div>
 
-          <!-- 3. Máximo Diario -->
-          <div
-            class="w-[190px] shrink-0 snap-start bg-white rounded-2xl p-4 border border-slate-100 shadow-sm flex flex-col justify-between">
-            <div class="flex items-center justify-between mb-2">
-              <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Máx. Diario</span>
-              <div
-                class="w-7 h-7 rounded-xl bg-indigo-50 text-indigo-500 flex items-center justify-center text-xs shadow-2xs">
-                <i class="fas fa-calendar-day"></i>
+            <!-- Barra de Progreso Global -->
+            <div class="mt-4 space-y-1.5">
+              <div class="flex justify-between text-[11px] font-semibold text-slate-300">
+                <span class="text-slate-400">Presupuesto Base: <strong id="display-global-budget" class="text-white">S/
+                    0.00</strong></span>
+                <span class="text-orange-300">Gastado: <strong id="display-global-spent-percent">0%</strong></span>
               </div>
-            </div>
-            <div>
-              <span id="display-daily-budget" class="text-xl font-black text-indigo-600 tracking-tight block">S/
-                0.00</span>
-              <span id="display-days-remaining" class="text-[10px] text-slate-400 font-medium block mt-0.5">-- días
-                rest.</span>
+              <div class="w-full bg-slate-800/80 h-2.5 rounded-full overflow-hidden p-0.5 border border-slate-700/50">
+                <div id="global-progress-bar"
+                  class="h-full bg-gradient-to-r from-emerald-400 to-indigo-400 rounded-full transition-all duration-700"
+                  style="width: 100%"></div>
+              </div>
             </div>
           </div>
         </div>
-      </div>
-    </section>
 
-    <!-- ========================================== -->
-    <!-- 2️⃣ BLOQUE PRINCIPAL: HISTORIAL DE TRANSACCIONES -->
-    <!-- ========================================== -->
-    <section id="bottom-history-section" class="space-y-3 pt-2">
-      <div class="flex items-center justify-between">
-        <div class="flex items-center gap-2">
-          <div class="w-2 h-2 rounded-full bg-slate-900"></div>
-          <h3 class="text-xs font-black uppercase tracking-wider text-slate-900">Movimientos Recientes</h3>
+        <!-- Carrusel Horizontal Táctil de Métricas Globales -->
+        <div class="space-y-1.5 pt-1">
+          <div class="flex items-center justify-between px-1">
+            <span class="text-[10px] font-extrabold uppercase tracking-wider text-slate-400">Resumen Financiero</span>
+            <span class="text-[10px] font-bold text-slate-400 flex items-center gap-1">
+              Desliza <i class="fas fa-arrow-right text-[8px]"></i>
+            </span>
+          </div>
+
+          <div class="flex overflow-x-auto snap-x scrollbar-none gap-3 pb-1 -mx-4 px-4">
+            <!-- 1. Gastado Total -->
+            <div
+              class="w-[190px] shrink-0 snap-start bg-white rounded-2xl p-4 border border-slate-100 shadow-sm flex flex-col justify-between">
+              <div class="flex items-center justify-between mb-2">
+                <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Gastado Total</span>
+                <div
+                  class="w-7 h-7 rounded-xl bg-orange-50 text-orange-500 flex items-center justify-center text-xs shadow-2xs">
+                  <i class="fas fa-chart-line"></i>
+                </div>
+              </div>
+              <div>
+                <span id="display-total-spent" class="text-xl font-black text-slate-900 tracking-tight block">S/
+                  0.00</span>
+                <span id="display-total-fixed" class="text-[10px] text-slate-400 font-medium block mt-0.5">Fijos: S/
+                  0.00</span>
+              </div>
+            </div>
+
+            <!-- 2. Fondo Ahorro -->
+            <div
+              class="w-[190px] shrink-0 snap-start bg-white rounded-2xl p-4 border border-slate-100 shadow-sm flex flex-col justify-between">
+              <div class="flex items-center justify-between mb-2">
+                <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Fondo Ahorro</span>
+                <div
+                  class="w-7 h-7 rounded-xl bg-purple-50 text-purple-500 flex items-center justify-center text-xs shadow-2xs">
+                  <i class="fas fa-piggy-bank"></i>
+                </div>
+              </div>
+              <div>
+                <span id="display-global-savings" class="text-xl font-black text-purple-600 tracking-tight block">S/
+                  0.00</span>
+                <span id="display-shared-savings" class="text-[10px] text-slate-400 font-medium block mt-0.5">Mutuo: S/
+                  0.00</span>
+              </div>
+            </div>
+
+            <!-- 3. Máximo Diario -->
+            <div
+              class="w-[190px] shrink-0 snap-start bg-white rounded-2xl p-4 border border-slate-100 shadow-sm flex flex-col justify-between">
+              <div class="flex items-center justify-between mb-2">
+                <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Máx. Diario</span>
+                <div
+                  class="w-7 h-7 rounded-xl bg-indigo-50 text-indigo-500 flex items-center justify-center text-xs shadow-2xs">
+                  <i class="fas fa-calendar-day"></i>
+                </div>
+              </div>
+              <div>
+                <span id="display-daily-budget" class="text-xl font-black text-indigo-600 tracking-tight block">S/
+                  0.00</span>
+                <span id="display-days-remaining" class="text-[10px] text-slate-400 font-medium block mt-0.5">-- días
+                  rest.</span>
+              </div>
+            </div>
+          </div>
         </div>
-        <span id="history-total-count" class="text-[10px] font-bold text-slate-400">0 registros</span>
-      </div>
+      </section>
 
-      <!-- Pestañas de Filtro Rápido (Todos / Gastos / Ingresos) -->
-      <div class="flex items-center p-1 bg-slate-100 rounded-2xl gap-1">
-        <button id="tab-filter-all"
-          class="flex-1 py-1.5 text-xs font-extrabold rounded-xl bg-white text-slate-900 shadow-sm transition-all text-center">
-          Todos
-        </button>
-        <button id="tab-filter-expenses"
-          class="flex-1 py-1.5 text-xs font-bold rounded-xl text-slate-500 hover:text-slate-800 transition-all text-center">
-          Gastos
-        </button>
-        <button id="tab-filter-incomes"
-          class="flex-1 py-1.5 text-xs font-bold rounded-xl text-slate-500 hover:text-slate-800 transition-all text-center">
-          Ingresos
-        </button>
-      </div>
+      <!-- ========================================== -->
+      <!-- 2️⃣ BLOQUE PRINCIPAL: HISTORIAL DE TRANSACCIONES -->
+      <!-- ========================================== -->
+      <section id="bottom-history-section" class="space-y-3 pt-2">
+        <div class="flex items-center justify-between">
+          <div class="flex items-center gap-2">
+            <div class="w-2 h-2 rounded-full bg-slate-900"></div>
+            <h3 class="text-xs font-black uppercase tracking-wider text-slate-900">Movimientos Recientes</h3>
+          </div>
+          <span id="history-total-count" class="text-[10px] font-bold text-slate-400">0 registros</span>
+        </div>
 
-      <!-- Buscador de texto en tiempo real -->
-      <div class="relative">
-        <i class="fas fa-search absolute left-3.5 top-3 text-slate-400 text-xs"></i>
-        <input type="text" id="mobile-search-input" placeholder="Buscar por nombre, categoría..."
-          class="w-full bg-white border border-slate-200/80 rounded-2xl py-2 pl-9 pr-3 text-xs font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all" />
-      </div>
+        <!-- Pestañas de Filtro Rápido (Todos / Gastos / Ingresos) -->
+        <div class="flex items-center p-1 bg-slate-100 rounded-2xl gap-1">
+          <button id="tab-filter-all"
+            class="flex-1 py-1.5 text-xs font-extrabold rounded-xl bg-white text-slate-900 shadow-sm transition-all text-center">
+            Todos
+          </button>
+          <button id="tab-filter-expenses"
+            class="flex-1 py-1.5 text-xs font-bold rounded-xl text-slate-500 hover:text-slate-800 transition-all text-center">
+            Gastos
+          </button>
+          <button id="tab-filter-incomes"
+            class="flex-1 py-1.5 text-xs font-bold rounded-xl text-slate-500 hover:text-slate-800 transition-all text-center">
+            Ingresos
+          </button>
+        </div>
 
-      <!-- Lista de Transacciones -->
-      <div id="mobile-history-list" class="space-y-2 min-h-[160px]">
-        <p class="text-center text-xs text-slate-400 italic py-8">Cargando transacciones...</p>
-      </div>
-    </section>
+        <!-- Lista de Transacciones -->
+        <div id="mobile-history-list" class="space-y-2 min-h-[160px]">
+          <p class="text-center text-xs text-slate-400 italic py-8">Cargando transacciones...</p>
+        </div>
+      </section>
 
+    </div><!-- Fin #view-dashboard -->
   </main>
 
-  <!-- ========================================== -->
-  <!-- 🔘 BARRA FLOTANTE FIJA INFERIOR (CÁPSULA 60PX + FAB 60X60PX) -->
-  <!-- ========================================== -->
+  <!-- 2️⃣ VISTA DEDICADA: RESUMEN DE TARJETAS Y MÉTODOS DE PAGO (PANTALLA COMPLETA CON DOCK PERSISTENTE) -->
+  <div id="view-tarjetas"
+    class="fixed inset-0 top-0 left-0 right-0 bottom-0 z-20 bg-[#eef9ea] hidden flex-col justify-between overflow-hidden select-none">
 
-  <!-- Overlay para cerrar el menú FAB al tocar fuera -->
-  <div id="fab-backdrop"
-    class="fixed inset-0 z-40 bg-slate-950/40 backdrop-blur-xs hidden transition-opacity duration-200"></div>
+    <!-- 1. ÁREA SUPERIOR FIJA: Altura exacta 297px (Fondo Blanco con Borde Inferior Redondeado 36px) -->
+    <div
+      class="h-[297px] px-6 pt-5 pb-5 bg-white rounded-b-[36px] shadow-[0_8px_25px_rgba(0,0,0,0.03)] shrink-0 flex flex-col justify-between border-b border-emerald-50/60 z-30">
+      <!-- Encabezado Superior: Avatar Usuario + Saludo "Hola, [Nombre]" + Iconos Acción -->
+      <div class="flex items-center justify-between">
+        <div class="flex items-center gap-3">
+          <div id="card-view-user-avatar"
+            class="w-11 h-11 rounded-2xl bg-[#142314] text-[#86efac] flex items-center justify-center font-black text-base shadow-xs border border-emerald-950/30 shrink-0">
+            EM
+          </div>
+          <h2 id="card-view-greeting"
+            class="text-2xl font-black text-emerald-900 tracking-tight flex items-center gap-1.5">
+            Hola, <span id="card-view-user-name" class="text-[#2d6a4f]">Usuario</span>
+          </h2>
+        </div>
 
-  <!-- Menú Speed-Dial de Acciones Flotantes (arriba del FAB - 4 Opciones Esenciales) -->
-  <div id="fab-menu-options"
-    class="fixed bottom-24 right-4 z-50 flex flex-col items-end gap-3 pointer-events-none">
-    
-    <!-- Opción 0 (Arriba): Hablar con Mita (IA) -->
-    <button type="button" id="fab-opt-voice-chat"
-      class="fab-speed-dial-item flex items-center gap-2.5 px-4 py-3 bg-[#ECF9E1] hover:bg-[#d9f5c4] active:scale-95 text-[#222818] font-black text-xs rounded-full shadow-2xl border border-[#BEEB9F] transition-all select-none">
-      <span class="material-symbols-rounded text-lg text-emerald-800">mic</span>
-      <span>Hablar con Mita (IA)</span>
-    </button>
+        <div class="flex items-center gap-2">
+          <button type="button"
+            class="w-10 h-10 rounded-full bg-slate-50 hover:bg-slate-100 text-slate-700 flex items-center justify-center text-sm shadow-2xs border border-slate-100 active:scale-95 transition-all">
+            <span class="material-symbols-rounded text-xl">notifications</span>
+          </button>
+          <button type="button" onclick="openModal('modal-metodos-pago')"
+            class="w-10 h-10 rounded-full bg-slate-50 hover:bg-slate-100 text-slate-700 flex items-center justify-center text-sm shadow-2xs border border-slate-100 active:scale-95 transition-all"
+            title="Gestionar métodos de pago">
+            <span class="material-symbols-rounded text-xl">more_vert</span>
+          </button>
+        </div>
+      </div>
 
-    <!-- Opción 1: Escanear Boleta IA -->
-    <button type="button" id="fab-opt-scan-receipt"
-      class="fab-speed-dial-item flex items-center gap-2.5 px-4 py-3 bg-[#e0f2fe] hover:bg-[#bae6fd] active:scale-95 text-[#0369a1] font-black text-xs rounded-full shadow-2xl border border-sky-200/80 transition-all select-none">
-      <span class="material-symbols-rounded text-lg text-sky-700">document_scanner</span>
-      <span>Escanear Boleta (IA)</span>
-    </button>
+      <!-- Display Central de Saldo Restante Consolidado -->
+      <div class="flex flex-col items-center justify-center space-y-1.5 my-auto">
+        <span
+          class="px-4 py-1 rounded-full text-xs font-black bg-[#eaf7e6] text-[#2d6a4f] border border-[#cbe8c4] tracking-wide shadow-2xs">
+          Saldo total restante
+        </span>
 
-    <!-- Opción 2: Registrar Gasto -->
-    <button type="button" id="fab-opt-simple-expense"
-      class="fab-speed-dial-item flex items-center gap-2.5 px-4 py-3 bg-[#f3e8ff] hover:bg-[#e9d5ff] active:scale-95 text-[#581c87] font-black text-xs rounded-full shadow-2xl border border-purple-200/80 transition-all select-none">
-      <span class="material-symbols-rounded text-lg text-purple-700">receipt_long</span>
-      <span>Registrar Gasto</span>
-    </button>
+        <div class="flex items-baseline justify-center gap-2 my-1">
+          <span class="text-2xl font-black text-slate-900">S/</span>
+          <span id="card-view-remaining-balance"
+            class="text-5xl sm:text-6xl font-black text-slate-950 tracking-tight">0.00</span>
+        </div>
 
-    <!-- Opción 3: Nuevo Ingreso -->
-    <button type="button" id="fab-opt-income"
-      class="fab-speed-dial-item flex items-center gap-2.5 px-4 py-3 bg-[#dcfce7] hover:bg-[#bbf7d0] active:scale-95 text-[#14532d] font-black text-xs rounded-full shadow-2xl border border-emerald-200/80 transition-all select-none">
-      <span class="material-symbols-rounded text-lg text-emerald-700">payments</span>
-      <span>Nuevo Ingreso</span>
-    </button>
+        <!-- Píldoras de Conteo / Filtro -->
+        <div class="flex items-center justify-center gap-2.5 pt-1">
+          <span id="card-view-wallet-count-pill"
+            class="px-3.5 py-1 rounded-full text-xs font-bold bg-[#84cc16] text-white flex items-center gap-2 shadow-xs">
+            <span>Billeteras</span>
+            <span id="card-view-wallet-count"
+              class="w-4 h-4 rounded-full bg-white/30 text-white flex items-center justify-center text-[10px] font-black">1</span>
+          </span>
+          <span id="card-view-card-count-pill"
+            class="px-3.5 py-1 rounded-full text-xs font-bold bg-[#84cc16] text-white flex items-center gap-2 shadow-xs">
+            <span>Tarjetas</span>
+            <span id="card-view-card-count"
+              class="w-4 h-4 rounded-full bg-white/30 text-white flex items-center justify-center text-[10px] font-black">2</span>
+          </span>
+        </div>
+      </div>
+    </div>
 
-    <!-- Opción 4 (Abajo, más cerca al FAB): Liquidar Deudas -->
-    <button type="button" id="fab-opt-settlement"
-      class="fab-speed-dial-item flex items-center gap-2.5 px-4 py-3 bg-[#ffe4e6] hover:bg-[#fecdd3] active:scale-95 text-[#881337] font-black text-xs rounded-full shadow-2xl border border-rose-200/80 transition-all select-none">
-      <span class="material-symbols-rounded text-lg text-rose-700">handshake</span>
-      <span>Liquidar Deudas</span>
-    </button>
-  </div>
+    <!-- 2. CONTENEDOR SCROLLABLE DE TARJETAS QUE EMERGEN DESDE EL FONDO -->
+    <div id="modal-pm-summary-cards-container" class="flex-1 overflow-y-auto custom-scrollbar px-4 pt-6 pb-28 min-h-0">
+      <div id="modal-pm-summary-cards-list" class="w-full max-w-lg mx-auto">
+        <!-- Inyectado dinámicamente por modulo-tarjetas.js -->
+      </div>
+    </div>
+  </div><!-- Fin #view-tarjetas -->
 
   <!-- ========================================== -->
   <!-- 🎙️ VISTA DEDICADA: CHAT POR VOZ CON IA (AGENTE MITA) -->
   <!-- ========================================== -->
   <div id="view-voice-chat"
     class="fixed inset-0 z-40 bg-gradient-to-b from-[#EBF9E5] via-[#F4FCF0] to-[#FBFCFA] hidden flex-col justify-between overflow-hidden transition-all duration-300 pb-24 select-none">
-    
+
     <!-- 1. Encabezado Superior: [ ← Volver ] + Títulos + [ ⋮ Opciones ] -->
     <div class="px-5 pt-5 pb-2 flex items-center justify-between gap-3 shrink-0">
       <button type="button" id="btn-close-voice-chat"
@@ -1091,169 +1148,51 @@
 
     <!-- 2. Área Central: Aura de Fondo Reactiva + Feed de Mensajes -->
     <div class="flex-1 flex flex-col justify-between overflow-hidden px-4 py-2 min-h-0 relative">
-      
+
       <!-- Esfera Luminosa Orgánica y Fluida Reactiva a la Voz (Apple Intelligence / Siri style) -->
-      <div id="voice-chat-center-aura" class="absolute inset-0 flex items-center justify-center pointer-events-none select-none transition-opacity duration-500 opacity-60 z-0 overflow-hidden">
+      <div id="voice-chat-center-aura"
+        class="absolute inset-0 flex items-center justify-center pointer-events-none select-none transition-opacity duration-500 opacity-60 z-0 overflow-hidden">
         <div id="voice-luminous-halo" class="relative w-64 h-64 flex items-center justify-center">
           <!-- Capa 1: Aura Externa Difusa y Respirable -->
-          <div id="voice-echo-ring-3" class="absolute w-72 h-72 rounded-full voice-luminous-orb filter blur-3xl opacity-75"></div>
+          <div id="voice-echo-ring-3"
+            class="absolute w-72 h-72 rounded-full voice-luminous-orb filter blur-3xl opacity-75"></div>
           <!-- Capa 2: Halo Intermedio Orgánico -->
           <div id="voice-echo-ring-2" class="absolute w-52 h-52 rounded-full bg-[#bef264]/40 filter blur-2xl"></div>
           <!-- Capa 3: Núcleo Brillante Holográfico -->
-          <div id="voice-echo-ring-1" class="absolute w-36 h-36 rounded-full voice-luminous-core flex items-center justify-center">
+          <div id="voice-echo-ring-1"
+            class="absolute w-36 h-36 rounded-full voice-luminous-core flex items-center justify-center">
             <span class="material-symbols-rounded text-emerald-900 text-5xl opacity-40 animate-pulse">graphic_eq</span>
           </div>
         </div>
       </div>
 
       <!-- Saludo Inicial Animado (Aparece en el centro al abrir el chat) -->
-      <div id="voice-chat-initial-greeting" class="my-auto flex flex-col items-center justify-center px-4 space-y-1.5 transition-opacity duration-300 relative z-10">
+      <div id="voice-chat-initial-greeting"
+        class="my-auto flex flex-col items-center justify-center px-4 space-y-1.5 transition-opacity duration-300 relative z-10">
         <!-- Inyectado dinámicamente con renderAnimatedVoiceText -->
       </div>
 
       <!-- Feed de Mensajes Conversacionales (Usuario: Burbuja a la derecha en vivo | Mita: Texto Limpio & Tarjetas) -->
-      <div id="voice-chat-messages-container" class="flex-1 overflow-y-auto custom-scrollbar flex flex-col gap-3 py-2 px-1 relative z-10">
+      <div id="voice-chat-messages-container"
+        class="flex-1 overflow-y-auto custom-scrollbar flex flex-col gap-3 py-2 px-1 relative z-10">
         <!-- Inyectado dinámicamente -->
       </div>
     </div>
   </div>
 
   <!-- ============================================================ -->
-  <!-- 🌟 BARRA DINÁMICA UNIVERSAL FLOTANTE (DYNAMIC MORPHING DOCK)  -->
+  <!-- 🌟 BARRA DINÁMICA UNIVERSAL FLOTANTE (DOCK UNIVERSAL 3.0)     -->
   <!-- ============================================================ -->
-  <div id="universal-dock-wrapper"
-    class="fixed bottom-4 inset-x-0 z-50 px-4 max-w-lg mx-auto flex items-center justify-center pointer-events-none">
-    
-    <!-- Menú Flotante de Opciones / Adjuntos (Fotos, Archivos, Cámara) -->
-    <div id="voice-chat-attachments-popup"
-      class="hidden absolute right-4 bottom-20 z-50 bg-white/98 backdrop-blur-xl p-2.5 rounded-[26px] shadow-[0_12px_40px_rgba(0,0,0,0.18)] border border-slate-100/90 flex flex-col gap-2 transition-all duration-200 transform origin-bottom-right scale-95 opacity-0 pointer-events-none">
-      
-      <!-- Opción 1: Fotos -->
-      <button type="button" id="btn-attach-photos"
-        class="flex items-center gap-2.5 px-3 py-2 rounded-2xl hover:bg-slate-50 active:scale-95 transition-all text-left cursor-pointer group pointer-events-auto">
-        <span class="material-symbols-rounded text-slate-800 text-xl group-hover:scale-110 transition-transform">add_photo_alternate</span>
-        <span class="px-3 py-1 bg-[#D9F99D]/90 text-[#1E2517] font-black text-xs rounded-xl shadow-2xs">Fotos</span>
-      </button>
-
-      <!-- Opción 2: Archivos -->
-      <button type="button" id="btn-attach-files"
-        class="flex items-center gap-2.5 px-3 py-2 rounded-2xl hover:bg-slate-50 active:scale-95 transition-all text-left cursor-pointer group pointer-events-auto">
-        <span class="material-symbols-rounded text-slate-800 text-xl group-hover:scale-110 transition-transform">attach_file</span>
-        <span class="px-3 py-1 bg-[#D9F99D]/90 text-[#1E2517] font-black text-xs rounded-xl shadow-2xs">Archivos</span>
-      </button>
-
-      <!-- Opción 3: Cámara -->
-      <button type="button" id="btn-attach-camera"
-        class="flex items-center gap-2.5 px-3 py-2 rounded-2xl hover:bg-slate-50 active:scale-95 transition-all text-left cursor-pointer group pointer-events-auto">
-        <span class="material-symbols-rounded text-slate-800 text-xl group-hover:scale-110 transition-transform">photo_camera</span>
-        <span class="px-3 py-1 bg-[#D9F99D]/90 text-[#1E2517] font-black text-xs rounded-xl shadow-2xs">Cámara</span>
-      </button>
-    </div>
-
-    <!-- LA CÁPSULA UNIVERSAL QUE SE TRANSFORMA ELÁSTICAMENTE (DYNAMIC ISLAND DOCK) -->
-    <div id="universal-floating-dock"
-      class="dock-state-nav pointer-events-auto h-[64px] bg-white shadow-[0_12px_40px_rgba(0,0,0,0.14)] border border-slate-100/90 rounded-[32px] flex items-center justify-between px-3 text-slate-800 relative z-40 overflow-hidden select-none">
-      
-      <!-- ======================================================== -->
-      <!-- ESTADO 1: MODO INICIO / NAVEGACIÓN COMPACTA (DASHBOARD) -->
-      <!-- ======================================================== -->
-      <div id="dock-view-nav"
-        class="w-full h-full flex items-center justify-between gap-1 transition-all duration-300 transform">
-        <!-- 1. Monedero (Google Material Symbols) -->
-        <button type="button" id="nav-btn-wallet"
-          class="bubble-btn w-11 h-11 rounded-2xl flex items-center justify-center text-slate-900 hover:bg-slate-100"
-          title="Inicio / Monedero">
-          <span class="material-symbols-rounded text-2xl">account_balance_wallet</span>
-        </button>
-
-        <!-- 2. Tarjetas (Google Material Symbols) -->
-        <button type="button" id="nav-btn-stats" onclick="openPaymentMethodsSummaryModal();"
-          class="bubble-btn w-11 h-11 rounded-2xl flex items-center justify-center text-slate-900 hover:bg-slate-100"
-          title="Tarjetas & Métodos de Pago">
-          <span class="material-symbols-rounded text-2xl">credit_card</span>
-        </button>
-
-        <!-- 3. Escanear Boleta con Cámara / IA (Google Material Symbols) -->
-        <button type="button" id="nav-btn-scan-camera" onclick="triggerReceiptScanner();"
-          class="bubble-btn w-11 h-11 rounded-2xl flex items-center justify-center text-emerald-700 hover:bg-emerald-50"
-          title="Escanear Boleta con IA">
-          <span class="material-symbols-rounded text-2xl">photo_camera</span>
-        </button>
-
-        <!-- 4. Botón Hablar por Voz (Píldora Verde con Micrófono) -->
-        <button type="button" id="nav-btn-open-voice"
-          class="bubble-btn h-11 px-3.5 rounded-full bg-[#ECF9E1] hover:bg-[#d9f5c4] text-[#1E2517] flex items-center gap-1.5 font-black text-xs border border-[#BEEB9F] shadow-2xs">
-          <span class="material-symbols-rounded text-xl text-emerald-800">mic</span>
-          <span>Hablar</span>
-        </button>
-
-        <!-- 5. Botón Abrir Chat / Escribir (Google Material Symbols) -->
-        <button type="button" id="nav-btn-open-chat"
-          class="bubble-btn w-11 h-11 rounded-2xl flex items-center justify-center text-slate-900 hover:bg-slate-100"
-          title="Abrir Chat de Texto">
-          <span class="material-symbols-rounded text-2xl">chat_bubble</span>
-        </button>
-      </div>
-
-      <!-- ======================================================== -->
-      <!-- ESTADO 2 & 3: MODO INTERACTIVO (CONTAINER TRANSFORM CONTINUO) -->
-      <!-- ======================================================== -->
-      <div id="dock-view-interactive"
-        class="hidden absolute inset-0 w-full h-full flex items-center justify-between pointer-events-auto">
-        
-        <!-- Elemento 1 (Izquierda): Micrófono / Cámara -->
-        <button type="button" id="mita-item-left"
-          class="bubble-btn w-[50px] h-[50px] rounded-full morph-item-left flex items-center justify-center shrink-0"
-          title="Nota de Voz / Escáner">
-          <span id="mita-icon-left" class="material-symbols-rounded text-2xl">mic</span>
-        </button>
-
-        <!-- Elemento 2 (Centro): Input "Pregunta a mita" / Cápsula Ondas de Audio -->
-        <div id="mita-item-center"
-          class="flex-1 h-[50px] rounded-full morph-item-center relative flex items-center justify-center px-3 overflow-hidden">
-          
-          <!-- Input de Texto (Visible en Modo Chat) -->
-          <input type="text" id="voice-chat-text-input"
-            placeholder="Pregunta a mita"
-            autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"
-            class="w-full h-full bg-transparent border-0 text-sm font-bold text-slate-900 placeholder:text-slate-800/90 focus:outline-none outline-none leading-none transition-opacity duration-300" />
-          
-          <!-- Ondas Ecualizadoras de Audio (Visibles en Modo Voz) -->
-          <div id="mita-waves-container"
-            class="absolute inset-0 flex items-center justify-center gap-1.5 px-4 opacity-0 pointer-events-none transition-opacity duration-300">
-            <span class="w-1.5 bg-[#A3E635] rounded-full animate-[pulse_0.6s_ease-in-out_infinite] h-3.5"></span>
-            <span class="w-1.5 bg-[#84cc16] rounded-full animate-[pulse_0.4s_ease-in-out_infinite] h-7"></span>
-            <span class="w-1.5 bg-[#65a30d] rounded-full animate-[pulse_0.7s_ease-in-out_infinite] h-5"></span>
-            <span class="w-1.5 bg-[#84cc16] rounded-full animate-[pulse_0.5s_ease-in-out_infinite] h-8"></span>
-            <span class="w-1.5 bg-[#A3E635] rounded-full animate-[pulse_0.6s_ease-in-out_infinite] h-3.5"></span>
-          </div>
-        </div>
-
-        <!-- Elemento 3 (Derecha 1): Rayas Decibeles / Micrófono Activo -->
-        <button type="button" id="mita-item-wave"
-          class="bubble-btn w-[50px] h-[50px] rounded-full morph-item-wave flex items-center justify-center shrink-0"
-          title="Hablar en Vivo / Pausar Micrófono">
-          <span id="mita-icon-wave" class="material-symbols-rounded text-2xl tracking-tighter">graphic_eq</span>
-        </button>
-
-        <!-- Elemento 4 (Derecha 2): Botón '+' / Botón '✕' -->
-        <button type="button" id="mita-item-action"
-          class="bubble-btn w-[50px] h-[50px] rounded-full morph-item-action flex items-center justify-center shrink-0"
-          title="Adjuntar / Cerrar">
-          <span id="mita-icon-action" class="material-symbols-rounded text-2xl font-bold">add</span>
-        </button>
-      </div>
-
-      <!-- Hidden File Inputs para Fotos y Archivos -->
-      <input type="file" id="input-mita-attach-photo" accept="image/*" class="hidden" />
-      <input type="file" id="input-mita-attach-file" accept="image/*,.pdf,.doc,.docx" class="hidden" />
+  <div class="fixed bottom-0 left-0 right-0 z-40 px-4 pointer-events-none flex justify-center pb-3">
+    <div class="w-full max-w-sm pointer-events-auto">
+      <universal-dock id="main-universal-dock"></universal-dock>
     </div>
   </div>
 
   <!-- 1. Pantalla Completa Registrar / Editar Gasto o Ingreso (Cabecera #ECF9E1 + Cuerpo rounded-t-[36px]) -->
   <div id="modal-expense"
     class="fixed inset-0 z-50 bg-[#ECF9E1] h-[100dvh] overflow-hidden hidden flex flex-col justify-between">
-    
+
     <!-- Cabecera Superior (Fondo #ECF9E1): [ ← Volver ] + Título & Subtítulo + [ 📷 Escanear ] + [ ⋮ Más / 🗑 Eliminar ] -->
     <div class="px-4 pt-4 pb-3 flex items-center justify-between gap-2.5 shrink-0 bg-[#ECF9E1]">
       <button type="button" onclick="closeModal('modal-expense'); resetExpenseForm();"
@@ -1262,8 +1201,10 @@
       </button>
 
       <div class="flex-1 min-w-0 px-1">
-        <h2 id="modal-expense-main-title" class="text-2xl font-black text-slate-900 leading-tight tracking-tight">Registrar</h2>
-        <p id="modal-expense-sub-title" class="text-xs font-semibold text-slate-700/80 truncate">Detalla y clasifica tu movimiento</p>
+        <h2 id="modal-expense-main-title" class="text-2xl font-black text-slate-900 leading-tight tracking-tight">
+          Registrar</h2>
+        <p id="modal-expense-sub-title" class="text-xs font-semibold text-slate-700/80 truncate">Detalla y clasifica tu
+          movimiento</p>
       </div>
 
       <!-- Botón Escanear Boleta con IA en el Header -->
@@ -1288,8 +1229,9 @@
     </div>
 
     <!-- CUERPO PRINCIPAL BLANCO CON BORDES SUPERIORES EN 36PX -->
-    <div class="w-full flex-1 bg-white rounded-t-[36px] px-4 pt-4 pb-3 flex flex-col justify-between overflow-y-auto custom-scrollbar shadow-[0_-8px_30px_rgba(0,0,0,0.04)]">
-      
+    <div
+      class="w-full flex-1 bg-white rounded-t-[36px] px-4 pt-4 pb-3 flex flex-col justify-between overflow-y-auto custom-scrollbar shadow-[0_-8px_30px_rgba(0,0,0,0.04)]">
+
       <!-- Pestañas Superiores Tipo de Registro: Personal | Compartido | Ingreso (Fondo #ECF9E1) -->
       <div class="pb-2 shrink-0">
         <div
@@ -1913,59 +1855,7 @@
     </div>
   </div>
 
-  <!-- 6A. Modal Resumen de Tarjetas y Métodos de Pago (M3 Bottom Sheet Vista Dedicada) -->
-  <div id="modal-payment-methods-summary"
-    class="fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-sm hidden items-end justify-center px-2 pb-2 m3-bottom-sheet-backdrop">
-    <div
-      class="w-full max-w-lg bg-[#F8FAFC] rounded-[28px] max-h-[94vh] flex flex-col shadow-2xl overflow-hidden m3-bottom-sheet-surface">
 
-      <!-- Drag Handle Indicator -->
-      <div class="w-12 h-1.5 bg-slate-300 rounded-full mx-auto mt-3 mb-1 shrink-0"></div>
-
-      <!-- Header del Bottom Sheet -->
-      <div class="px-4 py-3.5 border-b border-slate-200/80 bg-white flex items-center justify-between shrink-0">
-        <div class="flex items-center gap-2.5 min-w-0">
-          <div
-            class="w-9 h-9 rounded-2xl bg-indigo-50 text-indigo-600 flex items-center justify-center text-base font-bold shadow-xs shrink-0">
-            <i class="fas fa-credit-card"></i>
-          </div>
-          <div class="min-w-0">
-            <h3 class="font-extrabold text-sm text-slate-900 truncate">Resumen de Métodos de Pago</h3>
-            <p class="text-[10px] text-slate-400 font-medium truncate">Consumos por tarjeta, cuenta y efectivo</p>
-          </div>
-        </div>
-        <div class="flex items-center gap-2">
-          <span id="modal-pm-summary-count-badge"
-            class="text-[10px] font-black px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-700 border border-slate-200">5
-            métodos</span>
-          <button onclick="closeModal('modal-payment-methods-summary');" type="button"
-            class="w-8 h-8 rounded-full bg-slate-100 text-slate-400 hover:text-slate-600 flex items-center justify-center text-xs active:scale-90 transition-transform cursor-pointer shrink-0">
-            <i class="fas fa-times"></i>
-          </button>
-        </div>
-      </div>
-
-      <div class="p-4 space-y-3.5 overflow-y-auto flex-1 custom-scrollbar">
-        <!-- Banner Global -->
-        <div
-          class="p-4 rounded-3xl bg-gradient-to-br from-slate-900 via-indigo-950 to-slate-900 text-white shadow-xl border border-slate-800 relative overflow-hidden">
-          <div class="flex items-center justify-between mb-1">
-            <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Total Consolidado Métodos</span>
-            <span id="modal-pm-summary-credit-debt"
-              class="text-[10px] font-black px-2 py-0.5 rounded-full bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">Deuda
-              tarjetas: S/ 0.00</span>
-          </div>
-          <span id="modal-pm-summary-total-global" class="text-3xl font-black tracking-tight text-white block">S/
-            0.00</span>
-        </div>
-
-        <!-- Cuadrícula 2 Columnas de Tarjetas y Métodos -->
-        <div id="modal-pm-summary-cards-list" class="grid grid-cols-2 gap-2.5 pb-4">
-          <!-- Inyectado dinámicamente por modulo-tarjetas.js -->
-        </div>
-      </div>
-    </div>
-  </div>
 
   <!-- 6B. Modal de Detalle de Tarjeta de Crédito (M3 Bottom Sheet) -->
   <div id="modal-card-detail"
@@ -2410,19 +2300,22 @@
   <!-- ========================================== -->
   <div id="camera-viewfinder-overlay"
     class="fixed inset-0 z-[100] bg-black hidden flex-col justify-between overflow-hidden select-none">
-    
+
     <!-- Video Stream en Vivo de la Cámara -->
-    <video id="camera-stream-video" autoplay playsinline muted class="absolute inset-0 w-full h-full object-cover z-0"></video>
+    <video id="camera-stream-video" autoplay playsinline muted
+      class="absolute inset-0 w-full h-full object-cover z-0"></video>
     <canvas id="camera-capture-canvas" class="hidden"></canvas>
 
     <!-- 1. Header del Visor: [ ✕ Cerrar ] + Indicador + [ ⚡ Flash ] -->
-    <div class="relative z-10 px-5 pt-5 pb-3 flex items-center justify-between bg-gradient-to-b from-black/80 via-black/40 to-transparent">
+    <div
+      class="relative z-10 px-5 pt-5 pb-3 flex items-center justify-between bg-gradient-to-b from-black/80 via-black/40 to-transparent">
       <button type="button" id="btn-close-camera-viewfinder"
         class="w-10 h-10 rounded-full bg-white/20 backdrop-blur-md text-white flex items-center justify-center text-sm shadow-md active:scale-90 transition-transform cursor-pointer">
         <span class="material-symbols-rounded text-2xl">close</span>
       </button>
 
-      <div class="px-3.5 py-1.5 rounded-full bg-black/40 backdrop-blur-md border border-white/10 text-white text-xs font-black flex items-center gap-1.5">
+      <div
+        class="px-3.5 py-1.5 rounded-full bg-black/40 backdrop-blur-md border border-white/10 text-white text-xs font-black flex items-center gap-1.5">
         <span class="w-2 h-2 rounded-full bg-[#A3E635] animate-pulse"></span>
         <span>Enfoca tu comprobante</span>
       </div>
@@ -2435,7 +2328,8 @@
 
     <!-- 2. Área Central: Retícula de Encuadre con Esquinas Brillantes & Láser de Escaneo -->
     <div class="relative z-10 flex-1 flex items-center justify-center p-6 pointer-events-none">
-      <div class="relative w-full max-w-xs aspect-[3/4] rounded-3xl border-2 border-white/30 overflow-hidden shadow-[0_0_50px_rgba(0,0,0,0.5)]">
+      <div
+        class="relative w-full max-w-xs aspect-[3/4] rounded-3xl border-2 border-white/30 overflow-hidden shadow-[0_0_50px_rgba(0,0,0,0.5)]">
         <!-- Esquinas Verdes Reforzadas -->
         <div class="absolute top-0 left-0 w-8 h-8 border-t-4 border-l-4 border-[#A3E635] rounded-tl-2xl"></div>
         <div class="absolute top-0 right-0 w-8 h-8 border-t-4 border-r-4 border-[#A3E635] rounded-tr-2xl"></div>
@@ -2443,7 +2337,9 @@
         <div class="absolute bottom-0 right-0 w-8 h-8 border-b-4 border-r-4 border-[#A3E635] rounded-br-2xl"></div>
 
         <!-- Haz Láser Animado Verde Lima -->
-        <div class="absolute inset-x-0 h-1 bg-gradient-to-r from-transparent via-[#A3E635] to-transparent shadow-[0_0_15px_#A3E635] animate-[scanBeam_2s_ease-in-out_infinite]"></div>
+        <div
+          class="absolute inset-x-0 h-1 bg-gradient-to-r from-transparent via-[#A3E635] to-transparent shadow-[0_0_15px_#A3E635] animate-[scanBeam_2s_ease-in-out_infinite]">
+        </div>
 
         <div class="absolute inset-x-0 bottom-4 text-center">
           <span class="px-3 py-1 rounded-full bg-black/60 backdrop-blur-sm text-[11px] font-bold text-white/90">
@@ -2454,7 +2350,8 @@
     </div>
 
     <!-- 3. Barra Inferior de Controles de Captura -->
-    <div class="relative z-10 px-6 pb-8 pt-4 bg-gradient-to-t from-black/90 via-black/50 to-transparent flex items-center justify-around">
+    <div
+      class="relative z-10 px-6 pb-8 pt-4 bg-gradient-to-t from-black/90 via-black/50 to-transparent flex items-center justify-around">
       <!-- Botón Galería -->
       <button type="button" id="btn-camera-open-gallery"
         class="w-12 h-12 rounded-2xl bg-white/20 backdrop-blur-md hover:bg-white/30 text-white flex flex-col items-center justify-center gap-0.5 active:scale-90 transition-transform cursor-pointer"
@@ -2482,9 +2379,12 @@
     class="fixed inset-0 z-[110] bg-slate-950/85 backdrop-blur-xl hidden items-center justify-center p-6 select-none">
     <div class="w-full max-w-xs bg-white rounded-3xl p-6 text-center space-y-4 shadow-2xl relative overflow-hidden">
       <!-- Icono animado de escaneo con aura -->
-      <div class="relative w-20 h-20 mx-auto rounded-3xl bg-[#ECF9E1] text-[#222818] flex items-center justify-center text-3xl shadow-inner border border-[#BEEB9F] overflow-hidden">
+      <div
+        class="relative w-20 h-20 mx-auto rounded-3xl bg-[#ECF9E1] text-[#222818] flex items-center justify-center text-3xl shadow-inner border border-[#BEEB9F] overflow-hidden">
         <span class="material-symbols-rounded text-4xl text-emerald-800 animate-pulse">document_scanner</span>
-        <div class="absolute inset-x-0 h-1 bg-gradient-to-r from-transparent via-[#A3E635] to-transparent shadow-[0_0_10px_#A3E635] animate-[scanBeam_1.6s_ease-in-out_infinite]"></div>
+        <div
+          class="absolute inset-x-0 h-1 bg-gradient-to-r from-transparent via-[#A3E635] to-transparent shadow-[0_0_10px_#A3E635] animate-[scanBeam_1.6s_ease-in-out_infinite]">
+        </div>
       </div>
       <div>
         <h4 class="font-black text-base text-slate-900">Mita está analizando tu boleta</h4>
@@ -2502,7 +2402,7 @@
   <!-- ========================================== -->
   <!-- MODULOS JAVASCRIPT MOBILE (ARQUITECTURA MODULAR) -->
   <!-- ========================================== -->
-  <script type="module" src="js/mobile/mobile-main.js?v=9.4"></script>
+  <script type="module" src="js/mobile/mobile-main.js?v=17.5"></script>
 </body>
 
 </html>

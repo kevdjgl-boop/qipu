@@ -1,12 +1,22 @@
 // ================================================================
 // GESTIÓN DE LA BARRA FLOTANTE DE ACCIONES SOBRE EL TECLADO
-// (AVANZAR INPUTS Y AGREGAR ÍTEM DINÁMICO EN TOTAL)
+// (EXCLUSIVO PARA NAVEGACIÓN Y AGREGADO EN LA LISTA DE PRODUCTOS)
 // ================================================================
 
 let currentFocusedInput = null;
 let navBarEl = null;
 let btnNextEl = null;
 let btnAddItemEl = null;
+
+function isListItemInput(target) {
+  if (!target || target.tagName !== 'INPUT') return false;
+  return !!(
+    target.hasAttribute('data-item-field') ||
+    target.hasAttribute('data-item-id') ||
+    target.closest('#mobile-items-container') ||
+    target.closest('#mobile-items-scroll-wrapper')
+  );
+}
 
 export function setupKeyboardNavFab() {
   navBarEl = document.getElementById('keyboard-nav-bar');
@@ -51,7 +61,7 @@ export function setupKeyboardNavFab() {
   function hideNavBar() {
     setTimeout(() => {
       const active = document.activeElement;
-      if (!active || (active.tagName !== 'INPUT' && active.tagName !== 'TEXTAREA')) {
+      if (!isListItemInput(active)) {
         if (navBarEl) {
           navBarEl.classList.add('opacity-0', 'pointer-events-none', 'translate-y-4');
           navBarEl.classList.remove('opacity-100', 'pointer-events-auto', 'translate-y-0');
@@ -68,10 +78,12 @@ export function setupKeyboardNavFab() {
   }
   window.addEventListener('resize', updateNavPosition);
 
-  // Captura global de foco (Fase de captura 'true' para 100% compatibilidad en iOS y Android)
+  // Captura de foco: SOLO se activa si el input pertenece a la lista de ítems / productos
   document.addEventListener('focus', (e) => {
-    if (e.target && e.target.tagName === 'INPUT' && e.target.type !== 'hidden' && e.target.type !== 'date') {
+    if (e.target && isListItemInput(e.target)) {
       showNavBar(e.target);
+    } else {
+      hideNavBar();
     }
   }, true);
 
@@ -87,7 +99,7 @@ export function setupKeyboardNavFab() {
     e.preventDefault();
   });
 
-  // 1. Botón Flecha (Avanzar siguiente input)
+  // 1. Botón Flecha (Avanzar siguiente input en la lista)
   btnNextEl.addEventListener('click', (e) => {
     e.preventDefault();
     advanceToNextInput();
@@ -101,7 +113,8 @@ export function setupKeyboardNavFab() {
       // Ocultar botón inmediatamente al crearse la nueva fila
       checkAddItemButtonVisibility(null);
       setTimeout(() => {
-        const updatedInputs = Array.from(document.querySelectorAll('input:not([type="hidden"]):not([type="date"]):not([disabled])'))
+        const container = document.getElementById('mobile-items-container');
+        const updatedInputs = Array.from((container || document).querySelectorAll('input[data-item-field]:not([disabled])'))
           .filter(el => el.offsetParent !== null && !el.closest('.hidden'));
         // El primer campo de la nueva fila (descripción del producto)
         const target = updatedInputs[updatedInputs.length - 3] || updatedInputs[updatedInputs.length - 1];
@@ -116,7 +129,10 @@ export function setupKeyboardNavFab() {
 }
 
 export function advanceToNextInput() {
-  const allInputs = Array.from(document.querySelectorAll('input:not([type="hidden"]):not([type="date"]):not([disabled])'))
+  const container = document.getElementById('mobile-items-container');
+  if (!container) return;
+
+  const allInputs = Array.from(container.querySelectorAll('input:not([type="hidden"]):not([disabled])'))
     .filter(el => el.offsetParent !== null && !el.closest('.hidden'));
 
   if (!allInputs.length) return;
@@ -132,11 +148,11 @@ export function advanceToNextInput() {
     }
     nextInput.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
   } else {
-    // Si estamos en el último input visible y la lista está activa
-    if (window.isListExpenseActive && typeof window.addMobileItemRow === 'function') {
+    // Si estamos en el último input visible de la lista, agregar una nueva fila automáticamente
+    if (typeof window.addMobileItemRow === 'function') {
       window.addMobileItemRow();
       setTimeout(() => {
-        const updatedInputs = Array.from(document.querySelectorAll('input:not([type="hidden"]):not([type="date"]):not([disabled])'))
+        const updatedInputs = Array.from(container.querySelectorAll('input:not([type="hidden"]):not([disabled])'))
           .filter(el => el.offsetParent !== null && !el.closest('.hidden'));
         const target = updatedInputs[updatedInputs.length - 3] || updatedInputs[updatedInputs.length - 1];
         if (target) {

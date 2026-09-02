@@ -6,7 +6,8 @@ import {
 
 import { openModal, closeModal, setAppThemeColor } from "./modal-system.js";
 import { setupKeyboardNavFab, advanceToNextInput } from "./fab-keyboard-nav.js";
-import { openCreditCardDetailModal, openPaymentMethodsSummaryModal, openCardStatementsHistoryModal, restoreCurrentCardCycle, selectStatementCycle } from "./modulo-tarjetas.js";
+import { openCreditCardDetailModal, openPaymentMethodsSummaryModal, showDashboardView, openCardStatementsHistoryModal, restoreCurrentCardCycle, selectStatementCycle } from "./modulo-tarjetas.js";
+import "../components/universal-dock.js";
 
 import {
   renderMobileUI, renderParticipantsModalList, renderSettlementModal,
@@ -55,9 +56,9 @@ import {
   openEditExpenseModal, openEditIncomeModal, saveExpenseForm, deleteExpense, deleteIncome
 } from "./vista-registro.js";
 
-import { initReceiptScannerPWA, triggerReceiptScanner } from "./lector-boletas.js?v=9.4";
-import { initPullToRefresh, triggerPullRefresh } from "./pull-refresh.js?v=9.4";
-import { initVoiceChat, openVoiceChat, closeVoiceChat, handleReceiptInVoiceChat } from "./voice-chat.js?v=9.4";
+import { initReceiptScannerPWA, triggerReceiptScanner } from "./lector-boletas.js?v=13.1";
+import { initPullToRefresh, triggerPullRefresh } from "./pull-refresh.js?v=13.1";
+import { initVoiceChat, openVoiceChat, closeVoiceChat, handleReceiptInVoiceChat } from "./voice-chat.js?v=13.1";
 
 import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
 import { doc, getDoc, onSnapshot, updateDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
@@ -426,7 +427,65 @@ function initMobileEventListeners() {
     liquidateMonthMobile();
   });
 
-  // 11. Barra Cápsula de Navegación
+  // 11. Conexión del Nuevo Dock Universal 3.0
+  const mainDock = document.getElementById('main-universal-dock');
+  if (mainDock) {
+    mainDock.addEventListener('dock:tab-change', (e) => {
+      const idx = e.detail.index;
+      if (idx === 0) {
+        openPaymentMethodsSummaryModal();
+      } else if (idx === 1) {
+        showDashboardView();
+        const budgetSection = document.getElementById('top-budget-section');
+        if (budgetSection) budgetSection.scrollIntoView({ behavior: 'smooth' });
+      } else if (idx === 2) {
+        openVoiceChat();
+      } else if (idx === 3) {
+        showDashboardView();
+        const historySection = document.getElementById('bottom-history-section');
+        if (historySection) historySection.scrollIntoView({ behavior: 'smooth' });
+      }
+    });
+
+    mainDock.addEventListener('dock:search', (e) => {
+      showDashboardView();
+      setSearchTerm(e.detail?.query || '');
+      renderMobileUI();
+    });
+
+    mainDock.addEventListener('dock:mode-change', (e) => {
+      if (e.detail?.mode === 'nav') {
+        setSearchTerm('');
+        renderMobileUI();
+      }
+    });
+
+    mainDock.addEventListener('dock:action', (e) => {
+      const action = e.detail.action;
+      if (action === 'Registrar Gasto' || action === 'expense') {
+        resetExpenseForm();
+        switchExpenseRegistrationType('personal');
+        openModal('modal-expense');
+      } else if (action === 'Nuevo Ingreso' || action === 'income') {
+        resetExpenseForm();
+        switchExpenseRegistrationType('income');
+        openModal('modal-expense');
+      } else if (action === 'Escanear Boleta' || action === 'scan') {
+        triggerReceiptScanner();
+      }
+    });
+
+    mainDock.addEventListener('dock:chat-action', (e) => {
+      const action = e.detail.action;
+      if (action === 'camera') {
+        triggerReceiptScanner();
+      } else {
+        document.getElementById('pwa-receipt-file-input')?.click();
+      }
+    });
+  }
+
+  // 12. Barra Cápsula de Navegación
   document.getElementById('nav-btn-wallet')?.addEventListener('click', () => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   });

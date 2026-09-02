@@ -3,7 +3,7 @@
 // CON SOPORTE COMPLETO DE GASTOS FIJOS, PROYECCIONES Y ESTADOS DE CUENTA ANTERIORES
 // ================================================================
 
-import { appState, filterDate, formatCurrency, getFilterMonthString, getCycleDates, getCardStatementCycles, MONTHS } from "./core-state.js";
+import { appState, auth, currentUserId, filterDate, formatCurrency, getFilterMonthString, getCycleDates, getCardStatementCycles, isExpenseInBillingMonth, calculateSummary, MONTHS } from "./core-state.js";
 import { openModal, closeModal } from "./modal-system.js";
 
 // Estilos limpios y minimalistas por tipo de método para cuadrícula de 2 columnas
@@ -244,11 +244,24 @@ export function getAllPaymentMethodsData() {
   const participants = appState.participants || [];
   const today = new Date();
 
+  const currentParticipant = (participants && participants.length > 0)
+    ? (participants.find(p => p.id === (typeof currentUserId !== 'undefined' ? currentUserId : null)) || participants[0])
+    : null;
+  const filterMonthString = getFilterMonthString(filterDate);
+
   let totalCombinedSpent = 0;
   let totalCreditDebt = 0;
+  let walletCount = 0;
+  let cardCount = 0;
 
   const methodsData = paymentMethods.map((method) => {
     const isCredit = method.type === "credit";
+    const isDebit = method.type === "debit";
+    const isCash = method.type === "cash" || method.type === "wallet";
+
+    if (isCredit || isDebit) cardCount++;
+    else walletCount++;
+
     let range = {};
     let dateRangeLabel = "";
     let paymentDateLabel = "";
@@ -283,7 +296,7 @@ export function getAllPaymentMethodsData() {
       paymentDateLabel = "Mes en curso";
     }
 
-    // Cálculo maestro con gastos fijos proyectados
+    // Cálculo de consumos
     const calculation = getExpensesForMethodRange(allExpenses, method.id, range);
     const methodExpenses = calculation.expenses;
     const totalSpent = calculation.total;
@@ -300,85 +313,363 @@ export function getAllPaymentMethodsData() {
       if (owner) ownerName = owner.name;
     }
 
+    const categoryType = isCredit ? "Crédito" : (isDebit ? "Débito" : "Compartido");
+
+    // Gastos fijos asignados
+    const methodFixedExpenses = methodExpenses.filter(e => e.isFixed || e.isProjected);
+    const totalFixed = methodFixedExpenses.reduce((sum, e) => sum + (parseFloat(e.amount) || 0), 0);
+
+    // Saldo restante específico
+    const baseLimit = parseFloat(method.creditLimit || method.initialBalance || method.limit || 0);
+    const remainingBalance = isCredit ? Math.max(0, baseLimit - totalSpent) : Math.max(0, baseLimit - totalSpent);
+
     const style = METHOD_STYLES[method.type] || METHOD_STYLES.other;
 
     return {
       method,
       isCredit,
+      categoryType,
       cycle,
       dateRangeLabel,
       paymentDateLabel,
       ownerName,
       totalSpent,
+      spentFormatted: totalSpent.toFixed(2),
+      totalFixed,
+      fixedFormatted: totalFixed.toFixed(2),
+      remainingFormatted: remainingBalance.toFixed(2),
       methodExpenses,
       style
     };
   });
 
-  return { methodsData, totalCombinedSpent, totalCreditDebt };
+  return { methodsData, totalCombinedSpent, totalCreditDebt, walletCount, cardCount, currentParticipant };
 }
 
 // ================================================================
-// ABRIR MODAL RESUMEN GLOBAL DE MÉTODOS DE PAGO
+// EFECTO DE SCROLL Y FÍSICA ORGÁNICA GSAP (MATCH EXACTO DE BOTONES DEL DOCK)
+// INCLUYE INERCIA DE DESPLAZAMIENTO, VELOCIDAD Y REBOTES ELÁSTICOS (back.out 1.36)
+// ================================================================
+export function initCardsStackScroll() {
+  const container = document.getElementById('modal-pm-summary-cards-container');
+  const cards = Array.from(document.querySelectorAll('.card-deck-item'));
+  if (!container || !cards.length) return;
+
+  let rafId = null;
+  let lastScrollTop = container.scrollTop;
+  let scrollVelocity = 0;
+  let scrollStopTimer = null;
+
+  // 1. Física táctil orgánica en cada tarjeta (Press / Release con squash & stretch idéntico al Dock)
+  cards.forEach(card => {
+    if (card._hasDockPhysics) return;
+    card._hasDockPhysics = true;
+
+    card.addEventListener('pointerdown', (e) => {
+      if (e.target.closest('button')) return;
+      if (window.gsap) {
+        gsap.to(card, {
+          scale: 0.96,
+          scaleX: 1.02,
+          scaleY: 0.94,
+          duration: 0.07,
+          ease: "power2.out",
+          overwrite: "auto"
+        });
+      }
+    });
+
+    const releaseCard = (e) => {
+      if (e && e.target && e.target.closest('button')) return;
+      if (window.gsap) {
+        gsap.timeline({ overwrite: "auto" })
+          .to(card, {
+            scaleX: 0.97,
+            scaleY: 1.04,
+            duration: 0.08,
+            ease: "power2.out"
+          })
+          .to(card, {
+            scale: 1,
+            scaleX: 1,
+            scaleY: 1,
+            duration: 0.18,
+            ease: "back.out(1.36)"
+          });
+      }
+    };
+
+    card.addEventListener('pointerup', releaseCard);
+    card.addEventListener('pointerleave', releaseCard);
+    card.addEventListener('pointercancel', releaseCard);
+  });
+
+  // 2. Cálculo continuo de apilamiento en scroll con rebote elástico GSAP (back.out 1.8)
+  const updateCardTransforms = () => {
+    const containerRect = container.getBoundingClientRect();
+
+    cards.forEach((card, i) => {
+      const innerContent = card.querySelector('.card-inner-content');
+      const nextCard = cards[i + 1];
+
+      // 1. Cuántas tarjetas posteriores (j > i) han alcanzado el tope de fijación (~24px - 30px)
+      let cardsInFront = 0;
+      for (let j = i + 1; j < cards.length; j++) {
+        const currentTop = cards[j].getBoundingClientRect().top - containerRect.top;
+        if (currentTop <= 30) {
+          cardsInFront++;
+        }
+      }
+
+      // 2. REGLA ESTRICTA: Desvanecimiento progresivo marcado hacia atrás + Frenado con rebote elástico notorio
+      // Nivel 0 (Frente): scale 1.0, y 0px, opacity 1.0 (100% nítida)
+      // Nivel 1 (Detrás 1): scale 0.95, y -12px, opacity 0.50 (desvanecimiento visible)
+      // Nivel 2 (Detrás 2): scale 0.90, y -24px, opacity 0.20 (desvanecimiento profundo)
+      // Nivel 3+ (Excedente): opacity 0.0, visibility hidden (totalmente desvanecida)
+      const isTooDeep = cardsInFront >= 3;
+      const targetScale = cardsInFront === 0 ? 1 : (cardsInFront === 1 ? 0.95 : 0.90);
+      const targetY = cardsInFront === 0 ? 0 : (cardsInFront === 1 ? -12 : -24);
+      const targetOpacity = cardsInFront === 0 ? 1 : (cardsInFront === 1 ? 0.50 : (cardsInFront === 2 ? 0.20 : 0));
+
+      const prevLevel = card._lastStackLevel !== undefined ? card._lastStackLevel : -1;
+      const levelChanged = prevLevel !== cardsInFront;
+      card._lastStackLevel = cardsInFront;
+
+      if (levelChanged && window.gsap) {
+        // Frenado con rebote elástico notorio (back.out 1.8)
+        gsap.to(card, {
+          scale: targetScale,
+          y: targetY,
+          opacity: targetOpacity,
+          duration: 0.32,
+          ease: "back.out(1.8)",
+          overwrite: "auto",
+          onComplete: () => {
+            card.style.visibility = isTooDeep ? 'hidden' : 'visible';
+            card.style.pointerEvents = isTooDeep ? 'none' : 'auto';
+          }
+        });
+        if (!isTooDeep) {
+          card.style.visibility = 'visible';
+          card.style.pointerEvents = 'auto';
+        }
+      } else if (!window.gsap) {
+        card.style.transform = `translateY(${targetY}px) scale(${targetScale.toFixed(3)})`;
+        card.style.opacity = `${targetOpacity}`;
+        card.style.visibility = isTooDeep ? 'hidden' : 'visible';
+        card.style.pointerEvents = isTooDeep ? 'none' : 'auto';
+      }
+
+      // 3. Desvanecimiento suave del contenido interno al quedar cubierta
+      if (nextCard) {
+        const nextRect = nextCard.getBoundingClientRect();
+        const cardRect = card.getBoundingClientRect();
+        const overlapDistance = nextRect.top - cardRect.top;
+
+        if (overlapDistance < 80) {
+          const progress = Math.max(0, Math.min(1, (80 - overlapDistance) / 45));
+          if (innerContent) {
+            const op = Math.max(0, 1 - progress);
+            innerContent.style.opacity = `${op}`;
+            if (progress >= 0.85) {
+              innerContent.style.visibility = 'hidden';
+              innerContent.style.pointerEvents = 'none';
+            } else {
+              innerContent.style.visibility = 'visible';
+              innerContent.style.pointerEvents = 'auto';
+            }
+          }
+        } else {
+          if (innerContent) {
+            innerContent.style.opacity = '1';
+            innerContent.style.visibility = 'visible';
+            innerContent.style.pointerEvents = 'auto';
+          }
+        }
+      } else {
+        // La última tarjeta siempre se mantiene 100% visible y escala 1
+        if (innerContent) {
+          innerContent.style.opacity = '1';
+          innerContent.style.visibility = 'visible';
+          innerContent.style.pointerEvents = 'auto';
+        }
+      }
+    });
+  };
+
+  const onScroll = () => {
+    if (rafId) cancelAnimationFrame(rafId);
+    rafId = requestAnimationFrame(updateCardTransforms);
+  };
+
+  container.removeEventListener('scroll', container._cardDeckScrollHandler);
+  container._cardDeckScrollHandler = onScroll;
+  container.addEventListener('scroll', onScroll, { passive: true });
+
+  updateCardTransforms();
+}
+
+// ================================================================
+// ABRIR VISTA RESUMEN GENERAL DE TARJETAS (PÁGINA DEDICADA MOBILE)
 // ================================================================
 export function openPaymentMethodsSummaryModal() {
-  const { methodsData, totalCombinedSpent, totalCreditDebt } = getAllPaymentMethodsData();
+  const { methodsData, totalCombinedSpent, totalCreditDebt, walletCount, cardCount, currentParticipant } = getAllPaymentMethodsData();
 
-  const totalGlobalEl = document.getElementById('modal-pm-summary-total-global');
-  const creditDebtEl = document.getElementById('modal-pm-summary-credit-debt');
-  const countBadgeEl = document.getElementById('modal-pm-summary-count-badge');
+  // 1. Datos del Usuario y Saldo Consolidado Superior
+  const userName = currentParticipant?.name || 'Emerson';
+  const nameParts = userName.trim().split(' ').filter(Boolean);
+  const userInitials = nameParts.length > 1
+    ? (nameParts[0][0] + nameParts[1][0]).toUpperCase()
+    : (nameParts[0] ? nameParts[0].substring(0, 2).toUpperCase() : 'EB');
+
+  const avatarEl = document.getElementById('card-view-user-avatar');
+  const nameEl = document.getElementById('card-view-user-name');
+  const remainingBalEl = document.getElementById('card-view-remaining-balance');
+  const walletCountEl = document.getElementById('card-view-wallet-count');
+  const cardCountEl = document.getElementById('card-view-card-count');
   const listContainer = document.getElementById('modal-pm-summary-cards-list');
 
-  if (totalGlobalEl) totalGlobalEl.textContent = formatCurrency(totalCombinedSpent);
-  if (creditDebtEl) creditDebtEl.textContent = `Deuda tarjetas: ${formatCurrency(totalCreditDebt)}`;
-  if (countBadgeEl) countBadgeEl.textContent = `${methodsData.length} métodos`;
+  if (avatarEl) avatarEl.textContent = userInitials;
+  if (nameEl) nameEl.textContent = nameParts[0] || userName;
 
+  // Saldo Restante Superior
+  const allExpenses = appState.expenses || [];
+  const filterMonthString = getFilterMonthString(filterDate);
+  const summary = calculateSummary(appState, allExpenses.filter(e => isExpenseInBillingMonth(e, filterMonthString, filterDate, appState.paymentMethods)));
+  const userSummary = (summary.participantData || []).find(p => p.id === currentParticipant?.id);
+  const userRemaining = userSummary ? (userSummary.remainingBudget || 0) : (summary.globalTotalRemainingBudget || 0);
+
+  if (remainingBalEl) remainingBalEl.textContent = Math.max(0, userRemaining).toFixed(2);
+  if (walletCountEl) walletCountEl.textContent = String(Math.max(1, walletCount));
+  if (cardCountEl) cardCountEl.textContent = String(Math.max(1, cardCount));
+
+  // 2. Renderizado de Tarjetas Sobrepuestas (Stacked Deck con Base Recta y Overlap)
   if (listContainer) {
-    if (methodsData.length === 0) {
-      listContainer.innerHTML = `
-        <div class="col-span-2 text-center py-10 text-slate-400 italic space-y-2 bg-white rounded-2xl border border-slate-100">
-          <i class="fas fa-credit-card text-3xl opacity-30"></i>
-          <p class="text-xs">No hay métodos de pago configurados en este monedero.</p>
+    const cardsHTML = methodsData.map((item, index) => {
+      const isFirst = index === 0;
+      const mtClass = isFirst ? 'mt-0' : '-mt-[32px]';
+      const isSavings = item.method.type === 'savings' || (item.method.name || '').toLowerCase().includes('ahorro');
+      const thirdPillBadge = isSavings ? 'ahorrado' : 'Gastado';
+
+      return `
+        <div onclick="openCreditCardDetailModal('${item.method.id}')"
+          class="card-deck-item relative bg-[#e9f7e4] rounded-t-[36px] rounded-b-none px-[16px] pt-[12px] pb-[16px] w-full max-w-[408px] mx-auto h-[154px] min-h-[154px] border-t-2 border-x-2 border-[#cbe8c4] border-b-0 shadow-[0_-6px_20px_rgba(0,0,0,0.03)] hover:shadow-md cursor-pointer select-none ${mtClass}"
+          style="z-index: ${(index + 1) * 10}; position: sticky; top: 0px; background-color: #e9f7e4 !important; transform-origin: center top;">
+          
+          <!-- Contenedor interno: distribución vertical compacta para mantener píldoras 100% visibles -->
+          <div class="card-inner-content transition-opacity duration-150 flex flex-col w-full">
+            <!-- 1. Encabezado Tarjeta: Tipo a la izquierda, Botones a la derecha (Margen superior 12px) -->
+            <div class="flex items-center justify-between mb-1.5">
+              <span class="text-xs font-bold text-[#406838] tracking-wide">
+                ${item.categoryType}
+              </span>
+
+              <div class="flex items-center gap-2" onclick="event.stopPropagation()">
+                <button type="button" onclick="editPaymentMethod('${item.method.id}')"
+                  class="w-7 h-7 rounded-lg bg-[#84cc16] text-[#142314] flex items-center justify-center shadow-2xs hover:opacity-90 active:scale-90 transition-all cursor-pointer"
+                  title="Editar tarjeta">
+                  <span class="material-symbols-rounded text-base font-bold">edit</span>
+                </button>
+                <button type="button" onclick="confirmDeletePaymentMethod('${item.method.id}')"
+                  class="w-7 h-7 rounded-lg bg-[#ef4444] text-white flex items-center justify-center shadow-2xs hover:opacity-90 active:scale-90 transition-all cursor-pointer"
+                  title="Eliminar tarjeta">
+                  <span class="material-symbols-rounded text-base font-bold">delete</span>
+                </button>
+              </div>
+            </div>
+
+            <!-- 2. Título Principal de la Tarjeta (Altura 34px, margen izquierdo 16px, Grande y Negrita) -->
+            <div class="h-[34px] flex items-center mb-2">
+              <h3 class="text-3xl font-black text-[#193217] tracking-tight truncate leading-none">
+                ${item.method.name}
+              </h3>
+            </div>
+
+            <!-- 3. Fila de 3 Píldoras de Métricas (Ancho total 376px, cada píldora 109px, Altura 24px) -->
+            <div class="w-full max-w-[376px] mx-auto grid grid-cols-3 gap-2 items-center">
+              
+              <!-- 1. Píldora Saldo Restante (Ancho 109px, Altura 24px) -->
+              <div class="relative bg-[#f2faf0] h-[24px] max-w-[109px] rounded-full px-2 border border-[#d6edd1] shadow-2xs flex items-center justify-center min-w-0">
+                <span class="absolute -top-2 left-2.5 px-1.5 py-[1px] bg-[#e9f7e4] rounded-full text-[7.5px] font-extrabold text-[#2d6a4f] border border-[#cbe8c4] leading-none shadow-2xs">
+                  saldo
+                </span>
+                <div class="flex items-baseline gap-0.5 truncate text-slate-900 font-black text-xs leading-none">
+                  <span class="text-[8px] font-bold opacity-60">S/</span>
+                  <span class="text-xs font-black">${item.remainingFormatted}</span>
+                </div>
+              </div>
+
+              <!-- 2. Píldora Presupuesto / Gastos Fijos (Ancho 109px, Altura 24px) -->
+              <div class="relative bg-[#1e2e1c] h-[24px] max-w-[109px] text-white rounded-full px-2 shadow-2xs flex items-center justify-center min-w-0">
+                <span class="absolute -top-2 left-2.5 px-1.5 py-[1px] bg-[#1e2e1c] rounded-full text-[7.5px] font-extrabold text-[#86efac] leading-none shadow-2xs">
+                  Presupuesto
+                </span>
+                <div class="flex items-baseline gap-0.5 truncate text-white font-black text-xs leading-none">
+                  <span class="text-[8px] font-bold opacity-70">S/</span>
+                  <span class="text-xs font-black text-white">${item.fixedFormatted}</span>
+                </div>
+              </div>
+
+              <!-- 3. Píldora Total Gastado / Ahorrado (Ancho 109px, Altura 24px) -->
+              <div class="relative bg-[#e11d48] h-[24px] max-w-[109px] text-white rounded-full px-2 shadow-2xs flex items-center justify-center min-w-0">
+                <span class="absolute -top-2 left-2.5 px-1.5 py-[1px] bg-[#e11d48] rounded-full text-[7.5px] font-extrabold text-white leading-none shadow-2xs">
+                  ${thirdPillBadge}
+                </span>
+                <div class="flex items-baseline gap-0.5 truncate text-white font-black text-xs leading-none">
+                  <span class="text-[8px] font-bold opacity-70">S/</span>
+                  <span class="text-xs font-black text-white">${item.spentFormatted}</span>
+                </div>
+              </div>
+
+            </div>
+          </div>
+
         </div>
       `;
-    } else {
-      listContainer.innerHTML = methodsData.map(item => `
-        <div onclick="openCreditCardDetailModal('${item.method.id}')"
-          class="bg-white rounded-2xl p-3.5 border border-slate-200/80 shadow-2xs hover:shadow-md active:scale-95 transition-all flex flex-col justify-between cursor-pointer min-h-[136px] relative group select-none">
-          
-          <!-- Encabezado de la Tarjeta en Cuadrícula -->
-          <div class="flex items-center justify-between">
-            <div class="w-8 h-8 rounded-xl ${item.style.iconBg} flex items-center justify-center text-xs shrink-0 shadow-2xs">
-              <i class="fas ${item.style.icon}"></i>
-            </div>
-            <span class="text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full border ${item.style.badgeBg}">
-              ${item.style.badge}
-            </span>
-          </div>
+    }).join('');
 
-          <!-- Nombre y Consumo -->
-          <div class="my-2">
-            <span class="text-xs font-black text-slate-900 truncate block">${item.method.name}</span>
-            <span class="text-base sm:text-lg font-black ${item.style.amountColor} tracking-tight block mt-0.5">
-              ${formatCurrency(item.totalSpent)}
-            </span>
+    // 4. Tarjeta Especial al Final: Crear / Agregar Nueva Tarjeta (Con margen natural)
+    const addCardIndex = methodsData.length;
+    const addCardHTML = `
+      <div onclick="openCreatePaymentMethodModal()"
+        class="card-deck-item relative bg-[#f4faf2] hover:bg-[#ebf7e8] active:scale-[0.98] transition-all rounded-t-[36px] rounded-b-none px-[16px] pt-[20px] pb-[20px] w-full max-w-[408px] mx-auto h-[154px] min-h-[154px] mb-6 border-t-2 border-x-2 border-dashed border-[#84cc16] border-b-0 shadow-[0_-6px_20px_rgba(0,0,0,0.03)] cursor-pointer select-none -mt-[32px] flex flex-col items-center justify-center text-center group"
+        style="z-index: ${(addCardIndex + 1) * 10}; position: sticky; top: 0px; transform-origin: center top;">
+        
+        <div class="card-inner-content transition-opacity duration-150 flex flex-col items-center justify-center gap-2.5 w-full">
+          <div class="w-11 h-11 rounded-2xl bg-[#84cc16] text-[#142314] flex items-center justify-center shadow-md group-hover:scale-110 group-active:scale-95 transition-transform">
+            <span class="material-symbols-rounded text-3xl font-black">add</span>
           </div>
-
-          <!-- Pie de Tarjeta: Titular y Cantidad de Movimientos -->
-          <div class="pt-1.5 border-t border-slate-100 flex items-center justify-between text-[9px]">
-            <span class="text-slate-400 font-bold truncate max-w-[65px]">${item.ownerName}</span>
-            <span class="font-extrabold text-slate-600 group-hover:text-indigo-600 flex items-center gap-0.5 transition-colors">
-              <span>${item.methodExpenses.length}</span>
-              <i class="fas fa-chevron-right text-[7px]"></i>
-            </span>
+          <div class="space-y-0.5">
+            <h3 class="text-base font-black text-[#193217] tracking-tight leading-tight">
+              Agregar Nueva Tarjeta
+            </h3>
+            <p class="text-[11px] font-bold text-[#406838] opacity-80 leading-none">
+              Efectivo, Débito, Crédito o Billetera
+            </p>
           </div>
         </div>
-      `).join('');
-    }
+      </div>
+    `;
+
+    listContainer.innerHTML = cardsHTML + addCardHTML;
   }
 
-  openModal('modal-payment-methods-summary');
+  // 3. Mostrar Vista Dedicada #view-tarjetas y Ocultar Dashboard
+  const topHeader = document.getElementById('mobile-top-header');
+  const viewDashboard = document.getElementById('view-dashboard');
+  const viewTarjetas = document.getElementById('view-tarjetas');
+
+  if (topHeader) topHeader.classList.add('hidden');
+  if (viewDashboard && viewTarjetas) {
+    viewDashboard.classList.add('hidden');
+    viewTarjetas.classList.remove('hidden');
+    viewTarjetas.classList.add('flex');
+    const container = document.getElementById('modal-pm-summary-cards-container');
+    if (container) container.scrollTop = 0;
+    setTimeout(() => initCardsStackScroll(), 100);
+  }
 }
+
 
 // ================================================================
 // ABRIR MODAL DETALLE DE TARJETA (ACTUAL O CICLO HISTÓRICO SELECCIONADO)
@@ -639,10 +930,39 @@ export function selectStatementCycle(methodId, cycleIndex) {
   openCreditCardDetailModal(methodId, selectedCycle);
 }
 
+// ================================================================
+// VOLVER AL DASHBOARD PRINCIPAL DESDE LA VISTA DEDICADA DE TARJETAS
+// ================================================================
+export function showDashboardView() {
+  const topHeader = document.getElementById('mobile-top-header');
+  const viewDashboard = document.getElementById('view-dashboard');
+  const viewTarjetas = document.getElementById('view-tarjetas');
+
+  if (topHeader) topHeader.classList.remove('hidden');
+  if (viewDashboard && viewTarjetas) {
+    viewTarjetas.classList.add('hidden');
+    viewTarjetas.classList.remove('flex');
+    viewDashboard.classList.remove('hidden');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+}
+
+// ================================================================
+// ABRIR ACCIÓN / MODAL PARA CREAR NUEVA TARJETA O BILLETERA
+// ================================================================
+export function openCreatePaymentMethodModal() {
+  if (typeof window.showNotification === 'function') {
+    window.showNotification('Crear nueva tarjeta o billetera', 'info');
+  } else {
+    alert('Crear nueva tarjeta o billetera');
+  }
+}
+
 // Global window mappings
 window.openPaymentMethodsSummaryModal = openPaymentMethodsSummaryModal;
 window.openCreditCardDetailModal = openCreditCardDetailModal;
 window.openCardStatementsHistoryModal = openCardStatementsHistoryModal;
 window.restoreCurrentCardCycle = restoreCurrentCardCycle;
 window.selectStatementCycle = selectStatementCycle;
-
+window.showDashboardView = showDashboardView;
+window.openCreatePaymentMethodModal = openCreatePaymentMethodModal;
