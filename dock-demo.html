@@ -90,18 +90,22 @@
         class="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold bg-slate-100 text-slate-800 uppercase tracking-wider">1.
         Nav Separado</span>
     </div>
-    <div class="grid grid-cols-3 gap-1.5 pt-0.5">
-      <button onclick="transitionToNav()"
-        class="px-2 py-1.5 bg-slate-100 hover:bg-slate-200 active:scale-95 text-slate-800 font-bold text-[11px] rounded-xl transition-all">
-        1. Nav
+    <div class="grid grid-cols-4 gap-1.5 pt-0.5">
+      <button onclick="selectDemoView('tarjetas')"
+        class="px-1.5 py-1.5 bg-lime-100 hover:bg-lime-200 active:scale-95 text-lime-900 font-extrabold text-[10px] rounded-xl transition-all flex items-center justify-center gap-1">
+        <span>💳</span> Tarjetas
+      </button>
+      <button onclick="selectDemoView('estadisticas')"
+        class="px-1.5 py-1.5 bg-slate-100 hover:bg-slate-200 active:scale-95 text-slate-800 font-extrabold text-[10px] rounded-xl transition-all flex items-center justify-center gap-1">
+        <span>📊</span> Stats
       </button>
       <button onclick="transitionToChat()"
-        class="px-2 py-1.5 bg-emerald-50 hover:bg-emerald-100 active:scale-95 text-emerald-800 font-bold text-[11px] rounded-xl transition-all">
-        2. Chat (Fusión)
+        class="px-1.5 py-1.5 bg-emerald-50 hover:bg-emerald-100 active:scale-95 text-emerald-800 font-extrabold text-[10px] rounded-xl transition-all flex items-center justify-center gap-1">
+        <span>💬</span> Chat
       </button>
       <button onclick="transitionToVoice()"
-        class="px-2 py-1.5 bg-purple-50 hover:bg-purple-100 active:scale-95 text-purple-800 font-bold text-[11px] rounded-xl transition-all">
-        3. Voz (Cámara + Mute)
+        class="px-1.5 py-1.5 bg-purple-50 hover:bg-purple-100 active:scale-95 text-purple-800 font-extrabold text-[10px] rounded-xl transition-all flex items-center justify-center gap-1">
+        <span>🎙️</span> Voz
       </button>
     </div>
   </div>
@@ -305,8 +309,8 @@
             <span class="material-symbols-rounded text-[26px]">mic</span>
           </button>
           
-          <button type="button" data-nav-index="3" onclick="setActiveNavTab(3, this)"
-            class="nav-tab-btn nav-icon bubble-btn relative z-10 w-10 h-10 flex items-center justify-center text-slate-400 hover:text-slate-900 transition-colors"
+          <button type="button" id="nav-tab-search" data-nav-index="3" onclick="setActiveNavTab(3, this)"
+            class="nav-tab-btn nav-icon bubble-btn relative z-10 w-10 h-10 flex items-center justify-center text-slate-400 hover:text-slate-900 transition-colors overflow-hidden"
             title="Buscar">
             <span class="material-symbols-rounded text-[26px]">search</span>
           </button>
@@ -439,6 +443,7 @@
     let isMuted = false;
     let activeNavTabIndex = 0;
     let lastActiveNavTabIndex = 0;
+    let isSearchTabVisible = true;
 
     // Calcular posición X del centro exacto del botón relativo a nav-pill-left
     function getTabPosition(btnElement) {
@@ -464,6 +469,124 @@
       gsap.set(indicator, { x: posX, scale: 1, opacity: 1 });
     }
 
+    // Ocultar/Mostrar el botón de búsqueda con la física morphing squishy del dock
+    function setSearchTabVisibility(visible, animate = true) {
+      const searchBtn = document.getElementById('nav-tab-search');
+      const pillLeft = document.getElementById('nav-pill-left');
+      const indicator = document.getElementById('nav-active-indicator');
+      const preset = PRESS_PRESETS[activePressPreset] || PRESS_PRESETS.organic;
+      if (!searchBtn || !pillLeft || !indicator) return;
+
+      if (isSearchTabVisible === visible && searchBtn.style.display !== (visible ? 'flex' : 'none')) {
+        // Asegurar estado de display
+      } else if (isSearchTabVisible === visible) {
+        return;
+      }
+      isSearchTabVisible = visible;
+
+      const targetBtn = pillLeft.querySelectorAll('.nav-tab-btn')[activeNavTabIndex] || pillLeft.querySelector('.nav-tab-btn');
+
+      if (!animate) {
+        if (visible) {
+          gsap.set(searchBtn, { width: 40, opacity: 1, scale: 1, display: 'flex', pointerEvents: 'auto' });
+        } else {
+          gsap.set(searchBtn, { width: 0, opacity: 0, scale: 0, display: 'none', pointerEvents: 'none' });
+        }
+        initNavIndicator();
+        return;
+      }
+
+      gsap.killTweensOf([searchBtn, pillLeft]);
+
+      if (!visible) {
+        // EN VISTA TARJETAS: Ocultar búsqueda suavemente colapsando ancho a 0
+        const tl = gsap.timeline({
+          onUpdate: () => {
+            if (targetBtn) {
+              const posX = getTabPosition(targetBtn);
+              gsap.set(indicator, { x: posX });
+            }
+          },
+          onComplete: () => {
+            searchBtn.style.display = 'none';
+            initNavIndicator();
+          }
+        });
+
+        // 1. Desvanecimiento y colapso de ancho
+        tl.to(searchBtn, {
+          width: 0,
+          scale: 0,
+          opacity: 0,
+          duration: preset.dockMorphDuration * 1.3,
+          ease: "power2.inOut"
+        }, 0)
+        // 2. Micro rebote de reajuste en la cápsula completa
+        .fromTo(pillLeft, {
+          scaleY: preset.dockImpulseScaleY,
+          scaleX: preset.dockImpulseScaleX
+        }, {
+          scaleY: 1,
+          scaleX: 1,
+          duration: preset.dockMorphDuration * 1.5,
+          ease: preset.dockSettleEase
+        }, 0.06);
+
+      } else {
+        // FUERA DE VISTA TARJETAS: Mostrar búsqueda expandiendo ancho a 40px con rebote elástico
+        searchBtn.style.display = 'flex';
+        searchBtn.style.pointerEvents = 'auto';
+
+        const tl = gsap.timeline({
+          onUpdate: () => {
+            if (targetBtn) {
+              const posX = getTabPosition(targetBtn);
+              gsap.set(indicator, { x: posX });
+            }
+          },
+          onComplete: () => {
+            initNavIndicator();
+          }
+        });
+
+        tl.fromTo(searchBtn, {
+          width: 0,
+          scale: 0,
+          opacity: 0
+        }, {
+          width: 40,
+          scale: 1,
+          opacity: 1,
+          duration: preset.dockMorphDuration * 1.5,
+          ease: "back.out(1.8)"
+        }, 0)
+        .fromTo(pillLeft, {
+          scaleY: preset.dockImpulseScaleY,
+          scaleX: preset.dockImpulseScaleX
+        }, {
+          scaleY: 1,
+          scaleX: 1,
+          duration: preset.dockMorphDuration * 1.5,
+          ease: preset.dockSettleEase
+        }, 0.06);
+      }
+    }
+
+    // Selector rápido de vista demo
+    function selectDemoView(viewName) {
+      if (currentMode !== 'nav') {
+        transitionToNav();
+      }
+      const pillLeft = document.getElementById('nav-pill-left');
+      const tabs = pillLeft ? pillLeft.querySelectorAll('.nav-tab-btn') : [];
+
+      if (viewName === 'tarjetas') {
+        if (tabs[0]) setActiveNavTab(0, tabs[0]);
+      } else if (viewName === 'estadisticas') {
+        if (tabs[1]) setActiveNavTab(1, tabs[1]);
+      }
+    }
+
     // Cambiar de pestaña en Nav con viaje líquido, Squash & Stretch e inercia
     function setActiveNavTab(index, btnElement) {
       if (currentMode !== 'nav') return;
@@ -475,6 +598,16 @@
       const previousIndex = activeNavTabIndex;
       activeNavTabIndex = index;
       const preset = PRESS_PRESETS[activePressPreset];
+
+      // Gestión de visibilidad del icono de búsqueda según la vista
+      if (index === 0) {
+        // En Vista Tarjetas (Tab 0): Oculta el icono de búsqueda con morphing
+        setSearchTabVisibility(false, true);
+      } else if (index === 1) {
+        // En Vista Estadísticas (Tab 1): Muestra el icono de búsqueda
+        setSearchTabVisibility(true, true);
+      }
+
       const targetX = getTabPosition(btnElement);
 
       // 1. VIAJE DEL FONDO ACTIVO CON DEFORMACIÓN DE INERCIA Y REBOTE (-15% deformación/rebote)
