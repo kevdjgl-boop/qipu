@@ -433,29 +433,72 @@ export function initCardsStackScroll() {
 
       const prevLevel = card._lastStackLevel !== undefined ? card._lastStackLevel : -1;
       const levelChanged = prevLevel !== cardsInFront;
-      const isUnstacking = prevLevel > cardsInFront;
+      const isUnstacking = prevLevel !== -1 && prevLevel > cardsInFront;
       card._lastStackLevel = cardsInFront;
 
       if (levelChanged && window.gsap) {
-        // Rebote elástico simétrico: al apilar (back.out 1.8) y al desapilar/subir (back.out 2.4 para pop táctil)
-        const bounceEase = isUnstacking ? "back.out(2.4)" : "back.out(1.8)";
-        const bounceDuration = isUnstacking ? 0.34 : 0.30;
-
-        gsap.to(card, {
-          scale: targetScale,
-          y: targetY,
-          opacity: targetOpacity,
-          duration: bounceDuration,
-          ease: bounceEase,
-          overwrite: "auto",
-          onComplete: () => {
-            card.style.visibility = isTooDeep ? 'hidden' : 'visible';
-            card.style.pointerEvents = isTooDeep ? 'none' : 'auto';
-          }
-        });
-        if (!isTooDeep) {
+        if (isUnstacking && cardsInFront === 0) {
+          // 1. Desapilar al Frente: Micro-impulso elástico hacia adelante (scale 1.05 -> 1.0) con rebote notorio
+          const tl = gsap.timeline({ overwrite: "auto" });
+          tl.to(card, {
+            scale: 1.05,
+            scaleX: 1.04,
+            scaleY: 1.06,
+            y: 4,
+            opacity: 1.0,
+            duration: 0.12,
+            ease: "power2.out"
+          })
+          .to(card, {
+            scale: 1.0,
+            scaleX: 1.0,
+            scaleY: 1.0,
+            y: 0,
+            duration: 0.28,
+            ease: "back.out(2.2)"
+          });
           card.style.visibility = 'visible';
           card.style.pointerEvents = 'auto';
+        } else if (isUnstacking) {
+          // 2. Desapilar Intermedio (2 -> 1): Micro-rebote de recuperación
+          const tl = gsap.timeline({ overwrite: "auto" });
+          tl.to(card, {
+            scale: targetScale + 0.03,
+            y: targetY + 4,
+            opacity: targetOpacity,
+            duration: 0.10,
+            ease: "power2.out"
+          })
+          .to(card, {
+            scale: targetScale,
+            scaleX: 1.0,
+            scaleY: 1.0,
+            y: targetY,
+            duration: 0.24,
+            ease: "back.out(1.9)"
+          });
+          card.style.visibility = 'visible';
+          card.style.pointerEvents = 'auto';
+        } else {
+          // 3. Apilamiento hacia atrás (0 -> 1 -> 2): Desvanecimiento y frenado elástico
+          gsap.to(card, {
+            scale: targetScale,
+            scaleX: 1.0,
+            scaleY: 1.0,
+            y: targetY,
+            opacity: targetOpacity,
+            duration: 0.30,
+            ease: "back.out(1.8)",
+            overwrite: "auto",
+            onComplete: () => {
+              card.style.visibility = isTooDeep ? 'hidden' : 'visible';
+              card.style.pointerEvents = isTooDeep ? 'none' : 'auto';
+            }
+          });
+          if (!isTooDeep) {
+            card.style.visibility = 'visible';
+            card.style.pointerEvents = 'auto';
+          }
         }
       } else if (!window.gsap) {
         card.style.transform = `translateY(${targetY}px) scale(${targetScale.toFixed(3)})`;
