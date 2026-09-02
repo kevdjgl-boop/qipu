@@ -507,11 +507,37 @@ export function initCardsStackScroll() {
         card.style.pointerEvents = isTooDeep ? 'none' : 'auto';
       }
 
-      // 3. Desvanecimiento suave del contenido interno al quedar cubierta
+      // 3. Desvanecimiento y rebote elástico del contenido interno al desapilarse / revelarse
       if (nextCard) {
         const nextRect = nextCard.getBoundingClientRect();
         const cardRect = card.getBoundingClientRect();
         const overlapDistance = nextRect.top - cardRect.top;
+        const isCovered = overlapDistance < 80;
+
+        if (card._wasCovered !== isCovered) {
+          const previouslyCovered = card._wasCovered === true;
+          card._wasCovered = isCovered;
+
+          // REBOTE AL DESAPILAR / REVELARSE: Cuando la tarjeta de abajo se aleja y descubre esta tarjeta
+          if (previouslyCovered && !isCovered && window.gsap) {
+            gsap.timeline({ overwrite: "auto" })
+              .to(card, {
+                scale: 1.04,
+                scaleX: 1.03,
+                scaleY: 1.05,
+                opacity: 1.0,
+                duration: 0.14,
+                ease: "power2.out"
+              })
+              .to(card, {
+                scale: 1.0,
+                scaleX: 1.0,
+                scaleY: 1.0,
+                duration: 0.30,
+                ease: "back.out(2.2)"
+              });
+          }
+        }
 
         if (overlapDistance < 80) {
           const progress = Math.max(0, Math.min(1, (80 - overlapDistance) / 45));
