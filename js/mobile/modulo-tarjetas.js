@@ -433,16 +433,20 @@ export function initCardsStackScroll() {
 
       const prevLevel = card._lastStackLevel !== undefined ? card._lastStackLevel : -1;
       const levelChanged = prevLevel !== cardsInFront;
+      const isUnstacking = prevLevel > cardsInFront;
       card._lastStackLevel = cardsInFront;
 
       if (levelChanged && window.gsap) {
-        // Frenado con rebote elástico notorio (back.out 1.8)
+        // Rebote elástico simétrico: al apilar (back.out 1.8) y al desapilar/subir (back.out 2.4 para pop táctil)
+        const bounceEase = isUnstacking ? "back.out(2.4)" : "back.out(1.8)";
+        const bounceDuration = isUnstacking ? 0.34 : 0.30;
+
         gsap.to(card, {
           scale: targetScale,
           y: targetY,
           opacity: targetOpacity,
-          duration: 0.32,
-          ease: "back.out(1.8)",
+          duration: bounceDuration,
+          ease: bounceEase,
           overwrite: "auto",
           onComplete: () => {
             card.style.visibility = isTooDeep ? 'hidden' : 'visible';
