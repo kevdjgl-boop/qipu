@@ -72,6 +72,19 @@
       pointer-events: none;
     }
 
+    /* Aceleración por GPU en el compositor de hardware (Móvil a 60/120fps fijos sin reflow) */
+    #layer-nav, #layer-chat, #layer-voice, #layer-search,
+    #nav-pill-left, #nav-btn-plus, #nav-active-indicator,
+    .nav-tab-btn, .chat-item, .search-item,
+    #voice-cam-btn, #voice-mic-btn, #voice-close-btn {
+      will-change: transform, opacity;
+      transform: translateZ(0);
+      -webkit-backface-visibility: hidden;
+      backface-visibility: hidden;
+      -webkit-perspective: 1000;
+      perspective: 1000;
+    }
+
     #layer-nav {
       filter: url(#goo);
     }
@@ -572,704 +585,469 @@
       }
     }
 
-    // Selector rápido de vista demo
-    function selectDemoView(viewName) {
-      if (currentMode !== 'nav') {
-        transitionToNav();
-      }
-      const pillLeft = document.getElementById('nav-pill-left');
-      const tabs = pillLeft ? pillLeft.querySelectorAll('.nav-tab-btn') : [];
-
-      if (viewName === 'tarjetas') {
-        if (tabs[0]) setActiveNavTab(0, tabs[0]);
-      } else if (viewName === 'estadisticas') {
-        if (tabs[1]) setActiveNavTab(1, tabs[1]);
-      }
-    }
-
-    // Cambiar de pestaña en Nav con viaje líquido, Squash & Stretch e inercia
-    function setActiveNavTab(index, btnElement) {
-      if (currentMode !== 'nav') return;
-      const pillLeft = document.getElementById('nav-pill-left');
-      const indicator = document.getElementById('nav-active-indicator');
-      const tabs = pillLeft.querySelectorAll('.nav-tab-btn');
-      if (!indicator || !btnElement) return;
-
-      const previousIndex = activeNavTabIndex;
-      activeNavTabIndex = index;
-      const preset = PRESS_PRESETS[activePressPreset];
-
-      // Gestión de visibilidad del icono de búsqueda según la vista
-      if (index === 0) {
-        // En Vista Tarjetas (Tab 0): Oculta el icono de búsqueda con morphing
-        setSearchTabVisibility(false, true);
-      } else if (index === 1) {
-        // En Vista Estadísticas (Tab 1): Muestra el icono de búsqueda
-        setSearchTabVisibility(true, true);
-      }
-
-      const targetX = getTabPosition(btnElement);
-
-      // 1. VIAJE DEL FONDO ACTIVO CON DEFORMACIÓN DE INERCIA Y REBOTE (-15% deformación/rebote)
-      const isMoving = previousIndex !== index;
-      const stretchScaleX = isMoving ? 1.24 : 1.068;
-      const stretchScaleY = isMoving ? 0.88 : 0.95;
-
-      gsap.killTweensOf(indicator);
-      const tl = gsap.timeline();
-
-      // Fase de impulso y estiramiento en la dirección del movimiento
-      tl.to(indicator, {
-        scaleX: stretchScaleX,
-        scaleY: stretchScaleY,
-        duration: 0.10,
-        ease: "power2.in"
-      }, 0)
-      // Desplazamiento horizontal con desaceleración elástica
-      .to(indicator, {
-        x: targetX,
-        duration: 0.28,
-        ease: preset.dockSettleEase
-      }, 0)
-      // Asentamiento elástico (rebote) en la posición final (-15% rebote: 2.0)
-      .to(indicator, {
-        scaleX: 1,
-        scaleY: 1,
-        duration: 0.18,
-        ease: "back.out(2.0)"
-      }, 0.12);
-
-      // 2. REBOTE TÁCTIL DEL ICONO QUE RECIBE EL INDICADOR (-15% rebote)
-      const iconSpan = btnElement.querySelector('.material-symbols-rounded');
-      if (iconSpan) {
-        gsap.killTweensOf(iconSpan);
-        gsap.fromTo(iconSpan, {
-          scale: 0.85,
-          y: -1.7
-        }, {
-          scale: 1,
-          y: 0,
-          duration: 0.24,
-          ease: "back.out(1.85)"
-        });
-      }
-
-      // 3. ACTUALIZAR COLORES DE LAS PESTAÑAS (Activa en negro, inactivas en tono suave)
-      tabs.forEach((tab, idx) => {
-        if (idx === index) {
-          tab.classList.remove('text-slate-400');
-          tab.classList.add('text-slate-900');
-        } else {
-          tab.classList.remove('text-slate-900');
-          tab.classList.add('text-slate-400');
-        }
-      });
-
-      if (index === 0 || index === 1) {
-        lastActiveNavTabIndex = index;
-      }
-
-      // Si se selecciona la pestaña 2 (Micrófono / Mita), pasa fluidamente a Chat
-      if (index === 2) {
-        setTimeout(() => {
-          transitionToChat();
-        }, 160);
-      } else if (index === 3) {
-        // Si se selecciona la pestaña 3 (Lupa / Buscar), pasa fluidamente a Barra de Búsqueda
-        setTimeout(() => {
-          transitionToSearch();
-        }, 160);
-      }
-    }
-
     // ============================================================
-    // 🪄 TRANSICIÓN 1 -> 2: FUSIÓN DE NAV A CHAT (METABALL DINÁMICO)
+    // 🌐 MOTOR UNIVERSAL DE ESTADOS CON ACELERACIÓN POR GPU (60/120 FPS)
     // ============================================================
-    function transitionToChat() {
-      if (currentMode === 'chat') return;
-      currentMode = 'chat';
-      updateBadge('2. Chat (Fusión)', 'bg-emerald-100 text-emerald-800');
-      closeChatAttachments();
-      closeNavMenu();
+    function transitionDockTo(targetMode, options = {}) {
+      const fromMode = currentMode;
+      const preset = PRESS_PRESETS[activePressPreset] || PRESS_PRESETS.organic;
 
-      const preset = PRESS_PRESETS[activePressPreset];
-      const navPillLeft = document.getElementById('nav-pill-left');
-      const navBtnPlus = document.getElementById('nav-btn-plus');
-      const navIcons = navPillLeft.querySelectorAll('.nav-icon');
-      const navIndicator = document.getElementById('nav-active-indicator');
-      const navPlusSymbol = document.getElementById('nav-plus-symbol');
       const layerNav = document.getElementById('layer-nav');
       const layerChat = document.getElementById('layer-chat');
-      const chatItems = document.querySelectorAll('.chat-item');
-
-      const tl = gsap.timeline();
-
-      // Activar metaball líquido en la fusión
-      tl.call(() => {
-        layerNav.style.filter = "url(#goo)";
-      }, null, 0);
-
-      // 1. Iconos de Nav, indicador y el símbolo '+' se encogen de inmediato desde su centro
-      tl.to([navIcons, navIndicator, navPlusSymbol], {
-        scale: 0,
-        opacity: 0,
-        duration: preset.dockSnapDuration,
-        ease: "power2.in",
-        transformOrigin: "50% 50%"
-      }, 0);
-
-      // 2. FUSIÓN: El botón '+' y la cápsula izquierda se estiran hacia el centro con metaball líquido
-      tl.to(navBtnPlus, {
-        width: "100%",
-        borderRadius: "9999px",
-        duration: preset.dockMorphDuration,
-        ease: preset.dockMorphEase
-      }, 0)
-        .to(navPillLeft, {
-          width: "100%",
-          duration: preset.dockMorphDuration,
-          ease: preset.dockMorphEase
-        }, 0);
-
-      // 3. Activar la barra de chat y aplicar el IMPACTO DE REBOTE (SQUASH & STRETCH) en la cápsula completa
-      tl.call(() => {
-        layerChat.style.opacity = 1;
-        layerChat.style.pointerEvents = "auto";
-        layerChat.style.width = "100%";
-        layerNav.style.opacity = 0;
-        layerNav.style.pointerEvents = "none";
-        layerNav.style.filter = "none";
-      }, null, preset.dockMorphDuration * 0.55);
-
-      // Rebote elástico vertical/horizontal de la cápsula completa (SQUASH & STRETCH VISIBLE)
-      tl.fromTo(layerChat, {
-        scaleY: preset.dockImpulseScaleY,
-        scaleX: preset.dockImpulseScaleX
-      }, {
-        scaleY: preset.dockOvershootScaleY,
-        scaleX: preset.dockOvershootScaleX,
-        duration: preset.dockMorphDuration * 0.45,
-        ease: "power2.out"
-      }, preset.dockMorphDuration * 0.55)
-        .to(layerChat, {
-          scaleY: 1,
-          scaleX: 1,
-          duration: preset.dockMorphDuration * 0.55,
-          ease: preset.dockSettleEase
-        });
-
-      // 4. Los 4 elementos del chat entran en cascada suave de izquierda a derecha con desplazamiento e inercia
-      tl.fromTo(chatItems, {
-        scale: 0.3,
-        x: -22,
-        y: 0,
-        opacity: 0,
-        transformOrigin: "50% 50%"
-      }, {
-        scale: 1,
-        x: 0,
-        y: 0,
-        opacity: 1,
-        duration: 0.24,
-        ease: "back.out(1.3)",
-        stagger: {
-          each: 0.045,
-          from: "start"
-        }
-      }, preset.dockMorphDuration * 0.55);
-    }
-
-    // ============================================================
-    // 🪄 TRANSICIÓN 2 -> 1: REGRESO DE CHAT A NAV (DIVISIÓN METABALL DINÁMICO)
-    // ============================================================
-    function transitionToNav() {
-      if (currentMode === 'nav') return;
-      currentMode = 'nav';
-      updateBadge('1. Nav Separado', 'bg-slate-100 text-slate-800');
-      closeChatAttachments();
-      closeNavMenu();
-
-      const searchInput = document.getElementById('search-input');
-      if (searchInput) {
-        searchInput.value = '';
-        searchInput.blur();
-      }
-
-      // Restaura la pestaña previa de navegación
-      activeNavTabIndex = (lastActiveNavTabIndex !== undefined && lastActiveNavTabIndex !== 2 && lastActiveNavTabIndex !== 3)
-        ? lastActiveNavTabIndex
-        : 0;
-
-      const preset = PRESS_PRESETS[activePressPreset];
-      const navPillLeft = document.getElementById('nav-pill-left');
-      const navBtnPlus = document.getElementById('nav-btn-plus');
-      const navIcons = navPillLeft.querySelectorAll('.nav-icon');
-      const navIndicator = document.getElementById('nav-active-indicator');
-      const navPlusSymbol = document.getElementById('nav-plus-symbol');
-      const layerNav = document.getElementById('layer-nav');
-      const layerChat = document.getElementById('layer-chat');
+      const layerVoice = document.getElementById('layer-voice');
       const layerSearch = document.getElementById('layer-search');
+
+      const navPillLeft = document.getElementById('nav-pill-left');
+      const navBtnPlus = document.getElementById('nav-btn-plus');
+      const navIcons = navPillLeft.querySelectorAll('.nav-icon');
+      const navIndicator = document.getElementById('nav-active-indicator');
+      const navPlusSymbol = document.getElementById('nav-plus-symbol');
+
       const chatItems = document.querySelectorAll('.chat-item');
       const searchItems = layerSearch ? layerSearch.querySelectorAll('.search-item') : [];
+      const searchInput = document.getElementById('search-input');
 
-      const tl = gsap.timeline();
-
-      // 1. Iconos del chat y búsqueda se encogen
-      tl.to([...chatItems, ...searchItems], {
-        scale: 0,
-        opacity: 0,
-        duration: preset.dockSnapDuration,
-        ease: "power2.in"
-      }, 0);
-
-      // Activar metaball líquido durante la división de las cápsulas
-      tl.call(() => {
-        layerNav.style.filter = "url(#goo)";
-      }, null, preset.dockSnapDuration * 0.7);
-
-      // 2. Ocultar chat/búsqueda y contraer cápsulas con rebote squash & stretch al separarse
-      tl.set([layerChat, layerSearch], { opacity: 0, pointerEvents: "none" }, preset.dockSnapDuration * 0.8)
-        .set(layerNav, { opacity: 1, pointerEvents: "auto" }, preset.dockSnapDuration * 0.8)
-        .fromTo(navBtnPlus, {
-          width: "100%",
-          borderRadius: "9999px"
-        }, {
-          width: "64px",
-          borderRadius: "24px",
-          duration: preset.dockMorphDuration,
-          ease: preset.dockMorphEase
-        }, preset.dockSnapDuration * 0.8)
-        .fromTo(navPillLeft, {
-          width: "100%"
-        }, {
-          width: "calc(100% - 76px)",
-          duration: preset.dockMorphDuration,
-          ease: preset.dockMorphEase
-        }, preset.dockSnapDuration * 0.8);
-
-      // Deformación de asentamiento en las dos cápsulas al dividirse
-      tl.fromTo([navBtnPlus, navPillLeft], {
-        scaleY: preset.dockImpulseScaleY,
-        scaleX: preset.dockImpulseScaleX
-      }, {
-        scaleY: 1,
-        scaleX: 1,
-        duration: preset.dockMorphDuration * 0.6,
-        ease: preset.dockSettleEase
-      }, preset.dockSnapDuration + 0.04);
-
-      // En reposo final: retiramos el filtro metaball para que las cápsulas queden 100% nítidas y limpias
-      tl.call(() => {
-        layerNav.style.filter = "none";
-      }, null, preset.dockSnapDuration + preset.dockMorphDuration + 0.06);
-
-      // 3. Símbolo '+' del botón derecho: APARECE DE INMEDIATO (0.09s) DESDE SU EJE CENTRAL 50% 50%
-      tl.fromTo(navPlusSymbol, {
-        scale: 0,
-        opacity: 0,
-        x: 0,
-        y: 0,
-        transformOrigin: "50% 50%"
-      }, {
-        scale: 1,
-        opacity: 1,
-        x: 0,
-        y: 0,
-        duration: 0.09,
-        ease: "back.out(2.5)"
-      }, preset.dockSnapDuration * 0.5);
-
-      // 4. Asentamiento Milimétrico del Indicador
-      const morphEndTime = preset.dockSnapDuration * 0.8 + preset.dockMorphDuration;
-
-      tl.call(() => initNavIndicator(), null, morphEndTime);
-      tl.fromTo(navIndicator, {
-        scale: 0,
-        opacity: 0
-      }, {
-        scale: 1,
-        opacity: 1,
-        duration: 0.18,
-        ease: "back.out(1.7)"
-      }, morphEndTime);
-
-      tl.eventCallback("onComplete", () => {
-        initNavIndicator();
-      });
-
-      // 4. Los iconos de Nav en la cápsula izquierda se ordenan de izquierda a derecha con desplazamiento suave y legible
-      tl.fromTo(navIcons, {
-        scale: 0.3,
-        x: -22,
-        y: 0,
-        opacity: 0,
-        transformOrigin: "50% 50%"
-      }, {
-        scale: 1,
-        x: 0,
-        y: 0,
-        opacity: 1,
-        duration: 0.24,
-        ease: "back.out(1.3)",
-        stagger: {
-          each: 0.045,
-          from: "start"
-        }
-      }, preset.dockSnapDuration + 0.03);
-    }
-
-    // ============================================================
-    // 🪄 TRANSICIÓN 2 -> 3: DE CHAT A VOZ EN VIVO (ENCOGIMIENTO PAUSADO Y CONTROLADO)
-    // ============================================================
-    function transitionToVoice() {
-      if (currentMode === 'voice') return;
-      currentMode = 'voice';
-      updateBadge('3. Voz (Cámara + Mute)', 'bg-purple-100 text-purple-800');
-      closeChatAttachments();
-
-      const preset = PRESS_PRESETS[activePressPreset];
-      const layerChat = document.getElementById('layer-chat');
-      const chatMicIcon = document.getElementById('chat-mic-icon');
-      const chatRightItems = [
-        document.getElementById('chat-input'),
-        document.getElementById('chat-waveform-btn'),
-        document.getElementById('chat-plus-btn')
-      ];
-      const layerVoice = document.getElementById('layer-voice');
       const voiceCamBtn = document.getElementById('voice-cam-btn');
       const voiceCamIcon = document.getElementById('voice-cam-icon');
       const voiceMicBtn = document.getElementById('voice-mic-btn');
       const voiceCloseBtn = document.getElementById('voice-close-btn');
-      const voiceMicIcon = document.getElementById('voice-mic-icon');
-      const voiceCloseIcon = document.getElementById('voice-close-icon');
       const voiceRightControls = document.getElementById('voice-right-controls');
 
-      const tl = gsap.timeline();
-
-      // 1. Elementos a la derecha se repliegan con inercia de salida inmediata (empieza rápido y frena suave)
-      tl.to(chatRightItems, {
-        scale: 0.5,
-        x: -25,
-        opacity: 0,
-        duration: 0.18,
-        ease: "power2.out",
-        stagger: 0.015
-      }, 0);
-
-      // 2. Encogimiento con DESACELERACIÓN ENFÁTICA: Empieza rápido al presionar y frena suavemente en 64px
-      tl.to(layerChat, {
-        width: "64px",
-        duration: 0.32,
-        ease: "power3.out"
-      }, 0);
-
-      // 3. Transformación fluida Micrófono -> Cámara
-      tl.to(chatMicIcon, {
-        scale: 0,
-        rotation: -30,
-        opacity: 0,
-        duration: 0.14,
-        ease: "power2.out",
-        transformOrigin: "50% 50%"
-      }, 0);
-
-      tl.set(layerChat, { opacity: 0, pointerEvents: "none" }, 0.14)
-        .set(layerVoice, { opacity: 1, pointerEvents: "auto" }, 0.14);
-
-      // La cámara entra girando con rebote elástico en su posición final
-      tl.fromTo(voiceCamIcon, {
-        scale: 0,
-        rotation: 35,
-        opacity: 0,
-        transformOrigin: "50% 50%"
-      }, {
-        scale: 1,
-        rotation: 0,
-        opacity: 1,
-        duration: 0.24,
-        ease: "back.out(2.2)"
-      }, 0.12);
-
-      // Micro-rebote de impacto líquido (Squash & Stretch) en el botón de cámara al llegar a 64px
-      tl.fromTo(voiceCamBtn, {
-        scaleY: 1.15,
-        scaleX: 0.86
-      }, {
-        scaleY: 0.94,
-        scaleX: 1.06,
-        duration: 0.10,
-        ease: "power2.out"
-      }, 0.15)
-      .to(voiceCamBtn, {
-        scaleY: 1,
-        scaleX: 1,
-        duration: 0.16,
-        ease: "back.out(2.4)"
-      });
-
-      // 4. BOTONES MUTE Y CERRAR: Emergen deslizándose desde la izquierda con rebote elástico y metaball
-      tl.call(() => {
-        const ctrl = document.getElementById('voice-right-controls');
-        if (ctrl) ctrl.style.filter = "url(#goo)";
-      }, null, 0.06);
-
-      tl.fromTo(voiceMicBtn, {
-        x: -60,
-        scaleX: 1.18,
-        scaleY: 0.85,
-        opacity: 0
-      }, {
-        x: 0,
-        scaleX: 1,
-        scaleY: 1,
-        opacity: 1,
-        duration: 0.28,
-        ease: "back.out(1.8)"
-      }, 0.08);
-
-      tl.fromTo(voiceCloseBtn, {
-        x: -110,
-        scaleX: 1.22,
-        scaleY: 0.82,
-        opacity: 0
-      }, {
-        x: 0,
-        scaleX: 1,
-        scaleY: 1,
-        opacity: 1,
-        duration: 0.30,
-        ease: "back.out(1.9)"
-      }, 0.11);
-
-      // En reposo final: retiramos el filtro para círculos 100% nítidos y separados
-      tl.call(() => {
-        const ctrl = document.getElementById('voice-right-controls');
-        if (ctrl) ctrl.style.filter = "none";
-      }, null, 0.38);
-
-      // 5. Los iconos internos (Mic y X) tienen la inercia del movimiento con rebote elástico
-      tl.fromTo([voiceMicIcon, voiceCloseIcon], {
-        x: -24,
-        scale: 0.25,
-        opacity: 0,
-        transformOrigin: "50% 50%"
-      }, {
-        x: 0,
-        scale: 1,
-        opacity: 1,
-        duration: 0.26,
-        ease: "back.out(2.2)",
-        stagger: 0.035
-      }, 0.12);
-    }
-
-    // ============================================================
-    // 🪄 TRANSICIÓN 3 -> 2: REGRESO DE VOZ A CHAT (RÁPIDO, ÁGIL Y REACTIVO)
-    // ============================================================
-    function transitionFromVoiceToChat() {
-      currentMode = 'chat';
-      updateBadge('2. Chat (Fusión)', 'bg-emerald-100 text-emerald-800');
-
-      const preset = PRESS_PRESETS[activePressPreset];
-      const layerChat = document.getElementById('layer-chat');
-      const chatMicIcon = document.getElementById('chat-mic-icon');
-      const chatItems = document.querySelectorAll('.chat-item');
-      const layerVoice = document.getElementById('layer-voice');
-      const voiceCamIcon = document.getElementById('voice-cam-icon');
-      const voiceMicBtn = document.getElementById('voice-mic-btn');
-      const voiceCloseBtn = document.getElementById('voice-close-btn');
-      const voiceRightControls = document.getElementById('voice-right-controls');
-
-      const tl = gsap.timeline();
-
-      // 1. Mute y Cerrar se fusionan hacia la izquierda con metaball
-      tl.call(() => {
-        const ctrl = document.getElementById('voice-right-controls');
-        if (ctrl) ctrl.style.filter = "url(#goo)";
-      }, null, 0);
-
-      tl.to([voiceCloseBtn, voiceMicBtn], {
-        x: -40,
-        scale: 0.3,
-        opacity: 0,
-        duration: 0.08,
-        ease: "power2.in",
-        stagger: 0.01
-      }, 0);
-
-      // 2. Icono de cámara se encoge
-      tl.to(voiceCamIcon, {
-        scale: 0,
-        rotation: 30,
-        opacity: 0,
-        duration: 0.08,
-        ease: "power2.in",
-        transformOrigin: "50% 50%"
-      }, 0);
-
-      // 3. EXPANSIÓN RÁPIDA DE LA BARRA: De 64px a 100% en solo 0.18s
-      tl.set(layerVoice, { opacity: 0, pointerEvents: "none" }, 0.06)
-        .set(layerChat, { opacity: 1, pointerEvents: "auto", width: "64px" }, 0.06)
-        .to(layerChat, {
-          width: "100%",
-          duration: 0.18,
-          ease: "power2.out"
-        }, 0.06);
-
-      // 4. Icono de micrófono emerge de inmediato
-      tl.fromTo(chatMicIcon, {
-        scale: 0,
-        rotation: -30,
-        opacity: 0,
-        transformOrigin: "50% 50%"
-      }, {
-        scale: 1,
-        rotation: 0,
-        opacity: 1,
-        duration: 0.14,
-        ease: "back.out(1.4)"
-      }, 0.07);
-
-      // Asentamiento elástico de la barra
-      tl.fromTo(layerChat, {
-        scaleY: preset.dockImpulseScaleY,
-        scaleX: preset.dockImpulseScaleX
-      }, {
-        scaleY: 1,
-        scaleX: 1,
-        duration: 0.16,
-        ease: preset.dockSettleEase
-      }, 0.14);
-
-      // 5. Elementos del chat se despliegan de inmediato en cascada ágil
-      tl.fromTo(chatItems, {
-        scale: 0.3,
-        x: -16,
-        y: 0,
-        opacity: 0,
-        transformOrigin: "50% 50%"
-      }, {
-        scale: 1,
-        x: 0,
-        y: 0,
-        opacity: 1,
-        duration: 0.16,
-        ease: "back.out(1.3)",
-        stagger: {
-          each: 0.025,
-          from: "start"
-        }
-      }, 0.12);
-
-      tl.call(() => {
-        const ctrl = document.getElementById('voice-right-controls');
-        if (ctrl) ctrl.style.filter = "none";
-      }, null, 0.20);
-    }
-
-    // ============================================================
-    // 🔍 TRANSICIÓN 1 -> 4: DE NAVEGACIÓN A BARRA DE BÚSQUEDA
-    // ============================================================
-    function transitionToSearch() {
-      if (currentMode === 'search') return;
-      currentMode = 'search';
-      updateBadge('4. Búsqueda', 'bg-sky-100 text-sky-800');
+      // 1. Limpieza de popups e inputs
       closeChatAttachments();
       closeNavMenu();
 
-      const preset = PRESS_PRESETS[activePressPreset];
-      const navPillLeft = document.getElementById('nav-pill-left');
-      const navBtnPlus = document.getElementById('nav-btn-plus');
-      const navIcons = navPillLeft.querySelectorAll('.nav-icon');
-      const navIndicator = document.getElementById('nav-active-indicator');
-      const navPlusSymbol = document.getElementById('nav-plus-symbol');
-      const layerNav = document.getElementById('layer-nav');
-      const layerSearch = document.getElementById('layer-search');
-      const searchItems = layerSearch.querySelectorAll('.search-item');
-      const searchInput = document.getElementById('search-input');
+      if (fromMode === 'search' && targetMode !== 'search' && searchInput) {
+        searchInput.value = '';
+        searchInput.blur();
+      }
 
-      const tl = gsap.timeline();
+      // Detener cualquier animación en progreso para evitar tirones
+      gsap.killTweensOf([
+        layerNav, layerChat, layerVoice, layerSearch,
+        navPillLeft, navBtnPlus, navIcons, navIndicator, navPlusSymbol,
+        chatItems, searchItems, voiceCamBtn, voiceCamIcon, voiceMicBtn, voiceCloseBtn, voiceRightControls
+      ]);
 
-      // Activar metaball líquido en la fusión
-      tl.call(() => {
-        layerNav.style.filter = "url(#goo)";
-      }, null, 0);
-
-      // 1. Iconos de Nav, indicador y el símbolo '+' se encogen de inmediato
-      tl.to([navIcons, navIndicator, navPlusSymbol], {
-        scale: 0,
-        opacity: 0,
-        duration: preset.dockSnapDuration,
-        ease: "power2.in",
-        transformOrigin: "50% 50%"
-      }, 0);
-
-      // 2. FUSIÓN: Ambas cápsulas se estiran a ancho completo 100%
-      tl.to(navBtnPlus, {
-        width: "100%",
-        borderRadius: "9999px",
-        duration: preset.dockMorphDuration,
-        ease: preset.dockMorphEase
-      }, 0)
-      .to(navPillLeft, {
-        width: "100%",
-        duration: preset.dockMorphDuration,
-        ease: preset.dockMorphEase
-      }, 0);
-
-      // 3. Activar la capa de búsqueda con rebote elástico (Squash & Stretch)
-      tl.call(() => {
-        layerSearch.style.opacity = 1;
-        layerSearch.style.pointerEvents = "auto";
-        layerSearch.style.width = "100%";
-        layerNav.style.opacity = 0;
-        layerNav.style.pointerEvents = "none";
-        layerNav.style.filter = "none";
-        if (searchInput) searchInput.focus();
-      }, null, preset.dockMorphDuration * 0.55);
-
-      tl.fromTo(layerSearch, {
-        scaleY: preset.dockImpulseScaleY,
-        scaleX: preset.dockImpulseScaleX
-      }, {
-        scaleY: preset.dockOvershootScaleY,
-        scaleX: preset.dockOvershootScaleX,
-        duration: preset.dockMorphDuration * 0.45,
-        ease: "power2.out"
-      }, preset.dockMorphDuration * 0.55)
-      .to(layerSearch, {
-        scaleY: 1,
-        scaleX: 1,
-        duration: preset.dockMorphDuration * 0.55,
-        ease: preset.dockSettleEase
+      const tl = gsap.timeline({
+        defaults: { force3D: true }
       });
 
-      // 4. Los elementos de búsqueda (Atrás, Input, X) entran con cascada suave
-      tl.fromTo(searchItems, {
-        scale: 0.3,
-        x: -16,
-        y: 0,
-        opacity: 0,
-        transformOrigin: "50% 50%"
-      }, {
-        scale: 1,
-        x: 0,
-        y: 0,
-        opacity: 1,
-        duration: 0.24,
-        ease: "back.out(1.2)",
-        stagger: {
-          each: 0.045,
-          from: "start"
+      // ------------------------------------------------------------
+      // CASO 1: DESTINO = NAVEGACIÓN (Tarjetas o Estadísticas)
+      // ------------------------------------------------------------
+      if (targetMode === 'nav') {
+        currentMode = 'nav';
+        updateBadge('1. Nav Separado', 'bg-slate-100 text-slate-800');
+
+        const targetTab = options.tabIndex !== undefined
+          ? options.tabIndex
+          : (lastActiveNavTabIndex !== 2 && lastActiveNavTabIndex !== 3 ? lastActiveNavTabIndex : 0);
+
+        activeNavTabIndex = targetTab;
+        if (targetTab === 0 || targetTab === 1) lastActiveNavTabIndex = targetTab;
+
+        const isSearchVisible = targetTab !== 0;
+        isSearchTabVisible = isSearchVisible;
+        const searchBtn = document.getElementById('nav-tab-search');
+
+        // Actualizar colores activos de pestañas
+        navIcons.forEach((tab, idx) => {
+          if (idx === targetTab) {
+            tab.classList.remove('text-slate-400');
+            tab.classList.add('text-slate-900');
+          } else {
+            tab.classList.remove('text-slate-900');
+            tab.classList.add('text-slate-400');
+          }
+        });
+
+        if (fromMode === 'nav') {
+          // Si ya estamos en Nav: transición ágil entre pestañas o visibilidad de búsqueda
+          if (targetTab === 0 && searchBtn && searchBtn.style.display !== 'none') {
+            setSearchTabVisibility(false, true);
+          } else if (targetTab === 1 && searchBtn && searchBtn.style.display === 'none') {
+            setSearchTabVisibility(true, true);
+          } else {
+            const targetBtn = navIcons[targetTab] || navPillLeft.querySelector('.nav-tab-btn');
+            const targetX = getTabPosition(targetBtn);
+
+            tl.to(navIndicator, {
+              scaleX: 1.24,
+              scaleY: 0.88,
+              duration: 0.10,
+              ease: "power2.in"
+            }, 0)
+            .to(navIndicator, {
+              x: targetX,
+              duration: 0.28,
+              ease: preset.dockSettleEase
+            }, 0)
+            .to(navIndicator, {
+              scaleX: 1,
+              scaleY: 1,
+              duration: 0.18,
+              ease: "back.out(2.0)"
+            }, 0.12);
+
+            const iconSpan = targetBtn ? targetBtn.querySelector('.material-symbols-rounded') : null;
+            if (iconSpan) {
+              tl.fromTo(iconSpan, { scale: 0.85, y: -1.7 }, { scale: 1, y: 0, duration: 0.24, ease: "back.out(1.85)" }, 0.05);
+            }
+          }
+          return;
         }
-      }, preset.dockMorphDuration * 0.55);
+
+        // Si venimos de otro modo (Voz, Chat, Búsqueda): Transición directa fluida
+        if (searchBtn) {
+          searchBtn.style.display = isSearchVisible ? 'flex' : 'none';
+        }
+
+        // Desvanecimiento de controles anteriores
+        tl.to([...chatItems, ...searchItems, voiceCamBtn, voiceRightControls], {
+          scale: 0.3,
+          opacity: 0,
+          duration: preset.dockSnapDuration,
+          ease: "power2.in"
+        }, 0);
+
+        tl.call(() => {
+          if (isMetaballActive) layerNav.style.filter = "url(#goo)";
+        }, null, preset.dockSnapDuration * 0.7);
+
+        tl.set([layerChat, layerVoice, layerSearch], { opacity: 0, pointerEvents: "none" }, preset.dockSnapDuration * 0.8)
+          .set(layerNav, { opacity: 1, pointerEvents: "auto" }, preset.dockSnapDuration * 0.8)
+          .fromTo(navBtnPlus, {
+            width: "100%",
+            borderRadius: "9999px"
+          }, {
+            width: "64px",
+            borderRadius: "24px",
+            duration: preset.dockMorphDuration,
+            ease: preset.dockMorphEase
+          }, preset.dockSnapDuration * 0.8)
+          .fromTo(navPillLeft, {
+            width: "100%"
+          }, {
+            width: "calc(100% - 76px)",
+            duration: preset.dockMorphDuration,
+            ease: preset.dockMorphEase
+          }, preset.dockSnapDuration * 0.8);
+
+        // Deformación Squash & Stretch
+        tl.fromTo([navBtnPlus, navPillLeft], {
+          scaleY: preset.dockImpulseScaleY,
+          scaleX: preset.dockImpulseScaleX
+        }, {
+          scaleY: 1,
+          scaleX: 1,
+          duration: preset.dockMorphDuration * 0.6,
+          ease: preset.dockSettleEase
+        }, preset.dockSnapDuration + 0.04);
+
+        tl.call(() => {
+          layerNav.style.filter = "none";
+        }, null, preset.dockSnapDuration + preset.dockMorphDuration + 0.06);
+
+        // Símbolo '+' emerge
+        tl.fromTo(navPlusSymbol, {
+          scale: 0,
+          opacity: 0,
+          transformOrigin: "50% 50%"
+        }, {
+          scale: 1,
+          opacity: 1,
+          duration: 0.09,
+          ease: "back.out(2.5)"
+        }, preset.dockSnapDuration * 0.5);
+
+        const morphEndTime = preset.dockSnapDuration * 0.8 + preset.dockMorphDuration;
+        tl.call(() => initNavIndicator(), null, morphEndTime);
+
+        tl.fromTo(navIndicator, {
+          scale: 0,
+          opacity: 0
+        }, {
+          scale: 1,
+          opacity: 1,
+          duration: 0.18,
+          ease: "back.out(1.7)"
+        }, morphEndTime);
+
+        // Iconos de navegación entran en onda armónica
+        tl.fromTo(navIcons, {
+          scale: 0.3,
+          x: -22,
+          opacity: 0,
+          transformOrigin: "50% 50%"
+        }, {
+          scale: 1,
+          x: 0,
+          opacity: 1,
+          duration: 0.24,
+          ease: "back.out(1.3)",
+          stagger: 0.035
+        }, preset.dockSnapDuration + 0.03);
+      }
+
+      // ------------------------------------------------------------
+      // CASO 2: DESTINO = CHAT
+      // ------------------------------------------------------------
+      else if (targetMode === 'chat') {
+        currentMode = 'chat';
+        updateBadge('2. Chat (Fusión)', 'bg-emerald-100 text-emerald-800');
+
+        if (fromMode === 'voice') {
+          // De Voz a Chat
+          tl.to([voiceCloseBtn, voiceMicBtn, voiceCamIcon], {
+            scale: 0.3,
+            opacity: 0,
+            duration: 0.08,
+            ease: "power2.in"
+          }, 0);
+
+          tl.set(layerVoice, { opacity: 0, pointerEvents: "none" }, 0.06)
+            .set(layerChat, { opacity: 1, pointerEvents: "auto", width: "64px" }, 0.06)
+            .to(layerChat, {
+              width: "100%",
+              duration: 0.18,
+              ease: "power2.out"
+            }, 0.06);
+
+          tl.fromTo(layerChat, {
+            scaleY: preset.dockImpulseScaleY,
+            scaleX: preset.dockImpulseScaleX
+          }, {
+            scaleY: 1,
+            scaleX: 1,
+            duration: 0.16,
+            ease: preset.dockSettleEase
+          }, 0.14);
+
+          tl.fromTo(chatItems, {
+            scale: 0.3,
+            x: -16,
+            opacity: 0
+          }, {
+            scale: 1,
+            x: 0,
+            opacity: 1,
+            duration: 0.16,
+            ease: "back.out(1.3)",
+            stagger: 0.025
+          }, 0.12);
+        } else {
+          // De Nav o Búsqueda a Chat
+          tl.call(() => {
+            if (isMetaballActive) layerNav.style.filter = "url(#goo)";
+          }, null, 0);
+
+          tl.to([navIcons, navIndicator, navPlusSymbol, ...searchItems], {
+            scale: 0,
+            opacity: 0,
+            duration: preset.dockSnapDuration,
+            ease: "power2.in"
+          }, 0);
+
+          tl.to(navBtnPlus, {
+            width: "100%",
+            borderRadius: "9999px",
+            duration: preset.dockMorphDuration,
+            ease: preset.dockMorphEase
+          }, 0)
+          .to(navPillLeft, {
+            width: "100%",
+            duration: preset.dockMorphDuration,
+            ease: preset.dockMorphEase
+          }, 0);
+
+          tl.set([layerNav, layerVoice, layerSearch], { opacity: 0, pointerEvents: "none" }, preset.dockMorphDuration * 0.55)
+            .set(layerChat, { opacity: 1, pointerEvents: "auto", width: "100%" }, preset.dockMorphDuration * 0.55);
+
+          tl.fromTo(layerChat, {
+            scaleY: preset.dockImpulseScaleY,
+            scaleX: preset.dockImpulseScaleX
+          }, {
+            scaleY: 1,
+            scaleX: 1,
+            duration: preset.dockMorphDuration * 0.55,
+            ease: preset.dockSettleEase
+          }, preset.dockMorphDuration * 0.55);
+
+          tl.fromTo(chatItems, {
+            scale: 0.3,
+            x: -22,
+            opacity: 0
+          }, {
+            scale: 1,
+            x: 0,
+            opacity: 1,
+            duration: 0.24,
+            ease: "back.out(1.3)",
+            stagger: 0.045
+          }, preset.dockMorphDuration * 0.55);
+        }
+      }
+
+      // ------------------------------------------------------------
+      // CASO 3: DESTINO = VOZ
+      // ------------------------------------------------------------
+      else if (targetMode === 'voice') {
+        currentMode = 'voice';
+        updateBadge('3. Voz (Cámara + Mute)', 'bg-purple-100 text-purple-800');
+
+        tl.to([...chatItems, ...searchItems, navIcons, navIndicator, navPlusSymbol], {
+          scale: 0.5,
+          opacity: 0,
+          duration: 0.16,
+          ease: "power2.out"
+        }, 0);
+
+        tl.set([layerNav, layerChat, layerSearch], { opacity: 0, pointerEvents: "none" }, 0.14)
+          .set(layerVoice, { opacity: 1, pointerEvents: "auto" }, 0.14);
+
+        tl.fromTo(voiceCamIcon, {
+          scale: 0,
+          rotation: 35,
+          opacity: 0
+        }, {
+          scale: 1,
+          rotation: 0,
+          opacity: 1,
+          duration: 0.24,
+          ease: "back.out(2.2)"
+        }, 0.12);
+
+        tl.fromTo(voiceCamBtn, {
+          scaleY: 1.15,
+          scaleX: 0.86
+        }, {
+          scaleY: 1,
+          scaleX: 1,
+          duration: 0.20,
+          ease: "back.out(2.4)"
+        }, 0.14);
+
+        tl.fromTo(voiceMicBtn, {
+          x: -60,
+          scale: 0.4,
+          opacity: 0
+        }, {
+          x: 0,
+          scale: 1,
+          opacity: 1,
+          duration: 0.28,
+          ease: "back.out(1.8)"
+        }, 0.08);
+
+        tl.fromTo(voiceCloseBtn, {
+          x: -110,
+          scale: 0.4,
+          opacity: 0
+        }, {
+          x: 0,
+          scale: 1,
+          opacity: 1,
+          duration: 0.30,
+          ease: "back.out(1.9)"
+        }, 0.11);
+      }
+
+      // ------------------------------------------------------------
+      // CASO 4: DESTINO = BÚSQUEDA
+      // ------------------------------------------------------------
+      else if (targetMode === 'search') {
+        currentMode = 'search';
+        updateBadge('4. Búsqueda', 'bg-sky-100 text-sky-800');
+
+        tl.to([navIcons, navIndicator, navPlusSymbol, ...chatItems, voiceCamBtn, voiceRightControls], {
+          scale: 0,
+          opacity: 0,
+          duration: preset.dockSnapDuration,
+          ease: "power2.in"
+        }, 0);
+
+        tl.set([layerNav, layerChat, layerVoice], { opacity: 0, pointerEvents: "none" }, preset.dockMorphDuration * 0.55)
+          .set(layerSearch, { opacity: 1, pointerEvents: "auto", width: "100%" }, preset.dockMorphDuration * 0.55);
+
+        tl.fromTo(layerSearch, {
+          scaleY: preset.dockImpulseScaleY,
+          scaleX: preset.dockImpulseScaleX
+        }, {
+          scaleY: 1,
+          scaleX: 1,
+          duration: preset.dockMorphDuration * 0.55,
+          ease: preset.dockSettleEase
+        }, preset.dockMorphDuration * 0.55);
+
+        tl.fromTo(searchItems, {
+          scale: 0.3,
+          x: -16,
+          opacity: 0
+        }, {
+          scale: 1,
+          x: 0,
+          opacity: 1,
+          duration: 0.24,
+          ease: "back.out(1.2)",
+          stagger: 0.045
+        }, preset.dockMorphDuration * 0.55);
+
+        tl.call(() => {
+          if (searchInput) searchInput.focus();
+        }, null, preset.dockMorphDuration * 0.6);
+      }
     }
 
-    // ============================================================
-    // 🔙 TRANSICIÓN 4 -> 1: REGRESO DE BÚSQUEDA A NAVEGACIÓN
-    // ============================================================
+    // Funciones wrappers retrocompatibles que usan el motor universal
+    function selectDemoView(viewName) {
+      if (viewName === 'tarjetas') {
+        transitionDockTo('nav', { tabIndex: 0 });
+      } else if (viewName === 'estadisticas') {
+        transitionDockTo('nav', { tabIndex: 1 });
+      } else if (viewName === 'chat') {
+        transitionDockTo('chat');
+      } else if (viewName === 'voz') {
+        transitionDockTo('voice');
+      } else if (viewName === 'busqueda') {
+        transitionDockTo('search');
+      }
+    }
+
+    function setActiveNavTab(index, btnElement) {
+      if (index === 2) {
+        transitionDockTo('nav', { tabIndex: index });
+        setTimeout(() => transitionDockTo('chat'), 160);
+      } else if (index === 3) {
+        transitionDockTo('nav', { tabIndex: index });
+        setTimeout(() => transitionDockTo('search'), 160);
+      } else {
+        transitionDockTo('nav', { tabIndex: index });
+      }
+    }
+
+    function transitionToChat() {
+      transitionDockTo('chat');
+    }
+
+    function transitionToNav() {
+      transitionDockTo('nav');
+    }
+
+    function transitionToVoice() {
+      transitionDockTo('voice');
+    }
+
+    function transitionFromVoiceToChat() {
+      transitionDockTo('chat');
+    }
+
+    function transitionToSearch() {
+      transitionDockTo('search');
+    }
+
     function transitionFromSearchToNav() {
-      transitionToNav();
+      transitionDockTo('nav');
     }
 
     // ============================================================
