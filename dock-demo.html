@@ -300,9 +300,9 @@
           class="absolute left-0 top-0 h-[64px] bg-white rounded-full dock-shadow border border-slate-100/80 flex items-center justify-between px-6 overflow-hidden relative"
           style="width: calc(100% - 76px);">
           
-          <!-- Indicador Líquido Deslizante Activo (Rectángulo con Bordes Redondeados) -->
+          <!-- Indicador Líquido Deslizante Activo (Centrado vertical exacto en cápsula de 64px: (64-46)/2 = 9px) -->
           <div id="nav-active-indicator"
-            class="absolute top-1/2 -translate-y-1/2 left-0 w-[50px] h-[46px] rounded-[18px] bg-slate-100/90 border border-slate-200/80 pointer-events-none z-0 will-change-transform opacity-100"></div>
+            class="absolute top-[9px] left-0 w-[50px] h-[46px] rounded-[18px] bg-slate-100/90 border border-slate-200/80 pointer-events-none z-0 will-change-transform opacity-100"></div>
 
           <button type="button" data-nav-index="0" onclick="setActiveNavTab(0, this)"
             class="nav-tab-btn nav-icon bubble-btn relative z-10 w-10 h-10 flex items-center justify-center text-slate-900 transition-colors"
@@ -479,25 +479,15 @@
 
       const targetBtn = tabs[activeNavTabIndex] || tabs[0];
       const posX = getTabPosition(targetBtn);
-      gsap.set(indicator, { x: posX, scale: 1, opacity: 1 });
+      gsap.set(indicator, { x: posX, y: 0, scale: 1, opacity: 1 });
     }
 
-    // Ocultar/Mostrar el botón de búsqueda con la física morphing squishy del dock
+    // Ocultar/Mostrar el botón de búsqueda de manera fluida y sin reflows sincrónicos
     function setSearchTabVisibility(visible, animate = true) {
       const searchBtn = document.getElementById('nav-tab-search');
-      const pillLeft = document.getElementById('nav-pill-left');
-      const indicator = document.getElementById('nav-active-indicator');
-      const preset = PRESS_PRESETS[activePressPreset] || PRESS_PRESETS.organic;
-      if (!searchBtn || !pillLeft || !indicator) return;
+      if (!searchBtn) return;
 
-      if (isSearchTabVisible === visible && searchBtn.style.display !== (visible ? 'flex' : 'none')) {
-        // Asegurar estado de display
-      } else if (isSearchTabVisible === visible) {
-        return;
-      }
       isSearchTabVisible = visible;
-
-      const targetBtn = pillLeft.querySelectorAll('.nav-tab-btn')[activeNavTabIndex] || pillLeft.querySelector('.nav-tab-btn');
 
       if (!animate) {
         if (visible) {
@@ -509,60 +499,24 @@
         return;
       }
 
-      gsap.killTweensOf([searchBtn, pillLeft]);
+      gsap.killTweensOf(searchBtn);
 
       if (!visible) {
-        // EN VISTA TARJETAS: Ocultar búsqueda suavemente colapsando ancho a 0
-        const tl = gsap.timeline({
-          onUpdate: () => {
-            if (targetBtn) {
-              const posX = getTabPosition(targetBtn);
-              gsap.set(indicator, { x: posX });
-            }
-          },
+        gsap.to(searchBtn, {
+          width: 0,
+          scale: 0,
+          opacity: 0,
+          duration: 0.22,
+          ease: "power2.inOut",
           onComplete: () => {
             searchBtn.style.display = 'none';
             initNavIndicator();
           }
         });
-
-        // 1. Desvanecimiento y colapso de ancho
-        tl.to(searchBtn, {
-          width: 0,
-          scale: 0,
-          opacity: 0,
-          duration: preset.dockMorphDuration * 1.3,
-          ease: "power2.inOut"
-        }, 0)
-        // 2. Micro rebote de reajuste en la cápsula completa
-        .fromTo(pillLeft, {
-          scaleY: preset.dockImpulseScaleY,
-          scaleX: preset.dockImpulseScaleX
-        }, {
-          scaleY: 1,
-          scaleX: 1,
-          duration: preset.dockMorphDuration * 1.5,
-          ease: preset.dockSettleEase
-        }, 0.06);
-
       } else {
-        // FUERA DE VISTA TARJETAS: Mostrar búsqueda expandiendo ancho a 40px con rebote elástico
         searchBtn.style.display = 'flex';
         searchBtn.style.pointerEvents = 'auto';
-
-        const tl = gsap.timeline({
-          onUpdate: () => {
-            if (targetBtn) {
-              const posX = getTabPosition(targetBtn);
-              gsap.set(indicator, { x: posX });
-            }
-          },
-          onComplete: () => {
-            initNavIndicator();
-          }
-        });
-
-        tl.fromTo(searchBtn, {
+        gsap.fromTo(searchBtn, {
           width: 0,
           scale: 0,
           opacity: 0
@@ -570,18 +524,12 @@
           width: 40,
           scale: 1,
           opacity: 1,
-          duration: preset.dockMorphDuration * 1.5,
-          ease: "back.out(1.8)"
-        }, 0)
-        .fromTo(pillLeft, {
-          scaleY: preset.dockImpulseScaleY,
-          scaleX: preset.dockImpulseScaleX
-        }, {
-          scaleY: 1,
-          scaleX: 1,
-          duration: preset.dockMorphDuration * 1.5,
-          ease: preset.dockSettleEase
-        }, 0.06);
+          duration: 0.26,
+          ease: "back.out(1.8)",
+          onComplete: () => {
+            initNavIndicator();
+          }
+        });
       }
     }
 
@@ -663,38 +611,75 @@
         });
 
         if (fromMode === 'nav') {
-          // Si ya estamos en Nav: transición ágil entre pestañas o visibilidad de búsqueda
+          const targetBtn = navIcons[targetTab] || navPillLeft.querySelector('.nav-tab-btn');
+
+          // Si pasamos a Tarjetas (tab 0): colapsar búsqueda en sincronía exacta sin interrumpir la inercia
           if (targetTab === 0 && searchBtn && searchBtn.style.display !== 'none') {
-            setSearchTabVisibility(false, true);
-          } else if (targetTab === 1 && searchBtn && searchBtn.style.display === 'none') {
-            setSearchTabVisibility(true, true);
-          } else {
-            const targetBtn = navIcons[targetTab] || navPillLeft.querySelector('.nav-tab-btn');
-            const targetX = getTabPosition(targetBtn);
-
-            tl.to(navIndicator, {
-              scaleX: 1.24,
-              scaleY: 0.88,
-              duration: 0.10,
-              ease: "power2.in"
-            }, 0)
-            .to(navIndicator, {
-              x: targetX,
+            tl.to(searchBtn, {
+              width: 0,
+              scale: 0,
+              opacity: 0,
               duration: 0.28,
-              ease: preset.dockSettleEase
+              ease: "power2.inOut"
             }, 0)
-            .to(navIndicator, {
-              scaleX: 1,
-              scaleY: 1,
-              duration: 0.18,
-              ease: "back.out(2.0)"
-            }, 0.12);
-
-            const iconSpan = targetBtn ? targetBtn.querySelector('.material-symbols-rounded') : null;
-            if (iconSpan) {
-              tl.fromTo(iconSpan, { scale: 0.85, y: -1.7 }, { scale: 1, y: 0, duration: 0.24, ease: "back.out(1.85)" }, 0.05);
-            }
+            .set(searchBtn, { display: 'none' }, 0.30);
+          } else if (targetTab === 1 && searchBtn && searchBtn.style.display === 'none') {
+            // Si pasamos a Estadísticas (tab 1): expandir búsqueda con rebote elástico
+            searchBtn.style.display = 'flex';
+            tl.fromTo(searchBtn, {
+              width: 0,
+              scale: 0,
+              opacity: 0
+            }, {
+              width: 40,
+              scale: 1,
+              opacity: 1,
+              duration: 0.28,
+              ease: "back.out(1.8)"
+            }, 0);
           }
+
+          // Desplazamiento fluido continuo del indicador hacia la pestaña destino
+          const targetX = getTabPosition(targetBtn);
+
+          tl.to(navIndicator, {
+            scaleX: 1.24,
+            scaleY: 0.88,
+            duration: 0.10,
+            ease: "power2.in"
+          }, 0)
+          .to(navIndicator, {
+            x: targetX,
+            duration: 0.28,
+            ease: preset.dockSettleEase
+          }, 0)
+          .to(navIndicator, {
+            scaleX: 1,
+            scaleY: 1,
+            duration: 0.18,
+            ease: "back.out(2.0)"
+          }, 0.12);
+
+          // Micro-rebote de la cápsula y del icono activo
+          tl.fromTo(navPillLeft, {
+            scaleY: preset.dockImpulseScaleY,
+            scaleX: preset.dockImpulseScaleX
+          }, {
+            scaleY: 1,
+            scaleX: 1,
+            duration: 0.24,
+            ease: preset.dockSettleEase
+          }, 0.04);
+
+          const iconSpan = targetBtn ? targetBtn.querySelector('.material-symbols-rounded') : null;
+          if (iconSpan) {
+            tl.fromTo(iconSpan, { scale: 0.85, y: -1.7 }, { scale: 1, y: 0, duration: 0.24, ease: "back.out(1.85)" }, 0.05);
+          }
+
+          tl.eventCallback("onComplete", () => {
+            initNavIndicator();
+          });
+
           return;
         }
 
@@ -703,21 +688,23 @@
           searchBtn.style.display = isSearchVisible ? 'flex' : 'none';
         }
 
-        // Desvanecimiento de controles anteriores
-        tl.to([...chatItems, ...searchItems, voiceCamBtn, voiceRightControls], {
-          scale: 0.3,
+        // 1. Colapso completo de botones de voz / chat / búsqueda
+        tl.to([...chatItems, ...searchItems, voiceCamBtn, voiceMicBtn, voiceCloseBtn, voiceRightControls], {
+          scale: 0.2,
           opacity: 0,
           duration: preset.dockSnapDuration,
           ease: "power2.in"
         }, 0);
 
+        // 2. Ocultar capas inactivas y activar layerNav
+        tl.set([layerChat, layerVoice, layerSearch], { opacity: 0, pointerEvents: "none", display: "none" }, preset.dockSnapDuration * 0.8)
+          .set(layerNav, { opacity: 1, pointerEvents: "auto", display: "flex" }, preset.dockSnapDuration * 0.8);
+
         tl.call(() => {
           if (isMetaballActive) layerNav.style.filter = "url(#goo)";
         }, null, preset.dockSnapDuration * 0.7);
 
-        tl.set([layerChat, layerVoice, layerSearch], { opacity: 0, pointerEvents: "none" }, preset.dockSnapDuration * 0.8)
-          .set(layerNav, { opacity: 1, pointerEvents: "auto" }, preset.dockSnapDuration * 0.8)
-          .fromTo(navBtnPlus, {
+        tl.fromTo(navBtnPlus, {
             width: "100%",
             borderRadius: "9999px"
           }, {
@@ -799,15 +786,15 @@
 
         if (fromMode === 'voice') {
           // De Voz a Chat
-          tl.to([voiceCloseBtn, voiceMicBtn, voiceCamIcon], {
+          tl.to([voiceCloseBtn, voiceMicBtn, voiceCamIcon, voiceCamBtn, voiceRightControls], {
             scale: 0.3,
             opacity: 0,
             duration: 0.08,
             ease: "power2.in"
           }, 0);
 
-          tl.set(layerVoice, { opacity: 0, pointerEvents: "none" }, 0.06)
-            .set(layerChat, { opacity: 1, pointerEvents: "auto", width: "64px" }, 0.06)
+          tl.set([layerVoice, layerNav, layerSearch], { opacity: 0, pointerEvents: "none", display: "none" }, 0.06)
+            .set(layerChat, { opacity: 1, pointerEvents: "auto", display: "flex", width: "64px" }, 0.06)
             .to(layerChat, {
               width: "100%",
               duration: 0.18,
@@ -861,8 +848,8 @@
             ease: preset.dockMorphEase
           }, 0);
 
-          tl.set([layerNav, layerVoice, layerSearch], { opacity: 0, pointerEvents: "none" }, preset.dockMorphDuration * 0.55)
-            .set(layerChat, { opacity: 1, pointerEvents: "auto", width: "100%" }, preset.dockMorphDuration * 0.55);
+          tl.set([layerNav, layerVoice, layerSearch], { opacity: 0, pointerEvents: "none", display: "none" }, preset.dockMorphDuration * 0.55)
+            .set(layerChat, { opacity: 1, pointerEvents: "auto", display: "flex", width: "100%" }, preset.dockMorphDuration * 0.55);
 
           tl.fromTo(layerChat, {
             scaleY: preset.dockImpulseScaleY,
@@ -903,8 +890,19 @@
           ease: "power2.out"
         }, 0);
 
-        tl.set([layerNav, layerChat, layerSearch], { opacity: 0, pointerEvents: "none" }, 0.14)
-          .set(layerVoice, { opacity: 1, pointerEvents: "auto" }, 0.14);
+        tl.set([layerNav, layerChat, layerSearch], { opacity: 0, pointerEvents: "none", display: "none" }, 0.14)
+          .set(layerVoice, { opacity: 1, pointerEvents: "auto", display: "flex" }, 0.14)
+          .set(voiceRightControls, { opacity: 1, scale: 1, x: 0, display: "flex" }, 0.14);
+
+        tl.fromTo(voiceCamBtn, {
+          scale: 0.4,
+          opacity: 0
+        }, {
+          scale: 1,
+          opacity: 1,
+          duration: 0.20,
+          ease: "back.out(2.4)"
+        }, 0.10);
 
         tl.fromTo(voiceCamIcon, {
           scale: 0,
@@ -917,16 +915,6 @@
           duration: 0.24,
           ease: "back.out(2.2)"
         }, 0.12);
-
-        tl.fromTo(voiceCamBtn, {
-          scaleY: 1.15,
-          scaleX: 0.86
-        }, {
-          scaleY: 1,
-          scaleX: 1,
-          duration: 0.20,
-          ease: "back.out(2.4)"
-        }, 0.14);
 
         tl.fromTo(voiceMicBtn, {
           x: -60,
@@ -960,15 +948,15 @@
         currentMode = 'search';
         updateBadge('4. Búsqueda', 'bg-sky-100 text-sky-800');
 
-        tl.to([navIcons, navIndicator, navPlusSymbol, ...chatItems, voiceCamBtn, voiceRightControls], {
+        tl.to([navIcons, navIndicator, navPlusSymbol, ...chatItems, voiceCamBtn, voiceMicBtn, voiceCloseBtn, voiceRightControls], {
           scale: 0,
           opacity: 0,
           duration: preset.dockSnapDuration,
           ease: "power2.in"
         }, 0);
 
-        tl.set([layerNav, layerChat, layerVoice], { opacity: 0, pointerEvents: "none" }, preset.dockMorphDuration * 0.55)
-          .set(layerSearch, { opacity: 1, pointerEvents: "auto", width: "100%" }, preset.dockMorphDuration * 0.55);
+        tl.set([layerNav, layerChat, layerVoice], { opacity: 0, pointerEvents: "none", display: "none" }, preset.dockMorphDuration * 0.55)
+          .set(layerSearch, { opacity: 1, pointerEvents: "auto", display: "flex", width: "100%" }, preset.dockMorphDuration * 0.55);
 
         tl.fromTo(layerSearch, {
           scaleY: preset.dockImpulseScaleY,
